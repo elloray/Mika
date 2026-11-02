@@ -265,6 +265,12 @@ fun ChatScreen(
     var selecting by remember(ui.conversationId) { mutableStateOf<String?>(null) }
     /** 菜单出现的进度:0 是没有,1 是完全出来;关了动画时直接到位。 */
     val lift = remember { Animatable(0f) }
+    val adaptive = LocalAdaptiveLayout.current
+    val screenDocked = LocalOperationScreenDocked.current
+    LaunchedEffect(adaptive) {
+        menu = null
+        lift.snapTo(0f)
+    }
     LaunchedEffect(menu) {
         if (menu != null) {
             if (reduceMotion) lift.snapTo(1f) else lift.animateTo(1f, tween(MENU_IN_MS, easing = MikaMotion.Decelerate))
@@ -295,7 +301,7 @@ fun ChatScreen(
                     item("empty") { EmptyState(ui.conversationId) { input = it } }
                 }
                 ui.exchanges.forEachIndexed { i, ex ->
-                    val backgroundNote = i == ui.exchanges.lastIndex && ui.operatingPhone
+                    val backgroundNote = i == ui.exchanges.lastIndex && ui.operatingPhone && !screenDocked
                     exchange(i, ex, ui.conversationId, ui.takeoverStage, vm, reduceMotion, backgroundNote, openRun, loadSource, openSource, kept)
                 }
                 if (phoneSetupNeeded && ui.exchanges.isNotEmpty()) item("phone-setup") { PhoneSetupLine(openPhoneSetup) }
@@ -318,7 +324,8 @@ fun ChatScreen(
         Column(Modifier.behindMenu(menuOpen) { lift.value }.onSizeChanged { topHeight = it.height }) {
             TopBar(
                 ChatCopy.APP_TITLE,
-                left = MikaIcons.Menu, leftLabel = stringResource(R.string.chat_menu), onLeft = onOpenDrawer,
+                left = if (adaptive.hasNavigation && !screenDocked) null else MikaIcons.Menu,
+                leftLabel = stringResource(R.string.chat_menu), onLeft = onOpenDrawer,
                 // 别的对话里还有任务在跑(并行时):菜单上一个小圆点,侧栏「进行中」里能切过去
                 leftBadge = others.isNotEmpty(),
                 right = { BarIconButton(MikaIcons.New, stringResource(R.string.chat_new), { vm.newConversation() }, enabled = vm.canSwitch()) },
@@ -362,7 +369,7 @@ fun ChatScreen(
             editRequest = editRequest,
         )
 
-        AgentPip(
+        if (!screenDocked) AgentPip(
             pip = ui.pip,
             frame = frame,
             webContent = webContent,

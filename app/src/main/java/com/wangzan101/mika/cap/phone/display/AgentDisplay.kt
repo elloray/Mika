@@ -22,18 +22,22 @@ import java.io.ByteArrayOutputStream
  */
 class AgentDisplay(
     private val shell: IMikaShell,
-    val width: Int,
-    val height: Int,
-    dpi: Int,
+    width: Int,
+    height: Int,
+    private var dpi: Int,
 ) {
+    @Volatile var width: Int = width
+        private set
+    @Volatile var height: Int = height
+        private set
     private val thread = HandlerThread("agent-display").apply { start() }
     private val handler = Handler(thread.looper)
-    private val reader = ImageReader.newInstance(width, height, PixelFormat.RGBA_8888, 2)
+    private var reader = ImageReader.newInstance(width, height, PixelFormat.RGBA_8888, 2)
 
     val displayId: Int
 
     private val _frames = MutableStateFlow<Bitmap?>(null)
-    /** 实时画面:限速 ≤10 帧/秒,缩到宽 ≤360。 */
+    /** 实时画面:限速 ≤10 帧/秒,普通预览宽 ≤360，双栏调整虚拟屏后宽 ≤720。 */
     val frames: StateFlow<Bitmap?> = _frames.asStateFlow()
 
     private val frameLock = Any()
@@ -44,8 +48,9 @@ class AgentDisplay(
     @Volatile private var released = false
 
     private val paint = Paint(Paint.FILTER_BITMAP_FLAG)
-    private val previewWidth = minOf(PREVIEW_MAX_WIDTH, width)
-    private val previewHeight = maxOf(1, height * previewWidth / width)
+    private var previewLimit = 360
+    internal val previewWidth get() = minOf(previewLimit, width)
+    internal val previewHeight get() = maxOf(1, height * previewWidth / width)
 
     private val process = Runnable {
         pending = false
@@ -66,6 +71,43 @@ class AgentDisplay(
             throw IllegalStateException("createDisplay failed")
         }
         displayId = id
+    }
+
+    /** 在帧线程上换接收器，保持同一 displayId 和应用任务；失败时继续使用旧画面。 */
+    suspend fun resize(newWidth: Int, newHeight: Int, newDpi: Int): Boolean = kotlin.coroutines.suspendCoroutine { continuation ->
+        if (released) { continuation.resumeWith(Result.success(false)); return@suspendCoroutine }
+        val posted = handler.post {
+            if (released) { continuation.resumeWith(Result.success(false)); return@post }
+            if (width == newWidth && height == newHeight && dpi == newDpi) {
+                continuation.resumeWith(Result.success(true)); return@post
+            }
+            var next: ImageReader? = null
+            val resized = try {
+                next = ImageReader.newInstance(newWidth, newHeight, PixelFormat.RGBA_8888, 2)
+                if (!shell.resizeDisplay(displayId, next.surface, newWidth, newHeight, newDpi)) false else {
+                    reader.setOnImageAvailableListener(null, null)
+                    reader.close()
+                    synchronized(frameLock) {
+                        previewLimit = 720
+                        width = newWidth
+                        height = newHeight
+                        dpi = newDpi
+                        fullFrame?.recycle()
+                        fullFrame = null
+                        hasFrame = false
+                        _frames.value = null
+                    }
+                    reader = next
+                    next = null
+                    reader.setOnImageAvailableListener({ schedule() }, handler)
+                    schedule()
+                    true
+                }
+            } catch (_: Exception) { false }
+            finally { next?.close() }
+            continuation.resumeWith(Result.success(resized))
+        }
+        if (!posted) continuation.resumeWith(Result.success(false))
     }
 
     private fun schedule() {
@@ -125,7 +167,7 @@ class AgentDisplay(
 
     private fun closeLocal() {
         released = true
-        handler.removeCallbacksAndMessages(null)
+        handler.removeCallbacks(process)
         // 在帧线程上收尾,避免与正在处理的帧并发
         handler.post {
             reader.close()
@@ -139,7 +181,6 @@ class AgentDisplay(
     }
 
     private companion object {
-        const val PREVIEW_MAX_WIDTH = 360
         const val FRAME_INTERVAL_MS = 100L
     }
 }

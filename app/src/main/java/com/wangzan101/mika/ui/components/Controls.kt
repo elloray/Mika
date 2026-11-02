@@ -243,6 +243,7 @@ fun TopBar(
     subtitle: String? = null,
     subtitleColor: Color = Color.Unspecified,
     background: Color = MikaTheme.colors.bg,
+    titleModifier: Modifier = Modifier,
 ) {
     val c = MikaTheme.colors
     Box(Modifier.fillMaxWidth().background(background).windowInsetsPadding(WindowInsets.statusBars)) {
@@ -252,7 +253,8 @@ fun TopBar(
             horizontalArrangement = Arrangement.spacedBy(4.dp),
         ) {
             if (left != null) BarIconButton(left, leftLabel, onLeft, badge = leftBadge) else Spacer(Modifier.size(MikaSize.IconButton))
-            Column(Modifier.weight(1f).padding(horizontal = 4.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+            Column(Modifier.weight(1f).padding(horizontal = 4.dp).then(titleModifier), horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center) {
                 Text(title, style = MikaType.Title, color = c.ink, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 if (!subtitle.isNullOrEmpty()) {
                     Text(
