@@ -80,9 +80,11 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -104,6 +106,7 @@ import com.wangzan101.mika.ui.theme.MikaIcons
 import com.wangzan101.mika.ui.theme.MikaMotion
 import com.wangzan101.mika.ui.theme.MikaShapes
 import com.wangzan101.mika.ui.theme.MikaTheme
+import com.wangzan101.mika.voice.HoldToTalk
 import kotlinx.coroutines.flow.first
 
 private val CardShape = RoundedCornerShape(22.dp)
@@ -175,6 +178,12 @@ data class PendingScreen(val shot: CapturedScreen, val thumb: ImageBitmap?)
 data class CardInputUi(val open: Boolean = false, val draft: String = "", val screen: PendingScreen? = null) {
     /** 写了字或挂着一屏:可以发。 */
     val canSend: Boolean get() = draft.isNotBlank() || screen != null
+
+    /** 卡片收起、胶囊藏起时:输入框收起,截下的那一屏不留,没发出的字留着,下次展开接着改。 */
+    fun collapsed(): CardInputUi = CardInputUi(draft = draft)
+
+    /** 说的话接在没发出的字后面(和对话页输入框同一个接法)。 */
+    fun withSpoken(text: String): CardInputUi = copy(draft = HoldToTalk.join(draft, text))
 }
 
 /**
@@ -375,6 +384,9 @@ private fun InputField(field: CardInput, ui: CardInputUi, actions: CardActions, 
         focus.requestFocus()
         keyboard?.show()
     }
+    // 和对话页一样:打开时、外面的字一变(说完接上来),光标放到末尾,接着打都在后面
+    var fieldValue by remember { mutableStateOf(TextFieldValue(ui.draft, TextRange(ui.draft.length))) }
+    val shownValue = if (fieldValue.text == ui.draft) fieldValue else TextFieldValue(ui.draft, TextRange(ui.draft.length))
     Row(
         Modifier.fillMaxWidth().heightIn(min = 42.dp).clip(shape).background(c.ink.copy(alpha = 0.05f))
             .border(1.dp, c.accent.copy(alpha = 0.5f), shape).padding(start = 12.dp, end = 4.dp),
@@ -383,7 +395,7 @@ private fun InputField(field: CardInput, ui: CardInputUi, actions: CardActions, 
         Box(Modifier.weight(1f).padding(vertical = 10.dp)) {
             if (ui.draft.isEmpty()) Text(field.hint, style = Body, color = c.ink3, maxLines = 1)
             BasicTextField(
-                ui.draft, actions::draft,
+                shownValue, { v -> fieldValue = v; if (v.text != ui.draft) actions.draft(v.text) },
                 Modifier.testTag("capsule-field").fillMaxWidth().focusRequester(focus).semantics { contentDescription = field.hint },
                 textStyle = Body.copy(color = c.ink), maxLines = 4, cursorBrush = SolidColor(c.accent),
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Send),

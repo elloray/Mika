@@ -73,6 +73,7 @@
     <string name="model_reason_wrong_protocol">it isn’t served over the interface type you picked, so the request never reaches it</string>
     <string name="model_reason_server">the server returned an error (%1$s)</string>
     <string name="model_probe_none_usable">The provider is connected, but “%1$s” didn’t pass the test: %2$s. Pick a model from the list that your account has activated.</string>
+    <string name="model_probe_none_usable_protocol">The provider is connected, but “%1$s” didn’t pass the test: %2$s. Pick a model this interface type can reach, or switch the interface type.</string>
     <string name="model_probe_tried_unavailable">Tried %1$s; none of them is activated.</string>
     <string name="model_probe_tried">Tried %1$s; none of them passed the test.</string>
     <string name="model_probe_fallback">%1$s, tried first, didn’t pass the test: %2$s. The main model is “%3$s”, which passed.</string>

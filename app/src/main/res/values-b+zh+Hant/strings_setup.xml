@@ -73,6 +73,7 @@
     <string name="model_reason_wrong_protocol">它不走你選的介面類型，請求到不了它</string>
     <string name="model_reason_server">伺服器端出錯（%1$s）</string>
     <string name="model_probe_none_usable">服務商已連上，但「%1$s」沒測試通過：%2$s。從列表裡選一個你開通了的模型。</string>
+    <string name="model_probe_none_usable_protocol">服務商已連上，但「%1$s」沒測試通過：%2$s。換一個這個介面類型到得了的模型，或者換介面類型。</string>
     <string name="model_probe_tried_unavailable">試了 %1$s，都沒開通。</string>
     <string name="model_probe_tried">試了 %1$s，都沒測試通過。</string>
     <string name="model_probe_fallback">先試的 %1$s 沒測試通過：%2$s。主模型用了測試通過的「%3$s」。</string>

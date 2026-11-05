@@ -98,6 +98,10 @@ class McpRpc(
         val complete = buildJsonObject {
             put("resultType", "complete")
             result.forEach { (k, v) -> put(k, v) }
+            if (method in CACHEABLE) {
+                put("ttlMs", LIST_TTL_MS)
+                put("cacheScope", "private")
+            }
             putJsonObject("_meta") { put(META_SERVER, serverInfo()) }
         }
         return ok(id, complete)
@@ -194,6 +198,13 @@ class McpRpc(
         val MODERN_VERSIONS = listOf(MODERN)
         /** 新的在前;握手时对方要的不认就给第一个。 */
         val LEGACY_VERSIONS = listOf("2025-11-25", "2025-06-18", "2025-03-26")
+
+        /**
+         * 新一代要求这些方法的完整结果带缓存提示(`ttlMs`、`cacheScope`),缺了客户端会拒收整个结果。
+         * 工具列表要看这台手机接没接设备能力,不是人人一样,所以只许同一令牌复用(private),新鲜 5 分钟。
+         */
+        val CACHEABLE = setOf("server/discover", "tools/list")
+        const val LIST_TTL_MS = 300_000L
 
         const val PARSE_ERROR = -32700
         const val INVALID_REQUEST = -32600

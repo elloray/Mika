@@ -145,7 +145,7 @@ class ActionExecutor(
         when (d) {
             is Decision.Required -> return blocked(call, args, origin, before, d.hit, null, followUp)
             is Decision.Mismatch -> return blocked(call, args, origin, before, d.hit, d.reason, followUp)
-            Decision.Denied -> return refuse("approval_unavailable", origin, before)
+            is Decision.Denied -> return approvalUnavailable(call, args, origin, before, d.hit, followUp)
             Decision.Unresolved -> return refuse("target_unresolved", origin, before)
             Decision.OwnApp -> return ownApp(call, args, origin, before, followUp)
             else -> Unit
@@ -323,6 +323,18 @@ class ActionExecutor(
 
     private fun refuse(code: String, origin: Origin, before: List<GuardVerdict>) =
         ActionOutcome.Refused(code, Refusals.content(code, origin.policy.refusals, before, null, null), before)
+
+    private fun approvalUnavailable(
+        call: Part.ToolCall, args: JsonObject, origin: Origin, before: List<GuardVerdict>, hit: Irreversible, followUp: FollowUp,
+    ): ActionOutcome {
+        val code = "approval_unavailable"
+        val content = Refusals.content(code, origin.policy.refusals, before, hit, null)
+        if (origin.policy.recordsRefusal) {
+            followUp.refused(content)
+            recorder.result(origin.step, call.name, tools.verb(call.name), content, tools.portRecord(call.name, args), null, null, 0, origin.policy.source, call.id)
+        }
+        return ActionOutcome.Refused(code, content, before, hit)
+    }
 
     private fun blocked(
         call: Part.ToolCall, args: JsonObject, origin: Origin, before: List<GuardVerdict>, hit: Irreversible, reason: String?, followUp: FollowUp,

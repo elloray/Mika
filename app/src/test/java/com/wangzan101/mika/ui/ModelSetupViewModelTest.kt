@@ -284,13 +284,30 @@ class ModelSetupViewModelTest {
         val p = store.providers.value.single()
         val s = vm.state.value
         assertFalse(s.showForm)
-        // 一个都没通过:服务商照旧存下、说清原因,并请用户自己从列表里选(可能要换个接口类型)。
+        // 一个都没通过:服务商照旧存下、说清原因,并请用户自己从列表里选。
         // 这两个模型一次都没试,所以不能出现「试了 X、Y」那一行。
+        // 原因是接口类型到不了它们,末尾那句不能让人去「开通」(那不是这里的问题),该换接口类型或换这个接口类型到得了的模型。
         assertEquals(p.id, s.pickToProbe)
         assertEquals(
             "服务商已连上，但「claude-sonnet-5-5」没测试通过：它不走你选的接口类型，请求到不了它。" +
-                "从列表里选一个你开通了的模型。",
+                "换一个这个接口类型到得了的模型，或者换接口类型。",
             s.probeNote,
+        )
+    }
+
+    /** 同上,只有一个模型、只走另一套接口:照样一句「换接口类型」,不写「试了」,也不让人去开通。 */
+    @Test fun oneModelOnAnotherProtocolSaysToChangeTheInterfaceType() = runTest {
+        val url = "https://api.commandcode.ai/provider/v1"
+        listing[url] = ModelListResult.Ok(listOf(ListedModel("claude-sonnet-5-5", protocols = listOf(ModelProtocol.Messages))))
+        reply = { throw AssertionError("不该试调用:这个模型不走 OpenAI 兼容") }
+        val store = store()
+        val vm = vm(store)
+        vm.selectPreset(ProviderPresets.custom.label); vm.setBaseUrl(url); vm.setApiKey("sk"); vm.testAndSave(); runCurrent()
+        assertTrue("不该试调用", built.isEmpty())
+        assertEquals(
+            "服务商已连上，但「claude-sonnet-5-5」没测试通过：它不走你选的接口类型，请求到不了它。" +
+                "换一个这个接口类型到得了的模型，或者换接口类型。",
+            vm.state.value.probeNote,
         )
     }
 

@@ -35,7 +35,9 @@ object ProviderPresets {
      */
     fun forHost(url: String): ProviderPreset? {
         val host = url.trim().toHttpUrlOrNull()?.host ?: return null
-        return all.firstOrNull { !it.selfHosted && it.baseUrl.isNotEmpty() && it.baseUrl.toHttpUrlOrNull()?.host == host }
+        // 智谱的标准 API 和 Coding Plan 同主机不同路径；共同路径更多的是更具体的预设。
+        return all.filter { !it.selfHosted && it.baseUrl.isNotEmpty() && it.baseUrl.toHttpUrlOrNull()?.host == host }
+            .maxByOrNull { pathOverlap(it.baseUrl, url) }
     }
 
     val all: List<ProviderPreset> = listOf(
@@ -44,6 +46,8 @@ object ProviderPresets {
         ProviderPreset("通义千问", ProviderConfig.Kind.OpenAiCompat, "https://dashscope.aliyuncs.com/compatible-mode/v1", caps(caching = PromptCaching.Explicit), familyTokens = listOf("qwen")),
         ProviderPreset("Kimi", ProviderConfig.Kind.OpenAiCompat, "https://api.moonshot.cn/v1", caps(), familyTokens = listOf("kimi", "moonshot")),
         ProviderPreset("智谱", ProviderConfig.Kind.OpenAiCompat, "https://open.bigmodel.cn/api/paas/v4", caps(), familyTokens = listOf("glm")),
+        // Coding Plan 的 Key 和标准 API 分开；OpenAI Chat Completion 专用地址见智谱的 Coding Plan 接入指南。
+        ProviderPreset("智谱 Coding Plan", ProviderConfig.Kind.OpenAiCompat, "https://open.bigmodel.cn/api/coding/paas/v4", caps(), familyTokens = listOf("glm")),
         // 托管多家开源模型,能不能看图按模型定
         ProviderPreset("硅基流动", ProviderConfig.Kind.OpenAiCompat, "https://api.siliconflow.cn/v1", caps()),
         // 豆包:模型名填模型 ID 或推理接入点 ID(ep-…);这家不一定提供列模型接口,列不出时手填
@@ -74,4 +78,11 @@ object ProviderPresets {
     )
 
     val custom: ProviderPreset get() = all.last()
+
+    /** 同主机有多家预设时，按逐段路径相同的长度挑更贴近的一个；根地址并列时保持预设顺序。 */
+    private fun pathOverlap(presetUrl: String, inputUrl: String): Int {
+        val preset = presetUrl.trimEnd('/').toHttpUrlOrNull()?.pathSegments?.filter { it.isNotBlank() } ?: return 0
+        val input = inputUrl.trim().toHttpUrlOrNull()?.pathSegments?.filter { it.isNotBlank() } ?: return 0
+        return preset.indices.count { preset[it] == input.getOrNull(it) }
+    }
 }

@@ -53,3 +53,17 @@ If you need a proxy to reach a model service but don't want a system-wide VPN, e
 - If the proxy can't be reached or rejects the user name or password, Mika says so instead of blaming your key or model.
 - `https://` proxies (an encrypted connection to the proxy itself) are only used by commands in Files & computing environment; Mika's own connections stay direct. Use `http://` or `socks5://` to cover everything.
 - The in-app browser uses the proxy only if the phone's WebView supports a per-app proxy, and it can't use a SOCKS proxy that needs a login. In those cases the settings row says the browser connects directly.
+
+## ChatGPT reports a workspace access error after switching accounts
+
+If the browser says the app is only available to members of its workspace and shows `3p_login_workspace_scope_denied`, first check that you selected the ChatGPT account and workspace originally used to authorize it. The error means the current sign-in does not meet the app registration's workspace scope; it does not by itself establish a wrong password or exhausted plan usage.
+
+ChatGPT **Sign out** in Mika keeps the registered `client_id` so the same account can sign in again. If you intend to switch to a different account or workspace, repeatedly signing out and back in may keep using the old binding. To create a new connection:
+
+1. Return to Mika and cancel any pending sign-in.
+2. Note your main, vision and light model selections.
+3. Open **Settings › Models › ChatGPT** and confirm **Delete this provider** at the bottom. This removes that provider's local credentials, model configurations and registration ID; roles using it need to be selected again. Conversations stay on the phone. You do not need to uninstall Mika or clear all app data.
+4. Add ChatGPT again, tap **Continue with ChatGPT**, choose the intended account and workspace in the browser, complete authorization, and return to Mika.
+5. Select the models for your roles again and send a short request to verify inference. A model list confirms sign-in and model listing, not a successful inference request.
+
+This is for switching accounts or workspaces, not bypassing workspace access controls. If a fresh connection is still denied, check that the account has access to the workspace or contact its administrator. Include the error code and Mika version when reporting it, and redact email addresses, authorization codes and tokens.

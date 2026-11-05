@@ -73,6 +73,7 @@
     <string name="model_reason_wrong_protocol">no se ofrece con el tipo de interfaz que elegiste, así que la solicitud nunca llega hasta él</string>
     <string name="model_reason_server">el servidor devolvió un error (%1$s)</string>
     <string name="model_probe_none_usable">El proveedor está conectado, pero “%1$s” no pasó la prueba: %2$s. Elige de la lista un modelo que tu cuenta tenga activado.</string>
+    <string name="model_probe_none_usable_protocol">El proveedor está conectado, pero “%1$s” no pasó la prueba: %2$s. Elige un modelo al que llegue este tipo de interfaz, o cambia el tipo de interfaz.</string>
     <string name="model_probe_tried_unavailable">Se probó %1$s; ninguno está activado.</string>
     <string name="model_probe_tried">Se probó %1$s; ninguno pasó la prueba.</string>
     <string name="model_probe_fallback">%1$s, que se probó primero, no pasó la prueba: %2$s. El modelo principal es “%3$s”, que sí la pasó.</string>

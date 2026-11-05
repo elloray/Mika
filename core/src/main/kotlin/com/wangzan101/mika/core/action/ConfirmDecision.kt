@@ -27,7 +27,7 @@ sealed interface Decision {
     /** 有同意,但和这一步对不上;那次同意已作废。 */
     data class Mismatch(val hit: Irreversible, val reason: String) : Decision
     /** 要花钱,本次运行却问不到手机旁的用户,直接拒绝。 */
-    data object Denied : Decision
+    data class Denied(val hit: Irreversible) : Decision
     /** 作用在 Mika 自己身上,不做。 */
     data object OwnApp : Decision
 }
@@ -120,7 +120,7 @@ class ConfirmDecision(
         }
         when (ApprovalPolicy.decide(risk, provenance)) {
             Approval.Allow -> return null.also { audit("allowed") }
-            Approval.Deny -> return Decision.Denied.also { audit("denied") }
+            Approval.Deny -> return Decision.Denied(asked).also { audit("denied") }
             Approval.Ask -> Unit
         }
         val required = Decision.Required(asked)

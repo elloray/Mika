@@ -5,6 +5,7 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.time.Instant
+import java.time.ZoneId
 
 class TriggerEngineTest {
     @Test fun idleOnlyDueWindowWaitsForWatchdogWithoutBeingClaimed() {
@@ -96,5 +97,39 @@ class TriggerEngineTest {
         val second = nextCalendarAt("09:00", "America/New_York", emptyList(), first)
         assertEquals("2026-03-07T14:00:00Z", Instant.ofEpochMilli(first).toString())
         assertEquals("2026-03-08T13:00:00Z", Instant.ofEpochMilli(second).toString())
+    }
+
+    @Test fun rezoneMovesFollowingLocalTimePlansToTheNewZone() {
+        val store = MemoryTriggerStore()
+        val created = Instant.parse("2026-11-01T01:00:00Z").toEpochMilli()
+        store.upsert(
+            TriggerDefinition(
+                "local", "t", "do",
+                nextCalendarAt("09:00", "Asia/Shanghai", emptyList(), created),
+                calendarTime = "09:00", calendarZone = "Asia/Shanghai",
+            )
+        )
+        val now = Instant.parse("2026-11-01T02:00:00Z").toEpochMilli()
+        TriggerEngine(store, {}) { _, _ -> }.rezone(now, "Asia/Shanghai", ZoneId.of("America/New_York"))
+        val zoned = store.get("local")!!
+        assertEquals("America/New_York", zoned.calendarZone)
+        assertEquals(
+            nextCalendarAt("09:00", "America/New_York", emptyList(), now),
+            zoned.nextAtMs,
+        )
+    }
+
+    @Test fun rezoneLeavesPinnedIntervalAndDisabledTriggersAlone() {
+        val store = MemoryTriggerStore()
+        store.upsert(TriggerDefinition("tokyo", "t", "do", 5_000, calendarTime = "09:00", calendarZone = "Asia/Tokyo"))
+        store.upsert(TriggerDefinition("interval", "t", "do", 5_000, intervalMs = 1_000))
+        store.upsert(
+            TriggerDefinition("disabled", "t", "do", 5_000, calendarTime = "09:00", calendarZone = "Asia/Shanghai", enabled = false)
+        )
+        TriggerEngine(store, {}) { _, _ -> }.rezone(6_000, "Asia/Shanghai", ZoneId.of("America/New_York"))
+        assertEquals("Asia/Tokyo", store.get("tokyo")!!.calendarZone)
+        assertEquals(5_000L, store.get("tokyo")!!.nextAtMs)
+        assertEquals(5_000L, store.get("interval")!!.nextAtMs)
+        assertEquals(5_000L, store.get("disabled")!!.nextAtMs)
     }
 }

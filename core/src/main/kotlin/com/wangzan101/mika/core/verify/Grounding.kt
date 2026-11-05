@@ -142,7 +142,8 @@ internal object Grounding {
 
     private fun norm(s: String) = s.filter { it.isLetterOrDigit() }
 
-    private fun quotes(s: String) = QUOTED.findAll(s).map { m -> m.groupValues.drop(1).first { it.isNotEmpty() } }.toList()
+    // 空引号(JSON 里的 ""、「」)没有可核对的原文:跳过,不能让整个任务因此异常中断
+    private fun quotes(s: String) = QUOTED.findAll(s).mapNotNull { m -> m.groupValues.drop(1).firstOrNull { it.isNotEmpty() } }.toList()
 
     private fun num(m: MatchResult): Num {
         val raw = m.value.substring(0, m.value.length - m.groupValues[1].length)

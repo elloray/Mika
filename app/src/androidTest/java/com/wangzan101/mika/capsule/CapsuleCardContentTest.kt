@@ -231,6 +231,25 @@ class CapsuleCardContentTest {
         assertEquals(listOf("send"), calls)
     }
 
+    @Test fun keptDraftShowsClosedAndTypingContinuesAtTheEnd() {
+        var ui by mutableStateOf(CardInputUi(draft = "帮我把这段"))
+        val typing = object : CardActions by actions {
+            override fun draft(text: String) { ui = ui.copy(draft = text) }
+        }
+        val card = detail(run("a", TaskState.Running(1, "n"), CapsuleKind.Running, "在搜"))
+        compose.setContent {
+            MikaTheme(dark = false, reduceMotion = true) { CapsuleCard(card, null, false, typing, { null }, input = ui) }
+        }
+        compose.onNodeWithText("帮我把这段").assertIsDisplayed()
+        ui = ui.copy(open = true)
+        compose.onNodeWithTag("capsule-field").performTextInput("话")
+        compose.runOnIdle { assertEquals("帮我把这段话", ui.draft) }
+        // 说的话从外面接上来之后,接着打的也在最后
+        ui = ui.withSpoken("发给小王")
+        compose.onNodeWithTag("capsule-field").performTextInput("吧")
+        compose.runOnIdle { assertEquals("帮我把这段话发给小王吧", ui.draft) }
+    }
+
     @Test fun noInputWhileTakeoverOrConfirm() {
         show(detail(run("a", TaskState.WaitingTakeover("login", "请登录"), CapsuleKind.NeedTakeover, "需要你：登录")))
         compose.onAllNodesWithTag("capsule-input").assertCountEquals(0)

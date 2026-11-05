@@ -658,15 +658,23 @@ class ModelSetupViewModel(
     /**
      * 存下服务商后给人看的一句:先试的没通过、后面的通过了,说哪些没通过、主模型用了哪个;
      * 都没通过,说第一个为什么没通过、试过哪些,请用户从列表里选。都顺利为 null。
+     *
+     * 都没通过时,末尾那句「怎么办」要跟着原因走:一个都没试、原因全是这个接口类型到不了它们(见 [Rejected.skipped]),
+     * 该换的是接口类型或换一个这个接口类型能用的模型,不能让人去「开通」——那不是这里的问题。其余照旧请他选一个开通了的。
      */
     private fun probeNote(r: ListProbe.Done): String? {
         if (r.rejected.isEmpty()) return null
         val names = r.rejected.joinToString(tr(R.string.list_sep)) { it.model }
         val first = r.rejected.first()
         if (r.main != null) return tr(R.string.model_probe_fallback, names, first.reason, r.main)
-        val head = tr(R.string.model_probe_none_usable, first.model, first.reason)
+        val wrongProtocol = r.rejected.all { it.skipped }
+        val head = if (wrongProtocol) {
+            tr(R.string.model_probe_none_usable_protocol, first.model, first.reason)
+        } else {
+            tr(R.string.model_probe_none_usable, first.model, first.reason)
+        }
         // 一个都没试(接口写明了都不走这个接口类型):原因已经在 head 里说清,不能再写「试了」
-        if (r.rejected.size == 1 || r.rejected.all { it.skipped }) return head
+        if (r.rejected.size == 1 || wrongProtocol) return head
         val tried = if (r.rejected.all { it.notAvailable }) tr(R.string.model_probe_tried_unavailable, names) else tr(R.string.model_probe_tried, names)
         return "$head\n$tried"
     }

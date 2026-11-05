@@ -287,7 +287,7 @@ private class AnthropicStream(
     private val json = Json { ignoreUnknownKeys = true }
     private val blocks = sortedMapOf<Int, Block>()
     private val visible = StringBuilder()
-    private var usage: Usage? = null
+    private var usage: JsonObject? = null
     private var reason: String? = null
     private var stopped = false
 
@@ -295,7 +295,7 @@ private class AnthropicStream(
         val root = try { json.parseToJsonElement(data).jsonObject }
         catch (e: Exception) { throw ModelError.BadResponse("流式响应不是合法 JSON", e) }
         when ((root["type"] as? JsonPrimitive)?.contentOrNull) {
-            "message_start" -> usage = usageOf((root["message"] as? JsonObject)?.get("usage"))
+            "message_start" -> usage = (root["message"] as? JsonObject)?.get("usage") as? JsonObject
             "content_block_start" -> {
                 val index = (root["index"] as? JsonPrimitive)?.intOrNull ?: return
                 val b = root["content_block"] as? JsonObject ?: return
@@ -327,8 +327,10 @@ private class AnthropicStream(
             }
             "message_delta" -> {
                 reason = ((root["delta"] as? JsonObject)?.get("stop_reason") as? JsonPrimitive)?.contentOrNull ?: reason
-                val output = ((root["usage"] as? JsonObject)?.get("output_tokens") as? JsonPrimitive)?.intOrNull
-                if (output != null) usage = usage?.copy(outputTokens = output)
+                // 用量是累计值:带了整数的字段(输出,也可能有输入、缓存)覆盖 message_start 的,没带的、null 的沿用;收尾时再解析
+                (root["usage"] as? JsonObject)?.let { delta ->
+                    usage = JsonObject(usage.orEmpty() + delta.filterValues { (it as? JsonPrimitive)?.intOrNull != null })
+                }
             }
             "message_stop" -> stopped = true
             "error" -> throw ModelError.BadResponse(root["error"].toString().take(200))
@@ -360,7 +362,7 @@ private class AnthropicStream(
             "max_tokens" -> StopReason.MaxTokens
             else -> StopReason.Other
         }
-        return ModelReply(parts, stop, usage)
+        return ModelReply(parts, stop, usageOf(usage))
     }
 }
 

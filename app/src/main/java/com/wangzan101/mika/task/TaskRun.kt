@@ -565,6 +565,9 @@ class TaskRun(
         )
         sideScope = side
         try {
+            // 用户在「干活时」关掉了常亮就不拿唤醒锁;开跑就按此刻的状态(准备中)拿上:
+            // 开模型、读知识、选路线、判断意图这些第一步之前的准备和推理期间屏幕也不熄
+            awake = if (FeatureFlags.get(service).keepScreenOn()) KeepAwake(service.wakeLock.lease(), side).also { it.onState(_state.value) } else null
             val model = env.modelFactory(service, session) ?: return TaskState.Failed(tr(R.string.fail_no_main_model), FailKind.Environment)
             // 用户在浏览器页上对着一页问的:那一页借给这个任务当当前网页标签(见 PageLoans);开跑时页面还开着才借得到
             val pageLoan = if (provenance.origin == RunOrigin.Ui) withContext(Dispatchers.Main) { UserBrowser.existing()?.claim(conversationId, key) } else null
@@ -703,8 +706,6 @@ class TaskRun(
                 t != null && t.taskId >= 0 && moveBackToAgent(t.taskId)
             }
             gate = taskGate
-            // 用户在「干活时」关掉了常亮就不拿唤醒锁
-            awake = if (FeatureFlags.get(service).keepScreenOn()) KeepAwake(service.wakeLock.lease(), side) else null
             // 记录开不起来就不记,任务照跑
             val sink: RunSink = withContext(Dispatchers.IO) {
                 runCatching {

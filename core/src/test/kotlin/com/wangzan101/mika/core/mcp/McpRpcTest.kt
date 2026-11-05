@@ -121,11 +121,20 @@ class McpRpcTest {
 
         val l = post("""{"jsonrpc":"2.0","id":2,"method":"tools/list","params":{${modernMeta()}}}""", modernHeaders("tools/list"))
         assertEquals(7, l.json()["result"]!!.jsonObject["tools"]!!.jsonArray.size)
+
+        // 新一代规定这两种完整结果必须带缓存提示,缺了客户端(如 Claude Code)整个拒收
+        for (r in listOf(result, l.json()["result"]!!.jsonObject)) {
+            assertTrue(r["ttlMs"]!!.jsonPrimitive.content.toLong() >= 0)
+            assertEquals("private", r["cacheScope"]!!.jsonPrimitive.content)
+        }
     }
 
     @Test fun modernToolCallChecksMirroredHeaders() {
         val body = """{"jsonrpc":"2.0","id":7,"method":"tools/call","params":{"name":"mika_list_tasks","arguments":{},${modernMeta()}}}"""
-        assertEquals(200, post(body, modernHeaders("tools/call", name = "mika_list_tasks")).status)
+        post(body, modernHeaders("tools/call", name = "mika_list_tasks")).let {
+            assertEquals(200, it.status)
+            assertFalse("工具调用的结果不可缓存,不带缓存提示", "ttlMs" in it.json()["result"]!!.jsonObject)
+        }
         val encoded = "=?base64?" + Base64.getEncoder().encodeToString("mika_list_tasks".toByteArray()) + "?="
         assertEquals(200, post(body, modernHeaders("tools/call", name = encoded)).status)
         post(body, modernHeaders("tools/call", name = "mika_run_task")).let {

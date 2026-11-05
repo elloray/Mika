@@ -435,7 +435,7 @@ class CapsuleController(
         zoomed = false
         cardHandle = null
         closeInput()
-        inputUi = CardInputUi()
+        inputUi = inputUi.collapsed()
         watchPreview(null)
         updateThread(null, emptyList())
     }
@@ -1057,7 +1057,7 @@ class CapsuleController(
         val kind = target?.let(CapsuleCards::input)?.kind
         if (target == null || kind == null) {
             open()
-            inputUi = inputUi.copy(draft = text)
+            inputUi = inputUi.withSpoken(text)
             refresh()
             return
         }
@@ -1069,7 +1069,7 @@ class CapsuleController(
     /** 拖到「改一改」松开:展开卡片,字在输入框里、键盘弹出,改完自己发。 */
     private fun editSpoken(text: String) {
         open()
-        inputUi = inputUi.copy(draft = text)
+        inputUi = inputUi.withSpoken(text)
         refresh()
         if (card?.let(CapsuleCards::input) != null) openInput()
     }

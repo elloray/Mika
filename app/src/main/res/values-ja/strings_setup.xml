@@ -73,6 +73,7 @@
     <string name="model_reason_wrong_protocol">選んだインターフェースの種類では提供されていないため、リクエストが届きません</string>
     <string name="model_reason_server">サーバーがエラーを返しました(%1$s)</string>
     <string name="model_probe_none_usable">プロバイダーには接続できましたが、「%1$s」はテストに通りませんでした: %2$s。一覧から、アカウントで有効になっているモデルを選んでください。</string>
+    <string name="model_probe_none_usable_protocol">プロバイダーには接続できましたが、「%1$s」はテストに通りませんでした: %2$s。このインターフェースの種類で届くモデルに変えるか、インターフェースの種類を変えてください。</string>
     <string name="model_probe_tried_unavailable">%1$s を試しましたが、どれも有効になっていません。</string>
     <string name="model_probe_tried">%1$s を試しましたが、どれもテストに通りませんでした。</string>
     <string name="model_probe_fallback">最初に試した %1$s はテストに通りませんでした: %2$s。メインモデルは、テストに通った「%3$s」です。</string>

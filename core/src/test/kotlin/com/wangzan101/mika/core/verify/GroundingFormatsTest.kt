@@ -35,6 +35,16 @@ class GroundingFormatsTest {
         assertEquals(false, Grounding.found("多少钱", "128.5 元(@e3)\n依据: 价格 128.5", screen))
     }
 
+    /** 回答里有空引号(JSON 的 ""、空的「」):以前在取引文时抛 NoSuchElementException,整个任务「异常中断」。 */
+    @Test fun emptyQuotesAreSkipped() {
+        // 多一个空字段不改变判断结果(键名本身算不算引文是另一回事,这里只比有无空引号)
+        val withEmpty = "```json\n{\"title\": \"Jetpack Compose 入门\", \"recent\": \"\", \"price\": \"¥128\"}\n```"
+        val without = "```json\n{\"title\": \"Jetpack Compose 入门\", \"price\": \"¥128\"}\n```"
+        assertEquals(Grounding.found("标题和价格", without, screen), Grounding.found("标题和价格", withEmpty, screen))
+        assertEquals(true, Grounding.found("标题", "标题是「Jetpack Compose 入门」,标签「」", screen))
+        assertEquals(false, Grounding.found("价格", "{\"price\": \"¥256\", \"recent\": \"\"}", screen))
+    }
+
     @Test fun refsInQuotesStillMatch() {
         assertTrue(Grounding.quoteInReads("Jetpack Compose 入门 (@e16)", screen))
         assertFalse(Grounding.quoteInReads("Kotlin 协程 (@e16)", screen))

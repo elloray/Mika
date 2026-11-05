@@ -73,6 +73,7 @@
     <string name="model_reason_wrong_protocol">선택한 인터페이스 유형으로 제공되지 않아서 요청이 모델에 닿지 않아요</string>
     <string name="model_reason_server">서버가 오류를 반환했어요(%1$s)</string>
     <string name="model_probe_none_usable">제공업체는 연결됐지만 “%1$s”이(가) 테스트를 통과하지 못했어요: %2$s. 계정에서 활성화된 모델을 목록에서 고르세요.</string>
+    <string name="model_probe_none_usable_protocol">제공업체는 연결됐지만 “%1$s”이(가) 테스트를 통과하지 못했어요: %2$s. 이 인터페이스 유형으로 닿는 모델을 고르거나, 인터페이스 유형을 바꾸세요.</string>
     <string name="model_probe_tried_unavailable">%1$s을(를) 시도했지만 활성화된 모델이 없어요.</string>
     <string name="model_probe_tried">%1$s을(를) 시도했지만 테스트를 통과한 모델이 없어요.</string>
     <string name="model_probe_fallback">먼저 시도한 %1$s이(가) 테스트를 통과하지 못했어요: %2$s. 메인 모델은 테스트를 통과한 “%3$s”이에요.</string>

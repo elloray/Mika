@@ -170,6 +170,21 @@ class TriggerEngine(private val store: TriggerStore, private val scheduleAlarm: 
         })
     }
 
+    /** 时区变化后,跟随设备旧时区的当地时间计划重算到新时区;显式钉了其他时区的计划不动。 */
+    fun rezone(nowMs: Long, fromZone: String, toZone: ZoneId) {
+        if (fromZone == toZone.id) return
+        store.all().filter { it.enabled && it.calendarTime != null && it.calendarZone == fromZone }
+            .forEach { t ->
+                store.upsert(
+                    t.copy(
+                        calendarZone = toZone.id,
+                        nextAtMs = nextCalendarAt(t.calendarTime!!, toZone.id, t.calendarDays, nowMs),
+                    )
+                )
+            }
+        rearm(nowMs)
+    }
+
     fun fire(nowMs: Long) {
         val idle = isIdle()
         store.claimDue(nowMs) { !it.idleOnly || idle }.forEach { window ->

@@ -86,6 +86,37 @@ class StreamingModelsTest {
         assertEquals(Usage(10, 5), reply.usage)
     }
 
+    /**
+     * message_delta 里的用量是累计值,输入和缓存也可能在这里更新(第一组数值取自接口文档里的流式示例):带了的字段以它为准,
+     * 没带的、值为 null 或不是整数的沿用 message_start 的;message_start 全是 0 或没给用量时,按 message_delta 记。
+     */
+    @Test fun anthropicStreamTakesCumulativeUsageFromMessageDelta() = runTest {
+        fun reply(start: String, delta: String) = stream(
+            """{"type":"message_start","message":{$start}}""",
+            """{"type":"content_block_start","index":0,"content_block":{"type":"text","text":""}}""",
+            """{"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"好"}}""",
+            """{"type":"message_delta","delta":{"stop_reason":"end_turn"},"usage":$delta}""",
+            """{"type":"message_stop"}""",
+        )
+        server.enqueue(reply(
+            """"usage":{"input_tokens":2679,"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"output_tokens":3}""",
+            """{"input_tokens":10682,"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"output_tokens":510}""",
+        ))
+        server.enqueue(reply(
+            """"usage":{"input_tokens":10,"cache_read_input_tokens":100,"output_tokens":1}""",
+            """{"output_tokens":5,"cache_read_input_tokens":null,"input_tokens":12.5}""",
+        ))
+        server.enqueue(reply(
+            """"usage":{"input_tokens":0,"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"output_tokens":0}""",
+            """{"input_tokens":5,"cache_creation_input_tokens":20,"cache_read_input_tokens":100,"output_tokens":7}""",
+        ))
+        server.enqueue(reply("", """{"input_tokens":7,"output_tokens":2}"""))
+        assertEquals(Usage(10682, 510), anthropic().completeStreaming("s", user, emptyList()) {}.usage)
+        assertEquals(Usage(110, 5, 100), anthropic().completeStreaming("s", user, emptyList()) {}.usage)
+        assertEquals(Usage(125, 7, 100), anthropic().completeStreaming("s", user, emptyList()) {}.usage)
+        assertEquals(Usage(7, 2), anthropic().completeStreaming("s", user, emptyList()) {}.usage)
+    }
+
     @Test fun geminiStreamsTextAndKeepsExplicitCallId() = runTest {
         server.enqueue(stream(
             """{"candidates":[{"content":{"parts":[{"text":"你"}]}}]}""",

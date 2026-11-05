@@ -315,7 +315,8 @@ class MikaApp : Application(), WebOwner, SandboxOwner, TaskEnvironment.Owner, Ph
         scope.launch { taskRecovery.recover() }
         // 上次进程被杀时没结束的运行:现在就标为中断并告知,不等任务服务起来
         runRecovery.recover().let { if (it.isNotEmpty()) Log.w("MikaTask", "${it.size} runs interrupted by process restart") }
-        scope.launch(Dispatchers.IO) { runCatching { TriggerRuntime.rearm(this@MikaApp) } }
+        // 先对一下设备时区:没记过就记下当前的(升级上来的用户也有基线),和记下的不同就重算当地时间计划(关着时改了时区也补上)
+        scope.launch(Dispatchers.IO) { runCatching { TriggerRuntime.syncTimeZone(this@MikaApp); TriggerRuntime.rearm(this@MikaApp) } }
         // 给电脑跑的「经 USB 连接」脚本;顺带清掉上次开机留下的 USB 连接信息
         scope.launch(Dispatchers.IO) { runCatching { mcp.writeUsbScript() }.onFailure { Log.w("MikaMcp", "cannot write USB script", it) } }
         // 上次导出写到一半被杀留下的空壳条目

@@ -230,6 +230,19 @@ class TaskServiceTest {
         assertTrue("screen wake lock still held after the task: ${mikaScreenLock()}", released == true)
     }
 
+    /** 第一步之前的准备(开模型、读知识、选路线)也算在跑:模型还没开出来时屏幕锁就已拿上。 */
+    @Test
+    fun keepsScreenOnWhilePreparing() {
+        val opening = java.util.concurrent.CountDownLatch(1)
+        testTasks.modelFactory = { _, _ -> opening.await(); model }
+        start("测试任务")
+        val held = pollUntil(5_000) { mikaScreenLock() }
+        opening.countDown()
+        assertNotNull("Mika holds no screen wake lock while preparing", held)
+        assertEquals(1, model.awaitCall().number)
+        finishAndAwait()
+    }
+
     /**
      * 停止:界面当场是已停止,随后补上一段交代当作这一轮的回答(结局照旧是取消)。交代请轻量模型写,不给工具;
      * 轻量模型出错时换主模型,主模型也写不出就按记录直接拼。

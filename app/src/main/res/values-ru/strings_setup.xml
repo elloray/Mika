@@ -73,6 +73,7 @@
     <string name="model_reason_wrong_protocol">она недоступна через выбранный вами тип интерфейса, поэтому запрос до неё не доходит</string>
     <string name="model_reason_server">сервер вернул ошибку (%1$s)</string>
     <string name="model_probe_none_usable">Провайдер подключён, но «%1$s» не прошла проверку: %2$s. Выберите из списка модель, активированную в вашем аккаунте.</string>
+    <string name="model_probe_none_usable_protocol">Провайдер подключён, но «%1$s» не прошла проверку: %2$s. Выберите модель, доступную через этот тип интерфейса, или смените тип интерфейса.</string>
     <string name="model_probe_tried_unavailable">Пробовали: %1$s; ни одна не активирована.</string>
     <string name="model_probe_tried">Пробовали: %1$s; ни одна не прошла проверку.</string>
     <string name="model_probe_fallback">%1$s, которую пробовали первой, не прошла проверку: %2$s. Основная модель — «%3$s», она проверку прошла.</string>

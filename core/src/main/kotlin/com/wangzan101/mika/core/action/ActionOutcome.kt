@@ -57,7 +57,12 @@ internal object Refusals {
 
     fun content(code: String, style: RefusalStyle, before: List<GuardVerdict>, hit: Irreversible?, reason: String?): JsonObject = when (style) {
         // 模型单步被守卫叫停时任务就此结束,用不到说明
-        RefusalStyle.Model -> if (hit == null) notRun(code, if (code == OWN_APP) Feedback["own_app"] else code) else {
+        RefusalStyle.Model -> if (code == "approval_unavailable") notRun(code,
+            "This step spends money, but this run cannot collect the user's approval. The action was not run. " +
+                "Do not retry this action in this run; explain the limitation to the user.") {
+            hit?.let { put("action", it.action.name); put("matched", it.matched) }
+            put("counts_as_failure", false)
+        } else if (hit == null) notRun(code, if (code == OWN_APP) Feedback["own_app"] else code) else {
             val blocked = if (reason != null) mismatch(hit, reason) else required(hit)
             if (before.isEmpty()) blocked else JsonObject(blocked + ("guard" to JsonArray(before.map { it.toJson() })))
         }

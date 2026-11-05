@@ -67,6 +67,17 @@ object TriggerRuntime {
     }
 
     @Synchronized fun rearm(context: Context) { engine(context, store(context)).rearm(System.currentTimeMillis()) }
+
+    /** 设备时区变化后,跟随旧设备时区的当地时间计划重算到新时区;显式钉了其他时区的不动。没有基线(首次使用)就只记下当前时区。 */
+    @Synchronized fun syncTimeZone(context: Context) {
+        val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+        val current = ZoneId.systemDefault().id
+        val previous = prefs.getString(KEY_DEVICE_ZONE, null)
+        prefs.edit().putString(KEY_DEVICE_ZONE, current).apply()
+        if (previous == null || previous == current) return
+        engine(context, store(context)).rezone(System.currentTimeMillis(), previous, ZoneId.of(current))
+    }
+
     @Synchronized fun fire(context: Context) { engine(context, store(context)).fire(System.currentTimeMillis()) }
 
     @Synchronized fun delivered(context: Context, key: String) {
@@ -264,6 +275,7 @@ object TriggerRuntime {
     private const val ACTION = "com.wangzan101.mika.task.TRIGGER_ALARM"
     private const val PREFS = "triggers"
     private const val PROMPTED = "exact_alarm_prompted"
+    private const val KEY_DEVICE_ZONE = "device_timezone"
 }
 
 /** 准时闹钟权限的引导:没开时只主动提醒一次,之后在定时任务页一直写明。 */
