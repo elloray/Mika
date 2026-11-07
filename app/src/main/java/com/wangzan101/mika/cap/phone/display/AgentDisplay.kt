@@ -87,19 +87,20 @@ class AgentDisplay(
         if (released) { continuation.resumeWith(Result.success(false)); return@suspendCoroutine }
         val posted = handler.post {
             if (released) { continuation.resumeWith(Result.success(false)); return@post }
-            if (bufferWidth == newWidth && bufferHeight == newHeight && dpi == newDpi) {
+            val target = geometry.resized(newWidth, newHeight)
+            if (bufferWidth == target.bufferWidth && bufferHeight == target.bufferHeight && dpi == newDpi) {
                 continuation.resumeWith(Result.success(true)); return@post
             }
             var next: ImageReader? = null
             val resized = try {
-                next = ImageReader.newInstance(newWidth, newHeight, PixelFormat.RGBA_8888, 2)
-                if (!shell.resizeDisplay(displayId, next.surface, newWidth, newHeight, newDpi)) false else {
+                next = ImageReader.newInstance(target.bufferWidth, target.bufferHeight, PixelFormat.RGBA_8888, 2)
+                if (!shell.resizeDisplay(displayId, next.surface, target.bufferWidth, target.bufferHeight, newDpi)) false else {
                     reader.setOnImageAvailableListener(null, null)
                     reader.close()
                     synchronized(frameLock) {
                         previewLimit = 720
-                        bufferWidth = newWidth
-                        bufferHeight = newHeight
+                        bufferWidth = target.bufferWidth
+                        bufferHeight = target.bufferHeight
                         dpi = newDpi
                         fullFrame?.recycle()
                         fullFrame = null

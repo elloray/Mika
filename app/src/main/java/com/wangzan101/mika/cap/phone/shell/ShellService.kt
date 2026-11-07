@@ -115,6 +115,7 @@ class ShellService(
         val vd = displays[displayId] ?: return@synchronized false
         if (width !in 1..4096 || height !in 1..4096 || dpi !in 72..1000 || !surface.isValid) return@synchronized false
         val old = android.util.DisplayMetrics().also { vd.display.getRealMetrics(it) }
+        val oldMode = vd.display.mode
         val oldSurface = vd.surface
         try {
             vd.resize(width, height, dpi)
@@ -122,7 +123,7 @@ class ShellService(
             oldSurface?.release()
             true
         } catch (e: Exception) {
-            runCatching { vd.resize(old.widthPixels, old.heightPixels, old.densityDpi); vd.surface = oldSurface }
+            runCatching { vd.resize(oldMode.physicalWidth, oldMode.physicalHeight, old.densityDpi); vd.surface = oldSurface }
             Log.w(TAG, "resizeDisplay failed", e)
             false
         }
