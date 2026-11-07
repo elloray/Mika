@@ -58,6 +58,16 @@ class ModelErrorReasonTest {
         )
     }
 
+    /** 思考强度被服务端拒绝时保留参数错误并指向档位设置,不再误报 Base URL 或接口类型。 */
+    @Test fun rejectedReasoningEffortPointsToTheActualSetting() {
+        val detail = "Invalid value: 'ultra'. Supported values are: 'none', 'minimal', 'low', 'medium', 'high', 'xhigh', and 'max'."
+        val reason = StopRules.modelFailed(ModelError.ReasoningEffortRejected(detail)).reason
+        assertTrue(reason.contains(detail.dropLast(1)))
+        assertTrue(reason.contains("思考强度改为默认"))
+        assertFalse(reason.contains("Base URL"))
+        assertFalse(reason.contains("接口类型"))
+    }
+
     /** 断流有自己的说法、不提 Base URL;真的解析不了(格式对不上)才提示检查 Base URL 和接口类型。 */
     @Test fun streamCutIsNotBlamedOnConfiguration() {
         val cut = StopRules.modelFailed(ModelError.StreamCut()).reason

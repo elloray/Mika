@@ -33,18 +33,22 @@ import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.wangzan101.mika.ui.theme.MikaMotion
+import com.wangzan101.mika.ui.theme.MikaIcons
 import com.wangzan101.mika.ui.theme.MikaShapes
 import com.wangzan101.mika.ui.theme.MikaSize
 import com.wangzan101.mika.ui.theme.MikaTheme
@@ -194,6 +198,14 @@ private val SegmentOuter = RoundedCornerShape(10.dp)
 private val SegmentInner = RoundedCornerShape(8.dp)
 private val SegmentText = TextStyle(fontSize = 13.5.sp, lineHeight = 18.sp, fontWeight = FontWeight.Medium)
 
+/** Mirrors horizontal navigation symbols in RTL while leaving non-directional artwork unchanged. */
+@Composable
+fun DirectionalIcon(icon: ImageVector, contentDescription: String?, modifier: Modifier = Modifier, tint: Color) {
+    val rtl = LocalLayoutDirection.current == LayoutDirection.Rtl
+    val mirror = rtl && (icon == MikaIcons.Back || icon == MikaIcons.Forward || icon == MikaIcons.Chevron)
+    Icon(icon, contentDescription, modifier.graphicsLayer { if (mirror) scaleX = -1f }, tint = tint)
+}
+
 // ---------- 顶栏 ----------
 
 /**
@@ -217,7 +229,7 @@ fun BarIconButton(
             .clickable(enabled = enabled, onClickLabel = label, role = Role.Button, onClick = onClick),
         contentAlignment = Alignment.Center,
     ) {
-        Icon(icon, label, Modifier.size(MikaSize.Icon).alpha(if (enabled) 1f else 0.35f), tint = c.ink)
+        DirectionalIcon(icon, label, Modifier.size(MikaSize.Icon).alpha(if (enabled) 1f else 0.35f), tint = c.ink)
         if (badge) {
             Box(
                 Modifier.align(Alignment.TopEnd).padding(top = 8.dp, end = 7.dp).size(8.dp)

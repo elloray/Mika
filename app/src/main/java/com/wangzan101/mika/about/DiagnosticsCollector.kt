@@ -84,6 +84,8 @@ object DiagnosticsCollector {
                 appCopies = appCopies(app, phone),
                 adbKey = adbKey(app),
                 appsAfterTask = com.wangzan101.mika.task.AppsAfterTaskEnd.lastLine,
+                helperLaunchStage = phone.shellManager.lastHelperLaunchStage,
+                helperHandoffRejection = phone.hub.lastHandoffRejection,
             ),
             recovery = DiagnosticsSnapshot.Recovery(
                 consent = phone.recoverySettings.consent.value,

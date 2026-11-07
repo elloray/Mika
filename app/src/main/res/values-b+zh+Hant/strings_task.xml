@@ -32,6 +32,7 @@
     <string name="task_waiting_display">排隊中:等另一個任務做完再開始</string>
     <string name="task_no_phone_helper">手機操作還沒準備好:請在 Mika 裡完成「設定手機操作」。網頁和檔案類的事不受影響。</string>
     <string name="task_no_a11y">Mika 的無障礙服務沒有開啟:請在系統設定的無障礙裡開啟 Mika。</string>
+    <string name="task_a11y_not_running">Mika 的無障礙服務已開啟，但 Android 尚未連接它。請在系統設定的無障礙裡將 Mika 關閉後重新開啟；如果 Android 阻止開啟，請先在 Mika 的應用程式資訊裡允許受限制的設定。</string>
     <string name="task_error">任務出錯:%1$s</string>
     <string name="task_app_blocked">「%1$s」已被設為禁用，Mika 不能自動讀取或操作它。到 設定 › 應用訪問 裡允許後再試。</string>
     <string name="task_app_this_app">該應用</string>
@@ -53,6 +54,7 @@
     <string name="task_too_old">手機 App 操作需要 Android 12 及以上。仍然可以聊天、使用網頁和沙盒。</string>
     <string name="task_shell_died">手機操作助手中斷了,虛擬螢幕隨之關閉;等它重新連上後再試</string>
     <string name="task_running">正在執行</string>
+    <string name="channel_task_accepted">收到，任務已登記。</string>
     <string name="task_step_note">第 %1$d 步:%2$s</string>
     <string name="task_wait_unlock">等待解鎖</string>
     <string name="task_wait_unlock_body">解鎖手機後會自動繼續</string>

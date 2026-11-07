@@ -1,8 +1,11 @@
 package com.wangzan101.mika.cap.sandbox
 
 import android.content.Context
+import android.content.Intent
 import android.util.Log
 import com.wangzan101.mika.core.cap.sandbox.SandboxStatus
+import com.wangzan101.mika.sandbox.SandboxService
+import com.wangzan101.mika.settings.FeatureFlags
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -27,6 +30,7 @@ object RuntimePreparer {
     /** 需要准备就开始,返回这次准备(已在准备就返回那一个);不需要返回 null。 */
     @Synchronized
     fun ensure(context: Context, retryFailed: Boolean = false): Job? {
+        if (FeatureFlags.get(context).quitRequested()) return null
         current?.let { return it }
         val app = context.applicationContext
         val state = SandboxState.get(app)
@@ -50,6 +54,14 @@ object RuntimePreparer {
             Log.i(TAG, "preparing without the foreground notification: $e")
         }
         return j
+    }
+
+    /** 完全退出:取消解包并撤掉准备通知;进度文件仍由安装器按原子写入规则保留,下次打开可重新准备。 */
+    @Synchronized
+    fun stop(context: Context) {
+        job?.cancel()
+        job = null
+        context.applicationContext.stopService(Intent(context.applicationContext, SandboxService::class.java))
     }
 
     /** 要不要准备:没装、装了旧版本(Mika 升级了)、出过错(除非 [skipBroken])。不支持或正在进行的不动。 */

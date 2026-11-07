@@ -2,6 +2,8 @@ package com.wangzan101.mika.core.remote
 
 import com.wangzan101.mika.core.agent.TaskState
 import com.wangzan101.mika.core.mcp.FakeRemoteTasks
+import com.wangzan101.mika.core.record.RunEvent
+import com.wangzan101.mika.core.record.RunSummary
 import kotlinx.serialization.json.*
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
@@ -15,7 +17,8 @@ import java.net.InetAddress
 
 class RemoteTaskApiTest {
     private val tasks = FakeRemoteTasks()
-    private val host = RemoteHost(tasks, { TOKEN }, 0, false, "test")
+    private val records = FakeExports()
+    private val host = RemoteHost(tasks, { TOKEN }, 0, false, "test", records = records)
     private val client = OkHttpClient()
     @Before fun start() = host.start()
     @After fun stop() { host.stop(); client.connectionPool.evictAll(); client.dispatcher.executorService.shutdown() }
@@ -35,6 +38,8 @@ class RemoteTaskApiTest {
     }.toString()).second["result"]!!.jsonObject
 
     @Test fun bothAdaptersUseTheSameTasksAndConversationNamespace() {
+        assertTrue(request("/api/v1").second["capabilities"]!!.jsonArray.any { it.jsonPrimitive.content == "task_recovery" })
+        assertEquals(400, request("/api/v1/tasks", "POST", """{"goal":"invalid","request_id":null}""").first)
         val (code, first) = request("/api/v1/tasks", "POST", """{"goal":"from CLI"}""")
         assertEquals(201, code)
         val id = first["task_id"]!!.jsonPrimitive.content
@@ -150,6 +155,105 @@ class RemoteTaskApiTest {
         fun req(address: String) = HttpRequest("GET", "/api/v1", mapOf("authorization" to "Bearer $TOKEN"), byteArrayOf(), InetAddress.getByName(address))
         assertEquals(200, localOnly.handle(req("127.0.0.1")).status)
         assertEquals(401, localOnly.handle(req("192.168.1.20")).status)
+    }
+
+    @Test fun tokenRotationIsCheckedAgainOnAReusedConnection() {
+        var current = "old-token"
+        val rotating = RemoteHost(FakeRemoteTasks(), { current }, 0, false, "test")
+        val pooled = OkHttpClient()
+        rotating.start()
+        fun get(token: String): Int {
+            val call = Request.Builder().url("http://127.0.0.1:${rotating.boundPort}/api/v1")
+                .header("Authorization", "Bearer $token").build()
+            return pooled.newCall(call).execute().use { it.code }
+        }
+        try {
+            assertEquals(200, get("old-token"))
+            assertEquals(1, pooled.connectionPool.idleConnectionCount())
+            current = "new-token"
+            assertEquals(401, get("old-token"))
+            assertEquals(200, get("new-token"))
+        } finally {
+            rotating.stop()
+            pooled.connectionPool.evictAll()
+            pooled.dispatcher.executorService.shutdown()
+        }
+    }
+
+    @Test fun exportsByTaskAndRunIdAreBoundToTheSameComputerToken() {
+        var token = "one"
+        val runId = "20261102-033700-abc123"
+        val record = RunExportRecord("private", "mcp-chat", null, null, emptyList())
+        val owner = RemoteOwnership.of("one")
+        val all = mapOf("$owner:t1" to record, "$owner:$runId" to record)
+        val source = object : RunExportSource {
+            override fun scope(owner: String) = object : RunExportSource {
+                override fun load(id: String): RunExportLookup = all["$owner:$id"]?.let { RunExportLookup.Found(it) }
+                    ?: RunExportLookup.Missing
+            }
+            override fun load(id: String) = RunExportLookup.Missing
+        }
+        val scoped = RemoteHost(FakeRemoteTasks(), { token }, 0, false, "test", records = source)
+        fun export(id: String) = scoped.handle(HttpRequest("GET", "/api/v1/tasks/$id/export",
+            mapOf("authorization" to "Bearer $token"), byteArrayOf(), InetAddress.getLoopbackAddress()))
+        try {
+            assertEquals(200, export("t1").status)
+            assertEquals(200, export(runId).status)
+            token = "two"
+            assertEquals(404, export("t1").status)
+            assertEquals(404, export(runId).status)
+        } finally { scoped.stop() }
+    }
+
+    @Test fun exportIsAuthenticatedRedactedAndPartialUntilTheRunEnds() {
+        val info = request("/api/v1").second
+        assertTrue(info["capabilities"]!!.jsonArray.any { it.jsonPrimitive.content == "run_export" })
+        assertEquals(401, request("/api/v1/tasks/t1/export", token = null).first)
+        val (missingCode, missing) = request("/api/v1/tasks/missing/export")
+        assertEquals(404, missingCode)
+        assertEquals("not_found", missing["error"]!!.jsonObject["code"]!!.jsonPrimitive.content)
+        assertEquals("No remote task or run record with id missing", missing["error"]!!.jsonObject["message"]!!.jsonPrimitive.content)
+        assertEquals(400, request("/api/v1/tasks/t1/export?include=screenshots").first)
+        assertEquals(400, request("/api/v1/tasks/t1/export?events=zip").first)
+        assertEquals(405, request("/api/v1/tasks/t1/export", "POST", "{}").first)
+        val key = "sk-" + "a1B2c3D4e5F6g7H8i9J0k1L2"
+        val runId = "20261102-033700-abc123"
+        val record = RunExportRecord(
+            "t1", "mcp-11111111-1111-1111-1111-111111111111", runId,
+            RunSummary(runId, "goal $key", startedAtMs = 10, origin = "mcp"),
+            listOf(RunEvent.Observed(11, 1, "screen $key"), RunEvent.Media(12, 4, 1, "设置")),
+        )
+        records.items["t1"] = RunExportLookup.Found(record)
+        records.items[runId] = RunExportLookup.Found(record)
+        val (code, body) = request("/api/v1/tasks/t1/export")
+        assertEquals(200, code)
+        assertEquals(true, body["partial"]!!.jsonPrimitive.boolean)
+        assertEquals(false, body["includesScreenshots"]!!.jsonPrimitive.boolean)
+        assertEquals("t1", body["task_id"]!!.jsonPrimitive.content)
+        assertEquals(runId, body["run_id"]!!.jsonPrimitive.content)
+        assertFalse(body.toString(), body.toString().contains(key))
+        assertEquals("media", body["events"]!!.jsonArray.last().jsonObject["type"]!!.jsonPrimitive.content)
+        val ndjson = raw("/api/v1/tasks/$runId/export?events=jsonl", accept = "application/x-ndjson")
+        assertEquals(200, ndjson.first)
+        assertTrue(ndjson.third, ndjson.third.startsWith("application/x-ndjson"))
+        assertTrue(ndjson.second.lineSequence().first().contains("\"partial\":true"))
+        assertFalse(ndjson.second.contains(key))
+        records.items["t1"] = RunExportLookup.Gone("t1", runId)
+        val gone = request("/api/v1/tasks/t1/export").second["error"]!!.jsonObject["message"]!!.jsonPrimitive.content
+        assertTrue(gone, gone.contains("no longer available") && gone.contains(runId))
+    }
+
+    private fun raw(path: String, token: String? = TOKEN, accept: String = "application/json"): Triple<Int, String, String> {
+        val builder = Request.Builder().url("http://127.0.0.1:${host.boundPort}$path").header("Accept", accept)
+        token?.let { builder.header("Authorization", "Bearer $it") }
+        return client.newCall(builder.build()).execute().use { response ->
+            Triple(response.code, response.body!!.string(), response.header("Content-Type").orEmpty())
+        }
+    }
+
+    private class FakeExports : RunExportSource {
+        val items = HashMap<String, RunExportLookup>()
+        override fun load(id: String) = items[id] ?: RunExportLookup.Missing
     }
 
     private companion object { const val TOKEN = "test-api-token" }

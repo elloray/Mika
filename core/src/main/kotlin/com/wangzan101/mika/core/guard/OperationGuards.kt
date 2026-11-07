@@ -69,6 +69,8 @@ class OperationGuards(private val stepBudget: Int? = null) {
     /** 连续没有效果的动作数。 */
     private var unchanged = 0
     private var unchangedWarnedAt = 0
+    /** 同一轮无效果里,有几次是在树读不出操作位置时点的;单独滚动到底不借用这项证据提前停。 */
+    private var treeBlindActions = 0
 
     /** 到过的每个界面状态(元素表指纹)。 */
     private val seenStates = HashSet<Long>()
@@ -126,18 +128,35 @@ class OperationGuards(private val stepBudget: Int? = null) {
 
     /**
      * 动作报回的实际效果(effect 的 kind,见 core.uistate.EffectKind):no_effect 记一次「没有效果」,
-     * 明显变了、换了 App 或换了页就从头计;小的局部变化两样都不算。
+     * 明显变了、换了 App 或换了页就从头计;小的局部变化也从头计。
+     * 同一轮无效果中有两次 [treeBlind] 时先提醒,总次数到三次就叫停:连画面也没有可见变化,
+     * 既不能用控件树查隐藏状态,也不该换着坐标一直试。只有一次空树证据时仍走普通阶梯,
+     * 不把之前无关的滚动到底等无效果当成「注入不响应」的佐证。
      */
-    fun effect(kind: String): List<GuardVerdict> {
+    fun effect(kind: String, treeBlind: Boolean = false): List<GuardVerdict> {
         effectNoted = true
         when (kind) {
-            NO_EFFECT -> unchanged += 1
-            else -> { unchanged = 0; unchangedWarnedAt = 0; return emptyList() }
+            NO_EFFECT -> {
+                unchanged += 1
+                if (treeBlind) treeBlindActions += 1
+            }
+            else -> { resetNoEffect(); return emptyList() }
         }
         return noProgress()
     }
 
+    private fun resetNoEffect() {
+        unchanged = 0
+        unchangedWarnedAt = 0
+        treeBlindActions = 0
+    }
+
     private fun noProgress(): List<GuardVerdict> {
+        if (treeBlindActions >= 2) {
+            return verdict("no_progress", if (unchanged >= 3) Severity.Stop else Severity.Warn, buildJsonObject {
+                put("unchanged", unchanged); put("treeBlind", true); put("treeBlindActions", treeBlindActions)
+            }, unchanged)
+        }
         val rung = GuardRules.climb(unchanged, GuardRules.NO_EFFECT_LADDER, unchangedWarnedAt, canStop = true) ?: return emptyList()
         unchangedWarnedAt = rung.threshold
         return verdict("no_progress", rung.severity, buildJsonObject { put("unchanged", unchanged) }, unchanged)
@@ -162,7 +181,7 @@ class OperationGuards(private val stepBudget: Int? = null) {
             if (seenStates.add(hash)) progress()
         }
         if (didAct && !noted) {
-            if (same) { unchanged += 1; out += noProgress() } else { unchanged = 0; unchangedWarnedAt = 0 }
+            if (same) { unchanged += 1; out += noProgress() } else resetNoEffect()
         }
         // 旧界面本身不能证明失败，只提醒模型评估是否有新内容或换路线。
         if (didAct) out += noNewState()
@@ -227,8 +246,7 @@ class OperationGuards(private val stepBudget: Int? = null) {
 
     private fun progress() {
         progressVersion += 1
-        unchanged = 0
-        unchangedWarnedAt = 0
+        resetNoEffect()
         sinceNewState = 0
         sinceNewWarnedAt = 0
         if (stop?.code == "no_progress" || stop?.code == "read_loop") stop = null

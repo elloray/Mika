@@ -26,6 +26,7 @@ import com.wangzan101.mika.core.observation.Place
 import com.wangzan101.mika.core.observation.Trust
 import com.wangzan101.mika.core.prompt.Feedback
 import com.wangzan101.mika.core.tool.HINT_PROTECTED
+import com.wangzan101.mika.core.tool.HINT_DISPLAY_CAPTURE
 import com.wangzan101.mika.core.tool.MAX_READ_CHARS
 import com.wangzan101.mika.core.tool.NOTE_CHANGED_DURING_READ
 import com.wangzan101.mika.core.tool.ToolExecution
@@ -177,8 +178,16 @@ internal class ScreenSession(
             put("screenChangedDuringRead", s.changedDuringRead)
             if (s.changedDuringRead) put("note", NOTE_CHANGED_DURING_READ)
             s.opened?.let { put("opened", openedJson(it)) }
-            if (s.protected) { put("protected", true); put("hint", HINT_PROTECTED) }
-            else if (unreadable(s) != null && ocr.isNullOrEmpty()) { put("readable", false); put("hint", unreadable(s)) }
+            if (s.captureError != null) {
+                put("captureError", s.captureError)
+                put("hint", HINT_DISPLAY_CAPTURE)
+            }
+            else if (s.protected) { put("protected", true); put("hint", HINT_PROTECTED) }
+            else if (unreadable(s) != null && ocr.isNullOrEmpty()) {
+                put("readable", false)
+                // 窗口不可读不等于画面不可用:有截图和视觉定位时,不能把它盖成只能 Back 或交用户。
+                put("hint", unreadableHint(s, tree, ocrStatus))
+            }
             else if (s.packageName == null && s.elements.isEmpty() && !s.hasWindow) put("hint", Feedback[surface.family.emptyHint])
             else treeHint(tree, ocrStatus)?.let { put("hint", it) }
             put("viewport", buildJsonObject { put("width", s.width); put("height", s.height) })
@@ -190,8 +199,9 @@ internal class ScreenSession(
             put("truncated", hidden > 0 || omitted > 0)
             if (omitted > 0) put("omitted", hidden + omitted)
         }
-        // 防截屏页面截到的是黑图,给模型只会误导
-        val png = if ((sendImage && textOnlyDepth == 0 || (recordFrames && recordFrame && textOnlyDepth == 0)) && !s.protected) screen.screenshotPng() else null
+        // 受保护或持续全黑的帧都不给视觉模型;后者仍保留可读控件供降级操作。
+        val png = if ((sendImage && textOnlyDepth == 0 || (recordFrames && recordFrame && textOnlyDepth == 0)) &&
+            !s.protected && s.captureError == null) screen.screenshotPng() else null
         // 只有主模型能看图才留图；付款页和普通页面按同一规则处理
         val kept = png?.takeIf { visionEnabled }
         shots.remember(Recall(shotId, shots.step, s.packageName, kept, observationText(s, ocr.orEmpty())))
@@ -206,7 +216,7 @@ internal class ScreenSession(
     suspend fun currentFrame(): Pair<ByteArray, Int>? {
         if (!visionEnabled) return null
         val s = screenAttempt { screen.peek() } ?: return null
-        if (s.protected) return null
+        if (s.protected || s.captureError != null) return null
         if (s.packageName == null && s.elements.isEmpty() && !s.hasWindow) return null
         val png = screenAttempt { if (screen.isProtected()) null else screen.screenshotPng() } ?: return null
         val shotId = shots.next()
@@ -236,7 +246,7 @@ internal class ScreenSession(
         val obs = screenAttempt { observe(withImage = false) } ?: return null
         val s = lastSnapshot ?: return null
         val shotId = (obs.content["screenshotId"] as? JsonPrimitive)?.content?.toIntOrNull() ?: return null
-        val png = if (s.protected) null else screenAttempt { obs.frame ?: if (screen.isProtected()) null else screen.screenshotPng() }
+        val png = if (s.protected || s.captureError != null) null else screenAttempt { obs.frame ?: if (screen.isProtected()) null else screen.screenshotPng() }
         // 回看里这一张补上画面
         val recalls = shots.recalls
         if (png != null) recalls.indexOfLast { it.id == shotId }.takeIf { it >= 0 }?.let { i ->
@@ -296,16 +306,18 @@ internal class ScreenSession(
                 (s.web?.dialog?.let { mapOf("dialog" to dialogJson(it)) } ?: emptyMap()) +
                 (quality(tree)?.let { mapOf("treeQuality" to JsonPrimitive(it)) } ?: emptyMap()) +
                 (ocrStatus?.let { mapOf("ocr" to JsonPrimitive(it)) } ?: emptyMap()) +
-                ((unreadable(s)?.takeIf { ocr.isNullOrEmpty() }?.let { mapOf("readable" to JsonPrimitive(false), "hint" to JsonPrimitive(it)) })
-                    ?: treeHint(tree, ocrStatus)?.let { mapOf("hint" to JsonPrimitive(it)) } ?: emptyMap()))
+                (s.captureError?.let { mapOf("captureError" to JsonPrimitive(it), "hint" to JsonPrimitive(HINT_DISPLAY_CAPTURE)) } ?:
+                    (unreadable(s)?.takeIf { ocr.isNullOrEmpty() }?.let {
+                        mapOf("readable" to JsonPrimitive(false), "hint" to JsonPrimitive(unreadableHint(s, tree, ocrStatus)))
+                    } ?: treeHint(tree, ocrStatus)?.let { mapOf("hint" to JsonPrimitive(it)) } ?: emptyMap())))
         }
         val text = observationText(s, ocr.orEmpty())
         // 和上一次读到的一样就不再记一遍,免得把较早的读屏挤出去
         val read = if (lastRead() != text) interfaceRead(s, ocr.orEmpty()) else null
-        // 和 observe 同样的规则:防截屏页面不截;只有主模型能看图才留图回看
+        // 和 observe 同样的规则:不可用画面不截;只有主模型能看图才留图回看
         val imageReason = if (adaptiveVision && visionEnabled && tree.poor) tree.reason else null
         val sendImage = visionEnabled && (!adaptiveVision || imageReason != null)
-        val png = if ((recordFrames || sendImage) && textOnlyDepth == 0 && !s.protected) {
+        val png = if ((recordFrames || sendImage) && textOnlyDepth == 0 && !s.protected && s.captureError == null) {
             screenAttempt { screen.screenshotPng() }
         } else null
         val kept = png?.takeIf { visionEnabled }
@@ -411,7 +423,7 @@ internal class ScreenSession(
         // 树读不出点的那一处(只在手机上判:网页没有树够不够用这回事):看不出变化不等于没点上
         val e = effect?.let { judged ->
             if (surface.id != "phone") return@let judged
-            val quality = lastTree?.quality ?: probe.before?.let { TreeAdequacy.ofTree(it).quality }
+            val quality = probe.before?.let { TreeAdequacy.ofTree(it).quality } ?: lastTree?.quality
             if (judged.kind == EffectKind.NoEffect && ActionEffect.treeBlind(verb, quality, probe.before, target, region)) judged.copy(treeBlind = true) else judged
         } ?: return r
         if ("screen" !in c && e.kind != EffectKind.NoEffect) stale = true
@@ -454,6 +466,12 @@ internal class ScreenSession(
         return Feedback.format("unreadable_window", "app" to app)
     }
 
+    /** 窗口不可读但截图可用时,保留「不要重复启动」,后续路线改用这棵树的 OCR/视觉回退。 */
+    private fun unreadableHint(s: ScreenSnapshot, tree: TreeCheck, ocrStatus: String?): String {
+        val fallback = treeHint(tree, ocrStatus) ?: return unreadable(s)!!
+        return Feedback.format("unreadable_window.fallback", "app" to s.unreadableApp!!, "fallback" to fallback)
+    }
+
     /** 这一次读到的界面状态:可读元素的文字、在哪、网页标题、输入框里的字。 */
     private fun interfaceRead(s: ScreenSnapshot, ocr: List<VisibleTextLine> = emptyList()): Observation {
         val f = inputFields(s)
@@ -484,7 +502,7 @@ internal class ScreenSession(
      * 端口自己会等画面停稳,认的过程中整页变了会重认。
      */
     private suspend fun visibleText(s: ScreenSnapshot, waitMs: Long): Pair<List<VisibleTextLine>?, String?> {
-        if (surface.id != "phone" || s.protected || !s.hasWindow) return null to null
+        if (surface.id != "phone" || s.protected || s.captureError != null || !s.hasWindow) return null to null
         var timedOut = true
         val raw = try {
             withTimeoutOrNull(waitMs) { screen.readVisibleText().also { timedOut = false } }
@@ -514,7 +532,7 @@ internal class ScreenSession(
      */
     suspend fun freshLook(withImage: Boolean, extra: (suspend () -> Observation?)? = null): Look {
         val s = screenAttempt { screen.snapshot() }
-        val png = if (withImage && s != null && !s.protected) {
+        val png = if (withImage && s != null && !s.protected && s.captureError == null) {
             screenAttempt { screen.screenshotPng() }
         } else null
         // 树不够用时照样读屏上文字:核查要看的是屏上写着什么

@@ -2,6 +2,7 @@ package com.wangzan101.mika.core.adb
 
 import org.conscrypt.Conscrypt
 import java.net.InetAddress
+import java.net.InetSocketAddress
 import java.net.ServerSocket
 import java.security.Provider
 import kotlin.concurrent.thread
@@ -26,7 +27,7 @@ class FakePairingServer(
 ) : AutoCloseable {
     enum class Behavior { NORMAL, BAD_HEADER_VERSION, WRONG_TYPE, CLOSE_AFTER_SPAKE }
 
-    private val server = ServerSocket(0, 1, InetAddress.getLoopbackAddress())
+    private val server = ServerSocket(0, 1, InetAddress.getByAddress(byteArrayOf(127, 0, 0, 1)))
     val port: Int get() = server.localPort
     @Volatile var receivedKey: String? = null
     @Volatile var clientCertKey: ByteArray? = null
@@ -42,7 +43,7 @@ class FakePairingServer(
     }
 
     private fun serve(plain: java.net.Socket) {
-        val s = tls.wrap(plain, "127.0.0.1", port, client = false)
+        val s = tls.wrap(plain, InetSocketAddress(plain.localAddress, port), client = false)
         s.use {
             clientCertKey = (s.session.peerCertificates[0] as java.security.cert.X509Certificate).publicKey.encoded
             val exported = tls.exportKeyingMaterial(s, AdbPairing.EXPORT_LABEL, AdbPairing.EXPORT_LENGTH)

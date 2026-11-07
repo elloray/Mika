@@ -4,6 +4,7 @@
     <string name="model_context_note">Kolom kosong memakai nilai otomatis. Pengaturan berlaku pada tugas berikutnya untuk semua peran yang memakai penyedia dan model ini.</string>
     <string name="model_context_window">Jendela konteks (token)</string>
     <string name="model_context_trigger">Pemicu pemadatan (token)</string>
+    <string name="model_context_read_timeout">Waktu tunggu baca (detik)</string>
     <string name="model_context_auto">Otomatis · %1$d</string>
     <string name="model_context_integer">Masukkan bilangan bulat positif.</string>
     <string name="model_context_range">Rentang yang diizinkan (token) · %1$d–%2$d</string>

@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="metrics_model">تفكير النموذج</string>
+    <string name="metrics_observe">قراءة الشاشة</string>
+    <string name="metrics_act">الإجراءات</string>
+    <string name="metrics_other">أخرى (انتظار، إعادة المحاولة)</string>
+    <string name="metrics_title">إحصاءات التشغيل</string>
+    <string name="metrics_sub">الوقت ومرات تبادل الطلبات مع النموذج والرموز في عمليات التشغيل الأخيرة</string>
+    <string name="metrics_empty">لا توجد إحصاءات تشغيل بعد. اطلب من Mika تنفيذ مهمة وستُسجّل هنا.</string>
+    <string name="metrics_note">يُحتسب فقط آخر %1$d عملية تشغيل على هذا الهاتف. يبدأ احتساب الوقت عندما تبدأ Mika العمل؛ وتُسجّل أول استجابة عندما ترى ما تفعله للمرة الأولى.</string>
+    <string name="metrics_copy">نسخ JSON</string>
+    <string name="metrics_share">مشاركة JSON</string>
+    <string name="metrics_last_10">آخر 10</string>
+    <plurals name="metrics_runs">
+        <item quantity="zero">%1$d</item>
+        <item quantity="one">%1$d</item>
+        <item quantity="two">%1$d</item>
+        <item quantity="few">%1$d</item>
+        <item quantity="many">%1$d</item>
+        <item quantity="other">%1$d</item>
+    </plurals>
+    <string name="duration_h_m">%1$d س %2$d د</string>
+    <string name="metrics_total">الإجمالي %1$s</string>
+    <plurals name="metrics_round_trips">
+        <item quantity="zero">%1$d تبادل</item>
+        <item quantity="one">%1$d تبادل واحد</item>
+        <item quantity="two">%1$d تبادلان</item>
+        <item quantity="few">%1$d تبادلات</item>
+        <item quantity="many">%1$d تبادلًا</item>
+        <item quantity="other">%1$d تبادل</item>
+    </plurals>
+    <string name="metrics_first_feedback_at">أول استجابة %1$s</string>
+    <string name="metrics_retry_wait">منها أوقات انتظار إعادة المحاولة</string>
+    <string name="metrics_input_tokens">رموز الإدخال</string>
+    <string name="metrics_output_tokens">رموز الإخراج</string>
+    <string name="usage_cached">إصابات ذاكرة التخزين المؤقت</string>
+    <string name="metrics_no_usage">لم يُبلّغ عن الاستخدام</string>
+    <string name="metrics_all_calls">كل استدعاءات النموذج المنطقية</string>
+    <string name="metrics_all_http_calls">كل طلبات HTTP</string>
+    <plurals name="metrics_all_calls_value">
+        <item quantity="zero">%1$d (يشمل الطلبات الجانبية وإعادات المحاولة)</item>
+        <item quantity="one">%1$d (يشمل الطلبات الجانبية وإعادات المحاولة)</item>
+        <item quantity="two">%1$d (يشمل الطلبات الجانبية وإعادات المحاولة)</item>
+        <item quantity="few">%1$d (يشمل الطلبات الجانبية وإعادات المحاولة)</item>
+        <item quantity="many">%1$d (يشمل الطلبات الجانبية وإعادات المحاولة)</item>
+        <item quantity="other">%1$d (يشمل الطلبات الجانبية وإعادات المحاولة)</item>
+    </plurals>
+    <string name="metrics_steps">الخطوات</string>
+    <string name="metrics_observe_act">القراءات / الإجراءات</string>
+    <string name="metrics_observe_act_value">%1$d / %2$d</string>
+    <string name="metrics_counted">المحتسب</string>
+    <plurals name="metrics_n_runs">
+        <item quantity="zero">%1$d عملية تشغيل</item>
+        <item quantity="one">%1$d عملية تشغيل واحدة</item>
+        <item quantity="two">%1$d عمليتا تشغيل</item>
+        <item quantity="few">%1$d عمليات تشغيل</item>
+        <item quantity="many">%1$d عملية تشغيل</item>
+        <item quantity="other">%1$d عملية تشغيل</item>
+    </plurals>
+    <string name="metrics_success_rate">معدل النجاح</string>
+    <string name="metrics_success_value">%1$s (%2$d/%3$d)</string>
+    <string name="metrics_median_time">الوقت الوسيط</string>
+    <string name="metrics_median_feedback">الوقت الوسيط لأول استجابة</string>
+    <string name="metrics_avg_round_trips">متوسط مرات التبادل مع النموذج</string>
+    <string name="metrics_avg_round_trips_value">%1$s</string>
+    <string name="metrics_avg_tokens">متوسط عدد الرموز</string>
+    <plurals name="metrics_copied">
+        <item quantity="zero">لم يُنسخ ملخص أي عملية تشغيل (%1$d)</item>
+        <item quantity="one">نُسخ ملخص %1$d عملية تشغيل</item>
+        <item quantity="two">نُسخ ملخصا %1$d عمليتي تشغيل</item>
+        <item quantity="few">نُسخت ملخصات %1$d عمليات تشغيل</item>
+        <item quantity="many">نُسخ ملخص %1$d عملية تشغيل</item>
+        <item quantity="other">نُسخ ملخص %1$d عملية تشغيل</item>
+    </plurals>
+    <string name="metrics_export_failed">تعذر التصدير؛ قد تكون البيانات كبيرة جداً. جرّب نطاقاً أصغر.</string>
+    <string name="metrics_where_time">اطّلع على كيفية استهلاك الوقت</string>
+    <string name="metrics_overview">نظرة عامة</string>
+    <string name="metrics_time_split">كيفية استهلاك الوقت</string>
+    <string name="metrics_export">تصدير</string>
+    <plurals name="metrics_summary_of">
+        <item quantity="zero">ملخص عمليات التشغيل هذه (%1$d)</item>
+        <item quantity="one">ملخص عمليات التشغيل هذه (%1$d)</item>
+        <item quantity="two">ملخص عمليات التشغيل هذه (%1$d)</item>
+        <item quantity="few">ملخص عمليات التشغيل هذه (%1$d)</item>
+        <item quantity="many">ملخص عمليات التشغيل هذه (%1$d)</item>
+        <item quantity="other">ملخص عمليات التشغيل هذه (%1$d)</item>
+    </plurals>
+    <string name="metrics_summary_sub">مدخل واحد لكل عملية تشغيل لتحليلك الشخصي</string>
+    <plurals name="chat_steps_n">
+        <item quantity="zero">%1$d خطوة</item>
+        <item quantity="one">%1$d خطوة</item>
+        <item quantity="two">%1$d خطوتان</item>
+        <item quantity="few">%1$d خطوات</item>
+        <item quantity="many">%1$d خطوة</item>
+        <item quantity="other">%1$d خطوة</item>
+    </plurals>
+</resources>

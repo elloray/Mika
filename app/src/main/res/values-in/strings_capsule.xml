@@ -46,4 +46,6 @@
         <item quantity="other">%1$d langkah sekaligus</item>
     </plurals>
     <string name="and_more">" dan lainnya"</string>
+    <string name="capsule_hide">Matikan kapsul</string>
+    <string name="capsule_hidden_hint">Kapsul mengambang dimatikan. Aktifkan lagi di %1$s › %2$s.</string>
 </resources>

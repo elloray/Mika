@@ -72,6 +72,9 @@ No web page is open yet. Open one with web_navigate; this is not a fault.
 ## unreadable_window
 {{app}} is open in the foreground, but its window cannot be read right now (a secure, splash or special window, or one shown elsewhere). The app did launch: do not launch it again. Wait a moment and look once more; if it is still unreadable, press back once, and if that does not help, call hand_to_user.
 
+## unreadable_window.fallback
+{{app}} is open in the foreground, but its window cannot be read right now; do not launch it again. {{fallback}}
+
 ## tree_poor
 The accessibility tree is missing much of this screen (treeQuality), and observing again will not add the missing elements. visibleText is the text read from the screenshot; its center is a tap point on phone_tap's 0–999 x/y grid. Use element refs where they exist; tap text that has none with phone_tap x/y at its center. OCR can misread small or decorated text: do not report a garbled line as fact.
 
@@ -385,7 +388,19 @@ The skill could not be saved on the phone. Tell the user it was not saved.
 Saved. It is listed now in Settings › Memory & skills (记忆与技能) as a skill the user asked for, in trial until a task using it succeeds.
 
 ## memory.quote_not_from_user
-quote is not something the user said in this task. Only save what the user said themselves; do not save text from the screen.
+quote is not something the user said in this task or an eligible explicit confirmation in the immediately preceding turn. Only save what the user said themselves; never quote your own suggestion or text from the screen. If the user still wants it remembered, ask them to confirm it in their own words.
+
+## memory.edit_quote_not_from_user
+Update or delete needs the exact words from the current user message. A previous confirmation is not enough; nothing was changed.
+
+## memory.edit_not_requested
+The quoted current message does not explicitly ask to update or delete a memory. Nothing was changed; ask the user what they want changed.
+
+## memory.not_found
+The id is not in the latest memory_search result set, or no search has run. Nothing was changed. Search again and use an exact returned id.
+
+## memory.ambiguous_target
+The latest search returned multiple entries and the current quote does not contain the exact id, or the stored id is duplicated. Nothing was changed. Narrow the search to one entry or ask the user to specify the exact id; do not retry an ambiguous update or deletion.
 
 ## memory.content_not_from_user
 content or keywords contain details (names, numbers, addresses) the user did not say in this task. Save only what the user said.
@@ -465,6 +480,9 @@ No readable elements. The app may still be loading: wait, then look again. If it
 
 ## screenshot_unavailable
 The screen could not be captured right now. Read the element list instead.
+
+## display_capture_unavailable
+The app window is present, but the virtual display is providing only black frames. Black pixels alone cannot distinguish a secure window from content that this display cannot render. Do not send or describe the black image, and do not keep retrying screenshots. Use readable accessibility elements if they are enough for the task; otherwise call hand_to_user with reason display_capture so the user can take over on the device screen.
 
 ## recall_not_found
 Only the last {{keep}} screens of this task are kept; these ids are unknown or too old. Use the screenshotId from a screen read.
@@ -597,3 +615,21 @@ Earlier turns in this conversation: {{count}}. turn counts back from the most re
 
 ## history.not_recorded
 No detailed record of this turn is kept any more (only recent tasks keep one); what it ended with is in outcome.
+
+## approval.unavailable
+This step changes or deletes something and needs the user's OK, but this run cannot ask the user, so it was not run. Do it another way that only reads, or tell the user what you would need to do.
+
+## root.denied
+su refused to run the command: root access for Mika was denied or taken back in the root manager. Do not try again; tell the user, or do the task without root.
+
+## root.no_answer
+su did not answer; a permission prompt may be waiting on the phone. Do not try again right away; tell the user, or do the task without root.
+
+## root.unavailable
+This phone no longer has su, so root commands are not available. Do the task without root.
+
+## root.timed_out
+The command hit its time limit and was stopped. Use a larger timeoutSec (up to 300) or do less per command.
+
+## root.truncated
+The output was clipped to its head and tail. Narrow the command (grep, head, tail, a smaller query) to see the part you need.

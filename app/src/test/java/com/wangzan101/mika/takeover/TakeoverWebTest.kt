@@ -2,6 +2,7 @@ package com.wangzan101.mika.takeover
 
 import com.wangzan101.mika.core.agent.TaskState
 import com.wangzan101.mika.core.tool.HandBackOutcome
+import com.wangzan101.mika.task.restorePipSound
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.runCurrent
@@ -112,6 +113,16 @@ class TakeoverWebTest {
         assertFalse(takeover.putAside())
         takeover.handOver()
         assertFalse(takeover.putAside(key = 99))
+    }
+
+    @Test
+    fun pipUnmuteDuringWebHandoverFallsBackToPhone() = test {
+        takeover.onState(waiting)
+        takeover.handOver()
+        var phoneCalls = 0
+        restorePipSound(takeover) { phoneCalls++ }
+        assertEquals(1, phoneCalls)
+        assertEquals(listOf("showWeb:login:1"), port.log)
     }
 
     @Test

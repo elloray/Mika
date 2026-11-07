@@ -56,7 +56,7 @@ object DeviceSupport {
 
     fun newAgent(): Agent {
         val shell = shell()
-        val d = AgentDisplay(shell, 720, 1600, 320)
+        val d = AgentDisplay(shell, 720, 1600, 320, InstrumentationRegistry.getInstrumentation().targetContext.getSystemService(android.hardware.display.DisplayManager::class.java))
         return Agent(d, AndroidScreen(service(), shell, ready(d)))
     }
 

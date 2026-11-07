@@ -65,11 +65,13 @@ object CapsuleDocking {
     fun edgeOffset(side: DockSide, area: DockArea): Int = if (side == DockSide.Left) area.left else area.width - area.right
 
     /**
-     * 松手:[x] 是窗口左边,[y] 是窗口上边。中线在屏幕左半边贴左边,否则贴右边;高度按比例记下。
+     * 松手:[x] 是窗口左边,[y] 是窗口上边。中线在屏幕左半边贴左边,否则贴右边。
+     * 高度比例始终按没让输入法的 [fractionArea] 记下;[area] 是此刻实际可拖的范围(可能已收到输入法上面)。
+     * 这样后续 place 也按完整区域还原时,先得到的正是这次松手高度,再按当前输入法范围夹住,不会二次偏移。
      */
-    fun release(x: Int, y: Int, w: Int, h: Int, area: DockArea): CapsuleDock {
+    fun release(x: Int, y: Int, w: Int, h: Int, area: DockArea, fractionArea: DockArea = area): CapsuleDock {
         val side = if (x + w / 2 < area.width / 2) DockSide.Left else DockSide.Right
-        return CapsuleDock(side, fraction(fitY(y, area, h), area, h))
+        return CapsuleDock(side, fraction(fitY(y, area, h), fractionArea, h))
     }
 
     private fun range(area: DockArea, h: Int) = maxOf(0, area.bottom - area.top - h)

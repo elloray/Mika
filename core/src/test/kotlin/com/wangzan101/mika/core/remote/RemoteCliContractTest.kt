@@ -41,8 +41,10 @@ class RemoteCliContractTest {
             assertTrue(cli("connect")["connected"]!!.jsonPrimitive.boolean)
             assertEquals("unverified", cli("doctor")["model_configuration"]!!.jsonPrimitive.content)
             val goal = "查询版本\n保留引号 \"与\" emoji 👋"
-            val run = cli("task", "run", "--goal", goal)
+            val requestId = java.util.UUID.randomUUID().toString()
+            val run = cli("task", "run", "--goal", goal, "--request-id", requestId)
             val id = run["task_id"]!!.jsonPrimitive.content
+            assertEquals(requestId, id)
             assertEquals(goal, tasks.get(id)!!.goal)
             assertEquals(1, cli("task", "list")["tasks"]!!.jsonArray.size)
             tasks.set(id, TaskState.Running(1, "working"))

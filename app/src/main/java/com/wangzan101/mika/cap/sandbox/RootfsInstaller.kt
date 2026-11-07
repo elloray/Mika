@@ -107,23 +107,19 @@ class RootfsInstaller(
     }
 
     /** 删除整个 `files/sandbox/`(只读目录先改成可写,不跟随符号链接),回到未安装。 */
-    suspend fun reset() = dirs.tree.exclusive {
-        withContext(Dispatchers.IO) {
-            state.resetting()
-            try {
-                // 这些目录沙箱里的命令碰得到:按句柄删,不跟进中途换成的链接
-                deleteReachable(dirs.root)
-                deleteReachable(dirs.tmp)
-            } finally {
-                state.cleared()
-            }
+    suspend fun reset() = dirs.exclusiveWrite {
+        state.resetting()
+        try {
+            // 这些目录沙箱里的命令碰得到:按句柄删,不跟进中途换成的链接
+            deleteReachable(dirs.root)
+            deleteReachable(dirs.tmp)
+        } finally {
+            state.cleared()
         }
     }
 
     /** 删除所有对话的工作区。 */
-    suspend fun clearWorkspaces() = dirs.tree.exclusive {
-        withContext(Dispatchers.IO) { deleteReachable(dirs.work) }
-    }
+    suspend fun clearWorkspaces() = dirs.exclusiveWrite { deleteReachable(dirs.work) }
 
     private suspend fun run(s: InstallStep) {
         when (s) {

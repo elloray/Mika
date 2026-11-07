@@ -19,7 +19,7 @@ class AppAccessDeviceTest {
         val script = "/sdcard/Android/data/${app.packageName}/files/usb-start.sh"
         DeviceSupport.sh("sh $script")
         val shell = DeviceSupport.shell()
-        val display = AgentDisplay(shell, 720, 1600, 320)
+        val display = AgentDisplay(shell, 720, 1600, 320, InstrumentationRegistry.getInstrumentation().targetContext.getSystemService(android.hardware.display.DisplayManager::class.java))
         try {
             val native = AndroidScreen(DeviceSupport.service(), shell, DeviceSupport.ready(display), appAccess = app.appAccess)
             val screen = com.wangzan101.mika.core.uistate.AppAccessScreenPort(native, app.appAccess,
@@ -49,7 +49,7 @@ class AppAccessDeviceTest {
         val original = app.appAccess.current()
         DeviceSupport.sh("sh /sdcard/Android/data/${app.packageName}/files/usb-start.sh")
         val shell = DeviceSupport.shell()
-        val display = AgentDisplay(shell, 720, 1600, 320)
+        val display = AgentDisplay(shell, 720, 1600, 320, InstrumentationRegistry.getInstrumentation().targetContext.getSystemService(android.hardware.display.DisplayManager::class.java))
         try {
             val native = AndroidScreen(DeviceSupport.service(), shell, DeviceSupport.ready(display), appAccess = app.appAccess)
             val screen = com.wangzan101.mika.core.uistate.AppAccessScreenPort(native, app.appAccess,

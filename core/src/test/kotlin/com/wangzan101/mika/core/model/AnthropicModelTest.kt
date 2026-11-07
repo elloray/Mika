@@ -369,6 +369,9 @@ class AnthropicModelTest {
         assertTrue(errorOf(403, """{"error":{"type":"permission_error","message":"Your organization does not have access to the model"}}""") is ModelError.ModelNotAvailable)
         assertTrue(errorOf(413, "{}") is ModelError.ContextTooLong)
         assertTrue(errorOf(400, """{"error":{"type":"invalid_request_error","message":"prompt is too long: 250000 tokens"}}""") is ModelError.ContextTooLong)
+        // 官方接口「输入 + max_tokens」超出窗口(原话取自第三方客户端里的记录),和本机跑的服务开的同形接口:和 OpenAI 兼容接口同一条规则
+        assertTrue(errorOf(400, """{"type":"error","error":{"type":"invalid_request_error","message":"input length and max_tokens exceed context limit: 199926 + 21333 > 200000"}}""") is ModelError.ContextTooLong)
+        assertTrue(errorOf(400, """{"error":{"code":400,"message":"request (25123 tokens) exceeds the available context size (16384 tokens), try increasing it","type":"exceed_context_size_error","n_prompt_tokens":25123,"n_ctx":16384}}""") is ModelError.ContextTooLong)
         assertTrue(errorOf(400, """{"error":{"message":"Your credit balance is too low"}}""") is ModelError.QuotaExceeded)
         server.enqueue(MockResponse().setResponseCode(429).setHeader("retry-after", "2").setBody("{}"))
         val rl = try { model().complete("s", user, emptyList()); null } catch (e: ModelError.RateLimited) { e }

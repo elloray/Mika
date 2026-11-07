@@ -111,6 +111,9 @@ class HoldGesture(private val slopPx: Float) {
  */
 class OverlayHost internal constructor(private val service: ScreenAccessibility) {
     private val windows = mutableListOf<OverlayWindow>()
+    private val injectedGestures = InjectedGestures { isolate ->
+        forEachGestureWindow(windows.toList()) { it.isolateInjectedGestures(isolate) }
+    }
 
     /**
      * 加一个包住内容大小的浮层窗口。平时不抢焦点、点不到的地方照常交给下面的 App;
@@ -139,7 +142,7 @@ class OverlayHost internal constructor(private val service: ScreenAccessibility)
             WindowManager.LayoutParams.TYPE_ACCESSIBILITY_OVERLAY,
             WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL or
                 WindowManager.LayoutParams.FLAG_WATCH_OUTSIDE_TOUCH or WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or
-                (if (touchable) 0 else WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE),
+                (if (touchable && !injectedGestures.isolated) 0 else WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE),
             PixelFormat.TRANSLUCENT,
         ).apply {
             // 按整块屏幕摆,不让系统再把窗口挤进状态栏、导航栏以内:要避开哪里由调用方按 area() 定
@@ -147,7 +150,7 @@ class OverlayHost internal constructor(private val service: ScreenAccessibility)
             layoutInDisplayCutoutMode = WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_ALWAYS
             place(placement)
         }
-        val window = OverlayWindow(this, frame, params, owners)
+        val window = OverlayWindow(this, frame, params, owners, touchable)
         owners.start()
         return try {
             wm().addView(frame, params)
@@ -186,6 +189,13 @@ class OverlayHost internal constructor(private val service: ScreenAccessibility)
             ?.takeIf { !it.isEmpty }?.top
     }.getOrNull()
 
+    /**
+     * 自有注入手势执行期间让所有浮层不接触摸,手势落到胶囊或卡片的位置也交给下面的 App。
+     * 结束后恢复每个窗口原本能不能接触摸;原本不接触摸的面板不会被误改成可触摸。嵌套手势只在外层结束时恢复。
+     * 调用方取消协程时也等系统手势收尾再恢复:取消等待并不会撤掉已经注入系统的触摸。
+     */
+    suspend fun <T> passInjectedGesturesThrough(block: suspend () -> T): T = injectedGestures.passThrough(block)
+
     /** 拆掉全部浮层(服务断开时)。 */
     fun closeAll() {
         windows.toList().forEach(OverlayWindow::close)
@@ -209,6 +219,7 @@ class OverlayWindow internal constructor(
     private val frame: OverlayFrame,
     private val params: WindowManager.LayoutParams,
     private val owners: OverlayOwners,
+    private val touchable: Boolean,
 ) {
     var isOpen = true
         private set
@@ -261,14 +272,33 @@ class OverlayWindow internal constructor(
         if (isOpen) frame.onBack = onBack
     }
 
-    /** 按到窗口里面(不论按在哪)时调 [onTouch]:调用方据此把淡下去的胶囊恢复。 */
-    fun onTouch(onTouch: (() -> Unit)?) {
+    /** 按到窗口里面(不论按在哪)时调 [onTouch]:调用方据此恢复透明度,并读取这次真实触摸的落点和来源。 */
+    fun onTouch(onTouch: ((MotionEvent) -> Unit)?) {
         if (isOpen) frame.onTouch = onTouch
+    }
+
+    /** 注入手势期间临时不接触摸;结束时按这个窗口创建时的 [touchable] 恢复。 */
+    internal fun isolateInjectedGestures(isolate: Boolean) {
+        if (!isOpen) return
+        val flags = if (touchable && !isolate) params.flags and WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE.inv()
+            else params.flags or WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE
+        if (flags == params.flags) return
+        params.flags = flags
+        update()
     }
 
     /** 内容大小变了(胶囊换成卡片、转屏后重排)时调 [onResize],调用方据此重新摆位置。 */
     fun onResize(onResize: (() -> Unit)?) {
         if (isOpen) frame.onResize = onResize
+    }
+
+    /**
+     * 整个窗口显示或隐藏。只把 Compose 内容清空会等下一次排版和换帧,旧帧可能还留在系统的窗口画布上;
+     * 关闭、交替两个窗口时必须显式切换可见性,不能拿空内容当作已经不可见。
+     */
+    fun setVisible(visible: Boolean) {
+        if (!isOpen) return
+        frame.visibility = if (visible) View.VISIBLE else View.INVISIBLE
     }
 
     /**
@@ -340,7 +370,7 @@ internal class OverlayFrame(context: Context) : FrameLayout(context) {
     var onOutside: (() -> Unit)? = null
     var onResize: (() -> Unit)? = null
     var onBack: (() -> Unit)? = null
-    var onTouch: (() -> Unit)? = null
+    var onTouch: ((MotionEvent) -> Unit)? = null
     var drag: OverlayDrag? = null
     var handle: Rect? = null
     private var hold: OverlayHold? = null
@@ -403,7 +433,7 @@ internal class OverlayFrame(context: Context) : FrameLayout(context) {
             outside()
             return true
         }
-        if (e.actionMasked == MotionEvent.ACTION_DOWN) onTouch?.invoke()
+        if (e.actionMasked == MotionEvent.ACTION_DOWN) onTouch?.invoke(e)
         return super.dispatchTouchEvent(e)
     }
 

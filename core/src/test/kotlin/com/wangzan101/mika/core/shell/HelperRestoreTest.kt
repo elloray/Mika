@@ -12,11 +12,23 @@ class HelperRestoreTest {
     private val yes = RestoreWish(revive = true, accessibility = true)
 
     @Test
-    fun wishFollowsCapsuleModeAndTasks() {
-        assertTrue(RestoreWish.of(capsuleAlways = true, taskRunning = false, accessibilityWanted = true, accessibilityOn = true).revive)
-        assertTrue(RestoreWish.of(capsuleAlways = false, taskRunning = true, accessibilityWanted = true, accessibilityOn = true).revive)
-        // 胶囊只在任务时显示、也没有任务:用户强行停止就让它停着
-        assertEquals(RestoreWish.NONE, RestoreWish.of(capsuleAlways = false, taskRunning = false, accessibilityWanted = true, accessibilityOn = true))
+    fun wishFollowsCapsuleModeTasksAndAccessibility() {
+        assertTrue(RestoreWish.of(capsuleAlways = true, taskRunning = false, accessibilityWanted = true, accessibilityOn = false).revive)
+        assertTrue(RestoreWish.of(capsuleAlways = false, taskRunning = true, accessibilityWanted = true, accessibilityOn = false).revive)
+        // 无障碍还开着:异常死亡后也要回来并恢复授权,不能只在常驻胶囊或有任务时才修
+        val accessibility = RestoreWish.of(capsuleAlways = false, taskRunning = false, accessibilityWanted = true, accessibilityOn = true)
+        assertTrue(accessibility.revive)
+        assertTrue(accessibility.accessibility)
+        assertEquals(RestoreWish.NONE, RestoreWish.of(capsuleAlways = false, taskRunning = false, accessibilityWanted = true, accessibilityOn = false))
+    }
+
+    @Test
+    fun explicitExitSuppressesEveryRestorePath() {
+        for (input in listOf(
+            RestoreWish.of(capsuleAlways = true, taskRunning = false, accessibilityWanted = true, accessibilityOn = true, userExited = true),
+            RestoreWish.of(capsuleAlways = false, taskRunning = true, accessibilityWanted = true, accessibilityOn = true, userExited = true),
+            RestoreWish.of(capsuleAlways = false, taskRunning = false, accessibilityWanted = true, accessibilityOn = true, userExited = true),
+        )) assertEquals(RestoreWish.NONE, input)
     }
 
     @Test
@@ -69,6 +81,15 @@ class HelperRestoreTest {
         sender.update("h", yes)
         sender.update("h", yes)
         assertEquals("失败的不算交过,下次再交;交到了就不重复", 2, calls)
+    }
+
+    @Test
+    fun policyDoesNotRestoreForceStopButRecoversAfterManualLaunch() {
+        val p = HelperRestorePolicy()
+        assertEquals(HelperRestorePolicy.Decision.ForceStopped, p.decide(yes, appBack = false, now = 1_000, forceStopped = true))
+        assertTrue("强停不消耗异常恢复次数", p.report(1_000).empty)
+        // 手动打开会由系统清掉 stopped 标记;之后再次发生异常死亡,正常恢复仍然可用
+        assertEquals(HelperRestorePolicy.Decision.Restore, p.decide(yes, appBack = false, now = 2_000, forceStopped = false))
     }
 
     @Test

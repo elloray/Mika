@@ -1,7 +1,9 @@
 package com.wangzan101.mika.core.run
 
 import com.wangzan101.mika.core.action.ConfirmChoice
+import kotlinx.serialization.Serializable
 
+@Serializable
 data class ChannelPeer(val channelId: String, val peerId: String, val threadId: String)
 
 sealed interface Delivery {
@@ -41,6 +43,8 @@ interface Channel {
     val confirms: Boolean
     fun isAlive(peer: ChannelPeer): Boolean = true
     fun start(sink: ChannelInputSink): AutoCloseable
+    /** 入站消息已持久化为任务后确认；没有待处理账本的渠道无需实现。 */
+    fun acknowledge(messageId: String) = Unit
     suspend fun send(peer: ChannelPeer, delivery: Delivery): SendOutcome
 }
 

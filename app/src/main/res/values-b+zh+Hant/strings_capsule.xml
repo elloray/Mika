@@ -46,4 +46,6 @@
         <item quantity="other">一次做 %1$d 步</item>
     </plurals>
     <string name="and_more">" 等"</string>
+    <string name="capsule_hide">關閉浮動膠囊</string>
+    <string name="capsule_hidden_hint">浮動膠囊已關閉，可在「%1$s › %2$s」裡重新開啟</string>
 </resources>

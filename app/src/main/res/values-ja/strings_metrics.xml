@@ -25,7 +25,8 @@
     <string name="metrics_output_tokens">出力トークン</string>
     <string name="usage_cached">キャッシュヒット</string>
     <string name="metrics_no_usage">使用量の報告なし</string>
-    <string name="metrics_all_calls">モデルへのすべてのリクエスト</string>
+    <string name="metrics_all_calls">すべての論理モデル呼び出し</string>
+    <string name="metrics_all_http_calls">すべての HTTP リクエスト</string>
     <plurals name="metrics_all_calls_value">
         <item quantity="other">%1$d(補助的な呼び出しと再試行を含む)</item>
     </plurals>

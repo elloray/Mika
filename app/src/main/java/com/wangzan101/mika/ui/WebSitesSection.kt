@@ -3,7 +3,8 @@ package com.wangzan101.mika.ui
 import com.wangzan101.mika.R
 import com.wangzan101.mika.i18n.tr
 import androidx.compose.foundation.layout.Column
-import androidx.compose.material3.AlertDialog
+import com.wangzan101.mika.ui.components.MikaDialog
+import com.wangzan101.mika.ui.components.MikaNoticeDialog
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -74,7 +75,7 @@ fun WebSitesSection(state: WebSitesState, labeled: Boolean = true) {
     FooterNote(WEB_DATA_NOTE)
 
     picked?.let { s ->
-        AlertDialog(
+        MikaDialog(
             onDismissRequest = { picked = null },
             title = { Text(s.host) },
             text = {
@@ -99,7 +100,7 @@ fun WebSitesSection(state: WebSitesState, labeled: Boolean = true) {
     }
 
     if (confirmAll) {
-        AlertDialog(
+        MikaDialog(
             onDismissRequest = { confirmAll = false },
             title = { Text(tr(R.string.web_logout_all_q)) },
             text = { Text(tr(R.string.web_logout_all_body)) },
@@ -113,11 +114,7 @@ fun WebSitesSection(state: WebSitesState, labeled: Boolean = true) {
     }
 
     notice?.let { n ->
-        AlertDialog(
-            onDismissRequest = { notice = null },
-            text = { Text(n) },
-            confirmButton = { TextButton({ notice = null }) { Text(tr(R.string.ok_got_it)) } },
-        )
+        MikaNoticeDialog(n, onDismiss = { notice = null })
     }
 }
 

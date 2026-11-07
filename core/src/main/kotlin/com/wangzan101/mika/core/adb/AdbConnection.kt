@@ -19,6 +19,8 @@ import kotlin.concurrent.thread
 
 class AdbConnectionException(val reason: Reason, message: String, cause: Throwable? = null) : IOException(message, cause) {
     enum class Reason {
+        /** 目标不是本机自己的地址:建 Socket 前拒绝,不能按网络故障重试。 */
+        NOT_LOCAL,
         CONNECT_FAILED,
         TLS_FAILED,
         /** 设备不认这把钥匙(没配对、被撤销或授权过期),要重新配对。 */
@@ -196,26 +198,30 @@ class AdbConnection private constructor(
         private val EOF = ByteArray(0)
         private val HOST_BANNER = "host::\u0000".toByteArray(Charsets.US_ASCII)
 
-        /** 连上 [host]:[port] 的 adbd(通常是 127.0.0.1 + mDNS 找到的无线调试端口)。 */
+        /** 连上本机 [host]:[port] 的 adbd。校验结果同时就是实际连接地址,不再解析原 host。 */
         fun open(host: String, port: Int, tls: AdbTls, timeoutMs: Int = 10_000): AdbConnection {
+            val target = AdbHosts.ownSocketAddress(host, port) ?: throw AdbConnectionException(
+                AdbConnectionException.Reason.NOT_LOCAL,
+                "refusing to connect to $host: adb is only reachable on this device",
+            )
             val plain = Socket()
             try {
                 plain.tcpNoDelay = true
-                plain.connect(InetSocketAddress(host, port), timeoutMs)
+                plain.connect(target, timeoutMs)
                 plain.soTimeout = timeoutMs
             } catch (e: IOException) {
                 plain.close()
                 throw AdbConnectionException(AdbConnectionException.Reason.CONNECT_FAILED, "cannot connect to $host:$port", e)
             }
             try {
-                return handshake(plain, host, port, tls, timeoutMs)
+                return handshake(plain, target, tls, timeoutMs)
             } catch (e: Throwable) {
                 runCatching { plain.close() }
                 throw e
             }
         }
 
-        private fun handshake(plain: Socket, host: String, port: Int, tls: AdbTls, timeoutMs: Int): AdbConnection {
+        private fun handshake(plain: Socket, target: InetSocketAddress, tls: AdbTls, timeoutMs: Int): AdbConnection {
             val out = plain.getOutputStream()
             out.write(AdbMessage(AdbMessage.CNXN, AdbMessage.VERSION, AdbMessage.MAX_PAYLOAD, HOST_BANNER).encode())
             out.flush()
@@ -227,7 +233,7 @@ class AdbConnection private constructor(
                     out.write(AdbMessage(AdbMessage.STLS, AdbMessage.STLS_VERSION, 0).encode())
                     out.flush()
                     val ssl = try {
-                        tls.wrap(plain, host, port, client = true)
+                        tls.wrap(plain, target, client = true)
                     } catch (e: IOException) {
                         throw AdbConnectionException(AdbConnectionException.Reason.TLS_FAILED, "TLS handshake failed", e)
                     }

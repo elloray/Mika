@@ -4,6 +4,7 @@
     <string name="model_context_note">空欄の項目は自動の値を使います。設定は、このプロバイダーとモデルを使うすべての役割に、次のタスクから反映されます。</string>
     <string name="model_context_window">コンテキストウィンドウ(トークン)</string>
     <string name="model_context_trigger">圧縮を始める位置(トークン)</string>
+    <string name="model_context_read_timeout">読み取りタイムアウト（秒）</string>
     <string name="model_context_auto">自動 · %1$d</string>
     <string name="model_context_integer">正の整数を入力してください。</string>
     <string name="model_context_range">指定できる範囲(トークン) · %1$d～%2$d</string>

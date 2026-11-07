@@ -4,19 +4,13 @@ import com.wangzan101.mika.R
 import com.wangzan101.mika.i18n.tr
 import java.net.URLEncoder
 
-/** Mika 对外的地址都在这里:仓库、问题、作者、X 群聊、检查更新用的两个来源。换地址只改这一处。 */
+/** Mika 对外的地址都在这里:仓库、问题、检查更新用的两个来源。换地址只改这一处。 */
 object MikaLinks {
     const val REPO = "https://github.com/wangzan101/Mika"
     const val REPO_LABEL = "github.com/wangzan101/Mika"
     const val README = "$REPO#readme"
     const val RELEASES = "$REPO/releases"
     const val NEW_ISSUE = "$REPO/issues/new"
-    const val X = "https://x.com/wangzan101"
-    const val X_HANDLE = "@wangzan101"
-
-    /** X 上的 Mika 交流群:点开即申请加入(不用微信的走这里)。 */
-    const val X_GROUP = "https://x.com/i/chat/group_join/g2116926829198246025/48B52j5svL"
-
     /** 检查更新只问 GitHub 发布页(不登录,每小时有次数限制)。 */
     const val LATEST_RELEASE_API = "https://api.github.com/repos/wangzan101/Mika/releases/latest"
 

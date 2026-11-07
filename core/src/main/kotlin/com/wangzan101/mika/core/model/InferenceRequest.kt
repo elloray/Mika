@@ -1,6 +1,7 @@
 package com.wangzan101.mika.core.model
 
 import com.wangzan101.mika.core.trace.TraceCall
+import com.wangzan101.mika.core.usage.ModelHttpAttempts
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.serialization.json.*
 import okhttp3.MediaType.Companion.toMediaType
@@ -55,6 +56,10 @@ internal data class InferenceRequest(val protocol: InferenceProtocol, val payloa
 internal suspend inline fun Request.Builder.postInference(
     protocol: InferenceProtocol, payload: JsonObject, provider: () -> String = { protocol.provider },
 ): Request.Builder {
-    if (currentCoroutineContext()[TraceCall] != null) tag(InferenceRequest::class.java, InferenceRequest(protocol, payload, provider()))
+    val context = currentCoroutineContext()
+    // 追踪和请求计数都靠这个标记辨认推理流量；同协程里的令牌刷新、目录请求不能算成模型调用。
+    if (context[TraceCall] != null || context[ModelHttpAttempts] != null) {
+        tag(InferenceRequest::class.java, InferenceRequest(protocol, payload, provider()))
+    }
     return post(payload.toString().toRequestBody("application/json".toMediaType()))
 }

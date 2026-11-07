@@ -46,4 +46,6 @@
         <item quantity="other">%1$d단계 한 번에</item>
     </plurals>
     <string name="and_more">" 외"</string>
+    <string name="capsule_hide">캡슐 끄기</string>
+    <string name="capsule_hidden_hint">플로팅 캡슐을 껐어요. %1$s › %2$s에서 다시 켤 수 있어요</string>
 </resources>

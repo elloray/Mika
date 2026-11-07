@@ -4,6 +4,7 @@
     <string name="model_context_note">Campos em branco usam valores automáticos. As configurações valem a partir da próxima tarefa para todas as funções que usam este provedor e modelo.</string>
     <string name="model_context_window">Janela de contexto (tokens)</string>
     <string name="model_context_trigger">Gatilho de compactação (tokens)</string>
+    <string name="model_context_read_timeout">Tempo limite de leitura (segundos)</string>
     <string name="model_context_auto">Automático · %1$d</string>
     <string name="model_context_integer">Digite um número inteiro positivo.</string>
     <string name="model_context_range">Intervalo permitido (tokens) · %1$d–%2$d</string>

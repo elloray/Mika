@@ -6,6 +6,8 @@
     <string name="confirm_order">Hacer el pedido</string>
     <string name="confirm_submit">Enviar</string>
     <string name="confirm_other">Otra acción</string>
+    <string name="confirm_root">Comando root</string>
+    <string name="confirm_root_where">todo el teléfono (root)</string>
     <string name="confirm_title">Necesita tu visto bueno: %1$s</string>
     <string name="confirm_in_app">En %1$s</string>
     <string name="confirm_target">Para: %1$s</string>

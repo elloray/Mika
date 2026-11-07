@@ -5,7 +5,6 @@ import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -16,15 +15,12 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.aspectRatio
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
@@ -41,8 +37,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
@@ -55,7 +49,6 @@ import androidx.compose.ui.unit.dp
 import com.wangzan101.mika.R
 import com.wangzan101.mika.about.CheckStatus
 import com.wangzan101.mika.about.MikaLinks
-import com.wangzan101.mika.about.QrImage
 import com.wangzan101.mika.about.ReleaseInfo
 import com.wangzan101.mika.about.UpdateState
 import com.wangzan101.mika.ui.components.ButtonKind
@@ -71,11 +64,11 @@ import com.wangzan101.mika.ui.theme.MikaTheme
 import com.wangzan101.mika.ui.theme.MikaType
 
 /** 关于页上点开的底部面板。 */
-private enum class AboutSheet { Update, Changelog, Feedback, Group, Diagnostics }
+private enum class AboutSheet { Update, Changelog, Feedback, Diagnostics }
 
 /**
- * 关于 Mika:顶上图标、名字、一句话介绍、版本(Beta 标记、构建编号);下面三组——检查更新与更新记录,
- * 联系作者与反馈,关注作者、开源仓库与使用说明;一段数据说明;最底下许可证与作者。
+ * 关于 Mika:顶上图标、名字、一句话介绍、版本(Beta 标记、构建编号);下面是检查更新与更新记录、
+ * 反馈问题、开源仓库与使用说明;一段数据说明;最底下许可证与作者。
  * 外部链接都交给 [onOpenUrl](系统浏览器);手动检查的结果到了([UpdateState.manualRounds] 变了)才提示。
  * [diagnostics] 写出诊断信息(反馈面板里「复制诊断信息」点开预览时在后台线程调)。
  */
@@ -88,7 +81,6 @@ fun AboutScreen(
     issueUrl: String,
     onCheck: () -> Unit,
     onOpenUrl: (String) -> Unit,
-    onSaveQr: () -> Boolean,
     onOpenLicense: () -> Unit,
     onBack: () -> Unit,
     diagnostics: () -> String = { "" },
@@ -109,10 +101,6 @@ fun AboutScreen(
             }
         }
     }
-    val saveQr = {
-        Toast.makeText(context, if (onSaveQr()) AboutCopy.QR_SAVED else AboutCopy.QR_SAVE_FAILED, Toast.LENGTH_SHORT).show()
-    }
-
     PageScaffold(AboutCopy.TITLE, onBack) {
         Hero(versionName, build, beta)
 
@@ -134,12 +122,10 @@ fun AboutScreen(
             ListRow(MikaIcons.Lines, AboutCopy.CHANGELOG, AboutCopy.CHANGELOG_SUB, onClick = { sheet = AboutSheet.Changelog }) { RowChevron() }
         }
         GroupCard {
-            ListRow(MikaIcons.Chats, AboutCopy.GROUP, AboutCopy.GROUP_SUB, first = true, onClick = { sheet = AboutSheet.Group }) { RowChevron() }
-            ListRow(MikaIcons.Bug, AboutCopy.FEEDBACK, AboutCopy.FEEDBACK_SUB, onClick = { sheet = AboutSheet.Feedback }) { RowChevron() }
+            ListRow(MikaIcons.Bug, AboutCopy.FEEDBACK, AboutCopy.FEEDBACK_SUB, first = true, onClick = { sheet = AboutSheet.Feedback }) { RowChevron() }
         }
         GroupCard {
-            ListRow(MikaIcons.XMark, AboutCopy.FOLLOW, AboutCopy.FOLLOW_SUB, first = true, onClick = { onOpenUrl(MikaLinks.X) }) { ExternalMark() }
-            ListRow(MikaIcons.Code, AboutCopy.REPO, AboutCopy.REPO_SUB, onClick = { onOpenUrl(MikaLinks.REPO) }) { ExternalMark() }
+            ListRow(MikaIcons.Code, AboutCopy.REPO, AboutCopy.REPO_SUB, first = true, onClick = { onOpenUrl(MikaLinks.REPO) }) { ExternalMark() }
             ListRow(MikaIcons.Book, AboutCopy.GUIDE, AboutCopy.GUIDE_SUB, onClick = { onOpenUrl(MikaLinks.README) }) { ExternalMark() }
         }
 
@@ -176,13 +162,9 @@ fun AboutScreen(
         AboutSheet.Feedback -> FeedbackSheet(
             onGitHub = { close(); onOpenUrl(issueUrl) },
             onDiagnostics = { sheet = AboutSheet.Diagnostics },
-            onGroup = { sheet = AboutSheet.Group },
             onDismiss = close,
         )
         AboutSheet.Diagnostics -> DiagnosticsSheet(diagnostics, onDismiss = close)
-        AboutSheet.Group -> GroupSheet(
-            xFirst = AboutCopy.X_GROUP_FIRST, onSave = saveQr, onJoinX = { close(); onOpenUrl(MikaLinks.X_GROUP) }, onDismiss = close,
-        )
         null -> Unit
     }
 }
@@ -303,13 +285,11 @@ private fun ChangelogSheet(latest: ReleaseInfo?, onOpenAll: () -> Unit, onDismis
 }
 
 @Composable
-private fun FeedbackSheet(onGitHub: () -> Unit, onDiagnostics: () -> Unit, onGroup: () -> Unit, onDismiss: () -> Unit) {
+private fun FeedbackSheet(onGitHub: () -> Unit, onDiagnostics: () -> Unit, onDismiss: () -> Unit) {
     AboutSheetFrame(AboutCopy.FEEDBACK, AboutCopy.FEEDBACK_SHEET_SUB, "feedback-sheet", onDismiss) {
         Column(Modifier.padding(top = 6.dp)) {
             FeedbackOption(MikaIcons.Code, AboutCopy.FEEDBACK_GITHUB, AboutCopy.FEEDBACK_GITHUB_SUB, first = true, onGitHub)
             FeedbackOption(MikaIcons.Copy, AboutCopy.DIAGNOSTICS, AboutCopy.DIAGNOSTICS_SUB, first = false, onDiagnostics)
-            // 作者微信、X 群聊都在联系作者面板里,这里只开那个面板
-            FeedbackOption(MikaIcons.Chats, AboutCopy.FEEDBACK_GROUP, AboutCopy.GROUP_SUB, first = false, onGroup)
         }
     }
 }
@@ -318,45 +298,5 @@ private fun FeedbackSheet(onGitHub: () -> Unit, onDiagnostics: () -> Unit, onGro
 private fun FeedbackOption(icon: ImageVector, title: String, sub: String, first: Boolean, onClick: () -> Unit) {
     Box(Modifier.testTag("feedback-option")) {
         ListRow(icon, title, sub, first = first, onClick = onClick)
-    }
-}
-
-/**
- * 联系作者面板:作者的微信二维码(长按或按钮存进相册)和 X 群聊入口。[xFirst] 时(英文界面)X 群聊在上、微信码在下,
- * 不然微信在前、X 群聊作为「不用微信？」的去处放在下面。
- */
-@Composable
-internal fun GroupSheet(xFirst: Boolean, onSave: () -> Unit, onJoinX: () -> Unit, onDismiss: () -> Unit) {
-    val c = MikaTheme.colors
-    // 二维码最高占屏幕约三分之一,常见手机上不用滚就能看到底下的按钮
-    val qrHeight = (LocalConfiguration.current.screenHeightDp * 0.34f).coerceAtMost(280f).dp
-    val qr = painterResource(QrImage.RES)
-    AboutSheetFrame(AboutCopy.GROUP_SHEET_TITLE, AboutCopy.GROUP_SHEET_SUB, "group-sheet", onDismiss) {
-        val weChat = @Composable {
-            Image(
-                qr, contentDescription = AboutCopy.GROUP_SHEET_TITLE,
-                Modifier.padding(top = 12.dp, bottom = 6.dp).align(Alignment.CenterHorizontally)
-                    .height(qrHeight).aspectRatio(qr.intrinsicSize.width / qr.intrinsicSize.height)
-                    .clip(RoundedCornerShape(12.dp))
-                    .pointerInput(Unit) { detectTapGestures(onLongPress = { onSave() }) }
-                    .testTag("wechat-qr"),
-            )
-            Text(AboutCopy.GROUP_HINT, Modifier.fillMaxWidth(), style = MikaType.Hint, color = c.ink3, textAlign = TextAlign.Center)
-            MikaButton(AboutCopy.SAVE_QR, onSave, Modifier.fillMaxWidth().padding(top = 14.dp), kind = ButtonKind.Tonal)
-        }
-        val x = @Composable { top: Boolean ->
-            // 放在上面时不用「不用微信？」引出,直接给按钮
-            if (!top) Text(AboutCopy.GROUP_NO_WECHAT, Modifier.fillMaxWidth().padding(top = 12.dp), style = MikaType.Hint, color = c.ink3, textAlign = TextAlign.Center)
-            MikaButton(AboutCopy.GROUP_JOIN_X, onJoinX, Modifier.fillMaxWidth().padding(top = if (top) 14.dp else 8.dp).testTag("group-join-x"))
-        }
-        if (xFirst) {
-            x(true)
-            HorizontalDivider(Modifier.padding(top = 16.dp), color = c.hair)
-            weChat()
-        } else {
-            weChat()
-            HorizontalDivider(Modifier.padding(top = 16.dp), color = c.hair)
-            x(false)
-        }
     }
 }

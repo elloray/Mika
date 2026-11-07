@@ -125,7 +125,7 @@ For public remote access, deploy the optional self-hosted gateway. Pair and expl
 
 | Tool | Arguments | What it does |
 | --- | --- | --- |
-| `mika_run_task` | `goal` (required), `conversation` (optional) | Hands Mika a job and returns a `task_id` right away. The task is recorded in a conversation you can see in the app. To follow up on an earlier job, pass the `conversation` that task returned. |
+| `mika_run_task` | `goal` (required), `conversation` and `"request_id"` (optional) | Hands Mika a job and returns a `task_id` right away. The task is recorded in a conversation you can see in the app. To follow up on an earlier job, pass the `conversation` that task returned. |
 | `mika_task_status` | `task_id` | The task's state now: status, latest progress, what it is waiting for, and the answer when done. |
 | `mika_wait_task` | `task_id`, `timeout_s` (optional, default 30, at most 50) | Waits until the status changes (for example Mika starts waiting for an answer, or finishes) or time runs out, then returns the state. Progress notes alone don't count, so it doesn't return on every step. |
 | `mika_answer` | `task_id`, `text` | Answers the question Mika asked in this task. |
@@ -144,6 +144,8 @@ Statuses:
 - `done`: finished, with the answer; `verified` says whether the answer was checked.
 - `failed`: not done, with the reason.
 - `cancelled`: stopped.
+
+When the schema of `mika_run_task` includes `"request_id"`, save a lowercase UUID before submitting and use it with `mika_task_status` if you lose the reply. Replaying the same ID, goal and conversation starts only one task. Use a fresh ID for a different request. After a phone process restart, finished tasks retain their results and unfinished tasks report `failed` with `failure_kind=interrupted`. Finished records are kept for 30 days, up to the latest 1000.
 
 Suggested flow: `mika_run_task` → `mika_wait_task` repeatedly → on `waiting_for_answer`, reply with `mika_answer` → until `done` / `failed` / `cancelled`.
 

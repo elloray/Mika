@@ -96,7 +96,7 @@ class A11yOnDisplayTest {
     } ?: error("Mika accessibility service is not enabled")
 
     private fun settingsOnNewDisplay(): AgentDisplay {
-        val d = AgentDisplay(shell, 720, 1600, 320).also { display = it }
+        val d = AgentDisplay(shell, 720, 1600, 320, InstrumentationRegistry.getInstrumentation().targetContext.getSystemService(android.hardware.display.DisplayManager::class.java)).also { display = it }
         shell.startApp(d.displayId, SETTINGS)
         assertNotNull(pollUntil(5_000) { shell.topTaskId(d.displayId).takeIf { it != -1 } })
         return d

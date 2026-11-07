@@ -29,7 +29,8 @@
     <string name="metrics_output_tokens">Tokens de salida</string>
     <string name="usage_cached">Aciertos de caché</string>
     <string name="metrics_no_usage">Sin uso informado</string>
-    <string name="metrics_all_calls">Todas las solicitudes al modelo</string>
+    <string name="metrics_all_calls">Todas las llamadas lógicas al modelo</string>
+    <string name="metrics_all_http_calls">Todas las solicitudes HTTP</string>
     <plurals name="metrics_all_calls_value">
         <item quantity="one">%1$d (incl. llamadas auxiliares y reintentos)</item>
         <item quantity="many">%1$d (incl. llamadas auxiliares y reintentos)</item>

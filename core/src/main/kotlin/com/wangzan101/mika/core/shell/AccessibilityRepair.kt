@@ -1,6 +1,7 @@
 package com.wangzan101.mika.core.shell
 
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -8,6 +9,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.conflate
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.withTimeoutOrNull
 
 /** App 看到的 Mika 无障碍服务:系统列表里有没有它([enabled]),服务实例是否连着([connected])。 */
@@ -51,6 +53,8 @@ class AccessibilityRepair(
     /** App 自己就能写系统设置(拿到了修改系统设置的授权)时为 true:这时不用等内置助手。 */
     private val direct: () -> Boolean = { false },
     private val now: () -> Long = System::currentTimeMillis,
+    /** 明确退出后为 false:不写回无障碍;下次手动打开时 [watch] 的 active 流会重新判断。 */
+    private val allowed: () -> Boolean = { true },
 ) {
     private val _last = MutableStateFlow<RepairOutcome?>(null)
     val last: StateFlow<RepairOutcome?> = _last.asStateFlow()
@@ -60,17 +64,27 @@ class AccessibilityRepair(
 
     private enum class Result { Restored, GaveUp, Interrupted }
 
+    private data class WatchInputs(
+        val service: A11yObservation,
+        val helper: BuiltinShellStatus,
+        val unlocked: Boolean,
+        val active: Boolean,
+    )
+
     /**
      * 一直看着,直到被取消。修的过程中状态的变化(包括自己去掉又加回)按最新的一份再判断一次。
      * [unlocked] 是开机后用户解锁过没有;没解锁时不修,解锁时它的变化让这里再判断一次。
+     * [active] 在没有明确退出时为 true;退出和手动打开的变化也会让这里重新判断。
      */
     suspend fun watch(
         service: StateFlow<A11yObservation>,
         helper: StateFlow<BuiltinShellStatus>,
         unlocked: StateFlow<Boolean> = MutableStateFlow(true),
+        active: Flow<Boolean> = flowOf(true),
     ) {
         var exhausted = false
-        combine(service, helper, unlocked, ::Triple).conflate().collect { (s, h, u) ->
+        combine(service, helper, unlocked, active, ::WatchInputs).conflate().collect { (s, h, u, activeNow) ->
+            if (!activeNow) return@collect
             if (s.connected) {
                 exhausted = false
                 return@collect
@@ -89,7 +103,7 @@ class AccessibilityRepair(
     }
 
     private fun eligible(s: A11yObservation, h: BuiltinShellStatus, unlocked: Boolean) =
-        s.stuck && unlocked && (direct() || h == BuiltinShellStatus.Running) && consent().wants(RecoveryCapability.Accessibility)
+        allowed() && s.stuck && unlocked && (direct() || h == BuiltinShellStatus.Running) && consent().wants(RecoveryCapability.Accessibility)
 
     private suspend fun repair(
         service: StateFlow<A11yObservation>,

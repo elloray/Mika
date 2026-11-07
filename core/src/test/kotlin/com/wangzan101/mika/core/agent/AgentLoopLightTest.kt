@@ -32,10 +32,14 @@ private fun call(name: String, args: String = "{}") = Part.ToolCall("l${++seq}",
 private fun tools(vararg calls: Part.ToolCall) = ModelReply(calls.toList(), StopReason.ToolUse, null)
 private fun finish() = com.wangzan101.mika.core.testing.answerReply("done")
 
-/** 屏上只有一个「发送」按钮。 */
+/** 屏上有一个操作按钮;每次读取另有新序号,路由测试不会被无新数据收尾打断。 */
 private class SendScreen(private val label: String = "发送", private val inner: FakeScreen = FakeScreen()) : com.wangzan101.mika.core.uistate.ScreenPort by inner {
+    private var reads = 0
     override suspend fun snapshot() = ScreenSnapshot("s1", "com.x",
-        listOf(UiElement("@e1", "button", label, 500, 500, listOf(400, 450, 600, 550), null, true, false, false)), 1080, 2400)
+        listOf(
+            UiElement("@e1", "button", label, 500, 500, listOf(400, 450, 600, 550), null, true, false, false),
+            UiElement("@e2", "text", "读取 ${++reads}", 500, 700, listOf(400, 650, 600, 750), null, false, false, false),
+        ), 1080, 2400)
 }
 
 class AgentLoopLightTest {
@@ -103,7 +107,7 @@ class AgentLoopLightTest {
         val main = Named("main", FakeModel(*Array(6) { tools(call("phone_observe")) }, finish()))
         val light = Named("light", FakeModel(com.wangzan101.mika.core.model.ModelError.Auth()))
         val sink = Events()
-        val r = loop(main, light, sink).run("t")
+        val r = loop(main, light, sink, SendScreen()).run("t")
         assertTrue(r is TaskState.Succeeded)
         assertEquals(1, light.requests.size)
         assertEquals(1, sink.list.filterIsInstance<RunEvent.ModelReply>().count { it.role == "light_rejected" })

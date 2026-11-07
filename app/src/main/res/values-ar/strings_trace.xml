@@ -1,0 +1,36 @@
+<resources>
+    <string name="trace_switch">تسجيل التتبّع التفصيلي</string>
+    <string name="trace_switch_detail">لعمليات التشغيل الجديدة. قد يحتوي نص الطلب على معلومات خاصة. يؤدي إيقاف هذا الخيار إلى وقف التسجيل فورًا.</string>
+    <string name="trace_storage_limit">حد تخزين التتبّع</string>
+    <string name="trace_storage_hint">تُحذف آثار التتبّع الأقدم المكتملة عند الحاجة إلى مساحة.</string>
+    <string name="trace_storage_value">%1$d MiB</string>
+    <string name="trace_title">التتبّع التفصيلي</string>
+    <string name="trace_partial">سجل جزئي</string>
+    <string name="trace_recorded">سُجّل على هذا الجهاز</string>
+    <string name="trace_unknown">غير مُبلّغ عنه</string>
+    <string name="trace_ok">موافق</string>
+    <string name="trace_error">خطأ</string>
+    <string name="trace_cancelled">أُلغي</string>
+    <string name="trace_attempt">الخطوة %1$d · المحاولة %2$d · %3$s</string>
+    <string name="trace_tool">الخطوة %1$d · %2$s</string>
+    <string name="trace_counts">الإدخال %1$s · المخزّن مؤقتًا %2$s · غير المخزّن مؤقتًا %3$s · الإخراج %4$s</string>
+    <string name="trace_largest">أكبر إدخال غير مخزّن مؤقتًا</string>
+    <string name="trace_diff">أول اختلاف: %1$s</string>
+    <string name="trace_no_body">لم يُلتقط نص الطلب</string>
+    <string name="trace_attach">إرفاق النص بعد تنقيحه</string>
+    <string name="trace_attach_hint">ملف ZIP محلي فقط. راجع نص الطلب أعلاه قبل الحفظ.</string>
+    <string name="trace_save">حفظ هذا التتبّع</string>
+    <string name="trace_saved">حُفظ التتبّع</string>
+    <string name="trace_failed">فشل تصدير التتبّع</string>
+    <string name="trace_send">الإرسال عبر OTLP/HTTP</string>
+    <string name="trace_network_hint">أرسل بيانات التتبّع الوصفية فقط.</string>
+    <string name="trace_endpoint">نقطة نهاية آثار التتبّع</string>
+    <string name="trace_endpoint_hint">استخدم HTTPS للعناوين العامة. يُسمح بـ HTTP على localhost والشبكة المحلية.</string>
+    <string name="trace_header_name">اسم ترويسة المصادقة</string>
+    <string name="trace_header_value">قيمة ترويسة المصادقة (اختياري)</string>
+    <string name="trace_sent">قُبل التتبّع</string>
+    <string name="trace_sent_warning">قُبل التتبّع مع تحذير من جهة الاستقبال</string>
+    <string name="trace_rejected">رفضت جهة الاستقبال %1$d مقطعًا</string>
+    <string name="trace_http_error">أعادت جهة الاستقبال HTTP %1$d</string>
+    <string name="trace_send_failed">تعذّر إرسال التتبّع</string>
+</resources>

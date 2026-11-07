@@ -34,6 +34,7 @@ internal class LocScreen(
     vararg shots: ByteArray?,
     var secure: Boolean = false,
     var hasWindow: Boolean = true,
+    var captureError: String? = null,
 ) : ScreenPort {
     var peekFails = false
     var width = 1080
@@ -42,13 +43,17 @@ internal class LocScreen(
     var peeks = 0
     val taps = mutableListOf<String>()
     fun show(vararg next: ByteArray?) { queue.clear(); queue.addAll(next.toList()) }
-    private fun read(id: String) = ScreenSnapshot(id, if (hasWindow) "com.android.settings" else null, elements, width, height, hasWindow = hasWindow)
+    private fun read(id: String) = ScreenSnapshot(id, if (hasWindow) "com.android.settings" else null, elements, width, height,
+        hasWindow = hasWindow, captureError = captureError)
     override suspend fun snapshot() = read("s")
     override suspend fun peek(): ScreenSnapshot {
         if (peekFails) throw IllegalStateException("unreadable")
         peeks++; return read("p$peeks")
     }
-    override suspend fun screenshotPng(): ByteArray? = if (queue.size > 1) queue.removeFirst() else queue.firstOrNull()
+    override suspend fun screenshotPng(): ByteArray? {
+        if (captureError != null) return null
+        return if (queue.size > 1) queue.removeFirst() else queue.firstOrNull()
+    }
     override suspend fun isProtected() = secure
     override suspend fun tapRef(ref: String, snapshotId: String): ActionResult { taps += "ref $ref"; return ActionResult.Ok(changed = true) }
     override suspend fun tapXY(x: Int, y: Int): ActionResult { taps += "$x,$y"; return ActionResult.Ok(changed = true) }

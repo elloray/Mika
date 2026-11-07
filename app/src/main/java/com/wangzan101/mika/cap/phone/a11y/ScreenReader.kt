@@ -9,6 +9,7 @@ import com.wangzan101.mika.core.uistate.UiElement
 import com.wangzan101.mika.core.uistate.UiStates
 import com.wangzan101.mika.core.uistate.UiTreeNode
 import com.wangzan101.mika.core.uistate.UiWindowTree
+import com.wangzan101.mika.core.uistate.ambiguousFieldReadback
 import com.wangzan101.mika.core.uistate.normalize
 
 /**
@@ -63,6 +64,7 @@ internal object ScreenReader {
         fun visit(n: AccessibilityNodeInfo, depth: Int, inList: Boolean): List<UiTreeNode> {
             if (depth > MAX_DEPTH) return emptyList()
             val visible = n.isVisibleToUser
+            val editable = visible && canSetText(n)
             var ref: String? = null
             var clippedBounds = listOf(0, 0, 0, 0)
             if (visible) {
@@ -76,7 +78,7 @@ internal object ScreenReader {
                 clippedBounds = listOf(normalize(rect.left, width), normalize(rect.top, height),
                     normalize(rect.right, width), normalize(rect.bottom, height))
                 val usable = rect.width() >= MIN_SIZE && rect.height() >= MIN_SIZE
-                val interactive = n.isClickable || n.isEditable || n.isScrollable
+                val interactive = n.isClickable || editable || n.isScrollable
                 if (usable && (own != null || interactive)) {
                     val label = labelOf(n, own)
                     val role = roleOf(n)
@@ -92,14 +94,14 @@ internal object ScreenReader {
                                 normalize(rect.right, width), normalize(rect.bottom, height),
                             ),
                             // 输入框总带上资源 ID:回车前要靠它认出搜索框(名字常常只是推荐词)
-                            resourceId = if (label.isEmpty() || n.isEditable) readableResourceId(rid) else null,
-                            clickable = n.isClickable, editable = n.isEditable, scrollable = n.isScrollable,
+                            resourceId = if (label.isEmpty() || editable) readableResourceId(rid) else null,
+                            clickable = n.isClickable, editable = editable, scrollable = n.isScrollable,
                             hint = own != null && showingHint(n),
                             focused = n.isFocused,
                             secret = n.isPassword,
-                            placeholder = if (n.isEditable) n.hintText?.toString()?.trim()?.ifEmpty { null } else null,
+                            placeholder = if (editable) n.hintText?.toString()?.trim()?.ifEmpty { null } else null,
                             // 安卓的搜索框控件(SearchView 里的输入框)按类名认
-                            searchField = n.isEditable && n.className?.toString()?.contains("Search", ignoreCase = true) == true,
+                            searchField = editable && n.className?.toString()?.contains("Search", ignoreCase = true) == true,
                             states = uiStates(n),
                         )
                         val locator = ElementLocator(role, label, rid, rect.centerX(), rect.centerY(), lastLabel, element.hint, inList)
@@ -119,7 +121,7 @@ internal object ScreenReader {
                 description = n.contentDescription?.toString()?.takeUnless { n.isPassword || it.isBlank() },
                 hintText = n.hintText?.toString()?.takeUnless { it.isBlank() },
                 resourceId = n.viewIdResourceName,
-                clickable = n.isClickable, editable = n.isEditable, scrollable = n.isScrollable,
+                clickable = n.isClickable, editable = editable, scrollable = n.isScrollable,
                 checkable = n.isCheckable, checked = n.isChecked, selected = n.isSelected,
                 enabled = n.isEnabled, focused = n.isFocused, secret = n.isPassword,
                 wheel = isWheel(n),
@@ -266,10 +268,15 @@ internal object ScreenReader {
     fun placeholderOf(n: AccessibilityNodeInfo): String? =
         if (showingHint(n)) n.text?.toString()?.trim()?.ifEmpty { null } ?: n.hintText?.toString()?.trim() else null
 
+    /** Some accessibility providers expose the action without setting the editable flag. */
+    fun canSetText(n: AccessibilityNodeInfo): Boolean =
+        n.isEditable || n.actionList.any { it.id == AccessibilityNodeInfo.ACTION_SET_TEXT }
+
     /**
      * 输入框里用户可见的实际文字;显示的是提示语时为空串,密码框读不出时为 null。
      * [placeholder] 是输入前看到的提示语:有的输入框打字后不再标「显示提示语」,却仍把它当文字报出来,这时也算空。
      * 但要输入的 [typing] 本身就等于提示语时,没标「显示提示语」的同样文字就当作已输入。
+     * 读回呈「提示语 + 空白 + 目标文字」时无法分清标签和用户正文,返回 null,不删前缀也不触发重写。
      */
     fun fieldText(n: AccessibilityNodeInfo, placeholder: String? = null, typing: String? = null): String? {
         if (n.isPassword) return null
@@ -278,6 +285,7 @@ internal object ScreenReader {
         val shown = text.trim()
         if (typing != null && shown == typing.trim()) return text
         if (showingHint(n) || (placeholder != null && shown == placeholder)) return ""
+        if (ambiguousFieldReadback(shown, placeholder, typing)) return null
         return text
     }
 

@@ -26,6 +26,8 @@ Requires JDK 17 and the Android SDK (`sdk.dir` in `local.properties`, or the `AN
 ./gradlew :app:assembleDebug                  # debug build
 ./gradlew :app:assemblePerf                   # build for judging smoothness: precompiled and non-debuggable like release, debug-signed, installs over the debug build
 ./gradlew :core:test :core:cliTest :app:testDebugUnitTest   # unit tests
+python3 -m unittest discover -s tools/i18n -v              # translation tool tests (no JDK/Android SDK)
+python3 tools/i18n/translations.py check                  # lightweight translation resource checks
 ./gradlew updateReadme                        # regenerate the built-in knowledge and provider lists in the READMEs
 ```
 
@@ -35,7 +37,19 @@ The debug build is not precompiled and its UI is several times slower; use the p
 - README sections between the `generated` markers are produced by `./gradlew updateReadme`; don't edit them by hand. Unit tests check that they are up to date.
 - The README comes in several languages. The English `README.md` at the repository root is the original; the translations are in `docs/readme/`. `README.zh-CN.md` (Simplified Chinese) has the same generated sections as `README.md`; in `README.zh-Hant.md`, `README.ja.md`, `README.ko.md` and `README.es.md` the generated sections are replaced by one sentence pointing to the English or Simplified Chinese README. `README.en.md` at the root only points to `README.md`, kept so old links still work. Each translation starts with `<!-- translated-from: README.md @ <fingerprint> -->`, where the fingerprint is the first 12 hex digits of the SHA-256 of the root README.md with the generated sections removed. After you change README.md, `ReadmeTranslationsTest` lists the stale translations and prints the new fingerprint: update the translations to match, then replace the fingerprint at the top. Translations must also keep the same number of `## ` sections and the same local images as README.md. Native speakers are welcome to improve a translation with a PR.
 - The sandbox's native binaries and bundled runtime are checked into the repository; to rebuild them see [`tools/sandbox/README.md`](../tools/sandbox/README.md).
+- For translation key checks and a multi-language reference CSV without a JDK or Android SDK, see [`tools/i18n/README.md`](../tools/i18n/README.md). These lightweight checks cover all 10 current UI languages, including Arabic, but do not replace the JVM `StringResourcesTest` checks for exact placeholders, CLDR plural rules and language registration.
 - For on-device evaluation see [`eval/README.md`](../eval/README.md).
+
+### CI
+
+Pull requests and pushes to `main` run on GitHub Actions ([`ci.yml`](workflows/ci.yml)); no secrets are required:
+
+- `core (JVM)`: `./gradlew :core:test`
+- `cli (Python)`: `./gradlew :core:cliTest`, plus `tools/i18n` unit tests and translation resource checks (Python 3.10+; CI uses 3.12)
+- `app (Android)`: `./gradlew :app:testDebugUnitTest :app:assembleDebug`
+- `relay (Go)`: `./gradlew :core:relayTest`
+
+Reproduce locally with the commands above. The repository pins text files to LF in `.gitattributes`: goldens, prompts and the README are compared byte-for-byte, so line endings that vary by platform (for example an old Windows checkout with `core.autocrlf=true`) make tests and goldens disagree. If your working tree is not LF, re-checkout or convert it back to LF before running the tests or `-PupdateSnapshots`.
 
 ### Model configuration details
 

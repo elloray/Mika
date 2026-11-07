@@ -4,6 +4,7 @@
     <string name="model_context_note">비워 두면 자동 값을 사용해요. 설정은 다음 작업부터, 이 제공업체와 모델을 쓰는 모든 역할에 적용돼요.</string>
     <string name="model_context_window">컨텍스트 윈도우 (토큰)</string>
     <string name="model_context_trigger">압축 시작 기준 (토큰)</string>
+    <string name="model_context_read_timeout">읽기 제한 시간(초)</string>
     <string name="model_context_auto">자동 · %1$d</string>
     <string name="model_context_integer">양의 정수를 입력하세요.</string>
     <string name="model_context_range">허용 범위 (토큰) · %1$d–%2$d</string>

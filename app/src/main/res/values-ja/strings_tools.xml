@@ -15,6 +15,7 @@
     <string name="tool_check_dialog">ダイアログを確認</string>
     <string name="tool_gesture">マルチタッチ操作</string>
     <string name="tool_shell">システムコマンド</string>
+    <string name="tool_root">root コマンド</string>
     <string name="tool_find_element">画面上で探す</string>
     <string name="tool_collect">複数の画面にまたがって収集</string>
     <string name="tool_phone_run">スマホの複数の操作</string>

@@ -200,7 +200,7 @@ class TaskRecovery(context: Context, private val sharedShell: SharedShell) {
         if (live.isNotEmpty()) return
         // shell 进程还在就还原它记着的原剪贴板(剪贴板已被用户换掉时它不会动);
         // shell 也被杀过就按加密留底还原,两步都只在剪贴板仍是 Mika 的时才换
-        val inShell = runCatching { shell.restoreClip() }.isSuccess
+        val inShell = runCatching { shell.restoreClip() }.getOrDefault(false)
         val fromBackup = restoreClip(clipBackup()) { o, u -> shell.restoreClipText(o, u) }
         if (inShell && fromBackup) markClipHeld(false)
     }
@@ -244,10 +244,12 @@ class TaskRecovery(context: Context, private val sharedShell: SharedShell) {
         fun restoreRuns(records: Map<String, MarkerStore>, port: AudioPort, live: Set<String>): Boolean =
             records.filterKeys { it !in live }.values.map { AudioMute(port, it).restoreAll() }.all { it }
 
-        /** 按留底把用户原来的剪贴板还回去([restore] 只在剪贴板仍是 Mika 的时才换);还原了或没有留底返回 true,并删掉留底。 */
-        fun restoreClip(backup: ClipBackup, restore: (original: String, ours: String) -> Unit): Boolean {
+        /** 按留底把用户原来的剪贴板还回去;只有已还原、用户已复制别的或没有留底时才删掉留底,读不到时留给下次。 */
+        fun restoreClip(backup: ClipBackup, restore: (original: String, ours: String) -> Boolean): Boolean {
             val (original, ours) = backup.load() ?: return true.also { backup.clear() }
-            return runCatching { restore(original, ours) }.onSuccess { backup.clear() }.isSuccess
+            return runCatching { restore(original, ours) }
+                .onSuccess { finished -> if (finished) backup.clear() }
+                .getOrDefault(false)
         }
     }
 }

@@ -15,6 +15,7 @@
     <string name="tool_check_dialog">Verificar caixas de diálogo</string>
     <string name="tool_gesture">Gesto com vários toques</string>
     <string name="tool_shell">Comando do sistema</string>
+    <string name="tool_root">Comando root</string>
     <string name="tool_find_element">Procurar na tela</string>
     <string name="tool_collect">Coletar em várias telas</string>
     <string name="tool_phone_run">Várias ações no celular</string>

@@ -27,7 +27,8 @@
     <string name="metrics_output_tokens">Output tokens</string>
     <string name="usage_cached">Cache hits</string>
     <string name="metrics_no_usage">No usage reported</string>
-    <string name="metrics_all_calls">All model requests</string>
+    <string name="metrics_all_calls">All logical model calls</string>
+    <string name="metrics_all_http_calls">All HTTP requests</string>
     <plurals name="metrics_all_calls_value">
         <item quantity="one">%1$d (incl. side calls and retries)</item>
         <item quantity="other">%1$d (incl. side calls and retries)</item>

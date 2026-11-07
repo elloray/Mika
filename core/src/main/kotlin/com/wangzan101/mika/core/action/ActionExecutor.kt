@@ -141,7 +141,17 @@ class ActionExecutor(
         val writing = tools.writesScreen(call.name)
         if (writing && !policy.gatedByCaller) gate()
         // 没有可用的同意就不执行,也不计入失败熔断
-        val d = decision.judge(call.name, args, origin)
+        var d = decision.judge(call.name, args, origin)
+        // 不在屏上、工具声明要问的一步(会改动东西的 root 命令):调用方问得到人就当场问,同意了按这次同意再判一次;
+        // 问不到人(这次运行不能问、调用方不是模型单步)就不做,照被拦下记
+        val ask = if (d is Decision.Required || d is Decision.Denied) tools.approvalRisk(call.name, args)?.ask else null
+        if (ask != null) {
+            val hit = Irreversible(ask.action, ask.content)
+            val answer = (if (d is Decision.Required) followUp.approve(ask) else null)
+                ?: return declined(call, args, origin, before, hit, ToolExecution(Refusals.unavailable()), followUp, "approval_unavailable")
+            if (answer.content["ok"] != JsonPrimitive(true)) return declined(call, args, origin, before, hit, answer, followUp, "confirmation_declined")
+            d = decision.judge(call.name, args, origin)
+        }
         when (d) {
             is Decision.Required -> return blocked(call, args, origin, before, d.hit, null, followUp)
             is Decision.Mismatch -> return blocked(call, args, origin, before, d.hit, d.reason, followUp)
@@ -242,7 +252,10 @@ class ActionExecutor(
         val after = subVerdicts.toMutableList()
         after += if (s.offScreen) offScreen?.result(call.name, s.args, resolved.content).orEmpty() else guards.result(call.name, resolved.content)
         // 动作报回的实际效果先记(没有效果、换了地方),接着的画面就不再按指纹重复记
-        ((resolved.content["effect"] as? JsonObject)?.get("kind") as? JsonPrimitive)?.takeIf { !s.offScreen }?.let { after += guards.effect(it.content) }
+        (resolved.content["effect"] as? JsonObject)?.takeIf { !s.offScreen }?.let { effect ->
+            val kind = (effect["kind"] as? JsonPrimitive)?.content ?: return@let
+            after += guards.effect(kind, (effect["treeBlind"] as? JsonPrimitive)?.booleanOrNull == true)
+        }
         val elements = resolved.screenElements ?: resolved.content["elements"] as? JsonArray
         val beforeFrameProgress = guards.progressVersion
         elementsHash(elements)?.let { after += guards.frame("$n:${call.id}", it) }
@@ -334,6 +347,19 @@ class ActionExecutor(
             recorder.result(origin.step, call.name, tools.verb(call.name), content, tools.portRecord(call.name, args), null, null, 0, origin.policy.source, call.id)
         }
         return ActionOutcome.Refused(code, content, before, hit)
+    }
+
+    /** 要问的一步没有同意(用户没同意,或问不到人):[answer] 就是结果,照被拦下一样记。 */
+    private fun declined(
+        call: Part.ToolCall, args: JsonObject, origin: Origin, before: List<GuardVerdict>, hit: Irreversible, answer: ToolExecution, followUp: FollowUp,
+        code: String,
+    ): ActionOutcome {
+        recorder.confirmation(hit, if (code == "confirmation_declined") "declined" else "denied")
+        if (origin.policy.recordsRefusal) {
+            followUp.refused(answer.content)
+            recorder.result(origin.step, call.name, tools.verb(call.name), answer.content, tools.portRecord(call.name, args), null, null, 0, origin.policy.source, call.id)
+        }
+        return ActionOutcome.Refused(code, answer.content, before, hit)
     }
 
     private fun blocked(

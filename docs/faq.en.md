@@ -48,7 +48,7 @@ Yes. AI tools on your computer can use either CLI + Skill or MCP; normally you p
 ## Language
 
 **Is the app in English?**
-Yes. The app UI comes in English, Simplified Chinese, Traditional Chinese, Japanese, Korean, Spanish, Portuguese, Russian and Indonesian, follows your system language (English when your system language isn't one of them), and can be switched in Settings › Language. The built-in app and website knowledge is written in Chinese, but that doesn't limit you: the model reads it fine, and you can talk to Mika in your own language.
+Yes. The app UI comes in 10 languages: English, Arabic, Simplified Chinese, Traditional Chinese, Japanese, Korean, Spanish, Portuguese, Russian and Indonesian. It follows your system language (English when your system language isn't one of them), and can be switched in Settings › Language & appearance › Language. The built-in app and website knowledge is written in Chinese, but that doesn't limit you: the model reads it fine, and you can talk to Mika in your own language.
 
 ## Privacy
 

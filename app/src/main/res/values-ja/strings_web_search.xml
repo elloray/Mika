@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="web_search_title">ウェブ検索</string>
+    <string name="web_search_row_sub">検索サービスは任意です。ブラウザー検索は常に利用できます</string>
+    <string name="web_search_hint">初期設定ではオフです。Mika は指定した HTTP JSON エンドポイントに query と count パラメーターを送信します。任意のキーは Bearer トークンとして送信され、この端末に暗号化して保存されます。検索結果は信頼できない情報として扱われます。</string>
+    <string name="web_search_enabled">ウェブ検索を有効にする</string>
+    <string name="web_search_endpoint">検索エンドポイント URL</string>
+    <string name="web_search_api_key">API キー（任意）</string>
+    <string name="web_search_invalid_endpoint">クエリーパラメーターを含まない HTTP または HTTPS の URL を入力してください。</string>
+    <string name="web_search_action">ウェブを検索</string>
+</resources>

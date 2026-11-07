@@ -3,6 +3,7 @@ package com.wangzan101.mika.takeover
 import com.wangzan101.mika.core.agent.TaskState
 import com.wangzan101.mika.core.tool.HandBack
 import com.wangzan101.mika.core.tool.HandBackOutcome
+import com.wangzan101.mika.task.restorePipSound
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
@@ -36,6 +37,7 @@ class TakeoverControllerTest {
             return moveBackOk
         }
         override fun setSound(packageName: String, on: Boolean) { log += (if (on) "unmute:" else "mute:") + packageName }
+        override fun unmute(packageName: String) { log += "pip-unmute:$packageName" }
         val results = mutableListOf<HandBack>()
         var watching: String? = null
         var activity = HandoverActivity(0, null)
@@ -226,6 +228,43 @@ class TakeoverControllerTest {
         takeover.handOver()
         assertFalse(takeover.handOver())
         assertEquals(listOf("toMain:1", "unmute:a.app"), port.log)
+    }
+
+    @Test
+    fun pipUnmuteWithoutRealHandoverFallsBackToPhone() = test {
+        var phoneCalls = 0
+        takeover.onState(TaskState.Running(1, "phone_observe"))
+        restorePipSound(takeover) { phoneCalls++ }
+        assertEquals(1, phoneCalls)
+        // 接管对象一直存在;即使正在等待用户,普通当前 App 仍走 phone/AppMuter
+        takeover.onState(waiting)
+        restorePipSound(takeover) { phoneCalls++ }
+        assertEquals(2, phoneCalls)
+        assertTrue(port.log.isEmpty())
+    }
+
+    @Test
+    fun pipUnmuteDuringAppHandoverUsesTakeoverAndRepeatedClicksRetry() = test {
+        takeover.onState(waiting)
+        takeover.handOver()
+        port.log.clear()
+        var phoneCalls = 0
+        restorePipSound(takeover) { phoneCalls++ }
+        restorePipSound(takeover) { phoneCalls++ }
+        assertEquals(listOf("pip-unmute:a.app", "pip-unmute:a.app"), port.log)
+        assertEquals(0, phoneCalls)
+    }
+
+    @Test
+    fun pipUnmuteDuringHandoverWithoutAppFallsBackToPhone() = test {
+        port.displays.clear()
+        port.target = -1
+        takeover.onState(waiting)
+        takeover.handOver()
+        var phoneCalls = 0
+        restorePipSound(takeover) { phoneCalls++ }
+        assertEquals(1, phoneCalls)
+        assertTrue(port.log.isEmpty())
     }
 
     @Test

@@ -4,7 +4,7 @@ import com.wangzan101.mika.core.workspace.SandboxTree
 import android.content.Context
 import android.net.Uri
 import android.provider.OpenableColumns
-import com.wangzan101.mika.core.workspace.SandboxError
+import com.wangzan101.mika.core.workspace.GatedFile
 import com.wangzan101.mika.core.workspace.SandboxPaths
 import com.wangzan101.mika.core.workspace.WorkspaceFileGate
 import com.wangzan101.mika.core.cap.sandbox.ShareRules
@@ -14,6 +14,8 @@ import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.withContext
 import java.io.File
+import java.io.IOException
+import java.io.InputStream
 
 /** 附加进来的一批文件:[added] 是 (沙箱路径, 大小),[rejected] 是没收下的文件名(太大或读不了)。 */
 data class ImportResult(val added: List<Pair<String, Long>>, val rejected: List<String>)
@@ -60,7 +62,11 @@ object Attachments {
             val display = displayName(context, uri) ?: uri.lastPathSegment ?: "attachment"
             val base = safeName(display)
             if (!roomLeft(freeBytes, workspaceBytes)) { rejected += base; continue }
-            val result = try { copyOne(context, uri, workspace, gate, base) { roomLeft(freeBytes, workspaceBytes) } } catch (e: CancellationException) { throw e } catch (e: Exception) { null }
+            val result = try {
+                copyOne(workspace, gate, base, { roomLeft(freeBytes, workspaceBytes) }) {
+                    context.contentResolver.openInputStream(uri) ?: throw IOException("Cannot open attachment")
+                }.use { it.entry() }
+            } catch (e: CancellationException) { throw e } catch (e: Exception) { null }
             if (result == null) rejected += base else added += result
         }
         ImportResult(added, rejected)
@@ -69,32 +75,49 @@ object Attachments {
     private fun roomLeft(freeBytes: () -> Long, workspaceBytes: () -> Long) =
         freeBytes() >= MIN_FREE && workspaceBytes() <= WORKSPACE_MAX
 
-    private suspend fun copyOne(context: Context, uri: Uri, workspace: File, gate: WorkspaceFileGate, base: String, room: () -> Boolean): Pair<String, Long>? {
-        workspace.mkdirs()
-        val (name, g) = try { gate.createNumbered(workspace, INBOX, base, max = 1000) } catch (e: SandboxError) { return null }
-        var size = 0L
-        g.use {
-            try {
-                val input = context.contentResolver.openInputStream(uri) ?: throw IllegalStateException("cannot open")
-                input.use {
-                    val buf = ByteArray(64 * 1024)
-                    while (true) {
-                        currentCoroutineContext().ensureActive()
-                        val r = it.read(buf)
-                        if (r < 0) break
-                        size += r
-                        if (size > MAX_BYTES) throw IllegalStateException("too large")
-                        if (size % CHECK_EVERY < r && !room()) throw IllegalStateException("storage low")
-                        g.write(if (r == buf.size) buf else buf.copyOf(r))
-                    }
-                }
-            } catch (e: Throwable) {
-                g.delete()
-                throw e
+    /** Keep the exact handles until the phone accepts the task, so a failed batch leaves no partial input. */
+    suspend fun <T> withTaskFiles(
+        sources: List<Pair<String, File>>, workspace: File, gate: WorkspaceFileGate, tree: SandboxTree,
+        room: () -> Boolean, launch: (List<Pair<String, Long>>) -> T,
+    ): T = tree.shared {
+        val created = mutableListOf<GatedFile>()
+        try {
+            for ((name, source) in sources) {
+                if (!room()) throw IOException("Not enough space for task attachments")
+                created += copyOne(workspace, gate, safeName(name), room) { source.inputStream() }
             }
-        }
-        return "${SandboxPaths.WORKSPACE}/$INBOX/$name" to size
+            launch(created.map { it.entry() })
+        } catch (e: Throwable) {
+            created.forEach { it.delete() }
+            throw e
+        } finally { created.forEach { it.close() } }
     }
+
+    private suspend fun copyOne(workspace: File, gate: WorkspaceFileGate, base: String, room: () -> Boolean,
+        open: () -> InputStream): GatedFile {
+        workspace.mkdirs()
+        val (_, g) = gate.createNumbered(workspace, INBOX, base, max = 1000)
+        var size = 0L
+        try {
+            open().use { input ->
+                val buf = ByteArray(64 * 1024)
+                while (true) {
+                    currentCoroutineContext().ensureActive()
+                    val r = input.read(buf)
+                    if (r < 0) break
+                    size += r
+                    if (size > MAX_BYTES || (size % CHECK_EVERY < r && !room())) throw IOException("Attachment storage limit reached")
+                    g.write(if (r == buf.size) buf else buf.copyOf(r))
+                }
+            }
+            return g
+        } catch (e: Throwable) {
+            try { g.delete() } finally { g.close() }
+            throw e
+        }
+    }
+
+    private fun GatedFile.entry() = "${SandboxPaths.WORKSPACE}/$INBOX/$name" to currentSize()
 
     private const val INBOX = "inbox"
 

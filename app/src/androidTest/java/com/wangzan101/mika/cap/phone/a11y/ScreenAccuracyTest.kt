@@ -98,7 +98,10 @@ class ScreenAccuracyTest {
     @Test
     fun typingIntoAButtonDoesNotTapIt() = runBlocking<Unit> {
         val s = openFields()
-        assertEquals(ActionResult.Failed("not_editable"), screen.typeText(s.named("7").ref, s.snapshotId, "咖啡"))
+        assertEquals(
+            ActionResult.Failed("not_editable", "If this is a visible input box, give its point instead."),
+            screen.typeText(s.named("7").ref, s.snapshotId, "咖啡"),
+        )
         // 没有点下去:结果仍是 0
         assertTrue(screen.snapshot().elements.any { it.name == "0" })
     }

@@ -1,0 +1,29 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="relay_transport">عن بُعد</string>
+    <string name="relay_pair_title">إقران بوابة بعيدة</string>
+    <string name="relay_pair_sub">أنشئ رمز إقران في صفحة الويب الخاصة بالبوابة، ثم أدخل عنوانها والرمز أدناه.</string>
+    <string name="relay_gateway">البوابة</string>
+    <string name="relay_code">رمز الإقران</string>
+    <string name="relay_code_hint">رمز لمرة واحدة من بوابتك</string>
+    <string name="relay_pair">إقران البوابة</string>
+    <string name="relay_busy">يُرجى الانتظار…</string>
+    <string name="relay_enable">السماح بالوصول عن بُعد</string>
+    <string name="relay_disabled">تم الإقران. الوصول عن بُعد متوقف</string>
+    <string name="relay_online">البوابة متصلة. بانتظار طلبات CLI / MCP</string>
+    <string name="relay_connecting">جارٍ الاتصال بالبوابة البعيدة…</string>
+    <string name="relay_offline">انقطع الاتصال. يُعاد الاتصال تلقائيًا</string>
+    <string name="relay_unauthorized">انتهت صلاحية الإقران أو أُلغي. أعد إقران البوابة</string>
+    <string name="relay_copy_address">نسخ عنوان MCP</string>
+    <string name="relay_client_help">انسخ الإعدادات إلى عميل MCP على الكمبيوتر للاتصال.</string>
+    <string name="relay_unpair">إلغاء إقران البوابة</string>
+    <string name="relay_unpair_body">افصل هذا الهاتف عن البوابة. يلزم اتصال بالإنترنت. يظل رمز الوصول إلى الهاتف دون تغيير.</string>
+    <string name="relay_failed">تعذّر الإكمال. تحقق من عنوان البوابة واتصال الإنترنت ورمز الإقران. إذا تعذّر إلغاء الإقران، فالوصول متوقف؛ أعد المحاولة أو ألغِ تفويض الهاتف من البوابة.</string>
+    <string name="relay_notif_body">الوصول عن بُعد مفعّل. افتح Mika للتحقق من اتصال البوابة.</string>
+    <string name="relay_incompatible">حدّث Mika والبوابة إلى إصدارين متوافقين</string>
+    <string name="relay_copy_gateway">نسخ عنوان البوابة</string>
+    <string name="relay_cli_help">احفظ رمز الوصول في ملف على الكمبيوتر، ثم شغّل أمر الاتصال أعلاه.</string>
+    <string name="relay_intro">تحوّل البوابة إلى هاتفك طلبات CLI وMCP التي تُرسل عادةً عبر Wi-Fi / LAN لتمكين الوصول عن بُعد. انشرها على خادم عام تملكه قبل الإقران.</string>
+    <string name="relay_device_access">السماح بالإيقاظ وإلغاء القفل عبر البوابة</string>
+    <string name="relay_device_access_sub">متوقف افتراضيًا. ويتطلب أيضًا تفعيل «السماح بالإيقاظ وإلغاء القفل عن بُعد» في هذه الصفحة. عند تفعيل الخيارين، يستطيع أي شخص يملك رمز الوصول إيقاظ هذا الهاتف وإلغاء قفله عبر الإنترنت.</string>
+</resources>

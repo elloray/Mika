@@ -20,7 +20,7 @@ If you are the AI agent: read the "Rules" first. Start at step 1 when phone inst
 2. **Leave unrelated system settings alone.** Do not change the lock screen, screen timeout, display, sound, network, other developer options, or any setting this document does not mention.
 3. **Never uninstall a phone app or clear its data**, including Mika itself. If uninstalling is needed, explain why and let the user decide and do it.
 4. **Never handle the user's model API key.** Do not ask for it, type it, or send it over adb. The user enters it in Mika.
-5. **Stop and tell the user whenever a step needs a tap on the phone.** Say what will appear on screen and which button to tap, and wait until the user says it's done.
+5. **Stop and tell the user whenever a step needs a tap on the phone.** Say what will appear on screen and which button to tap, and wait until the user says it's done. Do not use adb to simulate taps or input to confirm system security prompts for the user, including allowing USB debugging or wireless debugging on a network.
 6. **Before each step, briefly tell the user what you are doing and why, in the user's language.** When a command fails, show the user the exact error, then the likely causes.
 7. The commands below are written for a Unix-style shell (macOS, Linux, or WSL / Git Bash on Windows). In Windows PowerShell, rewrite them to do the same thing.
 
@@ -178,23 +178,49 @@ adb shell am start -n com.wangzan101.mika/.ui.MainActivity
 
 On Android 11 or for chat, web and files only, go to step 8 after opening the app. The helper is only needed for phone app control; "Phone control" does not need to be ready in those cases.
 
-For phone app control, Mika's built-in helper starts using Android debugging. Keep the user's chosen method; if they have not chosen, explain the two options:
+For phone app control, the goal is to give Mika's built-in helper the adb shell identity (uid 2000). Both wireless debugging pairing and USB debugging can provide that identity: pair when the system has a working Wireless debugging page; if the system has removed that page, start over USB directly without a pairing code.
+
+### Check whether the Wireless debugging page exists
+
+Before pairing, run these read-only checks:
+
+```
+adb shell cmd package resolve-activity --brief -a android.settings.WIRELESS_DEBUGGING_SETTINGS
+adb shell dumpsys package com.android.settings | grep -iE 'wireless.?debug|AdbWireless|AdbPairing'
+```
+
+- If the first command returns `No activity found` and the second prints nothing, the system no longer has this page. Tell the user there is no need to keep looking in Settings, and do not repeatedly turn on Wireless debugging and wait for a pairing code. Go directly to option B below.
+- If an activity or related component is found, the page may exist; continue with option A. If the user still cannot open the pairing page, or no pairing code appears after turning on the switch, use B instead of repeatedly toggling the switch.
+- If a command fails or its output is inconclusive, show the user the exact error. This does not prove that the page was removed. With USB already connected and authorized, use B directly rather than probing private system implementation details.
+
+If the user has not chosen a startup method, explain the difference:
 
 - **A. Pair wireless debugging (recommended, set up once)**: pair on the phone. With the required permissions retained and wireless debugging and network conditions met, it can recover after a reboot without a computer.
 - **B. Start over USB**: run once with the cable connected, without pairing. Run it again after each phone reboot unless A can already recover automatically.
 
 You can use B first, then configure A for recovery. This pairing starts Mika's phone helper; it does not pair the computer for wireless ADB or enable computer access. Computer access is covered in step 10.
 
+### Optional: allow Mika to modify system settings
+
+This permission lets Mika turn on Wireless debugging for automatic recovery when that capability is available. **It is not required to start the helper over USB, and it cannot restore a pairing page removed by the system.** Explain that it changes the phone's permission state and get the user's consent before running these commands. If the user declines, skip this step; B still works:
+
+```
+adb shell pm grant com.wangzan101.mika android.permission.WRITE_SECURE_SETTINGS
+adb shell dumpsys package com.wangzan101.mika | grep 'WRITE_SECURE_SETTINGS: granted'
+```
+
+Success: the second command prints `granted=true`.
+
 ### A. Pair wireless debugging
 
-1. Turn on wireless debugging:
+1. After confirming that the checks above did not show the page to be removed, turn on Wireless debugging:
 
    ```
    adb shell settings put global adb_wifi_enabled 1
    adb shell settings get global adb_wifi_enabled
    ```
 
-   Success: the second command prints `1`. The phone must be on Wi-Fi (internet access not required). If the phone asks "Allow wireless debugging on this network?", ask the user to tap "Allow" and tick "Always allow on this network". If it reads back `0`, the phone is probably not on Wi-Fi, or the user did not allow it in that prompt.
+   Success: the second command prints `1`. The phone must be on Wi-Fi (internet access not required). If the phone asks "Allow wireless debugging on this network?", ask the user to tap "Allow" and tick "Always allow on this network". If it reads back `0`, the phone is probably not on Wi-Fi, or the user did not allow it in that prompt. If the switch turns on but no pairing code dialog appears, do not keep writing this setting; use B instead.
 
 2. Tell the user: in Mika, open Settings › Phone control to reach the "Set up phone control" (设置手机操作) wizard. (It also opens on first launch after the model setup. If it does not show up, tap the notice in the status card at the top of Settings, or tap Settings › Phone control › Pair again.) The wizard checks Developer options, USB debugging and Wireless debugging by itself and ticks the steps that are already done.
 
@@ -204,19 +230,35 @@ You can use B first, then configure A for recovery. This pairing starts Mika's p
 
 ### B. Start over USB
 
-Mika must have been opened at least once, so it can write its start script to the phone. With the cable plugged in, run:
+Mika must have been opened at least once, so it can write its start script to the phone. First check the files and read the script to confirm that it is Mika's generated start script; do not modify it:
+
+```
+adb shell ls /sdcard/Android/data/com.wangzan101.mika/files/
+adb shell cat /sdcard/Android/data/com.wangzan101.mika/files/usb-start.sh
+```
+
+The file list should contain `usb-start.sh`. With the cable plugged in, run:
 
 ```
 adb shell sh /sdcard/Android/data/com.wangzan101.mika/files/usb-start.sh
 ```
 
 - If it says the file does not exist: open Mika with the command above, wait a few seconds and try again. If it is still missing, the Mika version on the phone may not have this feature yet; use A instead.
+- If it says `Mika was updated or reinstalled`, `Mika helper did not start` or `is not running`: open Mika once so it regenerates the script for the current APK, then run the same command again.
 - After unplugging, check the helper status on the phone. If phone control becomes unavailable, reconnect and run this command again, or recover through an already-paired option A.
-- After a phone reboot, run this command again from the computer unless option A successfully restores the helper.
+- After a phone reboot, run this command again from the computer unless option A successfully restores the helper. Open Mika once first after the reboot.
+- Do not run `connect-computer.sh` to pair or start the phone helper. It enables computer access in step 10, starts a local service and generates a token; run it only when the user explicitly requests computer access.
+- Do not use `adb tcpip 5555` and `adb connect <phone-IP>:5555` as the default alternative for this flow: that is network ADB from the computer to the phone and may be blocked by Wi-Fi AP isolation. Mika's own pairing and connection use `127.0.0.1` on the phone and are unaffected by AP isolation, so there is no need to change router settings for this.
 
 ### Check that it is running
 
-Ask the user to open Mika's Settings and look at the status card at the top: "Phone control" shows ready (with a model set up too, it says "Model set up · Phone control ready"). If it says "Phone control isn't ready", redo the steps above or see "Troubleshooting" below.
+You can use the process list as a supplementary check:
+
+```
+adb shell ps -A -o USER,PID,NAME | grep -i mika
+```
+
+You will normally see `shell ... com.wangzan101.mika:helper` and `u0_aXXX ... com.wangzan101.mika`. A running process alone does not prove that handoff has completed. Finally, ask the user to open Mika's Settings and look at the status card at the top: "Phone control" shows ready (with a model set up too, it says "Model set up · Phone control ready"). If it says "Phone control isn't ready", redo the steps above or see "Troubleshooting" below.
 
 ## Step 8: Add a model
 

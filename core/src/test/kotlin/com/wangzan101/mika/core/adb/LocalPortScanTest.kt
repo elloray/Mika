@@ -101,4 +101,13 @@ class LocalPortScanTest {
             }
         }
     }
+
+    @Test
+    fun nioScannerRejectsNonLocalHostsInsteadOfResolvingOrConnecting() = runBlocking {
+        val scanner = NioPortScanner()
+        for (host in listOf("127.evil.com", "127.0.0.1.example.com", "192.0.2.1")) {
+            assertTrue(host, scanner.openPorts(host, 40000..40001, emptySet(), 50).isEmpty())
+            assertFalse(host, scanner.speaksAdbTls(host, 40000, 50))
+        }
+    }
 }

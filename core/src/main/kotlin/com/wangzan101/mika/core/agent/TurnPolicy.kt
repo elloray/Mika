@@ -13,6 +13,9 @@ internal data class TurnSnapshot(val step: Int, val maxSteps: Int)
 /** 和基础提示词同一条规则:要的结果缺了要用的功能、条目或值是做不成;只有问「有没有」时,App 的搜索明确说没有才是答案。 */
 internal val ANSWER_OR_FAILURE: String get() = Feedback["answer_or_failure"]
 
+/** 为什么禁止继续操作、只给最后一次收尾机会。 */
+internal enum class Closeout { StepLimit, Completed, NoNewData }
+
 /**
  * 回合策略:每步开头要不要先提醒(中途自查)、回复是空的(或被输出上限截断)时提醒还是结束、核对没对上时怎么提醒、
  * 步数用完后最后一轮说什么、给哪些工具。纯函数,只看传进来的东西。
@@ -65,6 +68,17 @@ internal object TurnPolicy {
 
     /** 步数用完后最后一轮之前的提醒。 */
     fun finalTurn(): Notice = Notice(Feedback["final_source"], Feedback["final_turn"])
+
+    /** 完成或连续无新数据后的收尾:不再给操作工具，但仍可交出结果或如实报告部分完成。 */
+    fun closeout(reason: Closeout, progress: RunProgress.Task? = null): Notice {
+        val confirmed = progress?.display?.takeIf { it.isNotBlank() }?.let { "\nLatest confirmed progress: $it" }.orEmpty()
+        return when (reason) {
+            Closeout.StepLimit -> finalTurn()
+            Closeout.Completed -> Notice(Feedback["closeout_source"], Feedback.format("completed_closeout", "progress" to confirmed))
+            Closeout.NoNewData -> Notice(Feedback["closeout_source"],
+                Feedback.format("no_new_data_closeout", "count" to NewDataTracker.LIMIT, "progress" to confirmed))
+        }
+    }
 
     /** 最后一轮给模型的工具:只有放弃;做完了就直接用文字回答。 */
     fun finalTools(specs: List<ToolSpec>, verbOf: (String) -> Verb?): List<ToolSpec> = specs.filter { verbOf(it.name) in FINAL_VERBS }

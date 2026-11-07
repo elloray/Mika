@@ -2,6 +2,7 @@ package com.wangzan101.mika.ui
 
 import com.wangzan101.mika.R
 import com.wangzan101.mika.i18n.tr
+import com.wangzan101.mika.i18n.trPlural
 import androidx.compose.ui.res.stringResource
 import com.wangzan101.mika.ui.components.keepsKeyboard
 import com.wangzan101.mika.ui.components.KeyboardDismissArea
@@ -10,7 +11,8 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.AlertDialog
+import com.wangzan101.mika.ui.components.MikaDialog
+import com.wangzan101.mika.ui.components.MikaNoticeDialog
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -38,6 +40,8 @@ import com.wangzan101.mika.ui.components.ListRow
 import com.wangzan101.mika.ui.components.MikaButton
 import com.wangzan101.mika.ui.components.MikaSwitch
 import com.wangzan101.mika.ui.components.RowActions
+import com.wangzan101.mika.ui.components.RowChevron
+import com.wangzan101.mika.ui.components.RowValue
 import com.wangzan101.mika.ui.components.SearchField
 import com.wangzan101.mika.ui.components.SegmentedControl
 import com.wangzan101.mika.ui.components.SheetAction
@@ -53,9 +57,41 @@ private val SEGMENT_TAGS = Segment.entries.map { "segment-${it.name}" }
 private val KIND_GROUPS get() = listOf(MemoryKind.fact to tr(R.string.memory_about_you), MemoryKind.preference to tr(R.string.memory_preferences), MemoryKind.procedure to tr(R.string.memory_procedures))
 private val KIND_NAMES get() = listOf(tr(R.string.memory_fact), tr(R.string.memory_preferences), tr(R.string.memory_procedures))
 
-/** 设置 →「记忆与技能」:看得见、改得了、删得掉。分三段:记忆、技能(内容在 [SkillsSection])、待确认。 */
+private enum class MemoryDataPage { Home, WebSites, Routes }
+
+/** 记忆与数据:保留原来的记忆 / 技能 / 待确认主页,网站登录和操作路线从这里各进一层。 */
 @Composable
-fun MemoryScreen(vm: MemoryViewModel, onBack: () -> Unit) {
+fun MemoryDataScreen(
+    vm: MemoryViewModel,
+    webSites: WebSitesState,
+    routes: Int?,
+    onClearRoutes: () -> Unit,
+    onBack: () -> Unit,
+) {
+    var page by rememberSaveable { mutableStateOf(MemoryDataPage.Home) }
+    val toHome = { page = MemoryDataPage.Home }
+    if (page != MemoryDataPage.Home) BackHandler(onBack = toHome)
+    when (page) {
+        MemoryDataPage.Home -> MemoryScreen(
+            vm, onBack,
+            webSitesCount = webSites.sites.size, onOpenWebSites = { page = MemoryDataPage.WebSites },
+            routes = routes, onOpenRoutes = { page = MemoryDataPage.Routes },
+        )
+        MemoryDataPage.WebSites -> WebSitesScreen(webSites, onBack = toHome)
+        MemoryDataPage.Routes -> RoutesScreen(routes, onClear = onClearRoutes, onBack = toHome)
+    }
+}
+
+/** 设置 →「记忆与数据」:看得见、改得了、删得掉。分三段:记忆、技能(内容在 [SkillsSection])、待确认。 */
+@Composable
+fun MemoryScreen(
+    vm: MemoryViewModel,
+    onBack: () -> Unit,
+    webSitesCount: Int? = null,
+    onOpenWebSites: () -> Unit = {},
+    routes: Int? = null,
+    onOpenRoutes: () -> Unit = {},
+) {
     BackHandler(onBack = onBack)
     val ui by vm.ui.collectAsState()
     var editing by remember { mutableStateOf<Row?>(null) }
@@ -65,7 +101,7 @@ fun MemoryScreen(vm: MemoryViewModel, onBack: () -> Unit) {
     val searchable = ui.segment != Segment.Skills
 
     SubPage(
-        stringResource(R.string.memory_and_skills), onBack,
+        stringResource(R.string.settings_memory_data), onBack,
         right = if (searchable) ({
             BarIconButton(MikaIcons.Search, stringResource(R.string.search), { searching = !searching; if (!searching) vm.search("") })
         }) else null,
@@ -135,6 +171,25 @@ fun MemoryScreen(vm: MemoryViewModel, onBack: () -> Unit) {
             SwitchRow(stringResource(R.string.memory_auto), stringResource(R.string.memory_auto_sub), ui.switches.autoRemember) { on -> vm.setSwitches { it.copy(autoRemember = on) } }
             SwitchRow(stringResource(R.string.memory_learn), stringResource(R.string.memory_learn_sub), ui.switches.learnSkills) { on -> vm.setSwitches { it.copy(learnSkills = on) } }
         }
+        if (webSitesCount != null || routes != null) {
+            GroupLabel(stringResource(R.string.settings_saved_data))
+            GroupCard {
+                var first = true
+                fun take(): Boolean = first.also { first = false }
+                webSitesCount?.let {
+                    ListRow(MikaIcons.Globe, stringResource(R.string.settings_web_logins), first = take(), onClick = onOpenWebSites) {
+                        RowValue(trPlural(R.plurals.settings_count_sites, it))
+                        RowChevron()
+                    }
+                }
+                routes?.let {
+                    ListRow(MikaIcons.Route, stringResource(R.string.settings_routes), first = take(), onClick = onOpenRoutes) {
+                        RowValue(trPlural(R.plurals.settings_count_routes, it))
+                        RowChevron()
+                    }
+                }
+            }
+        }
         GroupCard {
             ListRow(MikaIcons.Close, stringResource(R.string.routes_clear_all), stringResource(R.string.memory_clear_sub), first = true, titleColor = MikaTheme.colors.bad, tone = TileTone.Bad, onClick = vm::requestClear)
         }
@@ -158,10 +213,10 @@ fun MemoryScreen(vm: MemoryViewModel, onBack: () -> Unit) {
         EditDialog(stringResource(R.string.memory_add), "", emptyList(), onDismiss = { adding = false }, withKind = true) { content, keywords, kind -> vm.add(kind, content, keywords); adding = false }
     }
     ui.message?.let { m ->
-        AlertDialog(onDismissRequest = vm::dismissMessage, text = { Text(m) }, confirmButton = { TextButton(vm::dismissMessage) { Text(stringResource(R.string.ok_got_it)) } })
+        MikaNoticeDialog(m, onDismiss = vm::dismissMessage)
     }
     if (ui.clearStage > 0) {
-        AlertDialog(
+        MikaDialog(
             onDismissRequest = vm::cancelClear,
             title = { Text(if (ui.clearStage == 1) stringResource(R.string.memory_clear_q) else stringResource(R.string.memory_clear_sure)) },
             text = { Text(if (ui.clearStage == 1) stringResource(R.string.memory_clear_body) else stringResource(R.string.memory_clear_final)) },
@@ -200,7 +255,7 @@ private fun EditDialog(
     var kind by remember { mutableIntStateOf(0) }
     var text by remember { mutableStateOf(content) }
     var words by remember { mutableStateOf(keywords.joinToString(" ")) }
-    AlertDialog(
+    MikaDialog(
         onDismissRequest = onDismiss,
         title = { Text(title) },
         text = {

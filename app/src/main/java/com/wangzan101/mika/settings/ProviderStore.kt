@@ -157,12 +157,16 @@ data class Provider(
         kind != ProviderConfig.Kind.ChatGpt && kind != ProviderConfig.Kind.Xai && models?.isEmpty() == true && model !in verifiedModels
 }
 
-/** 留空的窗口沿用所选模型配置，留空的触发点交给核心自动计算。 */
-data class ModelContextSettings(val windowTokens: Int? = null, val triggerTokens: Int? = null) {
+/** OkHttp 把超时换算为 Int 毫秒，秒数必须在换算后仍能存下。 */
+internal val MODEL_READ_TIMEOUT_SECONDS = 1..(Int.MAX_VALUE / 1_000)
+
+/** 留空的窗口沿用所选模型配置，留空的触发点交给核心自动计算，留空的读超时用全局默认(120 秒)。 */
+data class ModelContextSettings(val windowTokens: Int? = null, val triggerTokens: Int? = null, val readTimeoutSeconds: Int? = null) {
     fun limits(modelWindow: Int): ContextLimits = ContextLimits.of(windowTokens ?: modelWindow, triggerTokens)
 
     fun validFor(modelWindow: Int): Boolean = (windowTokens == null || windowTokens > 0) &&
-        (triggerTokens == null || (triggerTokens > 0 && triggerTokens == limits(modelWindow).trigger))
+        (triggerTokens == null || (triggerTokens > 0 && triggerTokens == limits(modelWindow).trigger)) &&
+        (readTimeoutSeconds == null || readTimeoutSeconds in MODEL_READ_TIMEOUT_SECONDS)
 }
 
 /** 一个用途选了什么:一个具体模型、用主模型,或不用(只有看图可以不用)。 */
@@ -198,6 +202,12 @@ data class RoleChoices(
         RoleChoice.Off, null -> null
     }
 
+    /** 两个用途是否解析到同一条配置;任一用途没配时不算相同。 */
+    fun sameModel(first: ModelRole, second: ModelRole): Boolean {
+        val a = resolve(first) ?: return false
+        return a == resolve(second)
+    }
+
     /** 有用途在用的配置 id;其余的配置没人用,会被删掉。 */
     val referenced: Set<String> get() = ModelRole.entries.mapNotNull(::resolve).toSet()
 
@@ -231,13 +241,15 @@ data class RoleChoices(
 /**
  * 建一个模型客户端时额外给的:[headers] 每个请求都带(客户端标识、会话号,见 [ClientHeaders]);
  * [maxOutputTokens] 限制回复长度(连接测试用),null 按适配器默认;[reasoningEffort] 是这个用途选的思考强度;
- * [thinkingTypes] 是模型列表写明这个模型接受的思考方式(见 [ListedModel.thinkingTypes]),没说为 null。
+ * [thinkingTypes] 是模型列表写明这个模型接受的思考方式(见 [ListedModel.thinkingTypes]),没说为 null;
+ * [readTimeoutSeconds] 是这条配置单独的读超时,慢速本地推理(#295)可调大,null 用全局默认(120 秒)。
  */
 data class ClientSetup(
     val headers: Map<String, String> = emptyMap(),
     val maxOutputTokens: Int? = null,
     val reasoningEffort: String? = null,
     val thinkingTypes: List<String>? = null,
+    val readTimeoutSeconds: Int? = null,
 )
 
 /** 「测试并保存」试调用(见 [ProviderStore.probe])的结果。 */
@@ -377,6 +389,7 @@ class ProviderStore(
             savedUntested = untested && verified.isEmpty() && found.verifiedModels.isEmpty() && listed.isEmpty(),
         )
         _providers.value = _providers.value.map { if (it.id == p.id) p else it }
+        repairUnavailableReasoningEfforts()
         if (apiKey != null) setKey(p.id, apiKey)
         writeConfig()
         return p
@@ -389,6 +402,7 @@ class ProviderStore(
         _providers.value = _providers.value.map {
             if (it.id == providerId) it.copy(models = models, savedUntested = false) else it
         }
+        repairUnavailableReasoningEfforts()
         writeConfig()
     }
 
@@ -559,7 +573,7 @@ class ProviderStore(
         ))
         modelFactory(configured, apiKey(cfg.id), listed?.endpoint, ClientSetup(
             headers(p?.sessionHeader, session), reasoningEffort = _roles.value.reasoningEffort(role),
-            thinkingTypes = listed?.thinkingTypes,
+            thinkingTypes = listed?.thinkingTypes, readTimeoutSeconds = settings?.readTimeoutSeconds,
         )).metered(source, usage)
     }
 
@@ -771,6 +785,8 @@ class ProviderStore(
      * 请求头四种协议一样带。回复上限([ClientSetup.maxOutputTokens])只给 Messages(本来就必填)和 generateContent;
      * Chat Completions 不给(有的模型只认 `max_tokens`、有的只认 `max_completion_tokens`,给错了整个请求被拒,
      * 连接测试就会误报),Responses 也不给(ChatGPT 套餐那条路不收 `max_output_tokens`)。
+     * 读超时([ClientSetup.readTimeoutSeconds])配置了的按它派生 client(共享连接池与代理),慢速本地推理可调大(#295);
+     * 没配置用全局默认(120 秒)。派生只在建模型时发生一次,不影响别的模型。
      */
     private fun buildModel(cfg: ProviderConfig, apiKey: String?, endpoint: ModelEndpoint?, setup: ClientSetup): ChatModel {
         val (kind, adapterBase) = adapterFor(cfg, endpoint)
@@ -778,6 +794,11 @@ class ProviderStore(
         val baseUrl = if (cfg.kind == ProviderConfig.Kind.Xai) {
             provider(cfg.providerId)?.baseUrl?.takeIf { it.isNotBlank() } ?: adapterBase
         } else adapterBase
+        val defaultHttp = http
+        val http = setup.readTimeoutSeconds
+            ?.takeIf { it in MODEL_READ_TIMEOUT_SECONDS }
+            ?.let { seconds -> defaultHttp.newBuilder().readTimeout(seconds.toLong(), TimeUnit.SECONDS).build() }
+            ?: defaultHttp
         return when (kind) {
             ProviderConfig.Kind.OpenAiCompat ->
                 OpenAiCompatModel(baseUrl, apiKey, cfg.model, cfg.capabilities, http, endpoint?.reasoningField, setup.headers,
@@ -833,8 +854,10 @@ class ProviderStore(
             keys = json.parseToJsonElement(keyFile.readText()).jsonObject.mapValues { it.value.jsonPrimitive.content }
         }
         migrate()
+        repairStaleContextDefaults()
         // 指向不存在的配置的选择退回默认,没人用的配置删掉;和文件里的不一样(含刚迁移的用途)才写回
         _roles.value = _roles.value.keepOnly(_configs.value.map { it.id }.toSet())
+        repairUnavailableReasoningEfforts()
         prune()
         if (configFile.isFile) {
             val text = configJson()
@@ -887,6 +910,39 @@ class ProviderStore(
         }
     }
 
+    /**
+     * 模型目录或客户端认识的档位变化后,旧选择不能继续原样发给服务端:能确定当前选项时,失效项退回默认;
+     * 没有档位元数据、协议本就不提供这项设置的旧配置不动,避免把仍可由服务端处理的值误删。
+     */
+    private fun repairUnavailableReasoningEfforts() {
+        val repaired = _roles.value.reasoningEfforts.mapNotNull { (role, effort) ->
+            val cfg = configFor(role) ?: return@mapNotNull null
+            val listed = provider(cfg.providerId)?.models?.firstOrNull { it.id == cfg.model }
+            val options = ReasoningOptions.of(cfg, listed)
+            if (options == null || effort in options.levels) role to effort else null
+        }.toMap()
+        _roles.value = _roles.value.copy(reasoningEfforts = repaired)
+    }
+
+    /**
+     * 预设的默认上下文更新后,把当年按旧默认存下的配置跟上去:仅当存着的正是旧默认、这家预设现在的默认已经不同、
+     * 用户没给这个模型单独写过窗口时才改;用户改过的任何值一律不动。只在 [load] 读入后跑一次,
+     * 改动随读入后的统一写回落盘。窗口按旧值 64k 时,压缩会频繁改写请求前缀,服务商的前缀缓存整段失效(见 [ProviderPresets])。
+     */
+    private fun repairStaleContextDefaults() {
+        val fixed = _configs.value.mapNotNull { c ->
+            val now = ProviderPresets.forBaseUrl(c.baseUrl)?.capabilities?.contextTokens
+                ?.takeIf { it != LEGACY_DEFAULT_CONTEXT_TOKENS }
+            if (now != null && c.capabilities.contextTokens == LEGACY_DEFAULT_CONTEXT_TOKENS &&
+                provider(c.providerId)?.contextSettings?.get(c.model)?.windowTokens == null
+            ) c.id to now else null
+        }.toMap()
+        if (fixed.isEmpty()) return
+        _configs.value = _configs.value.map { c ->
+            fixed[c.id]?.let { window -> c.copy(capabilities = c.capabilities.copy(contextTokens = window)) } ?: c
+        }
+    }
+
     private fun providerOf(o: JsonObject) = Provider(
         id = o.str("id"),
         name = o.str("name"),
@@ -898,7 +954,8 @@ class ProviderStore(
         verifiedModels = o["verifiedModels"]?.jsonArray?.map { it.jsonPrimitive.content }?.toSet().orEmpty(),
         contextSettings = (o["contextSettings"] as? JsonObject).orEmpty().mapNotNull { (model, raw) ->
             val entry = raw as? JsonObject ?: return@mapNotNull null
-            val settings = ModelContextSettings(entry.positiveInt("windowTokens"), entry.positiveInt("triggerTokens"))
+            val settings = ModelContextSettings(entry.positiveInt("windowTokens"), entry.positiveInt("triggerTokens"),
+                entry.positiveInt("readTimeoutSeconds")?.takeIf { it in MODEL_READ_TIMEOUT_SECONDS })
             if (settings == ModelContextSettings()) null else model to settings
         }.toMap(),
         visionOverrides = (o["visionOverrides"] as? JsonObject).orEmpty().mapNotNull { (model, raw) ->
@@ -985,6 +1042,7 @@ class ProviderStore(
                             for ((model, settings) in p.contextSettings) putJsonObject(model) {
                                 settings.windowTokens?.let { put("windowTokens", it) }
                                 settings.triggerTokens?.let { put("triggerTokens", it) }
+                                settings.readTimeoutSeconds?.let { put("readTimeoutSeconds", it) }
                             }
                         }
                         if (p.visionOverrides.isNotEmpty()) putJsonObject("visionOverrides") {
@@ -1071,6 +1129,9 @@ class ProviderStore(
         private const val CONFIG_FILE = "providers.json"
         private const val KEY_FILE = "provider-keys.json"
         private const val CHATGPT_HOST_FILE = "chatgpt-host.json"
+
+        /** 各家预设沿用的旧上下文默认值;预设改了默认后,存着这个值的配置由 [repairStaleContextDefaults] 跟上去。 */
+        private const val LEGACY_DEFAULT_CONTEXT_TOKENS = 64_000
 
         /** `uses` 里每个用途的 `use`:具体模型(另记 `config`)、用主模型、不用。旧版本的文件里只有 `roles`。 */
         private const val USE_MODEL = "model"

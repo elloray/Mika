@@ -8,7 +8,7 @@ window = "1.3.0"
 junit = "4.13.2"
 okhttp = "4.12.0"
 serializationJson = "1.7.3"
-coroutines = "1.9.0"
+coroutines = "1.10.2"
 androidxTestRunner = "1.7.0"
 androidxTestExtJunit = "1.3.0"
 espresso = "3.7.0"
@@ -18,6 +18,7 @@ xz = "1.10"
 conscrypt = "2.7.0"
 commonmark = "0.30.1"
 mlkitTextRecognition = "16.0.1"
+zxing = "3.5.3"
 
 [libraries]
 protobuf-lite = { module = "com.google.protobuf:protobuf-javalite", version.ref = "protobuf" }
@@ -48,6 +49,7 @@ commonmark-ext-gfm-tables = { module = "org.commonmark:commonmark-ext-gfm-tables
 commonmark-ext-gfm-strikethrough = { module = "org.commonmark:commonmark-ext-gfm-strikethrough", version.ref = "commonmark" }
 mlkit-text-recognition = { module = "com.google.mlkit:text-recognition", version.ref = "mlkitTextRecognition" }
 mlkit-text-recognition-chinese = { module = "com.google.mlkit:text-recognition-chinese", version.ref = "mlkitTextRecognition" }
+zxing-core = { module = "com.google.zxing:core", version.ref = "zxing" }
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test-junit", version.ref = "kotlin" }
 
 [plugins]

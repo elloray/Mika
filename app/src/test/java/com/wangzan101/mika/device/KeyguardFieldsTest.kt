@@ -36,6 +36,14 @@ class KeyguardFieldsTest {
         assertFalse(KeyguardFields.matches(CredentialKind.Pin, id, "android.widget.EditText", true, true, false, untyped = true, digitPad = false))
         // 声明了文字输入类型的密码框,旁边有数字也还是密码框
         assertTrue(KeyguardFields.matches(CredentialKind.Password, id, "android.widget.EditText", true, true, false, untyped = false, digitPad = true))
+        assertFalse(KeyguardFields.matches(CredentialKind.Pin, id, "android.widget.EditText", true, true, false, untyped = false, digitPad = true))
+    }
+
+    @Test fun patternViewsNeverBecomeCredentialFields() {
+        assertFalse(KeyguardFields.matches(CredentialKind.Pin, "com.android.systemui:id/lockPatternView",
+            "android.view.View", false, false, false, untyped = true, digitPad = true))
+        assertFalse(KeyguardFields.matches(CredentialKind.Password, "com.android.systemui:id/lockPatternView",
+            "android.view.View", false, false, false, untyped = true, digitPad = true))
     }
 
     @Test fun digitKeysAreSingleDigitsOptionallyWithLetters() {

@@ -18,12 +18,21 @@ data class RestoreWish(val revive: Boolean, val accessibility: Boolean) {
         fun fromFlags(flags: Int) = RestoreWish(flags and REVIVE != 0, flags and ACCESSIBILITY != 0)
 
         /**
-         * 胶囊设成一直显示,或有任务在跑,才值得在被杀后拉起来;否则用户亲手强行停止就让它停着。
+         * 异常死亡时恢复用户还在用的能力:胶囊一直显示、任务在跑、或无障碍服务已打开。
+         * 最后一种也把服务授权恢复回来,不能只在常驻胶囊或有任务时才修。
+         * 用户明确退出(包括清掉最近任务)后,[userExited] 让心愿为空,直到下次手动打开 Mika。
          * 无障碍服务只在用户没在 Mika 里关掉「替我打开无障碍」([accessibilityWanted])、
          * 而且此刻系统列表里确实有 Mika([accessibilityOn])时才写回:用户趁 Mika 活着在系统设置里关掉的,不替他打开。
          */
-        fun of(capsuleAlways: Boolean, taskRunning: Boolean, accessibilityWanted: Boolean, accessibilityOn: Boolean): RestoreWish {
-            val revive = capsuleAlways || taskRunning
+        fun of(
+            capsuleAlways: Boolean,
+            taskRunning: Boolean,
+            accessibilityWanted: Boolean,
+            accessibilityOn: Boolean,
+            userExited: Boolean = false,
+        ): RestoreWish {
+            if (userExited) return NONE
+            val revive = capsuleAlways || taskRunning || accessibilityOn
             return RestoreWish(revive, revive && accessibilityWanted && accessibilityOn)
         }
     }
@@ -62,7 +71,7 @@ data class HelperRestoreReport(val lastRestoredAtMs: Long, val recent: Int, val 
 
 /**
  * 助手一侧:Mika 的进程没了、过了 [GRACE_MS] 还没回来时,决定要不要把它拉起来。
- * 只看 Mika 最后交来的 [RestoreWish];[windowMs] 里最多拉 [maxAttempts] 次,拉起来又马上死掉就停手,等窗口过去。
+ * 只看 Mika 最后交来的 [RestoreWish] 和系统是否把包标成强停;[windowMs] 里最多拉 [maxAttempts] 次,拉起来又马上死掉就停手,等窗口过去。
  */
 class HelperRestorePolicy(
     private val maxAttempts: Int = MAX_ATTEMPTS,
@@ -70,8 +79,10 @@ class HelperRestorePolicy(
 ) {
     enum class Decision {
         Restore,
-        /** Mika 没要(胶囊不是一直显示、也没有任务在跑)。 */
+        /** Mika 没要(用户明确退出了,或没有还在用、需要恢复的能力)。 */
         NotWanted,
+        /** 用户在系统里强行停止了 Mika;这次死亡不能像异常死亡一样自动拉回。 */
+        ForceStopped,
         /** 等的这一会儿里 Mika 自己回来了(或正在交接)。 */
         AppBack,
         /** 最近拉得太勤:Mika 一拉起来就又死,不再拉。 */
@@ -83,8 +94,9 @@ class HelperRestorePolicy(
     private var gaveUpAt = 0L
 
     @Synchronized
-    fun decide(wish: RestoreWish, appBack: Boolean, now: Long): Decision {
+    fun decide(wish: RestoreWish, appBack: Boolean, now: Long, forceStopped: Boolean = false): Decision {
         if (appBack) return Decision.AppBack
+        if (forceStopped) return Decision.ForceStopped
         if (!wish.revive) return Decision.NotWanted
         prune(now)
         if (attempts.size >= maxAttempts) {

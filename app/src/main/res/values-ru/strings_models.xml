@@ -4,6 +4,7 @@
     <string name="model_context_note">Пустые поля заполняются автоматически. Настройки применяются со следующей задачи для всех ролей, использующих этого провайдера и эту модель.</string>
     <string name="model_context_window">Контекстное окно (токены)</string>
     <string name="model_context_trigger">Порог сжатия (токены)</string>
+    <string name="model_context_read_timeout">Таймаут чтения (секунды)</string>
     <string name="model_context_auto">Авто · %1$d</string>
     <string name="model_context_integer">Введите положительное целое число.</string>
     <string name="model_context_range">Допустимый диапазон (токены) · %1$d–%2$d</string>

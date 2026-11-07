@@ -154,7 +154,7 @@ fun RowValue(text: String, tone: ValueTone = ValueTone.Plain) {
 /** 行尾的小箭头:点进去还有一页。 */
 @Composable
 fun RowChevron() {
-    Icon(MikaIcons.Chevron, null, Modifier.size(MikaSize.SmallIcon), tint = MikaTheme.colors.ink3)
+    DirectionalIcon(MikaIcons.Chevron, null, Modifier.size(MikaSize.SmallIcon), tint = MikaTheme.colors.ink3)
 }
 
 /** 单选行:左边圆圈,选中时实心强调色。分隔线从文字处开始。 */

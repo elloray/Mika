@@ -52,6 +52,24 @@ class HistoryPrunerTest {
         assertTrue("@e1" in results(h).first { it.callId == "c1" }.content)
     }
 
+    @Test fun oldScreenDropsTreeAndOtherLargeStructuresNotJustElements() {
+        val long = "x".repeat(500)
+        val structured = listOf(
+            Message(Role.Assistant, listOf(Part.ToolCall("structured", "phone_observe", "{}")), Author.Mika),
+            Message(Role.Tool, listOf(Part.ToolResult("structured",
+                """{"ok":true,"snapshotId":"old","elements":$big,"tree":[{"id":1,"nodes":[{"role":"TextView","text":"$long"}]}],"screenMap":{"rows":["$long"]}}""",
+                false)), Author.Mika),
+        )
+        // c2 是线前保留的最近全屏,因此 structured 必须按旧界面缩短。
+        val h = listOf(task) + structured + obs("c2") + (1..6).flatMap { tap("t$it") }
+        val old = results(HistoryPruner.prune(h, TOOLS, cut)).single { it.callId == "structured" }.content
+        assertTrue(old, "\"snapshotId\":\"old\"" in old && "\"ok\":true" in old)
+        assertTrue(old, "\"elements\":\"${HistoryPruner.OMITTED}\"" in old)
+        assertTrue(old, "\"tree\":\"${HistoryPruner.OMITTED}\"" in old)
+        assertTrue(old, "\"screenMap\":\"${HistoryPruner.OMITTED}\"" in old)
+        assertTrue("old tree/read-aid payload survived pruning", long !in old)
+    }
+
     @Test fun smallResultsAndHeadUntouched() {
         val h = listOf(task) + (1..8).flatMap { obs("c$it") + tap("t$it") }
         val out = HistoryPruner.prune(h, TOOLS, cut)

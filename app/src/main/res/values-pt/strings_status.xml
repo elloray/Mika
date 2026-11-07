@@ -57,6 +57,7 @@
     <string name="turn_on_go">Ativar</string>
     <string name="banner_a11y_not_running">O serviço de acessibilidade não está em execução</string>
     <string name="banner_a11y_not_running_detail">Desative e ative de novo</string>
+    <string name="banner_a11y_restricted_detail">Permita configurações restritas nas informações do app Mika</string>
     <string name="banner_a11y_locked">O celular não foi desbloqueado desde que ligou, então o serviço de acessibilidade não está em execução</string>
     <string name="banner_a11y_locked_detail">Ele volta quando você desbloquear o celular, sem nada para mudar nas configurações</string>
     <string name="banner_no_model">Nenhum modelo utilizável ainda</string>
@@ -72,6 +73,8 @@
     <string name="explain_a11y_off">Ative o serviço de acessibilidade</string>
     <string name="explain_a11y_off_body">O Mika usa o serviço de acessibilidade para ler e controlar a própria tela virtual. Encontre o Mika em Acessibilidade nas configurações do sistema (em alguns celulares fica em “Apps baixados” ou “Serviços instalados”) e ative.</string>
     <string name="explain_a11y_not_running_body">As configurações do sistema mostram o serviço de acessibilidade do Mika como ativado, mas ele não está realmente em execução (isso costuma acontecer depois que o Mika é forçado a parar). Desative o Mika nas configurações de acessibilidade e ative de novo.</string>
+    <string name="explain_a11y_restricted_off_body">Se o Android impedir a ativação do Mika, abra as informações do app e selecione «Permitir configurações restritas» no menu, se a opção estiver disponível. Depois, volte a Acessibilidade e ative o Mika.</string>
+    <string name="explain_a11y_restricted_body">O Android pode impedir que apps instalados fora de uma loja se conectem à acessibilidade até que as configurações restritas sejam permitidas. Abra as informações do Mika, abra o menu e escolha «Permitir configurações restritas», se disponível. Depois, desative o Mika e ative-o novamente em Acessibilidade.</string>
     <string name="explain_no_model">Adicione um modelo</string>
     <string name="explain_no_model_body">O Mika precisa de um modelo de linguagem grande com chamada de ferramentas para pensar e agir. Basta digitar a URL do provedor, o nome do modelo e uma chave de API.</string>
     <string name="explain_focus">Recomendado Android 14 ou superior</string>

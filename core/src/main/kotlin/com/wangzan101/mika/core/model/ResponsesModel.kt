@@ -199,12 +199,13 @@ class ResponsesModel(
         err?.let { errorOf(it.code, it.message, it.param) }
             // 账号登录已经核对过身份:没有认得出的错误代码的 403 是档位不够,不当成 Key 不对或某个模型没开通
             ?: (if (status == 403 && accountLogin != null) ModelError.AccountPlanNotAllowed(accountLogin, err?.message.orEmpty().take(200)) else null)
+            ?: ModelHttp.reasoningEffortRejected(status, body)
             ?: ModelAccessErrors.of(status, body, model) ?: when {
             status == 401 -> ModelError.Auth()
             status == 403 -> if (chatGptPlan) ModelError.ChatGptNotEligible(err?.message.orEmpty().take(200)) else ModelError.Auth()
             status == 429 -> if (chatGptPlan) ModelError.ChatGptLimitReached() else ModelError.RateLimited(HttpSupport.retryAfterMs(retryAfter))
             status == 402 -> ModelError.QuotaExceeded()
-            status == 400 && (body.contains("context_length") || body.contains("maximum context")) -> ModelError.ContextTooLong()
+            ModelHttp.contextTooLong(status, body) -> ModelError.ContextTooLong()
             status == 404 -> ModelError.ModelNotFound(model, ModelAccessErrors.jsonDetail(body))
             status in 500..599 -> ModelError.Server(status)
             else -> ModelError.BadResponse("HTTP $status ${body.take(200)}")
@@ -232,8 +233,8 @@ private class ResponsesStream(
     private var final: JsonObject? = null
     private var incomplete = false
 
-    fun accept(data: String) {
-        if (data == "[DONE]") return
+    fun accept(data: String): Boolean {
+        if (data == "[DONE]") return false
         val root = try { json.parseToJsonElement(data) as? JsonObject } catch (e: Exception) { null }
             ?: throw ModelError.BadResponse("流式响应不是合法 JSON")
         when (root.str("type")) {
@@ -250,6 +251,7 @@ private class ResponsesStream(
             "response.failed" -> throw failure((root["response"] as? JsonObject)?.get("error") as? JsonObject)
             "error" -> throw failure(root["error"] as? JsonObject ?: root)
         }
+        return final != null
     }
 
     private fun failure(e: JsonObject?): ModelError {

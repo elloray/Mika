@@ -5,6 +5,7 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.os.SystemClock
+import android.util.Log
 import com.wangzan101.mika.cap.phone.a11y.ScreenAccessibility
 import com.wangzan101.mika.cap.phone.PhoneServices
 import com.wangzan101.mika.core.shell.BuiltinShellControl
@@ -22,8 +23,10 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.transformWhile
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
 
 /**
  * 一次配对的全过程:找配对窗口、无障碍开着时自己读配对码([PairingCodeReader])、
@@ -54,6 +57,7 @@ class PairingCoordinator(context: Context, private val control: BuiltinShellCont
 
     /** 开始一次配对:状态一变成「正在配对」就结束重新配对的等待(免得被运行中的旧状态抢先判成已完成)和填码后的等待([submitted])。 */
     suspend fun pair(code: String, port: Int?) = coroutineScope {
+        Log.i(TAG, "pairing with ${if (port != null) "port $port" else "the found port"}")
         val job = launch(start = CoroutineStart.UNDISPATCHED) { control.startPairing(code, port) }
         _repairing.value = false
         submitted = false
@@ -65,7 +69,11 @@ class PairingCoordinator(context: Context, private val control: BuiltinShellCont
     fun begin() {
         deadline.extend()
         control.startDiscovery()
-        if (watch?.isActive == true) return
+        if (watch?.isActive == true) {
+            Log.i(TAG, "already watching; deadline extended")
+            return
+        }
+        Log.i(TAG, "watching for pairing (status ${control.status.value}, accessibility ${ScreenAccessibility.instance.value != null})")
         watch = scope.launch {
             val reader = launch { PairingCodeReader.run(app, control, this@PairingCoordinator) }
             val notices = launch {
@@ -79,11 +87,13 @@ class PairingCoordinator(context: Context, private val control: BuiltinShellCont
                     PairingNotice.follow(control.status.value, d, r, pending)
                 }
                     .distinctUntilChanged()
+                    .onEach { (notice, done) -> Log.i(TAG, "notice ${notice?.let { it::class.simpleName } ?: "none"} (discovery ${control.pairingDiscovery.value}, status ${control.status.value})${if (done) "; done" else ""}") }
                     .transformWhile { emit(it.first); !it.second }
                     // 状态一变就丢掉还没到点的弹出和再次提醒
                     .collectLatest { notice -> notice?.let { post(it) } }
             }
             if (!deadline.await(notices)) {
+                Log.i(TAG, "stopped watching: no pairing within ${WINDOW_MS / 60_000} min")
                 notices.cancel()
                 cancelNotice()
             }
@@ -106,6 +116,7 @@ class PairingCoordinator(context: Context, private val control: BuiltinShellCont
     }
 
     private fun show(notice: PairingNotice) {
+        Log.i(TAG, "show notification ${notice::class.simpleName}")
         shown = notice
         PairingNotifier.show(app, notice)
     }
@@ -117,6 +128,7 @@ class PairingCoordinator(context: Context, private val control: BuiltinShellCont
 
     @Synchronized
     fun end() {
+        if (watch?.isActive == true) Log.i(TAG, "stopped watching")
         watch?.cancel()
         watch = null
         _repairing.value = false
@@ -124,31 +136,52 @@ class PairingCoordinator(context: Context, private val control: BuiltinShellCont
         cancelNotice()
     }
 
-    /** 通知或引导页里填的码。不是 6 位数字就原地提示重填、不去试;对的话马上换成「正在配对」,免得输入框一直转圈。 */
-    fun submit(raw: String, port: Int?): Boolean {
+    /**
+     * 通知或引导页里填的码。不是 6 位数字就原地提示重填、不去试,返回 null;对的话马上换成「正在配对」,免得输入框一直转圈,
+     * 返回这次配对(通知那边据此等它做完再结束广播,见 [PairingCodeInput])。
+     */
+    fun submit(raw: String, port: Int?): Job? {
         val code = PairingCode.normalize(raw)
         if (code == null) {
+            Log.i(TAG, "entered code is not 6 digits")
             show(PairingNotice.EnterCode(port, PhoneSetupCopy.NOTIFY_CODE_INVALID))
-            return false
+            return null
         }
         submitted = true
         begin()
         show(PairingNotice.Working)
-        scope.launch { pair(code, port) }
-        return true
+        return scope.launch { pair(code, port) }
     }
 
     private companion object {
+        const val TAG = "MikaPairing"
         /** 配对窗口开着的时间有限;从最后一次 [begin] 起超过这么久没配上就不再找,下次 [begin] 再开始。 */
         const val WINDOW_MS = 10 * 60_000L
     }
 }
 
-/** 通知输入框的落点。 */
+/**
+ * 通知输入框的落点。系统可能冻结后台的 Mika:收到广播时先解冻它,广播一结束又可能马上冻住,
+ * 配对停在半路。所以等配对做完(或最多 [HOLD_MS])再结束广播,这段时间进程算在处理广播,不会被当成后台冻住。
+ */
 open class PairingCodeInput : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         val code = RemoteInput.getResultsFromIntent(intent)?.getCharSequence(PairingNotifier.KEY_CODE)?.toString() ?: return
         val port = intent.getIntExtra(PairingNotifier.EXTRA_PORT, -1).takeIf { it > 0 }
-        PhoneServices.of(context).pairing.submit(code, port)
+        val pairing = PhoneServices.of(context).pairing
+        val job = pairing.submit(code, port) ?: return
+        val pending = goAsync()
+        pairing.scope.launch {
+            try {
+                withTimeoutOrNull(HOLD_MS) { job.join() }
+            } finally {
+                pending.finish()
+            }
+        }
+    }
+
+    private companion object {
+        /** 广播最短 10 秒不结束就算无响应,留余量。够找配对端口(5 秒)再配对;之后的连接被冻住也只是晚一点,配对已经记下了。 */
+        const val HOLD_MS = 8_000L
     }
 }

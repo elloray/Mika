@@ -23,8 +23,11 @@ class HttpRequest(
     val query: String = "",
     /** 失败冷却按它记。本地监听就是对方地址;经网关转发的是网关看到的调用方地址,与本地地址分开记。 */
     val source: String = remote.hostAddress ?: "?",
+    /** 已认证访问令牌的不可逆归属摘要;未经过 RemoteAccess 的适配器调用只使用兼容作用域。 */
+    val accessOwner: String? = null,
 ) {
     fun header(name: String): String? = headers[name.lowercase()]
+    fun ownedBy(owner: String) = HttpRequest(method, path, headers, body, remote, query, source, owner)
 }
 
 class HttpResponse(val status: Int, val body: ByteArray = ByteArray(0), val headers: Map<String, String> = emptyMap()) {
@@ -75,7 +78,7 @@ class MiniHttpServer(
         running.set(false)
         runCatching { server?.close() }
         server = null
-        open.toList().forEach { runCatching { it.close() } }
+        open.forEach { runCatching { it.close() } }
         open.clear()
     }
 
@@ -110,7 +113,8 @@ class MiniHttpServer(
                     return
                 }
                 val response = try { handler(request) } catch (e: Exception) { onError(e); HttpResponse.empty(500) }
-                val close = request.header("connection").equals("close", ignoreCase = true)
+                val close = request.header("connection")?.split(',')
+                    ?.any { it.trim().equals("close", ignoreCase = true) } == true
                 write(output, response, close)
                 if (close) return
             }
@@ -210,7 +214,8 @@ class MiniHttpServer(
             val out = ByteArrayOutputStream()
             while (true) {
                 val size = readLine(input).substringBefore(';').trim().toIntOrNull(16) ?: throw HttpProtocolException(400, "bad chunk")
-                if (size < 0 || out.size() + size > MAX_BODY) throw HttpProtocolException(413, "body too large")
+                // 按剩余额度检查,避免相加溢出后放行超大分块并尝试分配内存。
+                if (size < 0 || size > MAX_BODY - out.size()) throw HttpProtocolException(413, "body too large")
                 if (size == 0) {
                     while (readLine(input).isNotEmpty()) Unit
                     return out.toByteArray()

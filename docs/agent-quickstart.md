@@ -63,6 +63,16 @@ py -3 "<技能目录>\mika\scripts\mika_cli.py" --version
 
 状态 `unauthorized`：让用户在手机上允许 USB 调试。`offline`：让用户重新插拔数据线。读不到连接信息（`connection_info`）：让用户解锁手机、打开一次 Mika，再运行 `connect`。
 
+## 导出运行记录
+
+任务卡住或结果不对时，把这一轮的脱敏记录拉下来（和手机「查看过程」同一份事件，默认不含截图），再对照 `task status`：
+
+```sh
+mika task export TASK_OR_RUN_ID --json
+```
+
+头里的 `task_id`、`conversation_id`、run_id 写明对应关系。`partial: true` 表示还在进行。未知编号是明确错误，不是一份空记录。
+
 ## 注意
 
 - 不提交手机任务，不打印、不回贴令牌。

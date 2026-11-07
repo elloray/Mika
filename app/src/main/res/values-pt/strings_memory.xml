@@ -78,4 +78,14 @@
     <string name="skills_archived">Arquivada</string>
     <string name="skills_archive">Arquivar</string>
     <string name="skills_changed_lines">Linhas alteradas:</string>
+    <string name="skills_get">Obter habilidades</string>
+    <string name="skills_share">Compartilhar habilidade</string>
+    <string name="skills_import">Importar uma habilidade</string>
+    <string name="skills_import_sub">Cole uma habilidade que alguém compartilhou com você</string>
+    <string name="skills_import_hint">Ela vai primeiro para “Para revisar” e só é usada depois que você ler e aceitar.</string>
+    <string name="skills_import_confirm">Importar</string>
+    <string name="skill_imported">Importada. Revise em “Para revisar”.</string>
+    <string name="skills_imported">Importada</string>
+    <string name="skill_builtin_name">Já existe uma habilidade integrada com esse nome. Mude o nome e tente de novo.</string>
+    <string name="skill_draft_pending">Já há um rascunho com esse nome esperando revisão. Resolva esse primeiro.</string>
 </resources>

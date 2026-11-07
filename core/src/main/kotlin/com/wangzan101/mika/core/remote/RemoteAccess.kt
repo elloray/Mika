@@ -42,9 +42,7 @@ class RemoteAccess(
                 return Verdict.Reject(429, "Too many failed attempts", mapOf("Retry-After" to wait.toString()))
             }
         }
-        val given = req.header("authorization")?.let { h ->
-            if (h.length > 7 && h.substring(0, 7).equals("Bearer ", ignoreCase = true)) h.substring(7).trim() else null
-        }
+        val given = presented(req)
         val loopback = if (req.remote.isLoopbackAddress) loopbackToken() else null
         // 两个都比,不因对上了第一个就少比一次。
         if (given == null || !(matches(given, token()) or matches(given, loopback))) {
@@ -61,7 +59,11 @@ class RemoteAccess(
         is Verdict.Reject -> if (req.path == McpRpc.PATH)
             McpRpc.transportError(verdict.status, verdict.message, verdict.headers)
         else RemoteTaskApi.error(verdict.status, "access_denied", verdict.message, verdict.headers)
-        Verdict.Pass -> next(req)
+        Verdict.Pass -> next(req.ownedBy(RemoteOwnership.of(requireNotNull(presented(req)))))
+    }
+
+    private fun presented(req: HttpRequest) = req.header("authorization")?.let { h ->
+        if (h.length > 7 && h.substring(0, 7).equals("Bearer ", ignoreCase = true)) h.substring(7).trim() else null
     }
 
     private fun matches(given: String, expected: String?) = !expected.isNullOrEmpty() && same(given, expected)

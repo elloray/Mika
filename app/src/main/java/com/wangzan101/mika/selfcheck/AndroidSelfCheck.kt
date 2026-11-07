@@ -14,6 +14,7 @@ import androidx.webkit.WebViewAssetLoader
 import androidx.webkit.WebViewCompat
 import com.wangzan101.mika.BuildConfig
 import com.wangzan101.mika.R
+import com.wangzan101.mika.i18n.AppLanguage
 import com.wangzan101.mika.i18n.tr
 import com.wangzan101.mika.cap.phone.PhoneServices
 import com.wangzan101.mika.cap.phone.a11y.AndroidScreen
@@ -169,7 +170,7 @@ class AndroidSelfCheck(context: Context, private val status: () -> SystemStatus)
         val m = metrics()
         // 建屏不中途打断:建好的一定记下,收尾时放掉
         val made = withContext(NonCancellable + Dispatchers.IO) {
-            runCatching { AgentDisplay(sh, m.widthPixels, m.heightPixels, m.densityDpi) }.onSuccess { display = it }
+            runCatching { AgentDisplay(sh, m.widthPixels, m.heightPixels, m.densityDpi, app.getSystemService(DisplayManager::class.java)) }.onSuccess { display = it }
         }
         val d = made.getOrElse { return CheckOutcome.fail("could not be created (${it.javaClass.simpleName})", Advice.DisplayFailed) }
         val flags = runCatching { app.getSystemService(DisplayManager::class.java).getDisplay(d.displayId)?.flags }.getOrNull()
@@ -381,7 +382,10 @@ class AndroidSelfCheck(context: Context, private val status: () -> SystemStatus)
             }
         }
         val w = built.getOrElse { return CheckOutcome.fail("browser could not start (${it.javaClass.simpleName})", Advice.WebFailed) }
-        val nav = w.screen.navigate(WEB_PAGE, newTab = false)
+        val isArabic = AppLanguage.resources(app).configuration.locales[0].language == "ar"
+        val pageUrl = if (isArabic) WEB_PAGE_AR else WEB_PAGE
+        val clickedText = if (isArabic) WEB_CLICKED_AR else WEB_CLICKED
+        val nav = w.screen.navigate(pageUrl, newTab = false)
         if (!nav.loaded) return CheckOutcome.fail("local page did not load (${nav.netError ?: "not loaded"})", Advice.WebFailed)
         val read = w.screen.readPage(MAX_CHARS, 0, scrollLazy = false).text
         if (!SelfCheckText.contains(read, WEB_MARKER)) return CheckOutcome.fail("page loaded but its text was not read", Advice.WebFailed)
@@ -389,7 +393,7 @@ class AndroidSelfCheck(context: Context, private val status: () -> SystemStatus)
         val button = snap.elements.firstOrNull { it.resourceId == WEB_BUTTON }
             ?: return CheckOutcome.fail("text read; button not found", Advice.WebFailed)
         w.screen.tapRef(button.ref, snap.snapshotId)
-        val clicked = poll { SelfCheckText.contains(w.screen.readPage(MAX_CHARS, 0, scrollLazy = false).text, WEB_CLICKED) }
+        val clicked = poll { SelfCheckText.contains(w.screen.readPage(MAX_CHARS, 0, scrollLazy = false).text, clickedText) }
         return if (clicked) CheckOutcome.pass("local page loaded, text read, button tap verified")
         else CheckOutcome.fail("text read; button tap did not change the page", Advice.WebFailed)
     }
@@ -604,8 +608,10 @@ class AndroidSelfCheck(context: Context, private val status: () -> SystemStatus)
         const val SEEN_CHARS = 24
 
         const val WEB_PAGE = "https://appassets.androidplatform.net/assets/selfcheck/page.html"
+        const val WEB_PAGE_AR = "https://appassets.androidplatform.net/assets/selfcheck/page-ar.html"
         const val WEB_MARKER = "SELFCHECK-READ-OK"
         const val WEB_BUTTON = "#selfcheck-button"
         const val WEB_CLICKED = "Clicked 1"
+        const val WEB_CLICKED_AR = "عدد النقرات: 1"
     }
 }

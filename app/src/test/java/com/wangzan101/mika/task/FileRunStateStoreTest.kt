@@ -1,6 +1,7 @@
 package com.wangzan101.mika.task
 
 import com.wangzan101.mika.core.run.RunId
+import com.wangzan101.mika.core.run.ChannelPeer
 import com.wangzan101.mika.core.run.RunPhase
 import com.wangzan101.mika.core.run.StoredRun
 import org.junit.Assert.assertEquals
@@ -16,12 +17,18 @@ class FileRunStateStoreTest {
             val first = FileRunStateStore(file)
             first.save(StoredRun(RunId("run-1"), "thread-1", "任务原话", RunPhase.Aftercare,
                 reply = "回答原文", deliveryId = "delivery-1", roundInProgress = true,
-                triggerWindowKey = "plan:1000", runSucceeded = false))
+                triggerWindowKey = "plan:1000", runSucceeded = false,
+                channelPeer = ChannelPeer("wechat", "owner", "thread-1"), channelMessageId = "message-1",
+                userText = "明天会下雨吗", followUpId = "followup-1"))
             val reopened = FileRunStateStore(file)
             assertEquals("回答原文", reopened.get(RunId("run-1"))?.reply)
             assertEquals("delivery-1", reopened.get(RunId("run-1"))?.deliveryId)
             assertEquals("plan:1000", reopened.get(RunId("run-1"))?.triggerWindowKey)
             assertEquals(false, reopened.get(RunId("run-1"))?.runSucceeded)
+            assertEquals(ChannelPeer("wechat", "owner", "thread-1"), reopened.get(RunId("run-1"))?.channelPeer)
+            assertEquals("message-1", reopened.get(RunId("run-1"))?.channelMessageId)
+            assertEquals("明天会下雨吗", reopened.get(RunId("run-1"))?.userText)
+            assertEquals("followup-1", reopened.get(RunId("run-1"))?.followUpId)
             assertEquals(1, reopened.interruptUnfinished().size)
             assertEquals(RunPhase.Interrupted, FileRunStateStore(file).get(RunId("run-1"))?.phase)
             // 账本只记阶段与交付:不存发给模型的上下文(图片、原始参数、密钥都不落盘)
@@ -39,6 +46,7 @@ class FileRunStateStoreTest {
                 """"context":{"messages":[],"summary":null,"userOriginals":[],"atMs":1}}]""")
             val store = FileRunStateStore(file)
             assertEquals(true, store.get(RunId("run-1"))?.roundInProgress)
+            assertEquals(null, store.get(RunId("run-1"))?.userText)
             store.save(store.get(RunId("run-1"))!!.copy(phase = RunPhase.Ended))
             assertFalse(file.readText().contains("\"context\""))
         } finally {

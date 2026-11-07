@@ -19,7 +19,7 @@ fun interface KeyingMaterialExporter {
 
 /**
  * adb 用的 TLS 1.3:双方都出示自签名证书,互不校验证书链。
- * 配对时身份由 SPAKE2 绑定到导出密钥上;连接时由设备比对我们证书里的公钥。只连本机回环地址。
+ * 配对时身份由 SPAKE2 绑定到导出密钥上;连接时由设备比对我们证书里的公钥。只连本机自己的地址。
  */
 class AdbTls(
     val identity: AdbIdentity,
@@ -32,23 +32,24 @@ class AdbTls(
         ctx
     }
 
-    /** 新建 TCP 连接并完成 TLS 握手(客户端)。 */
-    fun connect(host: String, port: Int, timeoutMs: Int): SSLSocket {
+    /** 用调用方已核对的 [target] 新建 TCP 连接并完成 TLS 握手;不重新解析主机名。 */
+    fun connect(target: InetSocketAddress, timeoutMs: Int): SSLSocket {
         val plain = Socket()
         try {
             plain.tcpNoDelay = true
-            plain.connect(InetSocketAddress(host, port), timeoutMs)
+            plain.connect(target, timeoutMs)
             plain.soTimeout = timeoutMs
         } catch (e: Exception) {
             plain.close()
             throw e
         }
-        return wrap(plain, host, port, client = true)
+        return wrap(plain, target, client = true)
     }
 
     /** 在已有连接上做 TLS 握手;[client] = false 只给测试里的假服务端用。 */
-    fun wrap(plain: Socket, host: String, port: Int, client: Boolean): SSLSocket {
-        val s = context.socketFactory.createSocket(plain, host, port, true) as SSLSocket
+    fun wrap(plain: Socket, target: InetSocketAddress, client: Boolean): SSLSocket {
+        val host = target.address?.hostAddress ?: throw IllegalArgumentException("ADB address must be resolved")
+        val s = context.socketFactory.createSocket(plain, host, target.port, true) as SSLSocket
         try {
             s.enabledProtocols = arrayOf("TLSv1.3")
             s.useClientMode = client

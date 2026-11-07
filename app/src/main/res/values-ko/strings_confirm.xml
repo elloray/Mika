@@ -6,6 +6,8 @@
     <string name="confirm_order">주문하기</string>
     <string name="confirm_submit">제출</string>
     <string name="confirm_other">기타 동작</string>
+    <string name="confirm_root">root 명령</string>
+    <string name="confirm_root_where">휴전화 전체(root)</string>
     <string name="confirm_title">확인이 필요해요: %1$s</string>
     <string name="confirm_in_app">%1$s에서</string>
     <string name="confirm_target">받는 사람: %1$s</string>

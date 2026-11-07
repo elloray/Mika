@@ -1,6 +1,7 @@
 package com.wangzan101.mika.settings
 
 import android.content.SharedPreferences
+import com.wangzan101.mika.capsule.CapsuleIdleOpacity
 import com.wangzan101.mika.capsule.CapsuleMode
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.take
@@ -33,6 +34,27 @@ class FeatureFlagsCapsuleTest {
         flags.setCapsuleMode(CapsuleMode.Off)
         job.join()
         assertEquals(listOf(CapsuleMode.Always, CapsuleMode.Off), seen)
+    }
+
+    @Test fun idleOpacitySnapsPersistsAndEmits() = runTest {
+        val prefs = MemoryPrefs()
+        val flags = FeatureFlags(prefs)
+        assertEquals(CapsuleIdleOpacity.P40, flags.capsuleIdleOpacity())
+        assertEquals(CapsuleIdleOpacity.P20, CapsuleIdleOpacity.snap(0))
+        assertEquals(CapsuleIdleOpacity.P40, CapsuleIdleOpacity.snap(55))
+        assertEquals(CapsuleIdleOpacity.P70, CapsuleIdleOpacity.snap(56))
+        assertEquals(CapsuleIdleOpacity.P100, CapsuleIdleOpacity.snap(1000))
+        flags.setCapsuleIdleOpacity(CapsuleIdleOpacity.P70)
+        assertEquals(CapsuleIdleOpacity.P70, FeatureFlags(prefs).capsuleIdleOpacity())
+        prefs.edit().putInt("capsule_idle_opacity", 41).commit()
+        assertEquals(CapsuleIdleOpacity.P40, FeatureFlags(prefs).capsuleIdleOpacity())
+
+        val seen = mutableListOf<CapsuleIdleOpacity>()
+        val job = launch { flags.capsuleIdleOpacityChanges().take(2).toList(seen) }
+        runCurrent()
+        flags.setCapsuleIdleOpacity(CapsuleIdleOpacity.P100)
+        job.join()
+        assertEquals(listOf(CapsuleIdleOpacity.P40, CapsuleIdleOpacity.P100), seen)
     }
 
     /** 内存里的设置,改动时同步通知监听者(和系统实现一样在写入后回调)。 */

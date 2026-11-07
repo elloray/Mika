@@ -59,6 +59,10 @@ class CapsuleCardContentTest {
         override fun loadEarlier() { calls += "earlier" }
         override fun captureScreen() { calls += "capture" }
         override fun dropScreen() { calls += "drop" }
+        override fun setFollowUpMode(mode: com.wangzan101.mika.ui.FollowUpMode) { calls += "mode:$mode" }
+        override fun askQuit() { calls += "askQuit" }
+        override fun cancelQuit() { calls += "cancelQuit" }
+        override fun quit() { calls += "quit" }
     }
 
     private fun run(key: String, state: TaskState, kind: CapsuleKind, line: String = "", startedAt: Long? = null, ahead: Int = 0) =
@@ -348,16 +352,17 @@ class CapsuleCardContentTest {
     }
 
     @Test fun taskCardWrapsItsContentAndTheChatCardDoesNot() {
+        val height = 520.dp
         val frame = Bitmap.createBitmap(36, 80, Bitmap.Config.ARGB_8888)
         val r = run("a", TaskState.Running(3, "n", "tap"), CapsuleKind.Running, "在搜")
         var card by mutableStateOf<CardView>(CardView.Detail(r, CardContent.Working(listOf("打开购物", "搜索牙膏", "选第一个"))))
         compose.setContent {
-            MikaTheme(dark = false, reduceMotion = true) { CapsuleCard(card, frame, false, actions, { null }, thread = history(1), height = 420.dp) }
+            MikaTheme(dark = false, reduceMotion = true) { CapsuleCard(card, frame, false, actions, { null }, thread = history(1), height = height) }
         }
         val task = compose.onNodeWithTag("capsule-card").fetchSemanticsNode().size.height
         val screen = compose.onNodeWithTag("capsule-screen").fetchSemanticsNode().size.height
-        val full = with(compose.density) { 420.dp.roundToPx() }
-        // 小画面加三步:比对话卡片矮,下面不留空,中间那段至少是整张小画面
+        val full = with(compose.density) { height.roundToPx() }
+        // 留出引导/排队控件的高度,让本例低于上限:验证任务卡片按内容收拢,对话卡片仍固定高
         assertTrue("wraps: $task < $full", task < full)
         assertTrue("fits the preview: $task > $screen", task > screen)
         compose.onNodeWithTag("capsule-screen").assertIsDisplayed()
@@ -365,7 +370,7 @@ class CapsuleCardContentTest {
         // 换成对话卡片:固定高
         card = chat(run("a", TaskState.Succeeded("好了"), CapsuleKind.Done))
         compose.waitForIdle()
-        compose.onNodeWithTag("capsule-card").assertHeightIsEqualTo(420.dp)
+        compose.onNodeWithTag("capsule-card").assertHeightIsEqualTo(height)
     }
 
     @Test fun longTaskCardIsCappedAndScrollsWhileButtonsStay() {
@@ -393,17 +398,18 @@ class CapsuleCardContentTest {
     )
 
     @Test fun manyStepsFitThePreviewHeightNewestAtTheBottom() {
+        val height = 520.dp
         val frame = Bitmap.createBitmap(36, 80, Bitmap.Config.ARGB_8888)
         var card by mutableStateOf<CardView>(working(30))
         compose.setContent {
-            MikaTheme(dark = false, reduceMotion = true) { CapsuleCard(card, frame, false, actions, { null }, height = 420.dp) }
+            MikaTheme(dark = false, reduceMotion = true) { CapsuleCard(card, frame, false, actions, { null }, height = height) }
         }
         val steps = compose.onNodeWithTag("capsule-steps").fetchSemanticsNode().size.height
         val screen = compose.onNodeWithTag("capsule-screen").fetchSemanticsNode().size.height
         val cardHeight = compose.onNodeWithTag("capsule-card").fetchSemanticsNode().size.height
-        // 步骤再多也和小画面一样高,卡片不被撑高
+        // 步骤再多也和小画面一样高;高度上限给固定控件留足空间,卡片不被步骤撑到上限
         assertTrue("steps fit the preview: $steps <= $screen", steps <= screen + 1)
-        assertTrue("card not stretched: $cardHeight < ${with(compose.density) { 420.dp.roundToPx() }}", cardHeight < with(compose.density) { 420.dp.roundToPx() })
+        assertTrue("card not stretched: $cardHeight < ${with(compose.density) { height.roundToPx() }}", cardHeight < with(compose.density) { height.roundToPx() })
         compose.onNodeWithText("第 30 步").assertIsDisplayed()
         offScreen("第 1 步")
         // 在底部时来了新的一步:跟到它
@@ -469,5 +475,44 @@ class CapsuleCardContentTest {
         compose.onNodeWithTag("capsule-header").performTouchInput { swipeDown() }
         compose.onNodeWithContentDescription(CardCopy.COLLAPSE).performTouchInput { swipe(center, center + Offset(0f, 300f)) }
         compose.runOnIdle { assertEquals(emptyList<String>(), calls) }
+    }
+
+    @Test fun steerInputOffersGuidingOrQueueing() {
+        show(detail(run("a", TaskState.Running(1, "在搜"), CapsuleKind.Running, "在搜")))
+        compose.onNodeWithTag("capsule-follow-up-mode").assertIsDisplayed()
+        compose.onNodeWithTag("capsule-follow-up-queue").performClick()
+        compose.runOnIdle { assertEquals(listOf("mode:Queue"), calls) }
+    }
+
+    @Test fun queuedLineOpensTheChatWhenThereAreQueuedFollowUps() {
+        compose.setContent {
+            MikaTheme(dark = false, reduceMotion = true) {
+                CapsuleCard(
+                    detail(run("a", TaskState.Running(1, "在搜"), CapsuleKind.Running, "在搜")), null, false, actions, { null },
+                    height = 420.dp, queuedCount = 2, onQueued = { calls += "openQueued" },
+                )
+            }
+        }
+        compose.onNodeWithTag("capsule-queued").assertIsDisplayed().performClick()
+        compose.onNodeWithText("排队中 · 2 件", substring = true).assertIsDisplayed()
+        compose.runOnIdle { assertEquals(listOf("openQueued"), calls) }
+    }
+
+    /** 标题栏的电源按钮只问一句,不直接退;确认卡片里「退出」「取消」各走各的。 */
+    @Test fun quitIsConfirmedInsideTheCard() {
+        show(detail(run("a", TaskState.Running(1, "n"), CapsuleKind.Running, "在搜")))
+        compose.onNodeWithContentDescription("完全退出 Mika").performClick()
+        compose.runOnIdle { assertEquals(listOf("askQuit"), calls) }
+    }
+
+    @Test fun quitCardOffersQuitAndCancel() {
+        compose.setContent {
+            MikaTheme(dark = false, reduceMotion = true) { QuitCard(actions, 420.dp) }
+        }
+        compose.onNodeWithText("完全退出 Mika").assertIsDisplayed()
+        compose.onNodeWithText("下次打开 Mika 就回来。", substring = true).assertIsDisplayed()
+        compose.onNodeWithTag("capsule-quit").performClick()
+        compose.onNodeWithTag("capsule-quit-cancel").performClick()
+        compose.runOnIdle { assertEquals(listOf("quit", "cancelQuit"), calls) }
     }
 }

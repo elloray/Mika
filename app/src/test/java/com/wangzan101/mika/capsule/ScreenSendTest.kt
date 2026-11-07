@@ -10,39 +10,61 @@ import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
-/** 双击还是单击、截下的屏幕发进哪个对话、带屏幕的话在列表里怎么称呼。 */
+/** 双击还是单击、截屏预览发进哪个对话、带屏幕的话在列表里怎么称呼。 */
 class ScreenSendTest {
     @get:Rule val texts = ChineseTexts()
 
+    private fun taps() = DoubleTap(300, slopPx = 20f)
+
     @Test fun secondTapWithinTimeoutIsDouble() {
-        val t = DoubleTap(300)
-        assertEquals(DoubleTap.Tap.First, t.tap(1_000))
-        assertEquals(DoubleTap.Tap.Double, t.tap(1_250))
+        val t = taps()
+        assertEquals(DoubleTap.Tap.First, t.tap(1_000, 100f, 200f, source = 1))
+        assertEquals(DoubleTap.Tap.Double, t.tap(1_250, 110f, 210f, source = 1))
         // 双击之后到时也不再算单击
         assertFalse(t.settle(1_400))
     }
 
+    @Test fun distantSecondTapStartsANewSingleTap() {
+        val t = taps()
+        t.tap(1_000, 100f, 200f, source = 1)
+        assertEquals(DoubleTap.Tap.First, t.tap(1_250, 140f, 200f, source = 1))
+        assertEquals(DoubleTap.Tap.Double, t.tap(1_400, 135f, 205f, source = 1))
+    }
+
+    @Test fun secondTapFromAnotherSourceStartsANewSingleTap() {
+        val t = taps()
+        t.tap(1_000, 100f, 200f, source = 1)
+        assertEquals(DoubleTap.Tap.First, t.tap(1_250, 100f, 200f, source = 2))
+        assertEquals(DoubleTap.Tap.Double, t.tap(1_400, 105f, 200f, source = 2))
+    }
+
     @Test fun singleTapSettlesAfterTimeout() {
-        val t = DoubleTap(300)
-        assertEquals(DoubleTap.Tap.First, t.tap(1_000))
+        val t = taps()
+        assertEquals(DoubleTap.Tap.First, t.tap(1_000, 0f, 0f, source = 1))
         assertFalse(t.settle(1_200))
         assertTrue(t.settle(1_300))
         assertFalse("只算一次", t.settle(1_400))
     }
 
     @Test fun lateSecondTapStartsOver() {
-        val t = DoubleTap(300)
-        t.tap(1_000)
-        assertEquals(DoubleTap.Tap.First, t.tap(1_400))
-        assertEquals(DoubleTap.Tap.Double, t.tap(1_600))
+        val t = taps()
+        t.tap(1_000, 0f, 0f, source = 1)
+        assertEquals(DoubleTap.Tap.First, t.tap(1_400, 0f, 0f, source = 1))
+        assertEquals(DoubleTap.Tap.Double, t.tap(1_600, 0f, 0f, source = 1))
+    }
+
+    @Test fun clockGoingBackStartsOver() {
+        val t = taps()
+        t.tap(1_000, 0f, 0f, source = 1)
+        assertEquals(DoubleTap.Tap.First, t.tap(900, 0f, 0f, source = 1))
     }
 
     @Test fun resetForgetsTheFirstTap() {
-        val t = DoubleTap(300)
-        t.tap(1_000)
+        val t = taps()
+        t.tap(1_000, 0f, 0f, source = 1)
         t.reset()
         assertFalse(t.settle(2_000))
-        assertEquals(DoubleTap.Tap.First, t.tap(2_100))
+        assertEquals(DoubleTap.Tap.First, t.tap(2_100, 0f, 0f, source = 1))
     }
 
     private fun run(key: String, conversation: String, state: TaskState, kind: CapsuleKind, onScreen: Boolean = false) =

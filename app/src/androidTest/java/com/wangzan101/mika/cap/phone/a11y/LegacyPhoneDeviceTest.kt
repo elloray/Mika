@@ -43,7 +43,7 @@ class LegacyPhoneDeviceTest {
             ?: error("USB helper did not hand off: ${phone.shellControl.status.value}")
         assertEquals(2000, shell.identity()[0])
 
-        val display = AgentDisplay(shell, 720, 1600, 320)
+        val display = AgentDisplay(shell, 720, 1600, 320, InstrumentationRegistry.getInstrumentation().targetContext.getSystemService(android.hardware.display.DisplayManager::class.java))
         try {
             val shown = context.getSystemService(DisplayManager::class.java).getDisplay(display.displayId)
             assertEquals("legacy display must be public", 0, shown.flags and Display.FLAG_PRIVATE)

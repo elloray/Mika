@@ -2,6 +2,7 @@ package com.wangzan101.mika.ui.theme
 
 import android.content.Context
 import android.provider.Settings
+import android.view.View
 import androidx.compose.animation.core.AnimationSpec
 import androidx.compose.animation.core.CubicBezierEasing
 import androidx.compose.animation.core.Easing
@@ -21,6 +22,8 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
 import androidx.activity.enableEdgeToEdge
@@ -85,7 +88,16 @@ fun ComponentActivity.systemBarsFor(dark: Boolean) {
 fun MikaTheme(dark: Boolean = appearanceDark(), reduceMotion: Boolean = false, content: @Composable () -> Unit) {
     val colors = if (dark) DarkColors else LightColors
     val scheme = if (dark) DarkScheme else LightScheme
-    CompositionLocalProvider(LocalMikaColors provides colors, LocalReduceMotion provides reduceMotion) {
+    val layoutDirection = if (LocalContext.current.resources.configuration.layoutDirection == View.LAYOUT_DIRECTION_RTL) {
+        LayoutDirection.Rtl
+    } else {
+        LayoutDirection.Ltr
+    }
+    CompositionLocalProvider(
+        LocalLayoutDirection provides layoutDirection,
+        LocalMikaColors provides colors,
+        LocalReduceMotion provides reduceMotion,
+    ) {
         MaterialTheme(colorScheme = scheme) {
             CompositionLocalProvider(LocalContentColor provides colors.ink, content = content)
         }

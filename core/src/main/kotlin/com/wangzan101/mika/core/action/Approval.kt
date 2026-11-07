@@ -1,5 +1,6 @@
 package com.wangzan101.mika.core.action
 
+import com.wangzan101.mika.core.gate.ConfirmationRequest
 import com.wangzan101.mika.core.run.Attendance
 import com.wangzan101.mika.core.run.RunOrigin
 import com.wangzan101.mika.core.run.RunProvenance
@@ -14,8 +15,12 @@ enum class ActionRisk { Read, Change, External, Irreversible, Unknown;
     val outward: Boolean get() = this == External || this == Irreversible || this == Unknown
 }
 
-/** [payment] 为 true 时这一步要花钱(付款、下单,或屏上有应付金额时的对外动作):询问时只有它先问用户。 */
-data class Risk(val level: ActionRisk, val payment: Boolean = false)
+/**
+ * [payment] 为 true 时这一步要花钱(付款、下单,或屏上有应付金额时的对外动作):询问时先问用户。
+ * [ask] 不为空时是不在屏上、改了收不回的一步(工具按这次的参数声明,如会改动东西的 root 命令),询问时也先问用户,
+ * 给用户看的就是它;同意只放行一字不差的这一步。
+ */
+data class Risk(val level: ActionRisk, val payment: Boolean = false, val ask: ConfirmationRequest? = null)
 
 /** 用户在确认卡片上的选择:同意这一次,或不同意。 */
 enum class ConfirmChoice { Once, Deny;
@@ -29,7 +34,7 @@ fun interface ApprovalSettings {
     fun autonomous(): Boolean
 
     companion object {
-        /** 询问(默认):只有付款先问。 */
+        /** 询问(默认):付款和工具声明要问的那几步(见 [Risk.ask])先问。 */
         val ASK = ApprovalSettings { false }
     }
 }
@@ -43,10 +48,13 @@ sealed interface Approval {
     data object Deny : Approval
 }
 
-/** 审批判定:纯函数。只有付款要问;问不到人(无人值守、子任务)或不在手机上(渠道、定时、MCP 发起的)时付款不做。 */
+/**
+ * 审批判定:纯函数。付款和工具声明要问的(见 [Risk.ask])要问;问不到人(无人值守、子任务)或不在手机上
+ * (渠道、定时、MCP 发起的)时这些都不做。
+ */
 object ApprovalPolicy {
     fun decide(risk: Risk, run: RunProvenance = RunProvenance()): Approval = when {
-        !risk.payment -> Approval.Allow
+        !risk.payment && risk.ask == null -> Approval.Allow
         run.attendance == Attendance.Unattended || run.origin != RunOrigin.Ui -> Approval.Deny
         else -> Approval.Ask
     }

@@ -25,7 +25,8 @@
     <string name="metrics_output_tokens">输出 Token</string>
     <string name="usage_cached">缓存命中</string>
     <string name="metrics_no_usage">没报用量</string>
-    <string name="metrics_all_calls">全部模型请求</string>
+    <string name="metrics_all_calls">全部逻辑调用</string>
+    <string name="metrics_all_http_calls">全部 HTTP 请求</string>
     <plurals name="metrics_all_calls_value">
         <item quantity="other">%1$d 次（含旁路调用和重试）</item>
     </plurals>

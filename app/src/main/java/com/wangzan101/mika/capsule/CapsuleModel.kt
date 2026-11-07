@@ -21,6 +21,19 @@ enum class CapsuleMode {
     }
 }
 
+/** 一颗胶囊静置后的不透明度;滑块只停在这四档,设置里存百分比。 */
+enum class CapsuleIdleOpacity(val percent: Int) {
+    P20(20), P40(40), P70(70), P100(100);
+
+    val alpha: Float get() = percent / 100f
+
+    companion object {
+        val DEFAULT = P40
+        fun snap(percent: Int): CapsuleIdleOpacity = entries.minBy { kotlin.math.abs(it.percent - percent) }
+        fun parse(percent: Int): CapsuleIdleOpacity = entries.firstOrNull { it.percent == percent } ?: DEFAULT
+    }
+}
+
 /**
  * 一个任务此刻的样子:编号([TaskRun.key])、所在对话、状态、接管走到哪一步;
  * 卡片还要它的目标 [goal] 和这一问一答此刻的样子 [exchange](步骤、要你做的事、结果,和对话页同一套推法)。
@@ -357,6 +370,7 @@ class CapsuleModel(private val reasonLabel: (String) -> String? = { null }) {
         fun progressText(p: RunProgress): String = when (p) {
             is RunProgress.Replay -> tr(R.string.capsule_replay, p.step, p.total)
             is RunProgress.Batch -> trPlural(R.plurals.capsule_batch, p.steps)
+            is RunProgress.Task -> p.display
             is RunProgress.WaitingForApp -> tr(R.string.progress_waiting_app, p.app)
         }
 
@@ -376,9 +390,9 @@ object CapsuleFade {
     const val BALL = 0.4f
 
     /** [idleFor] 是离上次碰到或状态变了过了多久。 */
-    fun alpha(kind: CapsuleKind, needCount: Int, pill: Boolean, idleFor: Long): Float = when {
+    fun alpha(kind: CapsuleKind, needCount: Int, pill: Boolean, idleFor: Long, idleAlpha: Float = BALL): Float = when {
         pill || kind.needsYou || needCount > 0 || kind == CapsuleKind.HandedOver -> 1f
         idleFor < IDLE_MS -> 1f
-        else -> BALL
+        else -> idleAlpha
     }
 }

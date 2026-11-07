@@ -54,11 +54,16 @@ def api(respond=None):
                 reply = (200, DISCOVERY if self.path == "/api/v1" else SNAPSHOT, {})
             code, value, headers = reply
             raw = value if isinstance(value, bytes) else json.dumps(value, ensure_ascii=False).encode()
+            extra = dict(headers)
+            mime = "application/json"
+            for key in list(extra):
+                if key.lower() == "content-type":
+                    mime = extra.pop(key)
             self.send_response(code)
-            self.send_header("Content-Type", "application/json")
+            self.send_header("Content-Type", mime)
             self.send_header("Content-Length", str(len(raw)))
-            for name, value in headers.items():
-                self.send_header(name, value)
+            for name, header_value in extra.items():
+                self.send_header(name, header_value)
             self.end_headers()
             self.wfile.write(raw)
 
@@ -84,8 +89,10 @@ class CliTest(unittest.TestCase):
         self.token_file = self.directory / "token"
         self.token_file.write_text(TOKEN)
 
-    def invoke(self, *args, server=None, script=SCRIPT, stdin=None, env=None):
-        command = [sys.executable, str(script), "--json"]
+    def invoke(self, *args, server=None, script=SCRIPT, stdin=None, env=None, json_option="--json", parse=True):
+        command = [sys.executable, str(script)]
+        if json_option is not None:
+            command.append(json_option)
         if server:
             command += ["--url", "http://127.0.0.1:" + str(server.server_port), "--token-file", str(self.token_file)]
         command += list(args)
@@ -96,7 +103,7 @@ class CliTest(unittest.TestCase):
         result = subprocess.run(command, input=stdin, text=True, encoding="utf-8", capture_output=True,
                                 cwd=self.directory, env=process_env, timeout=15)
         self.assertNotIn(TOKEN, result.stdout + result.stderr)
-        return result, json.loads(result.stdout)
+        return result, json.loads(result.stdout) if parse else None
 
     def fake_adb(self, server, **overrides):
         configuration = {
@@ -154,6 +161,35 @@ else:
         env = {"FAKE_ADB_CONFIG": str(config), "FAKE_ADB_LOG": str(log)}
         return executable, env, config, lambda: [json.loads(line) for line in log.read_text().splitlines()]
 
+    def test_an_abbreviated_json_option_still_means_compact_json_on_stdout(self):
+        for option in ["--json", "--jso", "--j"]:
+            with self.subTest(option=option):
+                result, body = self.invoke("devices", "--adb", str(self.directory / "missing-adb"), json_option=option)
+                self.assertEqual(2, result.returncode)
+                self.assertEqual("adb_unavailable", body["error"]["code"])
+                self.assertEqual(1, len(result.stdout.splitlines()))
+                self.assertNotIn("{", result.stderr)
+
+    def test_abbreviated_json_option_also_formats_success(self):
+        with api() as server:
+            result, body = self.invoke("doctor", server=server, json_option="--jso")
+            self.assertEqual(0, result.returncode, result.stderr)
+            self.assertEqual("http", body["transport"])
+            self.assertEqual(1, len(result.stdout.splitlines()))
+
+    def test_json_option_scan_stops_at_the_option_delimiter(self):
+        cli = load_cli()
+        self.assertFalse(cli.json_flag(["devices", "--", "--jso"]))
+        self.assertFalse(cli.json_flag(["task", "run", "--goal=--json"]))
+        self.assertTrue(cli.json_flag(["task", "run", "--jso", "--", "--goal", "x"]))
+
+    def test_ui_rejects_an_abbreviated_json_option(self):
+        result, body = self.invoke("ui", "--jso", json_option=None)
+        self.assertEqual(2, result.returncode)
+        self.assertEqual("arguments", body["error"]["code"])
+        self.assertEqual("The desk is interactive. Use mika ui without --json.", body["error"]["message"])
+        self.assertEqual(1, len(result.stdout.splitlines()))
+
     def test_submit_unicode_from_stdin_once_without_mcp(self):
         text = '查询版本\n保留 "引号"、$符号和 emoji 👋'
         with api() as server:
@@ -186,6 +222,33 @@ else:
             self.assertEqual(4, result.returncode)
             self.assertEqual("outcome_unknown", body["error"]["code"])
             self.assertEqual(1, len([c for c in server.calls if c[0] == "POST"]))
+
+    def test_lost_run_returns_the_preassigned_queryable_task_id(self):
+        accepted = {}
+        def respond(method, path, body):
+            if path == "/api/v1":
+                return 200, {**DISCOVERY, "capabilities": ["tasks", "task_recovery"]}, {}
+            if method == "POST":
+                accepted[body["request_id"]] = {**SNAPSHOT, "task_id": body["request_id"], "goal": body["goal"]}
+                return "drop"
+            return 200, accepted[path.split("/")[-1]], {}
+        with api(respond) as server:
+            result, body = self.invoke("task", "run", "--goal", "once", server=server)
+            self.assertEqual(4, result.returncode)
+            key = body["error"]["task_id"]
+            self.assertEqual("outcome_unknown", body["error"]["code"])
+            result, task = self.invoke("task", "status", key, server=server)
+            self.assertEqual(0, result.returncode)
+            self.assertEqual(key, task["task_id"])
+            self.assertEqual(1, sum(m == "POST" for m, _, _ in server.calls))
+
+    def test_explicit_request_id_never_downgrades_on_an_old_phone(self):
+        with api() as server:
+            result, body = self.invoke("task", "run", "--goal", "once", "--request-id",
+                                       "00000000-0000-4000-8000-000000000001", server=server)
+            self.assertNotEqual(0, result.returncode)
+            self.assertEqual("incompatible_api", body["error"]["code"])
+            self.assertFalse(any(m == "POST" for m, _, _ in server.calls))
 
     def test_unknown_answer_preserves_known_task_id(self):
         with api(lambda method, path, body: "drop" if method == "POST" else None) as server:
@@ -479,6 +542,72 @@ else:
             with self.assertRaises(module.CliError) as caught:
                 client.request("POST", "/tasks", {"goal": "once"}, mutation=True)
         self.assertEqual("outcome_unknown", caught.exception.code)
+
+    def test_export_fetches_the_record_as_one_json_object(self):
+        def respond(method, path, body):
+            if path == "/api/v1":
+                return 200, DISCOVERY_EXPORT, {}
+            if method == "GET" and path == "/api/v1/tasks/t1/export":
+                return 200, EXPORT, {}
+            return 500, {}, {}
+
+        with api(respond) as server:
+            result, body = self.invoke("task", "export", "t1", server=server)
+            self.assertEqual(0, result.returncode, result.stderr)
+            self.assertEqual(EXPORT, body)
+            self.assertTrue(body["partial"])
+            self.assertEqual([("GET", "/api/v1", None), ("GET", "/api/v1/tasks/t1/export", None)], server.calls)
+
+    def test_export_requires_capability_and_unknown_id_is_explicit(self):
+        with api(lambda *_: (200, DISCOVERY, {})) as server:
+            result, body = self.invoke("task", "export", "t1", server=server)
+            self.assertEqual(2, result.returncode)
+            self.assertEqual("incompatible_api", body["error"]["code"])
+            self.assertEqual([("GET", "/api/v1", None)], server.calls)
+        message = "No remote task or run record with id missing"
+
+        def respond(method, path, body):
+            if path == "/api/v1":
+                return 200, DISCOVERY_EXPORT, {}
+            return 404, {"error": {"code": "not_found", "message": message}}, {}
+
+        with api(respond) as server:
+            result, body = self.invoke("task", "export", "missing", server=server)
+            self.assertEqual(1, result.returncode)
+            self.assertEqual("not_found", body["error"]["code"])
+            self.assertEqual(message, body["error"]["message"])
+
+    def test_events_flag_prints_jsonl_without_rewrapping(self):
+        header = {key: value for key, value in EXPORT.items() if key != "events"}
+        payload = json.dumps(header, ensure_ascii=False) + "\n" + json.dumps(EXPORT["events"][0], ensure_ascii=False) + "\n"
+
+        def respond(method, path, body):
+            if path == "/api/v1":
+                return 200, DISCOVERY_EXPORT, {}
+            if method == "GET" and path == "/api/v1/tasks/t1/export?events=jsonl":
+                return 200, payload.encode(), {"Content-Type": "application/x-ndjson"}
+            return 500, {}, {}
+
+        with api(respond) as server:
+            result, _ = self.invoke("task", "export", "t1", "--events", server=server, parse=False)
+            self.assertEqual(0, result.returncode, result.stderr)
+            self.assertEqual(payload, result.stdout)
+            self.assertEqual([("GET", "/api/v1", None), ("GET", "/api/v1/tasks/t1/export?events=jsonl", None)], server.calls)
+
+    def test_malformed_export_id_does_not_connect(self):
+        result, body = self.invoke("task", "export", "../secret", "--adb", "does-not-exist")
+        self.assertEqual(2, result.returncode)
+        self.assertEqual("arguments", body["error"]["code"])
+
+
+EXPORT = {
+    "exportFormat": 1, "partial": True, "includesScreenshots": False,
+    "task_id": "t1", "conversation_id": "mcp-11111111-1111-1111-1111-111111111111",
+    "run_id": "20261102-033700-abc123",
+    "run": {"id": "20261102-033700-abc123", "goal": "open settings"},
+    "events": [{"type": "task_started", "goal": "open settings"}],
+}
+DISCOVERY_EXPORT = {**DISCOVERY, "capabilities": ["tasks", "task_steer", "run_export"]}
 
 
 if __name__ == "__main__":

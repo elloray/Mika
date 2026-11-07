@@ -1,11 +1,13 @@
 package com.wangzan101.mika.task
 
 import com.wangzan101.mika.core.run.RunId
+import com.wangzan101.mika.core.run.ChannelPeer
 import com.wangzan101.mika.core.run.RunPhase
 import com.wangzan101.mika.core.run.RunStore
 import com.wangzan101.mika.core.run.StoredRun
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.jsonArray
@@ -32,6 +34,10 @@ class FileRunStateStore(private val file: File) : RunStore {
                     o["roundInProgress"]?.jsonPrimitive?.content == "true",
                     o["triggerWindowKey"]?.jsonPrimitive?.contentOrNull,
                     o["runSucceeded"]?.jsonPrimitive?.contentOrNull?.toBooleanStrictOrNull(),
+                    channelPeer(o),
+                    o["channelMessageId"]?.jsonPrimitive?.contentOrNull,
+                    o["userText"]?.jsonPrimitive?.contentOrNull,
+                    o["followUpId"]?.jsonPrimitive?.contentOrNull,
                 )
             }
         }.onFailure {
@@ -51,6 +57,12 @@ class FileRunStateStore(private val file: File) : RunStore {
             put("roundInProgress", r.roundInProgress)
             put("triggerWindowKey", r.triggerWindowKey)
             put("runSucceeded", r.runSucceeded)
+            r.channelPeer?.let { peer -> put("channelPeer", buildJsonObject {
+                put("channelId", peer.channelId); put("peerId", peer.peerId); put("threadId", peer.threadId)
+            }) }
+            put("channelMessageId", r.channelMessageId)
+            put("userText", r.userText)
+            put("followUpId", r.followUpId)
         } }).toString()
         val temp = File(file.parentFile, file.name + ".tmp")
         FileOutputStream(temp).use { out -> out.write(json.toByteArray(Charsets.UTF_8)); out.fd.sync() }
@@ -59,6 +71,14 @@ class FileRunStateStore(private val file: File) : RunStore {
 
     @Synchronized override fun get(id: RunId): StoredRun? = records[id]
     @Synchronized override fun all(): List<StoredRun> = records.values.toList()
+
+    private fun channelPeer(o: JsonObject): ChannelPeer? {
+        val peer = o["channelPeer"] as? JsonObject ?: return null
+        return runCatching {
+            ChannelPeer(peer.getValue("channelId").jsonPrimitive.content,
+                peer.getValue("peerId").jsonPrimitive.content, peer.getValue("threadId").jsonPrimitive.content)
+        }.getOrNull()
+    }
 
     private fun code(phase: RunPhase): String = when (phase) {
         RunPhase.Queued -> "queued"

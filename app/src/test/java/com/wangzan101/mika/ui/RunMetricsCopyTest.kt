@@ -21,7 +21,8 @@ class RunMetricsCopyTest {
 
     @Test fun breakdownShowsSharesTokensAndSteps() {
         val m = RunMetrics(totalMs = 10_000, modelMs = 5_000, observeMs = 2_000, actMs = 1_000, retryWaitMs = 500,
-            inputTokens = 12_345, outputTokens = 100, cachedTokens = 10_000, steps = 4, observeCalls = 3, actCalls = 2, allCalls = 6)
+            inputTokens = 12_345, outputTokens = 100, cachedTokens = 10_000, steps = 4, observeCalls = 3, actCalls = 2,
+            allCalls = 5, allHttpCalls = 6)
         val rows = RunMetricsCopy.breakdown(m).toMap()
         assertEquals("5 秒 · 50%", rows[RunMetricsCopy.MODEL])
         assertEquals("2 秒 · 20%", rows[RunMetricsCopy.OBSERVE])
@@ -32,6 +33,7 @@ class RunMetricsCopyTest {
         assertEquals("1 万", rows["缓存命中"])
         assertEquals("4 步", rows["步数"])
         assertEquals("3 次 / 2 次", rows["读屏 / 操作"])
-        assertTrue(rows.getValue("全部模型请求").startsWith("6 次"))
+        assertTrue(rows.getValue("全部逻辑调用").startsWith("5 次"))
+        assertEquals("6 次", rows["全部 HTTP 请求"])
     }
 }

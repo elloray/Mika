@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="web_search_title">网页搜索</string>
+    <string name="web_search_row_sub">可选搜索服务；始终可以使用浏览器搜索</string>
+    <string name="web_search_hint">默认关闭。Mika 会向你的 HTTP JSON 端点发送 query 和 count 参数。可选密钥会作为 Bearer 令牌发送，并加密保存在本机。搜索结果按不可信内容处理。</string>
+    <string name="web_search_enabled">启用网页搜索</string>
+    <string name="web_search_endpoint">搜索端点网址</string>
+    <string name="web_search_api_key">API 密钥（可选）</string>
+    <string name="web_search_invalid_endpoint">请输入不带查询参数的 HTTP 或 HTTPS 网址。</string>
+    <string name="web_search_action">搜索网页</string>
+</resources>

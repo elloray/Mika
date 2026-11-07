@@ -3,6 +3,7 @@ package com.wangzan101.mika.core.model
 import com.wangzan101.mika.core.net.NetProxy
 import com.wangzan101.mika.core.net.ProxyFailure
 import com.wangzan101.mika.core.trace.TraceCall
+import com.wangzan101.mika.core.usage.ModelHttpAttempts
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.suspendCancellableCoroutine
 import okhttp3.Call
@@ -52,87 +53,103 @@ internal object HttpSupport {
         return response
     }
 
-    private suspend fun executeRaw(http: OkHttpClient, req: Request, attempt: TraceCall.Attempt?): RawResponse = suspendCancellableCoroutine { cont ->
-        val call = http.newCall(req)
-        cont.invokeOnCancellation { call.cancel() }
-        call.enqueue(object : Callback {
-            override fun onFailure(call: Call, e: IOException) {
-                if (cont.isActive) cont.resumeWithException(networkError(http, req, e))
-            }
+    private suspend fun countAttempt(req: Request) {
+        if (req.tag(InferenceRequest::class.java) != null) {
+            currentCoroutineContext()[ModelHttpAttempts]?.start()
+        }
+    }
 
-            override fun onResponse(call: Call, response: Response) {
-                response.use {
-                    attempt?.httpStatus(it.code)
-                    try {
-                        val raw = RawResponse(it.code, it.header("retry-after"), it.body?.string().orEmpty())
-                        if (cont.isActive) cont.resume(raw)
-                    } catch (e: IOException) {
-                        if (cont.isActive) cont.resumeWithException(ModelError.Network(e))
+    private suspend fun executeRaw(http: OkHttpClient, req: Request, attempt: TraceCall.Attempt?): RawResponse {
+        countAttempt(req)
+        return suspendCancellableCoroutine { cont ->
+            val call = http.newCall(req)
+            cont.invokeOnCancellation { call.cancel() }
+            call.enqueue(object : Callback {
+                override fun onFailure(call: Call, e: IOException) {
+                    if (cont.isActive) cont.resumeWithException(networkError(http, req, e))
+                }
+
+                override fun onResponse(call: Call, response: Response) {
+                    response.use {
+                        attempt?.httpStatus(it.code)
+                        try {
+                            val raw = RawResponse(it.code, it.header("retry-after"), it.body?.string().orEmpty())
+                            if (cont.isActive) cont.resume(raw)
+                        } catch (e: IOException) {
+                            if (cont.isActive) cont.resumeWithException(ModelError.Network(e))
+                        }
                     }
                 }
-            }
-        })
+            })
+        }
     }
 
     /**
-     * SSE 按事件交付；取消协程会同时取消 HTTP 请求。流读到头时由调用者按各自协议判断有没有正常收尾，
-     * 没收尾算 [ModelError.StreamCut]。一个事件都没有、又不是事件流格式的成功响应(比如地址指到了网页)算 [ModelError.BadResponse]。
+     * SSE 按事件交付；取消协程会同时取消 HTTP 请求。[onEvent] 返回 true 表示协议层已到
+     * 终态(如 OpenAI 的 [DONE]、Anthropic 的 message_stop),读循环就此收尾并关闭连接——
+     * 有的服务器发完终态后并不主动关流(经隧道时生成完却静默挂到读超时),
+     * 此时不能干等 EOF。调用者仍按各自协议判断有没有正常收尾,没收尾算 [ModelError.StreamCut]。
+     * 一个事件都没有、又不是事件流格式的成功响应(比如地址指到了网页)算 [ModelError.BadResponse]。
      */
-    suspend fun stream(http: OkHttpClient, req: Request, onEvent: (String) -> Unit): RawResponse =
+    suspend fun stream(http: OkHttpClient, req: Request, onEvent: (String) -> Boolean): RawResponse =
         observe(req) { attempt -> streamRaw(http, req, attempt, onEvent) }.also(::requireProxyAccepted)
 
-    private suspend fun streamRaw(http: OkHttpClient, req: Request, attempt: TraceCall.Attempt?, onEvent: (String) -> Unit): RawResponse = suspendCancellableCoroutine { cont ->
-        val call = http.newCall(req)
-        cont.invokeOnCancellation { call.cancel() }
-        call.enqueue(object : Callback {
-            override fun onFailure(call: Call, e: IOException) {
-                if (cont.isActive) cont.resumeWithException(networkError(http, req, e))
-            }
+    private suspend fun streamRaw(http: OkHttpClient, req: Request, attempt: TraceCall.Attempt?, onEvent: (String) -> Boolean): RawResponse {
+        countAttempt(req)
+        return suspendCancellableCoroutine { cont ->
+            val call = http.newCall(req)
+            cont.invokeOnCancellation { call.cancel() }
+            call.enqueue(object : Callback {
+                override fun onFailure(call: Call, e: IOException) {
+                    if (cont.isActive) cont.resumeWithException(networkError(http, req, e))
+                }
 
-            override fun onResponse(call: Call, response: Response) {
-                response.use {
-                    attempt?.httpStatus(it.code)
-                    try {
-                        if (it.code !in 200..299) {
-                            val error = RawResponse(it.code, it.header("retry-after"), it.body?.string().orEmpty())
-                            if (cont.isActive) cont.resume(error)
-                            return
-                        }
-                        if (it.header("Content-Type")?.contains("application/json", ignoreCase = true) == true) {
-                            if (cont.isActive) cont.resume(RawResponse(it.code, it.header("retry-after"), it.body?.string().orEmpty()))
-                            return
-                        }
-                        val source = it.body?.source() ?: throw ModelError.BadResponse("流式响应没有内容")
-                        val data = mutableListOf<String>()
-                        var events = 0
-                        fun dispatch() {
-                            if (data.isNotEmpty()) {
+                override fun onResponse(call: Call, response: Response) {
+                    response.use {
+                        attempt?.httpStatus(it.code)
+                        try {
+                            if (it.code !in 200..299) {
+                                val error = RawResponse(it.code, it.header("retry-after"), it.body?.string().orEmpty())
+                                if (cont.isActive) cont.resume(error)
+                                return
+                            }
+                            if (it.header("Content-Type")?.contains("application/json", ignoreCase = true) == true) {
+                                if (cont.isActive) cont.resume(RawResponse(it.code, it.header("retry-after"), it.body?.string().orEmpty()))
+                                return
+                            }
+                            val source = it.body?.source() ?: throw ModelError.BadResponse("流式响应没有内容")
+                            val data = mutableListOf<String>()
+                            var events = 0
+                            /** 派发一个事件;返回 true 表示协议层已到终态(如 [DONE]),读循环就此收尾,不再等连接关闭。 */
+                            fun dispatch(): Boolean {
+                                if (data.isEmpty()) return false
                                 events++
                                 val event = data.joinToString("\n")
                                 attempt?.packet(event)
-                                onEvent(event)
+                                val terminal = onEvent(event)
                                 data.clear()
+                                return terminal
                             }
-                        }
-                        while (cont.isActive) {
-                            val line = source.readUtf8Line() ?: break
-                            when {
-                                line.isEmpty() -> dispatch()
-                                line.startsWith("data:") -> data += line.removePrefix("data:").removePrefix(" ")
+                            while (cont.isActive) {
+                                val line = source.readUtf8Line() ?: break
+                                when {
+                                    line.isEmpty() -> if (dispatch()) break
+                                    line.startsWith("data:") -> data += line.removePrefix("data:").removePrefix(" ")
+                                }
                             }
+                            if (cont.isActive) {
+                                dispatch()
+                                val eventStream = it.header("Content-Type")?.contains("event-stream", ignoreCase = true) == true
+                                if (events == 0 && !eventStream) throw ModelError.BadResponse("返回的不是流式内容(Content-Type: ${it.header("Content-Type").orEmpty()})")
+                                cont.resume(RawResponse(it.code, it.header("retry-after"), ""))
+                            }
+                        } catch (e: Exception) {
+                            if (cont.isActive) cont.resumeWithException(if (e is IOException) ModelError.Network(e) else e)
                         }
-                        if (cont.isActive) {
-                            dispatch()
-                            val eventStream = it.header("Content-Type")?.contains("event-stream", ignoreCase = true) == true
-                            if (events == 0 && !eventStream) throw ModelError.BadResponse("返回的不是流式内容(Content-Type: ${it.header("Content-Type").orEmpty()})")
-                            cont.resume(RawResponse(it.code, it.header("retry-after"), ""))
-                        }
-                    } catch (e: Exception) {
-                        if (cont.isActive) cont.resumeWithException(if (e is IOException) ModelError.Network(e) else e)
                     }
                 }
-            }
-        })
+            })
+        }
     }
 
     fun retryAfterMs(header: String?): Long? = header?.trim()?.toDoubleOrNull()?.let { (it * 1000).toLong() }

@@ -228,6 +228,22 @@ class RecoveryPermissionsTest {
     }
 
     @Test
+    fun explicitExitDefersAutomaticPermissionsUntilManualLaunch() = runTest {
+        val shell = FakeShell()
+        val status = MutableStateFlow(BuiltinShellStatus.Running)
+        val active = MutableStateFlow(false)
+        val store = Store(RecoveryConsent(declined = setOf(a11y, restore, autoOn)))
+        val p = RecoveryPermissions({ shell }, store, pkg)
+        val job = launch { p.applyWhenRunning(status, active) }
+        runCurrent()
+        assertTrue(shell.ran.isEmpty())
+        active.value = true
+        runCurrent()
+        assertEquals(listOf(PermissionCommands.whitelistAdd(pkg)), shell.ran)
+        job.cancel()
+    }
+
+    @Test
     fun unpairRevokesEverythingThatWasApplied() = runTest {
         val shell = FakeShell(a11y = "$mika:$other")
         val store = Store(RecoveryConsent(applied = all))

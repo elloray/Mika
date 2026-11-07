@@ -32,6 +32,7 @@
     <string name="task_waiting_display">대기 중: 다른 작업이 끝나면 시작해요</string>
     <string name="task_no_phone_helper">휴대전화 제어가 준비되지 않았어요. Mika에서 “휴대전화 제어 설정”을 마치세요. 웹과 파일 작업은 영향이 없어요.</string>
     <string name="task_no_a11y">Mika의 접근성 서비스가 꺼져 있어요. 시스템 설정의 접근성에서 Mika를 켜세요.</string>
+    <string name="task_a11y_not_running">Mika의 접근성 서비스는 켜져 있지만 Android가 아직 연결하지 않았어요. 시스템 설정의 접근성에서 Mika를 껐다가 다시 켜세요. Android가 차단하면 먼저 Mika 앱 정보에서 제한된 설정을 허용하세요.</string>
     <string name="task_error">작업 오류: %1$s</string>
     <string name="task_app_blocked">“%1$s”이(가) 비활성화되어 있어서 Mika가 읽거나 조작할 수 없어요. 설정 › 앱 접근에서 허용한 뒤 다시 시도하세요.</string>
     <string name="task_app_this_app">이 앱</string>
@@ -53,6 +54,7 @@
     <string name="task_too_old">휴대전화 앱 제어는 Android 12 이상이 필요해요. 채팅, 웹, 샌드박스 작업은 계속 쓸 수 있어요.</string>
     <string name="task_shell_died">휴대전화 제어 도우미의 연결이 끊겨 가상 화면이 닫혔어요. 다시 연결되면 시도하세요.</string>
     <string name="task_running">실행 중</string>
+    <string name="channel_task_accepted">확인했어요. 작업이 등록됐어요.</string>
     <string name="task_step_note">%1$d단계: %2$s</string>
     <string name="task_wait_unlock">잠금 해제 대기 중</string>
     <string name="task_wait_unlock_body">휴대전화 잠금을 해제하면 이어서 진행해요</string>

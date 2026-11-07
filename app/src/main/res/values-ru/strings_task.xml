@@ -35,6 +35,7 @@
     <string name="task_waiting_display">В очереди: начнётся после завершения другой задачи</string>
     <string name="task_no_phone_helper">Управление телефоном не готово. Завершите «Настройку управления телефоном» в Mika. Задачи с сайтами и файлами это не затрагивает.</string>
     <string name="task_no_a11y">Служба специальных возможностей Mika выключена. Включите Mika в разделе «Специальные возможности» системных настроек.</string>
+    <string name="task_a11y_not_running">Служба специальных возможностей Mika включена, но Android ещё не подключил её. Выключите Mika и включите снова в разделе «Специальные возможности» системных настроек. Если Android блокирует включение, сначала разрешите ограниченные настройки в сведениях о Mika.</string>
     <string name="task_error">Ошибка задачи: %1$s</string>
     <string name="task_app_blocked">Приложение «%1$s» отключено, поэтому Mika не может его читать и использовать. Разрешите его в разделе «Настройки» › «Доступ к приложениям» и повторите попытку.</string>
     <string name="task_app_this_app">Это приложение</string>
@@ -62,6 +63,7 @@
     <string name="task_too_old">Для управления приложениями телефона нужен Android 12 или новее. Чат, сайты и песочница по-прежнему доступны.</string>
     <string name="task_shell_died">Помощник управления телефоном отключился, и виртуальный экран закрылся. Повторите попытку, когда он подключится снова.</string>
     <string name="task_running">Выполняется</string>
+    <string name="channel_task_accepted">Принято — задача зарегистрирована.</string>
     <string name="task_step_note">Шаг %1$d: %2$s</string>
     <string name="task_wait_unlock">Ждём разблокировки</string>
     <string name="task_wait_unlock_body">Продолжим, как только вы разблокируете телефон</string>

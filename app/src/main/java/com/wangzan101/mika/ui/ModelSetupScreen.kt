@@ -14,8 +14,10 @@ import com.wangzan101.mika.settings.ChatGptSignIns
 import com.wangzan101.mika.i18n.tr
 import androidx.compose.ui.res.stringResource
 import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
@@ -30,10 +32,11 @@ import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.AlertDialog
+import com.wangzan101.mika.ui.components.MikaDialog
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -59,6 +62,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.wangzan101.mika.core.model.ModelRole
 import com.wangzan101.mika.settings.ModelContextSettings
+import com.wangzan101.mika.settings.MODEL_READ_TIMEOUT_SECONDS
 import com.wangzan101.mika.settings.ModelOption
 import com.wangzan101.mika.settings.ModelOptions
 import com.wangzan101.mika.settings.ProviderConfig
@@ -71,8 +75,10 @@ import com.wangzan101.mika.ui.components.CapabilityTag
 import com.wangzan101.mika.ui.components.FooterNote
 import com.wangzan101.mika.ui.components.GroupCard
 import com.wangzan101.mika.ui.components.GroupLabel
+import com.wangzan101.mika.ui.components.Hairline
 import com.wangzan101.mika.ui.components.InputRow
 import com.wangzan101.mika.ui.components.ListRow
+import com.wangzan101.mika.ui.components.RowChevron
 import com.wangzan101.mika.ui.components.MikaButton
 import com.wangzan101.mika.ui.components.PageBackground
 import com.wangzan101.mika.ui.components.ProgressDots
@@ -94,6 +100,8 @@ fun ModelSetupScreen(
     store: ProviderStore, onboarding: Boolean, onBack: () -> Unit, onDone: () -> Unit,
     /** 设置里点「语音转文字」卡片去选择页;上手流程不传,卡片就不出现。 */
     onOpenSpeech: (() -> Unit)? = null,
+    /** 设置里查看 Token 用量;上手流程不传。 */
+    onOpenUsage: (() -> Unit)? = null,
 ) {
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
@@ -195,6 +203,7 @@ fun ModelSetupScreen(
                     testAndSave = vm::testAndSave, saveUntested = vm::saveWithoutTest,
                     openForm = vm::openForm, closeForm = vm::closeForm,
                     openProvider = { openProvider = it; allModels = false }, pickRole = { picking = it }, next = onDone, openSpeech = onOpenSpeech,
+                    openUsage = onOpenUsage,
                     openSignIn = { signInSheet = it },
                     setReasoningEffort = vm::setReasoningEffort,
                     setModelContext = vm::setModelContext,
@@ -246,6 +255,8 @@ class ModelSetupActions(
     val pickRole: (ModelRole) -> Unit = {},
     /** 打开「语音转文字」的选择页;为 null 时不显示这张卡(上手流程)。 */
     val openSpeech: (() -> Unit)? = null,
+    /** 打开 Token 用量;为 null 时不显示入口(上手流程)。 */
+    val openUsage: (() -> Unit)? = null,
     val next: () -> Unit = {},
     /** 打开一家账号登录的说明面板。 */
     val openSignIn: (SignInKind) -> Unit = {},
@@ -268,10 +279,12 @@ fun ModelSetupContent(ui: ModelSetupUi, onboarding: Boolean, actions: ModelSetup
         Column(Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.navigationBars).windowInsetsPadding(WindowInsets.ime)) {
             TopBar(if (onboarding) ModelSetupCopy.TITLE else ModelsCopy.TITLE, MikaIcons.Back, onBack, stringResource(R.string.back))
             Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(horizontal = 16.dp)) {
-                Text(
-                    if (onboarding) ModelSetupCopy.LEAD else ModelsCopy.LEAD, Modifier.padding(top = 4.dp, bottom = 12.dp),
-                    fontSize = 14.5.sp, lineHeight = 23.sp, color = c.ink2,
-                )
+                if (onboarding) {
+                    Text(
+                        ModelSetupCopy.LEAD, Modifier.padding(top = 4.dp, bottom = 12.dp),
+                        fontSize = 14.5.sp, lineHeight = 23.sp, color = c.ink2,
+                    )
+                }
                 // 上手时先连服务商再选模型;设置里先看用途
                 if (onboarding) {
                     ProvidersSection(ui, actions)
@@ -280,6 +293,11 @@ fun ModelSetupContent(ui: ModelSetupUi, onboarding: Boolean, actions: ModelSetup
                 } else {
                     RolesSection(ui, onPick, actions.setReasoningEffort, actions.openSpeech, actions.setModelContext)
                     ProvidersSection(ui, actions)
+                    actions.openUsage?.let { openUsage ->
+                        GroupCard {
+                            ListRow(MikaIcons.Chart, UsageCopy.TITLE, first = true, onClick = openUsage) { RowChevron() }
+                        }
+                    }
                 }
                 Spacer(Modifier.height(16.dp))
             }
@@ -430,7 +448,7 @@ private fun AddProviderForm(ui: ModelSetupUi, actions: ModelSetupActions) {
         Modifier.fillMaxWidth().padding(top = 6.dp).testTag("setup-save-untested"),
         kind = ButtonKind.Tonal, size = ButtonSize.Small, enabled = f.canSaveUntested,
     )
-    if (confirmUntested) AlertDialog(
+    if (confirmUntested) MikaDialog(
         onDismissRequest = { confirmUntested = false },
         title = { Text(ModelSetupCopy.SAVE_UNTESTED_TITLE) },
         text = { Text(ModelSetupCopy.SAVE_UNTESTED_BODY) },
@@ -462,7 +480,7 @@ private fun PresetSuggestion(f: AddForm, label: String, onUse: () -> Unit) {
 /** 第一次用 ChatGPT 登录成功后说明一次:Mika 里的用量走你的 ChatGPT 套餐。 */
 @Composable
 private fun ChatGptWelcome(onDismiss: () -> Unit) {
-    AlertDialog(
+    MikaDialog(
         onDismissRequest = onDismiss,
         title = { Text(ModelsCopy.CHATGPT_WELCOME_TITLE) },
         text = { Text(ModelsCopy.CHATGPT_WELCOME_BODY) },
@@ -522,8 +540,22 @@ private fun RolesSection(ui: ModelSetupUi, onPick: (ModelRole) -> Unit, onReason
             RoleCard(ModelsCopy.roleIcon(role), ModelsCopy.roleLabel(role), ModelsCopy.roleLine(ui, role), first = i == 0, tag = "role-${role.name.lowercase()}") {
                 onPick(role)
             }
-            ReasoningControl(ui, role) { onReasoning(role, it) }
-            if (onContext != null) ModelContextControl(ui, role, onContext)
+            if (ui.roles[role] == RoleChoice.SameAsMain) {
+                ReasoningControl(ui, role) { onReasoning(role, it) }
+            } else {
+                val reasoning = hasReasoningAction(ui, role)
+                val context = onContext != null && hasModelContextControl(ui, role)
+                if (reasoning || context) {
+                    Column(Modifier.padding(start = 70.dp, end = 16.dp)) {
+                        Hairline(start = 0.dp)
+                        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                            if (reasoning) ReasoningControl(ui, role, Modifier.weight(1f)) { onReasoning(role, it) }
+                            if (reasoning && context) Box(Modifier.width(0.5.dp).height(14.dp).background(MikaTheme.colors.hair))
+                            if (onContext != null && context) ModelContextControl(ui, role, onContext, Modifier.weight(1f))
+                        }
+                    }
+                }
+            }
         }
         // 第四个用途:语音转文字(不是对话模型,点开是单独的选择页)
         if (onSpeech != null) {
@@ -532,29 +564,33 @@ private fun RolesSection(ui: ModelSetupUi, onPick: (ModelRole) -> Unit, onReason
     }
 }
 
+private fun hasModelContextControl(ui: ModelSetupUi, role: ModelRole): Boolean =
+    ui.roles[role] is RoleChoice.Model && ui.configFor(role) != null
+
 @Composable
 private fun ModelContextControl(ui: ModelSetupUi, role: ModelRole,
-    onSave: (String, ModelContextSettings) -> Boolean,
+    onSave: (String, ModelContextSettings) -> Boolean, modifier: Modifier = Modifier,
 ) {
     if (ui.roles[role] !is RoleChoice.Model) return
     val cfg = ui.configFor(role) ?: return
     val saved = ui.providerOf(cfg)?.contextSettings?.get(cfg.model) ?: ModelContextSettings()
     var open by rememberSaveable(cfg.id) { mutableStateOf(false) }
-    TextButton(onClick = { open = true }, modifier = Modifier.padding(start = 8.dp).testTag("context-${role.name.lowercase()}")) {
-        Text(stringResource(R.string.model_context_title))
-    }
+    ModelOptionButton(stringResource(R.string.model_context_title), "context-${role.name.lowercase()}", modifier) { open = true }
     if (!open) return
     var window by rememberSaveable(cfg.id) { mutableStateOf(saved.windowTokens?.toString().orEmpty()) }
     var trigger by rememberSaveable(cfg.id) { mutableStateOf(saved.triggerTokens?.toString().orEmpty()) }
+    var readTimeout by rememberSaveable(cfg.id) { mutableStateOf(saved.readTimeoutSeconds?.toString().orEmpty()) }
     var saveFailed by remember { mutableStateOf(false) }
     fun positiveInt(text: String) = text.trim().takeIf { it.all { c -> c in '0'..'9' } }?.toIntOrNull()?.takeIf { it > 0 }
-    val settings = ModelContextSettings(positiveInt(window), positiveInt(trigger))
+    val settings = ModelContextSettings(positiveInt(window), positiveInt(trigger),
+        positiveInt(readTimeout)?.takeIf { it in MODEL_READ_TIMEOUT_SECONDS })
     val modelWindow = cfg.capabilities.contextTokens
     val limits = settings.limits(modelWindow)
     val badWindow = window.isNotBlank() && settings.windowTokens == null
     val badTrigger = trigger.isNotBlank() && (settings.triggerTokens == null || (!badWindow && settings.triggerTokens != limits.trigger))
+    val badReadTimeout = readTimeout.isNotBlank() && settings.readTimeoutSeconds == null
     val keyboard = KeyboardOptions(keyboardType = KeyboardType.Number)
-    AlertDialog(
+    MikaDialog(
         onDismissRequest = { open = false },
         modifier = Modifier.imePadding(),
         title = { Text(stringResource(R.string.model_context_title)) },
@@ -577,15 +613,23 @@ private fun ModelContextControl(ui: ModelSetupUi, role: ModelRole,
                             limits.minTrigger.coerceAtLeast(1), limits.usable))
                         else if (badTrigger) Text(stringResource(R.string.model_context_integer))
                     }, isError = badTrigger)
+                OutlinedTextField(readTimeout, { readTimeout = it; saveFailed = false },
+                    modifier = Modifier.fillMaxWidth().testTag("context-read-timeout"), singleLine = true, keyboardOptions = keyboard,
+                    label = { Text(stringResource(R.string.model_context_read_timeout)) },
+                    placeholder = { Text(stringResource(R.string.model_context_auto, 120)) },
+                    supportingText = if (badReadTimeout) ({
+                        Text("${stringResource(R.string.model_context_integer)} (1–${MODEL_READ_TIMEOUT_SECONDS.last})")
+                    }) else null,
+                    isError = badReadTimeout)
                 if (!badWindow && (trigger.isBlank() || settings.triggerTokens != null)) Text(stringResource(R.string.model_context_effective, limits.window, limits.trigger),
                     modifier = Modifier.testTag("context-effective"))
-                TextButton(onClick = { window = ""; trigger = ""; saveFailed = false }) { Text(stringResource(R.string.reset)) }
+                TextButton(onClick = { window = ""; trigger = ""; readTimeout = ""; saveFailed = false }) { Text(stringResource(R.string.reset)) }
                 if (saveFailed) Text(stringResource(R.string.model_context_save_failed), color = MikaTheme.colors.bad)
             }
         },
         confirmButton = { TextButton(onClick = {
             if (onSave(cfg.id, settings)) open = false else saveFailed = true
-        }, enabled = !badWindow && !badTrigger, modifier = Modifier.testTag("context-save")) { Text(stringResource(R.string.save)) } },
+        }, enabled = !badWindow && !badTrigger && !badReadTimeout, modifier = Modifier.testTag("context-save")) { Text(stringResource(R.string.save)) } },
         dismissButton = { TextButton(onClick = { open = false }) { Text(stringResource(R.string.cancel)) } },
     )
 }

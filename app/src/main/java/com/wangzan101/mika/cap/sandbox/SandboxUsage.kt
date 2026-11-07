@@ -1,8 +1,6 @@
 package com.wangzan101.mika.cap.sandbox
 
 import com.wangzan101.mika.chat.ConversationSummary
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 import java.nio.file.Files
 
 /**
@@ -19,7 +17,7 @@ data class SandboxUsage(val runtime: Long, val skills: Long, val workspaces: Lis
 
 /**
  * 读、清各对话的工作区。大小按目录树里的普通文件算,不跟进链接(工作区里的命令能建链接,指到哪都不算进来);
- * 清的时候和删对话一样经文件闸门按句柄删、不跟进链接,拿着树锁的共享许可、和重置互斥;
+ * 清的时候经文件闸门按句柄删、不跟进链接,拿着树锁的独占许可([SandboxDirs.exclusiveWrite])、和命令及其他写入互斥;
  * 这个对话有任务在跑或排队时不清([active]),免得删掉任务正在用的文件。运行环境和技能随 App 自带,不在这里清。
  */
 class SandboxUsageReader(
@@ -41,20 +39,23 @@ class SandboxUsageReader(
     }
 
     /** 清掉 `work/` 下名为 [dirName] 的工作区;它的对话有任务在跑时不清,返回 false。 */
-    suspend fun clear(dirName: String): Boolean {
-        if (dirName in busyDirs()) return false
-        dirs.tree.shared { withContext(Dispatchers.IO) { dirs.gate.deleteTree(dirs.work, dirName) } }
-        return true
+    suspend fun clear(dirName: String): Boolean = dirs.exclusiveWrite {
+        // 等树许可和切到 IO 都可能挂起:拿到以后再查,不使用等待前的忙碌快照。
+        if (dirName in busyDirs()) return@exclusiveWrite false
+        dirs.deleteWorkDir(dirName)
+        true
     }
 
     /** 清掉所有没在用的工作区;返回因为有任务在跑而留下的个数。 */
-    suspend fun clearAll(): Int {
-        val busy = busyDirs()
-        val names = withContext(Dispatchers.IO) { dirs.work.listFiles().orEmpty().map { it.name } }
-        dirs.tree.shared {
-            withContext(Dispatchers.IO) { names.filter { it !in busy }.forEach { runCatching { dirs.gate.deleteTree(dirs.work, it) } } }
+    suspend fun clearAll(): Int = dirs.exclusiveWrite {
+        val names = dirs.work.listFiles().orEmpty().map { it.name }
+        var busy = 0
+        for (name in names) {
+            // 前面的工作区可能删很久:每个工作区删除前都重新查。
+            if (name in busyDirs()) busy++
+            else runCatching { dirs.deleteWorkDir(name) }
         }
-        return names.count { it in busy }
+        busy
     }
 
     private fun busyDirs(): Set<String> = active().map { dirs.workspace(it).name }.toSet()

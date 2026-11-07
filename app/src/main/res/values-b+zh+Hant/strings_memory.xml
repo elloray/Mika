@@ -78,4 +78,14 @@
     <string name="skills_archived">已歸檔</string>
     <string name="skills_archive">歸檔</string>
     <string name="skills_changed_lines">改了這幾行:</string>
+    <string name="skills_get">獲取技能</string>
+    <string name="skills_share">分享技能</string>
+    <string name="skills_import">匯入技能</string>
+    <string name="skills_import_sub">貼上別人分享的技能全文</string>
+    <string name="skills_import_hint">會先放進「待確認」，你看過、收下後才會用。</string>
+    <string name="skills_import_confirm">匯入</string>
+    <string name="skill_imported">已匯入，到「待確認」裡看看再收下。</string>
+    <string name="skills_imported">匯入的</string>
+    <string name="skill_builtin_name">和內建技能重名了，改個名字再試。</string>
+    <string name="skill_draft_pending">已經有一份同名草稿在等你確認，先處理那份。</string>
 </resources>

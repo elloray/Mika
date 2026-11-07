@@ -25,6 +25,7 @@ class McpSettings(private val dir: File, private val cipher: KeyCipher, private 
     private val file = File(dir, "mcp.json")
     private val tokenFile = File(dir, "mcp-token.bin")
     private val _enabled: MutableStateFlow<Boolean>
+    private val _historyEnabled: MutableStateFlow<Boolean>
     @Volatile private var cachedToken: String? = null
 
     /** 监听的端口;文件里没写就用 [DEFAULT_PORT]。 */
@@ -33,10 +34,18 @@ class McpSettings(private val dir: File, private val cipher: KeyCipher, private 
     init {
         val o = runCatching { Json.parseToJsonElement(file.readText()) as? JsonObject }.getOrNull()
         _enabled = MutableStateFlow((o?.get("enabled") as? JsonPrimitive)?.booleanOrNull ?: false)
+        _historyEnabled = MutableStateFlow((o?.get("historyEnabled") as? JsonPrimitive)?.booleanOrNull ?: false)
         port = (o?.get("port") as? JsonPrimitive)?.intOrNull?.takeIf { it in 1024..65535 } ?: DEFAULT_PORT
     }
 
     val enabled: StateFlow<Boolean> = _enabled.asStateFlow()
+    val historyEnabled: StateFlow<Boolean> = _historyEnabled.asStateFlow()
+
+    /** Applies to authenticated USB and private-network clients; older settings grant no history access. */
+    @Synchronized fun setHistoryEnabled(on: Boolean) {
+        _historyEnabled.value = on
+        save()
+    }
 
     @Synchronized fun setEnabled(on: Boolean) {
         _enabled.value = on
@@ -65,7 +74,9 @@ class McpSettings(private val dir: File, private val cipher: KeyCipher, private 
     @Synchronized private fun save() {
         dir.mkdirs()
         val tmp = File(dir, file.name + ".tmp")
-        tmp.writeText(buildJsonObject { put("enabled", _enabled.value); put("port", port) }.toString())
+        tmp.writeText(buildJsonObject {
+            put("enabled", _enabled.value); put("port", port); put("historyEnabled", _historyEnabled.value)
+        }.toString())
         Files.move(tmp.toPath(), file.toPath(), StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE)
     }
 

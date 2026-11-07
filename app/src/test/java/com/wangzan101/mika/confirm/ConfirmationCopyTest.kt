@@ -2,6 +2,7 @@ package com.wangzan101.mika.confirm
 
 import org.junit.Rule
 import com.wangzan101.mika.i18n.ChineseTexts
+import com.wangzan101.mika.core.cap.root.ROOT_CONFIRM_APP
 import com.wangzan101.mika.core.gate.ConfirmationRequest
 import com.wangzan101.mika.core.risk.IrrevAction
 import org.junit.Assert.assertEquals
@@ -36,5 +37,15 @@ class ConfirmationCopyTest {
         assertTrue(ConfirmationNotifier.intentData(1, true) != ConfirmationNotifier.intentData(2, true))
         assertTrue(ConfirmationNotifier.intentData(1, true) != ConfirmationNotifier.intentData(1, false))
     }
-}
 
+    /** root 命令的确认卡片:标题说是 root 命令,「在哪里」是整部手机,展开时命令整条显示,不截断。 */
+    @Test fun rootCommandCardShowsTheWholeCommand() {
+        val command = "rm -rf /sdcard/Download/" + "x".repeat(300)
+        val r = ConfirmationRequest(IrrevAction.other, "", command, null, ROOT_CONFIRM_APP)
+        assertEquals("要你同意:root 命令", ConfirmationCopy.title(r))
+        val detail = ConfirmationCopy.detail(r, "root")
+        assertTrue(detail, detail.startsWith("在 整部手机(root)\n内容:rm -rf"))
+        assertTrue(detail, detail.endsWith("x".repeat(300)))
+        assertFalse(detail, "对象" in detail)
+    }
+}

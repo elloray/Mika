@@ -12,7 +12,8 @@ import kotlinx.serialization.Serializable
  *   改派掉的轻量模型回复不算(用户看不到);回答逐段显示时第一段字会更早,没记录,不算。两样都没有为 null。
  * - [modelCalls]:模型回复事件数,即主循环的请求次数(含改派掉的轻量模型回复,[lightCalls] 是其中轻量模型的);
  *   [callsWithoutUsage] 是其中服务商没报用量的。token 是这些回复的用量之和([inputTokens] 含 [cachedTokens])。
- * - [allCalls] 等:运行期间经计量的全部请求([RunEvent.ModelCalls]:另含旁路调用和失败重试的每一次);旧记录为 null。
+ * - [allCalls] 等:运行期间经计量的全部外层逻辑调用([RunEvent.ModelCalls],含旁路调用和外层重试);
+ *   [allHttpCalls] 是实际 HTTP 请求数(另含适配器内部重发),旧记录没有这项时为 null。
  * - [modelMs]:各次回复的请求耗时之和(最后一次请求发出到收完);之前失败的请求和退避另记在 [retryWaitMs]。
  * - [observeMs] / [actMs]:顶层工具调用(模型直接调的、回放的)的执行耗时,按执行入口给活动定的种类分:风险为只读的是读
  *   (读屏、读网页、列元素、截图、查资料……),其余是操作(点、输入、滑、打开 App……)。一批动作、页面脚本的外层调用里,
@@ -38,6 +39,7 @@ data class RunMetrics(
     val outputTokens: Long = 0,
     val cachedTokens: Long = 0,
     val allCalls: Int? = null,
+    val allHttpCalls: Int? = null,
     val allInputTokens: Long? = null,
     val allOutputTokens: Long? = null,
     val modelMs: Long = 0,
@@ -158,6 +160,7 @@ data class RunMetrics(
                 outputTokens = output,
                 cachedTokens = cached,
                 allCalls = all?.calls,
+                allHttpCalls = all?.httpCalls,
                 allInputTokens = all?.inputTokens,
                 allOutputTokens = all?.outputTokens,
                 modelMs = modelMs,

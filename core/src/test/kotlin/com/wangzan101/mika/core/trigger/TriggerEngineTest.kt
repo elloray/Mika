@@ -67,6 +67,55 @@ class TriggerEngineTest {
         assertTrue(store.claimDue(1_000).isEmpty())
     }
 
+    // #259:跑过(这里是失败了)的一次性计划,恢复会被拒;就算已经是打开的(旧版本恢复过),也不再排「马上响」的闹钟空转
+    @Test fun oneShotThatAlreadyRanCannotBeResumedAndNeverArmsAnAlarm() {
+        val store = MemoryTriggerStore()
+        store.upsert(TriggerDefinition("once", "t", "do", 1_000))
+        TriggerEngine(store, {}) { _, _ -> }.fire(1_000)
+        val armed = mutableListOf<Long?>()
+        val sent = mutableListOf<String>()
+        val engine = TriggerEngine(store, { armed += it }, idleRetryMs = 500) { t, _ -> sent += t.id }
+        // 还在跑时(窗口进行中)照常隔一会儿重查,等它结束
+        store.upsert(store.get("once")!!.copy(enabled = true))
+        engine.rearm(2_000)
+        assertEquals(2_500L, armed.single())
+        store.upsert(store.get("once")!!.copy(enabled = false))
+        armed.clear()
+        store.mark("once:1000", TriggerWindowState.Failed)
+        assertFalse(engine.setEnabled("once", true, 60_000))
+        assertFalse(store.get("once")!!.enabled)
+        assertTrue(armed.isEmpty())
+        store.upsert(store.get("once")!!.copy(enabled = true))
+        engine.fire(60_000)
+        assertTrue(sent.isEmpty())
+        assertEquals(listOf<Long?>(null), armed)
+        // 改了时间就是新的时段,照常排上、到点照常跑
+        store.upsert(store.get("once")!!.copy(nextAtMs = 120_000))
+        engine.rearm(60_000)
+        assertEquals(120_000L, armed.last())
+        engine.fire(120_000)
+        assertEquals(listOf("once"), sent)
+    }
+
+    @Test fun setEnabledPausesAndResumesRecurringPlansThatRanAndUnrunOneShotsAndReportsMissingOnes() {
+        val store = MemoryTriggerStore()
+        store.upsert(TriggerDefinition("once", "t", "do", 5_000))
+        store.upsert(TriggerDefinition("every", "t", "do", 1_000, intervalMs = 1_000))
+        var armed: Long? = null
+        val engine = TriggerEngine(store, { armed = it }) { _, _ -> }
+        engine.fire(1_000)
+        store.mark("every:1000", TriggerWindowState.Delivered)
+        assertTrue(engine.setEnabled("every", false, 1_500))
+        assertEquals(5_000L, armed)
+        assertTrue(engine.setEnabled("once", false, 1_500))
+        assertEquals(null, armed)
+        assertTrue(engine.setEnabled("once", true, 1_500))
+        assertEquals(5_000L, armed)
+        assertTrue(engine.setEnabled("every", true, 1_500))
+        assertEquals(2_000L, armed)
+        assertFalse(engine.setEnabled("missing", true, 1_500))
+    }
+
     @Test fun dueWindowDoesNotOverlapUnfinishedPriorWindow() {
         val store = MemoryTriggerStore()
         store.upsert(TriggerDefinition("watch", "thread", "check", 1_000, 1_000))
@@ -131,5 +180,42 @@ class TriggerEngineTest {
         assertEquals(5_000L, store.get("tokyo")!!.nextAtMs)
         assertEquals(5_000L, store.get("interval")!!.nextAtMs)
         assertEquals(5_000L, store.get("disabled")!!.nextAtMs)
+    }
+
+    @Test fun upcomingChainsCalendarRecurrencesInTheTriggersZone() {
+        val created = Instant.parse("2026-11-01T01:00:00Z").toEpochMilli()
+        val def = TriggerDefinition(
+            "daily", "t", "do",
+            nextCalendarAt("09:00", "Asia/Shanghai", emptyList(), created),
+            calendarTime = "09:00", calendarZone = "Asia/Shanghai",
+        )
+        val after = Instant.parse("2026-11-02T02:00:00Z").toEpochMilli()
+        val times = upcoming(def, after, 3)
+        assertEquals(3, times.size)
+        assertEquals(nextCalendarAt("09:00", "Asia/Shanghai", emptyList(), after), times[0])
+        assertEquals(nextCalendarAt("09:00", "Asia/Shanghai", emptyList(), times[0]), times[1])
+        assertEquals(nextCalendarAt("09:00", "Asia/Shanghai", emptyList(), times[1]), times[2])
+    }
+
+    @Test fun reschedulingIncludesEditedFirstTimeAndUsesItForCalendarRecurrences() {
+        val edited = Instant.parse("2026-11-04T02:30:00Z").toEpochMilli()
+        val def = TriggerDefinition(
+            "daily", "t", "do", 0,
+            calendarTime = "09:00", calendarZone = "Asia/Shanghai", enabled = false,
+        ).rescheduledTo(edited)
+        assertEquals("10:30", def.calendarTime)
+        assertTrue(def.enabled)
+        val times = upcoming(def, edited, 3)
+        assertEquals(edited, times[0])
+        assertEquals(nextCalendarAt("10:30", "Asia/Shanghai", emptyList(), edited), times[1])
+        assertEquals(nextCalendarAt("10:30", "Asia/Shanghai", emptyList(), times[1]), times[2])
+    }
+
+    @Test fun upcomingSkipsMissedIntervalsAndLimitsOneShots() {
+        val interval = TriggerDefinition("i", "t", "do", 1_000, intervalMs = 1_000)
+        assertEquals(listOf(5_000L, 6_000L, 7_000L), upcoming(interval, 4_500, 3))
+        assertEquals(listOf(5_000L, 6_000L, 7_000L), upcoming(interval.copy(nextAtMs = 5_000), 5_000, 3))
+        val once = TriggerDefinition("once", "t", "do", 9_000)
+        assertEquals(listOf(9_000L), upcoming(once, 8_000, 3))
     }
 }

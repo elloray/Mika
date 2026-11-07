@@ -52,7 +52,7 @@ class ModelSetupScreenTest {
         selectPreset = { calls += "preset $it" }, testAndSave = { calls += "test" }, openForm = { calls += "open form" },
         saveUntested = { calls += "save untested" },
         openProvider = { calls += "provider $it" }, pickRole = { calls += "role $it" }, next = { calls += "next" },
-        openSignIn = { calls += "signin $it" },
+        openUsage = { calls += "usage" }, openSignIn = { calls += "signin $it" },
     )
 
     private val form = AddForm.of(ProviderPresets.all.first()).copy(apiKey = "sk")
@@ -119,6 +119,7 @@ class ModelSetupScreenTest {
     @Test fun settingsPageShowsAllThreeRolesWithoutBottomButton() {
         show(connected(RoleChoices(main = "c1", vision = RoleChoice.Off, light = RoleChoice.SameAsMain)), onboarding = false)
         compose.onNodeWithText(ModelsCopy.TITLE).assertIsDisplayed()
+        compose.onNodeWithText(ModelsCopy.LEAD).assertDoesNotExist()
         // 改动当场生效,左上角返回就行
         compose.onNodeWithTag("setup-next").assertDoesNotExist()
         ModelRole.entries.forEach { compose.onNodeWithText(ModelsCopy.roleLabel(it)).assertIsDisplayed() }
@@ -129,6 +130,15 @@ class ModelSetupScreenTest {
         assertEquals(listOf("role Light"), calls)
     }
 
+    @Test fun settingsPageOpensTokenUsageButOnboardingDoesNotShowIt() {
+        show(connected(), onboarding = false)
+        compose.onNodeWithText(UsageCopy.TITLE).performScrollTo().performClick()
+        assertEquals(listOf("usage"), calls)
+        calls.clear()
+        show(connected(), onboarding = true)
+        compose.onNodeWithText(UsageCopy.TITLE).assertDoesNotExist()
+    }
+
     @Test fun contextFormValidatesPreviewsAndSavesTheModelUsedForNewTasks() {
         val store = ProviderStore(tmp.root, AesGcmKeyCipher { error("Fixture has no API key") })
         val provider = store.connect("Test", deepseek.kind, "https://example.test/v1", null, listOf(ListedModel("m")))
@@ -137,6 +147,7 @@ class ModelSetupScreenTest {
         val open = compose.onNodeWithTag("context-main")
         val window = compose.onNodeWithTag("context-window")
         val trigger = compose.onNodeWithTag("context-trigger")
+        val readTimeout = compose.onNodeWithTag("context-read-timeout")
         val save = compose.onNodeWithTag("context-save")
         val preview = compose.onNodeWithTag("context-effective")
         compose.onNodeWithTag("context-light").assertDoesNotExist()
@@ -153,6 +164,11 @@ class ModelSetupScreenTest {
             save.assertIsNotEnabled()
         }
         trigger.performTextReplacement("600000")
+        for (invalid in listOf("0", "-1", "1e6", "2147484", "2147483648")) {
+            readTimeout.performTextReplacement(invalid)
+            save.assertIsNotEnabled()
+        }
+        readTimeout.performTextReplacement("600")
         save.assertIsEnabled().performClick()
         compose.runOnIdle {
             assertEquals(1_000_000, store.modelFor(ModelRole.Main)!!.capabilities.contextTokens)
@@ -160,10 +176,11 @@ class ModelSetupScreenTest {
         }
         open.performScrollTo().performClick()
         trigger.assertTextContains("600000")
+        readTimeout.assertTextContains("600")
         compose.onNodeWithText("重置").performScrollTo().performClick()
         preview.assertTextContains("18000", substring = true)
         compose.onNodeWithText("取消").performClick()
-        assertEquals(ModelContextSettings(1_000_000, 600_000), store.provider(provider.id)!!.contextSettings["m"])
+        assertEquals(ModelContextSettings(1_000_000, 600_000, 600), store.provider(provider.id)!!.contextSettings["m"])
         open.performScrollTo().performClick()
         compose.onNodeWithText("重置").performScrollTo().performClick()
         save.performClick()

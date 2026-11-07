@@ -25,7 +25,8 @@
     <string name="metrics_output_tokens">輸出 Token</string>
     <string name="usage_cached">快取命中</string>
     <string name="metrics_no_usage">沒報用量</string>
-    <string name="metrics_all_calls">全部模型請求</string>
+    <string name="metrics_all_calls">全部邏輯呼叫</string>
+    <string name="metrics_all_http_calls">全部 HTTP 請求</string>
     <plurals name="metrics_all_calls_value">
         <item quantity="other">%1$d 次（含旁路呼叫和重試）</item>
     </plurals>

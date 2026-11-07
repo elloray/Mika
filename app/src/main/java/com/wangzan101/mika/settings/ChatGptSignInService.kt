@@ -44,7 +44,8 @@ class ChatGptSignInService : Service() {
             }
         }.onFailure { Log.w(TAG, "sign-in service could not enter the foreground", it) }.isSuccess
         if (intent?.action == ACTION_CANCEL) signIns.cancel()
-        if (!foreground) {
+        if (FeatureFlags.get(this).quitRequested()) signIns.cancel()
+        if (!foreground || FeatureFlags.get(this).quitRequested()) {
             stopSelf()
             return START_NOT_STICKY
         }
@@ -85,6 +86,7 @@ class ChatGptSignInService : Service() {
 
         /** 登录开始时调(用户刚点了登录,Mika 在前台,可以开前台服务);开不了抛出,由调用方记下。 */
         fun start(context: Context) {
+            if (FeatureFlags.get(context).quitRequested()) return
             context.startForegroundService(Intent(context, ChatGptSignInService::class.java))
         }
     }

@@ -42,6 +42,7 @@ class SystemSpeechTest {
         assertEquals("zh-CN", SystemSpeech.speechTag(com.wangzan101.mika.i18n.AppLanguage.SimplifiedChinese, java.util.Locale.US))
         assertEquals("zh-TW", SystemSpeech.speechTag(com.wangzan101.mika.i18n.AppLanguage.TraditionalChinese, java.util.Locale.US))
         assertEquals("en-US", SystemSpeech.speechTag(com.wangzan101.mika.i18n.AppLanguage.English, java.util.Locale.CHINA))
+        assertEquals("ar-MA", SystemSpeech.speechTag(com.wangzan101.mika.i18n.AppLanguage.Arabic, java.util.Locale.US))
         assertEquals("fr-FR", SystemSpeech.speechTag(com.wangzan101.mika.i18n.AppLanguage.System, java.util.Locale.FRANCE))
         // 选的语言和系统不同时用这种语言最常见的地区;相同时沿用系统的地区
         assertEquals("ja-JP", SystemSpeech.speechTag(com.wangzan101.mika.i18n.AppLanguage.Japanese, java.util.Locale.US))

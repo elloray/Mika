@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="card_approve_once">الموافقة هذه المرة فقط</string>
+    <string name="card_see_process">العودة إلى Mika لعرض العملية كاملة</string>
+    <string name="card_back_to_mika">العودة إلى Mika</string>
+    <string name="card_continue_last">متابعة آخر محادثة</string>
+    <string name="card_screen">شاشة في الخلفية، انقر لتكبيرها</string>
+    <string name="card_screen_label">الخلفية</string>
+    <string name="card_zoomed">شاشة الخلفية مكبّرة، انقر للإغلاق</string>
+    <string name="card_zoom_hint">تعمل Mika في الخلفية · انقر للإغلاق</string>
+    <string name="card_continuing">متابعة «%1$s»</string>
+    <string name="card_queued_ahead">أكمل المهمة الأخرى أولًا، ثم هذه المهمة</string>
+    <string name="card_hint_answer">أجب Mika…</string>
+    <string name="card_hint_continue">تابع الحديث…</string>
+    <plurals name="capsule_behind">
+        <item quantity="zero">بعد هذه المهمة، لا توجد مهام أخرى بانتظارك (%1$d)</item>
+        <item quantity="one">بعد هذه المهمة، هناك مهمة أخرى واحدة (%1$d) بانتظارك</item>
+        <item quantity="two">بعد هذه المهمة، هناك مهمتان أخريان (%1$d) بانتظارك</item>
+        <item quantity="few">بعد هذه المهمة، هناك %1$d مهام أخرى بانتظارك</item>
+        <item quantity="many">بعد هذه المهمة، هناك %1$d مهمة أخرى بانتظارك</item>
+        <item quantity="other">بعد هذه المهمة، هناك %1$d مهمة أخرى بانتظارك</item>
+    </plurals>
+    <string name="capsule_hold">معلّقة</string>
+    <string name="capsule_handed_over">تولّيت المهمة</string>
+    <string name="capsule_running">جارٍ العمل</string>
+    <string name="capsule_done">تم</string>
+    <string name="capsule_failed">لم تنجح</string>
+    <string name="capsule_stopped">متوقفة</string>
+    <string name="capsule_stop">إيقاف هذه المهمة</string>
+    <string name="capsule_expand">توسيع هذه المهمة</string>
+    <string name="capsule_talk">التحدث إلى Mika</string>
+    <string name="capsule_swap_side">النقل إلى الجانب الآخر</string>
+    <string name="capsule_desc_needs">%1$s، انقر للمعالجة</string>
+    <string name="capsule_desc_running">تعمل Mika: %1$s، انقر للتفاصيل</string>
+    <string name="capsule_desc_other">Mika: %1$s، انقر للتفاصيل</string>
+    <string name="capsule_then_tap_right">عند الانتهاء، انقر على الجانب الأيمن</string>
+    <string name="capsule_need_of_total">%1$d تتطلب تدخّلك · المجموع %2$d</string>
+    <string name="capsule_of_total">%1$s · المجموع %2$d</string>
+    <string name="capsule_done_tap">اكتملت · انقر لعرض النتيجة</string>
+    <string name="capsule_failed_tap">لم تنجح · انقر لمعرفة السبب</string>
+    <string name="capsule_needs_you">تتطلب تدخّلك: %1$s</string>
+    <string name="capsule_handle_it">ألقِ نظرة</string>
+    <string name="capsule_needs_ok">تتطلب موافقتك: %1$s</string>
+    <string name="capsule_asks">تسأل Mika: %1$s</string>
+    <string name="capsule_hold_why">معلّقة: %1$s</string>
+    <string name="capsule_you_handle">حان دورك</string>
+    <string name="capsule_thinking">جارٍ التفكير في الخطوة التالية</string>
+    <string name="capsule_continuing">جارٍ المتابعة</string>
+    <string name="capsule_replay">جارٍ اتباع مسار %1$d/%2$d</string>
+    <plurals name="capsule_batch">
+        <item quantity="zero">لا توجد خطوات في المرة (%1$d)</item>
+        <item quantity="one">خطوة واحدة في المرة (%1$d)</item>
+        <item quantity="two">خطوتان في المرة (%1$d)</item>
+        <item quantity="few">%1$d من الخطوات في المرة الواحدة</item>
+        <item quantity="many">%1$d خطوة في المرة الواحدة</item>
+        <item quantity="other">%1$d خطوة في المرة الواحدة</item>
+    </plurals>
+    <string name="and_more">" والمزيد"</string>
+    <string name="capsule_hide">إيقاف الكبسولة العائمة</string>
+    <string name="capsule_hidden_hint">تم إيقاف الكبسولة العائمة. يمكنك إعادة تشغيلها من «%1$s › %2$s»</string>
+</resources>

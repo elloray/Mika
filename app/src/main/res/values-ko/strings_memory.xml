@@ -78,4 +78,14 @@
     <string name="skills_archived">보관됨</string>
     <string name="skills_archive">보관</string>
     <string name="skills_changed_lines">변경된 줄:</string>
+    <string name="skills_get">스킬 얻기</string>
+    <string name="skills_share">스킬 공유</string>
+    <string name="skills_import">스킬 가져오기</string>
+    <string name="skills_import_sub">다른 사람이 공유한 스킬 전문을 붙여 넣으세요</string>
+    <string name="skills_import_hint">먼저 “검토 대기”로 들어가며, 읽고 받아들이기 전에는 사용되지 않습니다.</string>
+    <string name="skills_import_confirm">가져오기</string>
+    <string name="skill_imported">가져왔습니다. “검토 대기”에서 확인하세요.</string>
+    <string name="skills_imported">가져옴</string>
+    <string name="skill_builtin_name">같은 이름의 기본 스킬이 있습니다. 이름을 바꿔 다시 시도하세요.</string>
+    <string name="skill_draft_pending">같은 이름의 초안이 이미 검토를 기다리고 있습니다. 그것부터 처리하세요.</string>
 </resources>

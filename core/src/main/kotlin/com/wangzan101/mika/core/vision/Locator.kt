@@ -2,6 +2,8 @@ package com.wangzan101.mika.core.vision
 
 import com.wangzan101.mika.core.uistate.ScreenFamily
 import com.wangzan101.mika.core.prompt.Prompts
+import com.wangzan101.mika.core.prompt.Feedback
+import com.wangzan101.mika.core.uistate.ScreenDiagnosis
 import com.wangzan101.mika.core.uistate.ScreenPort
 import com.wangzan101.mika.core.uistate.ScreenSnapshot
 import com.wangzan101.mika.core.uistate.TreeAdequacy
@@ -195,6 +197,9 @@ class Locator(private val screen: ScreenPort, private val vision: VisionService,
         val png = screen.screenshotPng()
         if (png == null) {
             val s = peekOrNull()
+            if (s?.captureError == ScreenDiagnosis.DISPLAY_CAPTURE_UNAVAILABLE) {
+                return Shot.Missing(s.captureError, Feedback["display_capture_unavailable"])
+            }
             val empty = s != null && s.packageName == null && s.elements.isEmpty() && !s.hasWindow
             return if (empty) Shot.Missing("no_app_open", m.noApp) else Shot.Missing("screenshot_unavailable", m.noShot)
         }
@@ -209,6 +214,9 @@ class Locator(private val screen: ScreenPort, private val vision: VisionService,
      */
     private suspend fun clearForVision(): Shot.Missing? {
         val s = peekOrNull() ?: return Shot.Missing("vision_unavailable", m.unchecked)
+        if (s.captureError == ScreenDiagnosis.DISPLAY_CAPTURE_UNAVAILABLE) {
+            return Shot.Missing(s.captureError, Feedback["display_capture_unavailable"])
+        }
         if (s.protected) return Shot.Missing("protected_content", m.protectedScreen)
         return null
     }

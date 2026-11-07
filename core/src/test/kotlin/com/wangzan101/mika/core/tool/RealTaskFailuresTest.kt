@@ -42,7 +42,8 @@ class RealTaskFailuresTest {
         assertEquals("com.bank", o.s("currentApp"))
         assertEquals("false", o.s("readable"))
         val hint = o.s("hint")
-        assertTrue(hint, "do not launch it again" in hint && "back once" in hint && "hand_to_user" in hint)
+        assertTrue(hint, "do not launch it again" in hint && "hand_to_user" in hint)
+        assertFalse("back once" in hint)
         // 启动后到了前台却读不到:照实说,不叫人再启动
         val l = d.execute(call("phone_launch_app", """{"package":"com.bank"}""")).content
         assertEquals("true", l.s("ok")); assertEquals("false", l.s("readable"))

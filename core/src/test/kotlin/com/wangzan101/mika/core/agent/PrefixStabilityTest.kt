@@ -237,9 +237,9 @@ class PrefixStabilityTest {
         val bodies = run(Setup(contextTokens = 80_000)).single()
         val r = check(bodies, "compaction", appendOnly = false)
         assertTrue(bodies.any { ContextCompressor.HEADER in it.toString() })
-        // 越过触发点的那一次压缩一次(改写一次),之后只追加,再长一个余量越过时才再压:30 步里只改写三次
-        // (80K 窗口:提示词和展开的工具约 20K,触发点 47K,压到 30K 以下)
-        assertEquals(listOf(12, 21, 30), r.changed)
+        // 越过触发点的那一次压缩一次(改写一次),之后只追加,再长一个余量越过时才再压:30 步里改写两次
+        // (80K 窗口:提示词和展开的工具约 20K,触发点 47K,压到 30K 以下;增量估算不随普通文本的低用量向下校准)
+        assertEquals(listOf(12, 22), r.changed)
         assertTrue("${r.share}", r.share > 0.85)
     }
 

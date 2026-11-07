@@ -15,6 +15,7 @@
     <string name="tool_check_dialog">Comprobar si hay diálogos</string>
     <string name="tool_gesture">Gesto multitáctil</string>
     <string name="tool_shell">Comando del sistema</string>
+    <string name="tool_root">Comando root</string>
     <string name="tool_find_element">Buscar en la pantalla</string>
     <string name="tool_collect">Recopilar de varias pantallas</string>
     <string name="tool_phone_run">Varias acciones en el teléfono</string>

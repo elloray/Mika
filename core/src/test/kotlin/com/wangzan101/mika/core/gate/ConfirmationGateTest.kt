@@ -35,6 +35,25 @@ class ConfirmationGateTest {
         assertTrue(approved(req(IrrevAction.send, "com.a")).permits(hit(IrrevAction.send), null, 2) is Permit.Mismatch)
     }
 
+    @Test fun nonPayableAmountsDoNotCauseApprovalMismatchLoops() {
+        val page = ScreenSnapshot("s", "com.a", listOf(
+            el("示例对象", top = 200), el("150-200元/天", top = 280), el("提交", top = 900),
+        ), 1080, 2400)
+        fun request(amount: String?) = ConfirmationRequest(IrrevAction.submit, "示例对象", "提交申请", amount, "com.a")
+        val hit = Irreversible(IrrevAction.submit, "提交")
+        // 区间、只申报一端以及无金额都不是失配;同意仍只放行一次,不会留下授权造成反复核对
+        for (amount in listOf("150-200元/天", "150", "200元", null)) {
+            val gate = approved(request(amount))
+            assertEquals(amount ?: "none", Permit.Allowed, gate.permits(hit, page, 2))
+            assertEquals(amount ?: "none", Permit.NoGrant, gate.permits(hit, page, 2))
+        }
+        // 应付上下文不因动作叫「提交」而跳过金额:无金额、错金额仍不放行
+        val due = page.copy(elements = page.elements + el("合计 ¥25", top = 800))
+        assertTrue(approved(request(null)).permits(hit, due, 2) is Permit.Mismatch)
+        assertTrue(approved(request("150-200元/天")).permits(hit, due, 2) is Permit.Mismatch)
+        assertEquals(Permit.Allowed, approved(request("¥25")).permits(hit, due, 2))
+    }
+
     // 联系、投申请的按钮按提交核对:对象(职位、公司)在屏上任何地方都行,没有要核的输入框文字
     @Test fun contactButtonApprovalChecksTargetOnScreen() {
         val page = ScreenSnapshot("s", "www.jobs.example", listOf(el("产品经理 · 某公司", top = 400), el("¥25", top = 430), el("立即沟通", top = 460)), 1080, 2400)

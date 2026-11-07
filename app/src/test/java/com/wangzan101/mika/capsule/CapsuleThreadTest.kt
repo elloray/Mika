@@ -172,7 +172,7 @@ class CapsuleThreadTest {
         val t = CapsuleThreads.build(emptyList(), 10, listOf(run))
         val users = t.items.filterIsInstance<ThreadItem.User>()
         assertEquals(listOf("问题a", "改成后天", "顺便订午饭"), users.map { it.text })
-        assertEquals(listOf(null, "已加入当前任务", "已收到，下一步处理"), users.map { it.note })
+        assertEquals(listOf(null, "已加入当前任务", "已收到，下一步调整当前任务"), users.map { it.note })
         assertEquals("你:顺便订午饭", texts(t)[t.anchor])
         assertEquals(t.items.size, t.items.map { it.key }.toSet().size)
     }

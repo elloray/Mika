@@ -23,7 +23,7 @@ class ChannelGateway(
             is ChannelInput.Text -> {
                 val ask = activeAsk(input.peer.threadId)
                 if (input.replyToAskId != null && ask?.askId == input.replyToAskId && ask.kind == Delivery.Ask.Kind.Input) {
-                    route.answer(input.peer.threadId, ask.askId, input.text)
+                    if (route.answer(input.peer.threadId, ask.askId, input.text)) channel.acknowledge(input.messageId)
                 } else {
                     if (ask != null) route.cancelAsk(input.peer.threadId)
                     route.newTask(input.peer, input.messageId, input.text)

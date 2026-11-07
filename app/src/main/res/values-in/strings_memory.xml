@@ -78,4 +78,14 @@
     <string name="skills_archived">Diarsipkan</string>
     <string name="skills_archive">Arsipkan</string>
     <string name="skills_changed_lines">Baris yang berubah:</string>
+    <string name="skills_get">Dapatkan keterampilan</string>
+    <string name="skills_share">Bagikan keterampilan</string>
+    <string name="skills_import">Impor keterampilan</string>
+    <string name="skills_import_sub">Tempel keterampilan yang dibagikan orang lain</string>
+    <string name="skills_import_hint">Masuk ke “Perlu ditinjau” dulu dan baru dipakai setelah kamu baca dan terima.</string>
+    <string name="skills_import_confirm">Impor</string>
+    <string name="skill_imported">Sudah diimpor. Tinjau di “Perlu ditinjau”.</string>
+    <string name="skills_imported">Diimpor</string>
+    <string name="skill_builtin_name">Sudah ada keterampilan bawaan dengan nama ini. Ganti namanya lalu coba lagi.</string>
+    <string name="skill_draft_pending">Draf dengan nama ini masih menunggu ditinjau. Selesaikan yang itu dulu.</string>
 </resources>

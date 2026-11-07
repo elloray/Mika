@@ -24,7 +24,7 @@ object Redactor {
     /** [secretField]:端口报告这次输入的目标是密码框。 */
     /** [verb]:调用的工具做的动作(不认识的工具为 null)。 */
     fun args(verb: Verb?, argsJson: String, secretField: Boolean): String {
-        if (verb == Verb.MemorySave) return maskFields(argsJson, MEMORY_ARGS)
+        if (verb == Verb.MemorySave || verb == Verb.MemoryEdit) return maskFields(argsJson, MEMORY_ARGS)
         if (verb == Verb.Script) return script(argsJson)
         if (verb == Verb.PhoneCommand) return maskFields(argsJson, setOf("command"))
         if (verb == Verb.PhoneRun) return phoneRun(argsJson)

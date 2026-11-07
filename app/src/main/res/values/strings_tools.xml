@@ -15,6 +15,7 @@
     <string name="tool_check_dialog">Check for dialogs</string>
     <string name="tool_gesture">Multi-touch gesture</string>
     <string name="tool_shell">System command</string>
+    <string name="tool_root">Root command</string>
     <string name="tool_find_element">Find on screen</string>
     <string name="tool_collect">Collect across screens</string>
     <string name="tool_phone_run">Several phone actions</string>

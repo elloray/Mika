@@ -4,6 +4,7 @@
     <string name="model_context_note">Los campos en blanco usan valores automáticos. Los ajustes se aplican en la próxima tarea a todos los roles que usen este proveedor y modelo.</string>
     <string name="model_context_window">Ventana de contexto (tokens)</string>
     <string name="model_context_trigger">Umbral de compactación (tokens)</string>
+    <string name="model_context_read_timeout">Tiempo de espera de lectura (segundos)</string>
     <string name="model_context_auto">Auto · %1$d</string>
     <string name="model_context_integer">Introduce un número entero positivo.</string>
     <string name="model_context_range">Rango permitido (tokens) · %1$d–%2$d</string>

@@ -34,10 +34,7 @@ object ShareRules {
         return f to saveAs
     }
 
-    /** 单个文件名:不含路径分隔符、控制字符、格式字符(改写方向、零宽等,能让显示的名字和实际的对不上)与行/段分隔符。 */
-    fun plainName(n: String): Boolean =
-        n.isNotEmpty() && '/' !in n && '\\' !in n && n != "." && n != ".." &&
-            n.codePoints().noneMatch(::hiddenChar)
+    fun plainName(n: String): Boolean = SandboxPaths.plainName(n)
 
     /** 不让导出:安装包放进「下载」里,用户一点就可能装上沙箱里做出来的 App。 */
     private val REFUSED_TYPES = setOf("apk", "apks", "xapk", "aab")
@@ -74,7 +71,5 @@ object ShareRules {
         return sb.toString() + if (keepExt) ext else ""
     }
 
-    /** 控制字符、格式字符(Cf)与 U+2028/U+2029。 */
-    fun hiddenChar(cp: Int): Boolean =
-        Character.isISOControl(cp) || Character.getType(cp) == Character.FORMAT.toInt() || cp == 0x2028 || cp == 0x2029
+    fun hiddenChar(cp: Int): Boolean = SandboxPaths.hiddenChar(cp)
 }

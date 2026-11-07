@@ -11,6 +11,13 @@ data class StoredRun(
     val roundInProgress: Boolean = false,
     val triggerWindowKey: String? = null,
     val runSucceeded: Boolean? = null,
+    /** 非本机任务的回复地址与入站编号；旧记录缺省时仍按本机任务恢复。 */
+    val channelPeer: ChannelPeer? = null,
+    val channelMessageId: String? = null,
+    /** 给人看、记进对话的原话;条件检查运行的 [goal] 是生成的检查目标,这里存用户写的条件原文。 */
+    val userText: String? = null,
+    /** 持久排队项的编号;恢复时据此防止已登记的运行被再次入队执行。 */
+    val followUpId: String? = null,
 )
 
 interface RunStore {

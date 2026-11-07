@@ -172,7 +172,7 @@ class RunStore internal constructor(
             "model_reply" to setOf("step", "model", "role", "tool", "inputTokens", "cachedTokens",
                 "outputTokens", "repliedAtMs", "latencyMs", "retryWaitMs"),
             "compressed" to setOf("foldedSteps"),
-            "model_calls" to setOf("calls", "unreported", "inputTokens", "cachedTokens", "outputTokens"),
+            "model_calls" to setOf("calls", "httpCalls", "unreported", "httpUnreported", "inputTokens", "cachedTokens", "outputTokens"),
             "task_ended" to setOf("outcome", "kind"),
         )
         private const val ALPHABET = "abcdefghijklmnopqrstuvwxyz0123456789"

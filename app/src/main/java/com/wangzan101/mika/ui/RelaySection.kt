@@ -1,6 +1,6 @@
 package com.wangzan101.mika.ui
 
-import androidx.compose.material3.AlertDialog
+import com.wangzan101.mika.ui.components.MikaDialog
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -122,7 +122,7 @@ internal fun RelayControls(config: RelayConfig, state: RelayState, busy: Boolean
     }
     FooterNote(stringResource(R.string.relay_intro))
     if (failed) FooterNote(stringResource(R.string.relay_failed))
-    if (confirm) AlertDialog(onDismissRequest = { confirm = false },
+    if (confirm) MikaDialog(onDismissRequest = { confirm = false },
         title = { Text(stringResource(R.string.relay_unpair)) }, text = { Text(stringResource(R.string.relay_unpair_body)) },
         confirmButton = { TextButton({ confirm = false; onUnpair() }) { Text(stringResource(R.string.relay_unpair)) } },
         dismissButton = { TextButton({ confirm = false }) { Text(stringResource(R.string.cancel)) } })

@@ -1,0 +1,28 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="install_check">جارٍ فحص الجهاز</string>
+    <string name="install_extract">جارٍ فك الحزمة</string>
+    <string name="install_configure">جارٍ الإعداد</string>
+    <string name="install_skills">جارٍ مزامنة نصوص المهارات</string>
+    <string name="install_interrupted">توقف الإعداد؛ يمكنك إعادة المحاولة</string>
+    <string name="install_checksum">عدم تطابق المجموع الاختباري للملف</string>
+    <string name="install_unpack_failed">تعذّر فك حزمة البيئة؛ يُرجى إعادة تثبيت Mika: %1$s</string>
+    <string name="install_unsupported">هذا الجهاز غير مدعوم (يتطلب arm64)</string>
+    <string name="install_no_space">المساحة غير كافية: يلزم %1$d MB (المتاح %2$d MB)</string>
+    <string name="install_cannot_start">لن تبدأ البيئة: %1$s</string>
+    <string name="install_exit_code">رمز الخروج %1$d</string>
+    <string name="install_no_client">أمر mika مفقود (الحزمة غير مكتملة)</string>
+    <string name="sandbox_resetting">جارٍ إعادة الضبط</string>
+    <string name="sandbox_incomplete">ملفات البيئة غير مكتملة؛ يمكنك إعادة ضبطها من الإعدادات → خيارات متقدمة</string>
+    <string name="sandbox_not_finished">لم يكتمل الإعداد؛ يمكنك إعادة المحاولة</string>
+    <string name="sandbox_network">السماح للنصوص البرمجية بالاتصال بالإنترنت</string>
+    <string name="sandbox_network_sub">متوقف افتراضيًا</string>
+    <string name="sandbox_network_explain">يعمل Mika افتراضيًا مع الملفات ويشغّل النصوص البرمجية دون اتصال. عند تفعيل هذا الخيار، يمكن للنصوص البرمجية استخدام الشبكة (مثل البحث عن الأوراق أو الخرائط)، وقد ترسل أيضًا ملفات من المحادثة.</string>
+    <string name="sandbox_isolation_unavailable">لا يستطيع هذا الجهاز إبقاء النصوص البرمجية دون اتصال: لا يمكن لـ Mika العمل على الملفات وتشغيل النصوص البرمجية إلا عند تفعيل «السماح للنصوص البرمجية بالاتصال بالإنترنت»</string>
+    <string name="sandbox_reset_title">هل تريد إعادة ضبط البيئة؟</string>
+    <string name="sandbox_reset_body">يحذف البيئة التي يستخدمها Mika للملفات والنصوص البرمجية، بالإضافة إلى الملفات التي أُنشئت في كل محادثة (بما فيها الملفات التي أرفقتها)، ثم يُعدّها مجددًا تلقائيًا. لا تتأثر المحادثات والإعدادات.</string>
+    <string name="sandbox_broken">لم يكتمل الإعداد: %1$s</string>
+    <string name="sandbox_reset_sub">استخدمه عند حدوث مشكلة: يحذف البيئة ويعدّها من جديد</string>
+    <string name="sandbox_reset">إعادة ضبط البيئة</string>
+    <string name="reset">إعادة ضبط</string>
+</resources>

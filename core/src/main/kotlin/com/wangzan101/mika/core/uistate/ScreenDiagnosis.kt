@@ -6,8 +6,10 @@ enum class ScreenState(val wire: String) {
     BLANK("blank"),
     /** 界面在持续变化,还没加载完。 */
     LOADING("loading"),
-    /** 防截屏页面:画面全黑但有窗口。 */
+    /** 有明确依据认定的防截屏页面。 */
     PROTECTED("protected"),
+    /** 画面持续不可用;黑像素本身不能证明是防截屏还是虚拟屏没有合成出内容。 */
+    CAPTURE_UNAVAILABLE("capture_unavailable"),
     /** 登录、验证码、支付等需要用户亲自处理的页面。 */
     NEEDS_HUMAN("needs_human"),
 }
@@ -45,6 +47,8 @@ object ScreenDiagnosis {
     /** 屏上一个 App 窗口都没有(虚拟屏刚建好时就是这样)。 */
     const val NO_WINDOW = "no window"
     const val UNREADABLE_WINDOW = "unreadable window"
+    const val DISPLAY_CAPTURE_UNAVAILABLE = "display_capture_unavailable"
+    const val DISPLAY_CAPTURE = "display_capture"
     /** 网页:网站不支持内置浏览器(要求换浏览器或下载 App)。 */
     const val UNSUPPORTED_BROWSER = "unsupported_browser"
 
@@ -80,9 +84,17 @@ object ScreenDiagnosis {
             hit(SMS_CODE) != null -> "login" to "verification code text: ${hit(SMS_CODE)}"
             else -> null
         }
-        // 两次安静时都全黑才算防截屏,一次黑可能只是还没画出来
-        if (f.hasWindow && f.blackFrames.size >= 2 && f.blackFrames.all { it }) {
-            return ScreenCheck(ScreenState.PROTECTED, f.currentApp, true, human?.first ?: "other", "secure window: the frame stays black")
+        // 两次安静时都全黑,只能确定画面不能用。黑像素不能区分安全窗口和虚拟屏合成失败。
+        // 树够用就降级走控件;树也没有信息时才需要用户在自己的屏幕上接管。
+        if ((f.hasWindow || f.anyWindow || f.foregroundApp != null) && f.blackFrames.size >= 2 && f.blackFrames.all { it }) {
+            val needsHuman = human != null || f.readableElements == 0
+            return ScreenCheck(
+                ScreenState.CAPTURE_UNAVAILABLE,
+                f.currentApp ?: f.foregroundApp,
+                needsHuman,
+                if (needsHuman) human?.first ?: DISPLAY_CAPTURE else null,
+                "frames stay black; secure window and display rendering failure cannot be distinguished",
+            )
         }
         human?.let { (reason, cause) -> return human(reason, cause) }
         if (f.changing) return ScreenCheck(ScreenState.LOADING, f.currentApp, false, cause = "screen keeps changing")

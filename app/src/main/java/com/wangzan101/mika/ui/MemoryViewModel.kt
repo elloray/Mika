@@ -11,6 +11,7 @@ import com.wangzan101.mika.core.memory.MemoryStatus
 import com.wangzan101.mika.core.memory.MemoryStore
 import com.wangzan101.mika.core.knowledge.FrontMatter
 import com.wangzan101.mika.core.skills.SkillDrafter
+import com.wangzan101.mika.core.skills.SkillImport
 import com.wangzan101.mika.core.assembly.knownToolNames
 import com.wangzan101.mika.core.skills.PersonalSkill
 import com.wangzan101.mika.core.skills.PersonalSkills
@@ -31,6 +32,7 @@ import kotlinx.coroutines.flow.update
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import java.util.UUID
 import com.wangzan101.mika.i18n.uiLocale
 import com.wangzan101.mika.core.assembly.knownTools
 import com.wangzan101.mika.core.tool.Verb
@@ -82,6 +84,8 @@ class MemoryViewModel(
     /** 收下改过的技能时:提到跑脚本的工具的,脚本得是清单里标为可运行的。 */
     private val runnableScripts: Set<String> = emptySet(),
     private val appDrafts: AppKnowledgeDraftStore? = null,
+    /** 内置技能的名字:导入的技能不能用。 */
+    private val builtinSkillNames: Set<String> = emptySet(),
 ) {
     private val local = MutableStateFlow(MemoryUi())
     private val skillsVersion = MutableStateFlow(0)
@@ -146,10 +150,14 @@ class MemoryViewModel(
     private fun skillsUi(): SkillsUi = skills?.let { SkillsUi.of(it, appDrafts) } ?: SkillsUi()
     private fun skillsChanged() = skillsVersion.update { it + 1 }
 
-    /** 收下草稿;[edited] 是用户改过的全文,和起草出来的一样要过格式与安全校验,不过就不收并说明。 */
+    /**
+     * 收下草稿;[edited] 是用户改过的全文,和起草出来的一样要过格式与安全校验,不过就不收并说明。
+     * 导入的草稿是别人写的,没改过也照样再校验一遍;自学的草稿起草时已按那次运行的工具校验过,没改过就不再查。
+     */
     fun approveSkill(draftId: String, edited: String? = null) {
         val p = skills ?: return
-        val problem = edited?.let { SkillDrafter.validate(it, toolNames, scriptTool, runnableScripts) }
+        val checked = edited ?: p.drafts()[draftId]?.takeIf { it.imported }?.markdown
+        val problem = checked?.let { SkillDrafter.validate(it, toolNames, scriptTool, runnableScripts) }
         if (problem != null) {
             local.update { it.copy(message = SKILL_PROBLEMS[problem] ?: tr(R.string.skill_bad_format)) }
             return
@@ -161,6 +169,22 @@ class MemoryViewModel(
     }
 
     fun rejectSkill(draftId: String) { skills?.reject(draftId); skillsChanged() }
+
+    /**
+     * 导入别人分享的技能全文:过了校验放进「待确认」并切过去,返回 null;不过就返回原因,由导入框自己显示(框还开着,粘的字不丢)。
+     */
+    fun importSkill(text: String): String? {
+        val p = skills ?: return tr(R.string.skill_bad_format)
+        return when (val r = SkillImport.prepare(text, p, builtinSkillNames, toolNames, scriptTool, runnableScripts, UUID.randomUUID().toString(), clock())) {
+            is SkillImport.Result.Ready -> {
+                p.putPending(r.id, r.skill)
+                skillsChanged()
+                local.update { it.copy(segment = Segment.Pending, message = tr(R.string.skill_imported)) }
+                null
+            }
+            is SkillImport.Result.Rejected -> SKILL_PROBLEMS[r.problem] ?: tr(R.string.skill_bad_format)
+        }
+    }
 
     fun approveAppDraft(id: String) { appDrafts?.approve(id); skillsChanged() }
     fun rejectAppDraft(id: String) { appDrafts?.reject(id); skillsChanged() }
@@ -195,6 +219,8 @@ class MemoryViewModel(
             "missing_section" to tr(R.string.skill_missing_section),
             "too_long" to tr(R.string.skill_too_long),
             "unknown_tool" to tr(R.string.skill_unknown_tool),
+            "builtin_name" to tr(R.string.skill_builtin_name),
+            "draft_pending" to tr(R.string.skill_draft_pending),
         )
 
         fun sourceLine(s: MemorySource): String =
@@ -244,6 +270,7 @@ data class SkillsUi(val drafts: List<SkillRow> = emptyList(), val installed: Lis
                 canRestore = skills?.revisions(s.name)?.isNotEmpty() == true,
                 recent = s.outcomes.takeLast(3).map(::outcomeLabel),
                 userCreated = s.createdByUser,
+                imported = s.imported,
             )
         }
 
@@ -270,4 +297,6 @@ data class SkillRow(
     val recent: List<String> = emptyList(), val changedLines: List<String> = emptyList(),
     /** 用户在任务里要求写下的(不是从办成的任务里学来的)。 */
     val userCreated: Boolean = false,
+    /** 从别人分享的全文导入的。 */
+    val imported: Boolean = false,
 )

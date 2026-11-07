@@ -4,6 +4,7 @@ import com.wangzan101.mika.core.net.ProxyFailure
 import com.wangzan101.mika.core.guard.GuardVerdict
 import com.wangzan101.mika.core.model.ModelError
 import com.wangzan101.mika.core.tool.Outcome
+import kotlinx.serialization.json.JsonPrimitive
 
 /**
  * 停止规则:任务什么时候、以什么结局结束(放弃、守卫叫停、模型出错、没给出回答、步数用完)。办完不在这里:
@@ -24,6 +25,13 @@ internal object StopRules {
 
     fun stepLimit(maxSteps: Int) = TaskState.Failed("已达到 $maxSteps 步上限,任务没有完成。", FailKind.StepLimit)
 
+    /** 收尾请求本身失败或仍没交出结果时，按触发收尾的原因落结局，不谎报步数用完。 */
+    fun closeoutFailed(reason: Closeout, maxSteps: Int): TaskState.Failed = when (reason) {
+        Closeout.StepLimit -> stepLimit(maxSteps)
+        Closeout.Completed -> TaskState.Failed("任务进度已经完成,但模型没有给出结果。", FailKind.Model)
+        Closeout.NoNewData -> TaskState.Failed("连续 ${NewDataTracker.LIMIT} 次没有读到新数据,任务已停止。", FailKind.Guard)
+    }
+
     /** 提醒过一次,模型仍然回了空话(或又被输出上限截断)。 */
     fun noAnswer() = TaskState.Failed("模型停止了操作,没有给出回答。", FailKind.Model)
 
@@ -36,9 +44,11 @@ internal object StopRules {
         else TaskState.Failed("模型调用异常:${e.message ?: e::class.simpleName}", FailKind.Model)
 
     fun guard(v: GuardVerdict): TaskState.Failed {
+        val treeBlind = v.evidence["treeBlind"] == JsonPrimitive(true)
         val why = when (v.code) {
             "repeating_action" -> "同一个操作反复执行仍没有效果"
-            "no_progress" -> "操作多次后画面一直没有变化"
+            "no_progress" -> if (treeBlind) "控件树读不到操作位置,连续操作后画面仍无可见变化,无法确认操作是否生效,已停止重试"
+                else "操作多次后画面一直没有变化"
             "read_loop" -> "页面没有变化,反复读也读不出要找的内容"
             "too_many_failures" -> "操作连续失败"
             "sandbox_loop" -> "同一条命令原样重复仍然失败"
@@ -69,6 +79,8 @@ internal fun userReason(e: ModelError): String = when (e) {
         "模型「${e.model.ifEmpty { "当前模型" }}」不支持调用工具,Mika 干活要靠工具。去设置 › 模型换一个会调用工具的模型。"
     is ModelError.ContextTooLong -> "对话内容超出了模型的上下文长度,请换用上下文更长的模型,或把任务拆小一些。"
     is ModelError.ContentRefused -> "模型拒绝处理该内容,请调整任务描述或换一个模型。"
+    is ModelError.ReasoningEffortRejected ->
+        "模型不接受所选的思考强度。服务端回复：${quoted(e.detail)}。请到设置 › 模型,把思考强度改为默认或服务端支持的档位。"
     is ModelError.RateLimited -> "模型服务限流,重试后仍然请求太频繁。请稍后再试,或检查账户的调用频率限制。"
     is ModelError.Network -> "连接模型服务失败,重试后仍然不通。请检查网络和 Base URL。"
     is ModelError.Proxy -> when (e.failure) {

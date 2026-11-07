@@ -39,6 +39,19 @@ class ToolDispatcherInteractTest {
 
     private suspend fun ToolDispatcher.interact(args: String) = execute(call(INTERACT_TOOL, args)).content
 
+    private suspend fun assertPointRefCause(t: ToolDispatcher, ref: String, sid: String, cause: String) {
+        val calls = listOf(
+            """{"action":"hover","ref":"$ref","snapshotId":"$sid"}""",
+            """{"action":"drag","ref":"$ref","snapshotId":"$sid","toX":1,"toY":1}""",
+            """{"action":"drag","x":1,"y":1,"toRef":"$ref","snapshotId":"$sid"}""",
+        )
+        for (args in calls) {
+            val r = t.interact(args)
+            assertEquals(args, "ref_expired", r.s("error"))
+            assertEquals(args, cause, r.s("cause"))
+        }
+    }
+
     @Test fun offeredWithTheWebPortOnly() = runTest {
         assertTrue(toolDispatcher(FakeScreen()).definitions().none { it.name == INTERACT_TOOL })
         assertTrue(toolDispatcher(FakeScreen(), web = FakeWebPort()).definitions().any { it.name == INTERACT_TOOL })
@@ -132,10 +145,35 @@ class ToolDispatcherInteractTest {
         val (t, sid) = onWeb(web, stableRefs = true)
         assertEquals("true", t.interact("""{"action":"drag","ref":"@e1","snapshotId":"$sid","toRef":"@e2"}""").s("ok"))
         assertEquals("drag Ref(ref=@e1, snapshotId=wt1-1) Ref(ref=@e2, snapshotId=wt1-1) 10", web.calls.last())
-        // 退役的编号不交给端口
-        assertEquals("ref_expired", t.interact("""{"action":"drag","ref":"@e1","snapshotId":"$sid","toRef":"@e9"}""").s("error"))
+        // 退役的编号不交给端口,hover/drag 也保留 stabilizer 给出的原因
+        assertPointRefCause(t, "@e9", sid, "ref_retired")
         assertEquals("ref_expired", t.interact("""{"action":"select","ref":"@e9","snapshotId":"$sid","option":"x"}""").s("error"))
         assertTrue(web.calls.last().startsWith("drag"))
+    }
+
+    @Test fun pointRefFailuresKeepEveryStabilizerCause() = runTest {
+        run {
+            val web = FakeWebPort()
+            val (t, _) = onWeb(web, stableRefs = true)
+            assertPointRefCause(t, "@e1", "w99", "snapshot_unknown")
+            assertTrue(web.calls.none { it.startsWith("hover") || it.startsWith("drag") })
+        }
+        run {
+            val web = FakeWebPort()
+            val (t, first) = onWeb(web, stableRefs = true)
+            web.elements += UiElement("@e3", "button", "新增", 800, 900, listOf(0, 0, 10, 10), null, true, false, false)
+            t.execute(call("web_observe"))
+            assertPointRefCause(t, "@e3", first, "ref_not_in_snapshot")
+        }
+        run {
+            val web = FakeWebPort()
+            val (t, first) = onWeb(web, stableRefs = true)
+            for (y in listOf(220, 320, 420)) {
+                web.elements = web.elements.map { if (it.ref == "@e1") it.copy(centerY = y) else it }
+                t.execute(call("web_observe"))
+            }
+            assertPointRefCause(t, "@e1", first, "element_moved")
+        }
     }
 
     @Test fun actionsAreLogged() = runTest {

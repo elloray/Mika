@@ -8,6 +8,15 @@ object SandboxPaths {
     const val WORKSPACE = "/workspace"
     const val SKILLS = "/opt/mika/skills"
 
+    /** 单个文件名:不含路径分隔符、控制字符、格式字符(改写方向、零宽等,能让显示的名字和实际的对不上)与行/段分隔符。 */
+    fun plainName(n: String): Boolean =
+        n.isNotEmpty() && '/' !in n && '\\' !in n && n != "." && n != ".." &&
+            n.codePoints().noneMatch(::hiddenChar)
+
+    /** 控制字符、格式字符(Cf)与 U+2028/U+2029。 */
+    fun hiddenChar(cp: Int): Boolean =
+        Character.isISOControl(cp) || Character.getType(cp) == Character.FORMAT.toInt() || cp == 0x2028 || cp == 0x2029
+
     /** 相对路径以 [cwd] 为基;规范化后不在 [WORKSPACE] 或 [SKILLS] 下返回 null。 */
     fun normalize(path: String, cwd: String = WORKSPACE): String? {
         if (path.isEmpty() || '\u0000' in path) return null

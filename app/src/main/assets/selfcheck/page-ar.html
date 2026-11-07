@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>صفحة الفحص الذاتي في Mika</title>
+<style>
+  body { font-family: sans-serif; margin: 24px; color: #111; background: #fff; direction: rtl; text-align: start; }
+  button { font-size: 18px; padding: 12px 20px; }
+  p { font-size: 16px; }
+</style>
+</head>
+<body>
+<!-- صفحة محلية مضمّنة لفحص توافق الويب في Mika؛ لا تتصل بالإنترنت. -->
+<h1>صفحة الفحص الذاتي في Mika</h1>
+<p id="marker">هذه صفحة اختبار محلية خاصة بـMika. SELFCHECK-READ-OK</p>
+<button id="selfcheck-button" type="button" onclick="clicked()">انقر هنا</button>
+<p id="status">عدد النقرات: 0</p>
+<script>
+  var clicks = 0;
+  function clicked() {
+    clicks++;
+    document.getElementById('status').textContent = 'عدد النقرات: ' + clicks;
+  }
+</script>
+</body>
+</html>

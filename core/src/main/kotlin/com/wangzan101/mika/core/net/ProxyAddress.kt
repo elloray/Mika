@@ -3,6 +3,7 @@ package com.wangzan101.mika.core.net
 import java.net.InetSocketAddress
 import java.net.Proxy
 import java.net.URI
+import java.net.URLDecoder
 
 /**
  * 一个网络代理地址,形如 `协议://[用户:密码@]主机:端口`:协议是 http、https、socks5、socks5h 之一,后面不带路径。
@@ -45,11 +46,14 @@ class ProxyAddress private constructor(
             val host = u.host?.removeSurrounding("[", "]")?.takeIf { it.isNotEmpty() } ?: return null
             if (u.port !in 1..65535) return null
             if (!(u.rawPath.isNullOrEmpty() || u.rawPath == "/") || u.rawQuery != null || u.rawFragment != null) return null
-            val info = u.userInfo.orEmpty()
-            val user = info.substringBefore(':')
-            val password = if (info.contains(':')) info.substringAfter(':') else ""
+            val info = u.rawUserInfo.orEmpty()
+            val user = decodeCredential(info.substringBefore(':'))
+            val password = decodeCredential(info.substringAfter(':', ""))
             return ProxyAddress(scheme, host, u.port, user, password)
         }
+
+        // URI 中的加号是字面字符,解码时保留它。
+        private fun decodeCredential(value: String): String = URLDecoder.decode(value.replace("+", "%2B"), "UTF-8")
 
         /** 空串(不用代理),或能解析的代理地址。 */
         fun valid(text: String): Boolean = text.isBlank() || parse(text) != null

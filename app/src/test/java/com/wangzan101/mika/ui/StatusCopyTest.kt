@@ -8,6 +8,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
+import com.wangzan101.mika.settings.AccessibilityState
 import com.wangzan101.mika.settings.Problem
 import org.junit.Test
 
@@ -27,6 +28,40 @@ class StatusCopyTest {
     }
 
     @Test
+    fun unavailableAccessibilityDistinguishesEnabledFromOff() {
+        assertEquals("Mika 的无障碍服务没有开启:请在系统设置的无障碍里打开 Mika。", StatusCopy.accessibilityUnavailable(enabled = false))
+        val enabled = StatusCopy.accessibilityUnavailable(enabled = true)
+        assertTrue(enabled.contains("已开启"))
+        assertTrue(enabled.contains("关闭后重新开启"))
+        assertTrue(enabled.contains("允许受限制的设置"))
+        assertFalse(enabled.contains("没有开启"))
+    }
+
+    @Test
+    fun restrictedAccessibilityPointsToAppInfoInsteadOfOnlyToggling() {
+        val p = Problem.Accessibility(AccessibilityState.EnabledNotRunning, restrictedSettings = true)
+        assertTrue(StatusCopy.banner(p).detail.contains("允许受限制的设置"))
+        val e = StatusCopy.explain(p, "14")
+        assertEquals(Fix.OpenAppInfo, e.fix)
+        assertTrue(e.body.contains("应用信息"))
+        assertTrue(e.body.contains("允许受限制的设置"))
+    }
+
+    @Test
+    fun lockedAccessibilityKeepsTheUnlockGuidanceEvenWhenRestricted() {
+        val p = Problem.Accessibility(
+            AccessibilityState.EnabledNotRunning,
+            userLocked = true,
+            restrictedSettings = true,
+        )
+        assertTrue(StatusCopy.banner(p).detail.contains("解锁一次"))
+        val e = StatusCopy.explain(p, "14")
+        assertNull(e.fix)
+        assertNull(e.action)
+        assertTrue(e.body.contains("解锁一次"))
+    }
+
+    @Test
     fun paymentLinesOnePerField() {
         assertEquals("商品:拿铁 大杯\n金额:¥18\n地址:公司前台", StatusCopy.paymentLines("拿铁 大杯", "¥18", "公司前台"))
         assertEquals("金额:¥18", StatusCopy.paymentLines(null, "¥18", " "))
@@ -38,6 +73,7 @@ class StatusCopyTest {
     fun replayAndBatchCopy() {
         assertEquals("按以往的做法快速执行中(第 2/5 步)", StatusCopy.progress(RunProgress.Replay(2, 5)))
         assertEquals("一次执行 3 步", StatusCopy.progress(RunProgress.Batch(3)))
+        assertEquals("已收集 · 12/36 · 2026-10-31", StatusCopy.progress(RunProgress.Task("已收集", 12, 36, "2026-10-31")))
 
         val ex = Exchange("查电量", emptyList(), ExchangeStatus.Working, live = true)
         val replaying = ChatViewModel.reduce(ex, TaskState.Running(0, "按以往的做法操作", progress = RunProgress.Replay(2, 5)))

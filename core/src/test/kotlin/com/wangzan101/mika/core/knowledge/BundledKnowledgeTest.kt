@@ -23,7 +23,7 @@ class BundledKnowledgeTest {
     @Test fun bundledTreesPassValidationAndIndexIsCurrent() {
         val r = KnowledgeIndex.build(resources)
         assertTrue(r.errors.joinToString("\n"), r.errors.isEmpty())
-        assertEquals(mapOf("app" to 23, "site" to 18, "skill" to 6), r.entries.groupingBy { it.kind }.eachCount())
+        assertEquals(mapOf("app" to 24, "site" to 18, "skill" to 6), r.entries.groupingBy { it.kind }.eachCount())
         // 类路径上的索引就是按当前文件生成的那份
         assertEquals(r.entries, catalog.rows)
     }
@@ -46,7 +46,7 @@ class BundledKnowledgeTest {
     }
 
     @Test fun everyEntryHasABody() {
-        assertEquals(41, bundled.size)
+        assertEquals(42, bundled.size)
         assertTrue(bundled.all { !it.body.isNullOrBlank() && it.body!!.length <= KnowledgeIndex.BODY_LIMIT })
         assertTrue(bundled.map { it.name }.containsAll(listOf("wechat", "xianyu", "android-settings", "zhihu.com", "weixin.sogou.com")))
     }

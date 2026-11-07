@@ -40,6 +40,8 @@ object MikaIcons {
     val Up = stroke("up", "M12 19 V5 M6 11 l6 -6 l6 6", width = 2.2f)
     val Check = stroke("check", "M5 12.5 l4.5 4.5 L19 7.5", width = 2.2f)
     val Close = stroke("close", "M6 6 l12 12 M18 6 L6 18", width = 2f)
+    /** 完全退出:电源键。 */
+    val Power = stroke("power", "M12 3 v8", "M18.36 6.64 a8 8 0 1 1 -12.73 0")
     val Search = stroke("search", "M4 11 a7 7 0 1 0 14 0 a7 7 0 1 0 -14 0", "M20 20 l-4 -4")
     /** 刷新:差一点闭合的圆,右上角一个箭头。 */
     val Refresh = stroke("refresh", "M19.5 12 a7.5 7.5 0 1 1 -2.2 -5.3", "M19.5 4.5 v4 h-4")
@@ -201,6 +203,12 @@ object MikaIcons {
         "M12 3 v1.8 M12 19.2 v1.8 M3 12 H4.8 M19.2 12 h1.8 M5.64 5.64 l1.2 1.2 M17.16 17.16 l1.2 1.2 M5.64 18.36 l1.2 -1.2 M17.16 6.84 l1.2 -1.2",
     )
     val Mute = stroke("mute", "M4.2 9.6 h3.6 l4.8 -3.6 v12 l-4.8 -3.6 h-3.6 z", "M16.8 9.6 l4.8 4.8 M21.6 9.6 l-4.8 4.8")
+    /** 音量:恢复声音。 */
+    val Sound = stroke(
+        "sound",
+        "M4.2 9.6 h3.6 l4.8 -3.6 v12 l-4.8 -3.6 h-3.6 z",
+        "M16.2 8.4 a5.1 5.1 0 0 1 0 7.2 M19.2 5.4 a9.2 9.2 0 0 1 0 13.2",
+    )
 
     /** 实心:停止。 */
     val Stop = filled(

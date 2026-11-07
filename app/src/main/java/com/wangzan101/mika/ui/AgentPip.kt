@@ -111,6 +111,7 @@ fun AgentPip(
     onAttention: () -> Unit,
     onClose: () -> Unit = {},
     onReopen: () -> Unit = {},
+    onUnmute: () -> Unit = {},
 ) {
     BoxWithConstraints(Modifier.fillMaxSize()) {
         val fade = if (reduceMotion) tween<Float>(150) else tween(300)
@@ -131,6 +132,7 @@ fun AgentPip(
                 areaWidth = constraints.maxWidth.toFloat(), areaHeight = constraints.maxHeight.toFloat(),
                 topInset = topInset, bottomInset = bottomInset, onExpand = onExpand, onCollapse = onCollapse, onAttention = onAttention,
                 onClose = onClose,
+                onUnmute = onUnmute,
             )
         }
     }
@@ -180,25 +182,28 @@ private fun PipWindow(
     onCollapse: () -> Unit,
     onAttention: () -> Unit,
     onClose: () -> Unit,
+    onUnmute: () -> Unit,
 ) {
     val density = LocalDensity.current
     val sizeSpec = if (reduceMotion) snap() else tween<androidx.compose.ui.unit.Dp>(350, easing = Ease)
-    // 大小跟着画面的长宽比走:手机画面是主屏的比例(不同手机略有长短),桌面网页是横向的,按固定的宽度定高度,
+    // 大小跟着画面的长宽比走:手机游戏和桌面网页都可能横向,按固定的宽度定高度,
     // 画面整张放得下;放不下时按比例整体缩小
     val context = LocalContext.current
     val screenAspect = remember { mainScreenAspect(context) }
-    val landscapeWeb = frame != null && webContent && frame.width > frame.height
+    val landscapeFrame = frame != null && frame.width > frame.height
     val aspect = frame?.let { it.height.toFloat() / it.width } ?: screenAspect
     val target = run {
         val margin = with(density) { 24.dp.toPx() }
         val availableWidth = with(density) { (areaWidth - margin).coerceAtLeast(1f).toDp() }
         val availableHeight = with(density) { (areaHeight - topInset - bottomInset - margin).coerceAtLeast(1f).toDp() }
         val base = when {
-            landscapeWeb -> if (pip.expanded) 320.dp else 220.dp
+            landscapeFrame -> if (pip.expanded) 320.dp else 220.dp
             else -> if (pip.expanded) ExpandedWidth else CollapsedWidth
         }
-        val width = minOf(base, availableWidth, availableHeight / aspect)
-        width to width * aspect
+        val inset = if (pip.expanded) 8.dp else 6.dp
+        val contentWidth = minOf(base - inset, (availableWidth - inset).coerceAtLeast(1.dp),
+            (availableHeight - inset).coerceAtLeast(1.dp) / aspect)
+        contentWidth + inset to contentWidth * aspect + inset
     }
     val w by animateDpAsState(target.first, sizeSpec, label = "pipW")
     val h by animateDpAsState(target.second, sizeSpec, label = "pipH")
@@ -279,7 +284,7 @@ private fun PipWindow(
             )
         }
         Box(
-            Modifier.size(w, h)
+            Modifier.testTag("pip-window").size(w, h)
                 .alpha(if (pip.mode == PipMode.Done) 0.85f else 1f)
                 .floatShadow(MikaTheme.colors, outer)
                 .background(MikaTheme.colors.glass, outer)
@@ -318,19 +323,26 @@ private fun PipWindow(
             Box(Modifier.fillMaxSize().clip(inner).background(MikaTheme.colors.surface)) {
                 if (frame != null) {
                     val image = remember(frame) { frame.asImageBitmap() }
-                    Image(image, stringResource(R.string.pip_screen), Modifier.fillMaxSize(), alignment = Alignment.TopCenter,
-                        contentScale = if (webContent) ContentScale.Fit else ContentScale.Crop)
+                    Image(image, stringResource(R.string.pip_screen), Modifier.testTag("pip-frame").fillMaxSize(), alignment = Alignment.Center,
+                        contentScale = ContentScale.Fit)
                 }
             }
             if (pip.expanded) {
-                // 左上角:关掉这个任务的小画面(只剩右下角的小按钮);右上角 × 只是收起
-                Box(
-                    Modifier.align(Alignment.TopStart).padding(6.dp).size(26.dp)
-                        .floatShadow(MikaTheme.colors, CircleShape).background(MikaTheme.colors.glass, CircleShape).clip(CircleShape)
-                        .clickable(onClickLabel = stringResource(R.string.pip_close), onClick = onClose)
-                        .testTag("pip-close"),
-                    contentAlignment = Alignment.Center,
-                ) { Icon(MikaIcons.EyeOff, stringResource(R.string.pip_close), Modifier.size(13.dp), tint = MikaTheme.colors.ink) }
+                // 左上角:一次性恢复当前 App 声音,再关掉小画面;不伪造与真实音频无关的开关状态
+                Row(Modifier.align(Alignment.TopStart).padding(6.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    PipButton(
+                        icon = MikaIcons.Sound,
+                        label = stringResource(R.string.pip_unmute),
+                        onClick = onUnmute,
+                        tag = "pip-unmute",
+                    )
+                    PipButton(
+                        icon = MikaIcons.EyeOff,
+                        label = stringResource(R.string.pip_close),
+                        onClick = onClose,
+                        tag = "pip-close",
+                    )
+                }
                 Box(
                     Modifier.align(Alignment.TopEnd).padding(6.dp).size(26.dp)
                         .floatShadow(MikaTheme.colors, CircleShape).background(MikaTheme.colors.glass, CircleShape).clip(CircleShape)
@@ -347,4 +359,15 @@ private fun PipWindow(
         }
         if (glow != null) Box(Modifier.size(w, h).border(glow.second, glow.first, outer))
     }
+}
+
+@Composable
+private fun PipButton(icon: androidx.compose.ui.graphics.vector.ImageVector, label: String, onClick: () -> Unit, tag: String) {
+    Box(
+        Modifier.size(26.dp)
+            .floatShadow(MikaTheme.colors, CircleShape).background(MikaTheme.colors.glass, CircleShape).clip(CircleShape)
+            .clickable(onClickLabel = label, onClick = onClick)
+            .testTag(tag),
+        contentAlignment = Alignment.Center,
+    ) { Icon(icon, label, Modifier.size(13.dp), tint = MikaTheme.colors.ink) }
 }

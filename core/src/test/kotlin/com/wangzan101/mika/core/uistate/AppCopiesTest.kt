@@ -135,8 +135,8 @@ class AppCopiesTest {
         assertEquals(128, apps[1]["user"]!!.jsonPrimitive.int)
         assertFalse("user" in apps[0])
         assertFalse("user" in apps[2])
-        // packages 仍只是本来那几个
-        assertEquals(listOf("com.example.chat", "com.example.notes"), r.content["packages"]!!.jsonArray.map { it.jsonPrimitive.content })
+        // 另一份用户的条目也只写在 apps 里,不再额外复制一份 packages 数组。
+        assertFalse("packages" in r.content)
     }
 
     @Test fun singleCopyAppsListAndLaunchAsBefore() = runTest {

@@ -4,6 +4,7 @@ import kotlinx.serialization.Serializable
 import java.time.Instant
 import java.time.LocalTime
 import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 
 @Serializable
 data class TriggerDefinition(
@@ -18,7 +19,7 @@ data class TriggerDefinition(
     val enabled: Boolean = true,
     /** 到点后只在没有前台任务时执行；忙时看门狗稍后重查。 */
     val idleOnly: Boolean = false,
-    /** 上一次有效检查是否满足条件；用于只在状态变化时执行动作。 */
+    /** 上一次有效检查是否满足条件(冷却期内跳过的那次不算);用于只在状态变化时执行动作。 */
     val lastConditionMet: Boolean? = null,
     /** 固定提醒原文；非空时到点直接送达，不启动模型。 */
     val reminderText: String? = null,
@@ -26,11 +27,23 @@ data class TriggerDefinition(
     val calendarTime: String? = null,
     val calendarZone: String? = null,
     val calendarDays: List<Int> = emptyList(),
+    /** 有条件时:只在条件刚满足时执行(默认),或每次检查满足都执行。 */
+    val notifyWhen: ConditionNotify = ConditionNotify.BecomesMet,
+    /** 两次派发动作之间至少隔这么久;冷却期内满足的推迟到冷却结束后再算。 */
+    val cooldownMs: Long? = null,
+    /** 最近一次有效检查记下的关键值。 */
+    val lastValue: String? = null,
+    /** 比较基准:上次派发动作时的值;从没派发过时是第一次检查到的值。 */
+    val baselineValue: String? = null,
+    val baselineAtMs: Long? = null,
+    /** 上次因条件满足而派发动作的那次检查的计划时间,冷却从这里算。 */
+    val lastFiredAtMs: Long? = null,
 ) {
     init {
         require(id.isNotBlank() && threadId.isNotBlank() && goal.isNotBlank())
         require(nextAtMs >= 0 && (intervalMs == null || intervalMs > 0))
         require(calendarTime == null || (intervalMs == null && calendarZone != null && calendarDays.all { it in 1..7 }))
+        require(cooldownMs == null || cooldownMs > 0)
     }
 }
 
@@ -92,7 +105,7 @@ class MemoryTriggerStore(initial: TriggerSnapshot = TriggerSnapshot(emptyList(),
             it.state == TriggerWindowState.Dispatched || it.state == TriggerWindowState.ActionDispatched }
             .map { it.triggerId }.toSet()
         val due = triggers.values.filter { it.enabled && it.id !in active && it.nextAtMs <= nowMs &&
-            ledger["${it.id}:${it.nextAtMs}"] == null && eligible(it) }
+            ledger["${it.id}:${it.nextAtMs}"] == null && eligible(it) } // 和 TriggerDefinition.slotTaken 一致
         return due.map { t ->
             val interval = t.intervalMs
             val missed = if (interval == null) 0 else (nowMs - t.nextAtMs) / interval
@@ -140,6 +153,13 @@ class MemoryTriggerStore(initial: TriggerSnapshot = TriggerSnapshot(emptyList(),
     }
 }
 
+/**
+ * 这个计划眼下这一次的时段已经记过账(认领过,跑过或正在跑):[TriggerStore.claimDue] 不会再认领它,两边的条件要一致。
+ * 一次性计划认领后下次时间不往前走,就是这样;循环的计划认领时就换到下一个时段了。
+ */
+fun TriggerDefinition.slotTaken(windows: List<TriggerWindow>): Boolean =
+    windows.any { it.triggerId == id && it.dueAtMs == nextAtMs }
+
 /** 以当地日历递进，跨夏令时仍保持同一钟点；不存在的钟点使用系统的向前调整规则。 */
 fun nextCalendarAt(time: String, zone: String, days: List<Int>, afterMs: Long): Long {
     val localTime = LocalTime.parse(time)
@@ -153,6 +173,39 @@ fun nextCalendarAt(time: String, zone: String, days: List<Int>, afterMs: Long): 
     error("calendar schedule has no matching day")
 }
 
+private val CALENDAR_CLOCK: DateTimeFormatter = DateTimeFormatter.ofPattern("HH:mm")
+
+/** 修改下次时间时,日历计划也改用新钟点重复;保存与预览必须共用这份转换。 */
+fun TriggerDefinition.rescheduledTo(nextAtMs: Long): TriggerDefinition {
+    val local = calendarZone?.let { zone ->
+        CALENDAR_CLOCK.format(Instant.ofEpochMilli(nextAtMs).atZone(ZoneId.of(zone)))
+    }
+    return copy(nextAtMs = nextAtMs, enabled = true, calendarTime = if (calendarTime != null) local else null)
+}
+
+/** 编辑/创建时预览:首个不早于 [afterMs] 的触发也计入,再按计划自身的时区与重复规则递进。 */
+fun upcoming(def: TriggerDefinition, afterMs: Long, count: Int): List<Long> {
+    if (count <= 0) return emptyList()
+    val out = ArrayList<Long>(count)
+    when {
+        def.calendarTime != null -> {
+            var at = if (def.nextAtMs >= afterMs) def.nextAtMs
+            else nextCalendarAt(def.calendarTime, def.calendarZone!!, def.calendarDays, afterMs)
+            repeat(count) {
+                out += at
+                at = nextCalendarAt(def.calendarTime, def.calendarZone!!, def.calendarDays, at)
+            }
+        }
+        def.intervalMs != null && def.intervalMs > 0 -> {
+            var t = def.nextAtMs
+            if (t < afterMs) t += (afterMs - t) / def.intervalMs * def.intervalMs + def.intervalMs
+            repeat(count) { out += t; t += def.intervalMs }
+        }
+        else -> out += def.nextAtMs
+    }
+    return out
+}
+
 /** 排期由宿主实现；核心负责先记账再派发，异常重启时不会重复执行已认领的时段。 */
 class TriggerEngine(private val store: TriggerStore, private val scheduleAlarm: (Long?) -> Unit,
     private val isIdle: () -> Boolean = { true }, private val idleRetryMs: Long = 60_000L,
@@ -161,13 +214,27 @@ class TriggerEngine(private val store: TriggerStore, private val scheduleAlarm: 
         store.windows().filter { it.state == TriggerWindowState.Claimed }
             .forEach { store.mark(it.key, TriggerWindowState.Unknown, "process restarted before dispatch confirmation") }
         val idle = isIdle()
-        val active = store.windows().filter { it.state == TriggerWindowState.Claimed ||
+        val windows = store.windows()
+        val active = windows.filter { it.state == TriggerWindowState.Claimed ||
             it.state == TriggerWindowState.Dispatched || it.state == TriggerWindowState.ActionDispatched }
             .map { it.triggerId }.toSet()
-        scheduleAlarm(store.all().filter { it.enabled }.minOfOrNull {
+        // 时段已记过账的计划 claimDue 不会认领,不为它排闹钟:按到期时间排就是「马上响」,响了又认领不了,一直空转
+        scheduleAlarm(store.all().filter { it.enabled && (it.id in active || !it.slotTaken(windows)) }.minOfOrNull {
             if (it.id in active) nowMs + idleRetryMs
             else maxOf(if (it.idleOnly && !idle) nowMs + idleRetryMs else nowMs, it.nextAtMs)
         })
+    }
+
+    /**
+     * 暂停或恢复 [id];没有这个计划、或要恢复的计划这一次的时段已经记过账([slotTaken],认领过的一次性计划)时不改,返回 false:
+     * 恢复了也不会再跑,要再跑用改时间或立即执行(计划页对这种计划也不给开关)。
+     */
+    fun setEnabled(id: String, enabled: Boolean, nowMs: Long): Boolean {
+        val trigger = store.get(id) ?: return false
+        if (enabled && trigger.slotTaken(store.windows())) return false
+        store.upsert(trigger.copy(enabled = enabled))
+        rearm(nowMs)
+        return true
     }
 
     /** 时区变化后,跟随设备旧时区的当地时间计划重算到新时区;显式钉了其他时区的计划不动。 */

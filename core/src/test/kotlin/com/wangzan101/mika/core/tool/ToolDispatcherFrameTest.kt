@@ -2,6 +2,7 @@ package com.wangzan101.mika.core.tool
 
 import com.wangzan101.mika.core.model.Part
 import com.wangzan101.mika.core.uistate.ActionResult
+import com.wangzan101.mika.core.uistate.ScreenDiagnosis
 import com.wangzan101.mika.core.uistate.ScreenPort
 import com.wangzan101.mika.core.uistate.ScreenSnapshot
 import com.wangzan101.mika.core.uistate.UiElement
@@ -23,16 +24,21 @@ import com.wangzan101.mika.core.assembly.toolDispatcher
 private class FrameScreen(var names: List<String> = listOf("搜索")) : ScreenPort by FakeScreen() {
     var shots = 0
     var secure = false
+    var captureError: String? = null
     var empty = false
     var result: ActionResult = ActionResult.Ok(changed = true)
     val frame: ByteArray = JvmTestImageOps.encode(1224, 2700) { x, _ -> if (x < 600) 40 else 220 }
     private fun read() = ScreenSnapshot("p", if (empty) null else "com.x",
         if (empty) emptyList() else names.mapIndexed { i, n -> UiElement("@e${i + 1}", "button", n, 500, 100, listOf(0, 0, 10, 10),
             if (n.isBlank()) "com.x:id/control_$i" else null, true, false, false) },
-        1224, 2700, protected = secure, hasWindow = !empty)
+        1224, 2700, protected = secure, hasWindow = !empty, captureError = captureError)
     override suspend fun snapshot() = read()
     override suspend fun peek() = read()
-    override suspend fun screenshotPng(): ByteArray { shots++; return frame }
+    override suspend fun screenshotPng(): ByteArray? {
+        if (captureError != null) return null
+        shots++
+        return frame
+    }
     override suspend fun isProtected() = secure
     override suspend fun tapXY(x: Int, y: Int) = result
     override suspend fun back() = result
@@ -86,7 +92,16 @@ class ToolDispatcherFrameTest {
             val r = d.execute(call("phone_tap", """{"ref":"@e1","snapshotId":$sid}""")).content
             assertEquals("ref_expired", r.s("error"))
             assertTrue(r.s("message"), "is a screenshotId" in r.s("message") && "screen field" in r.s("message"))
+            assertEquals("screenshot_id", r.s("cause"))
         }
+    }
+
+    @Test fun retiredRefSaysWhyItExpired() = runTest {
+        val d = toolDispatcher(FrameScreen(), inlineScreen = true)
+        val sid = d.execute(call("phone_observe")).content.s("snapshotId")
+        val r = d.execute(call("phone_tap", """{"ref":"@e99","snapshotId":"$sid"}""")).content
+        assertEquals("ref_expired", r.s("error"))
+        assertEquals("ref_retired", r.s("cause"))
     }
 
     @Test fun unknownArgumentSaysWhatIsAllowed() = runTest {
@@ -128,6 +143,28 @@ class ToolDispatcherFrameTest {
         // 屏上还没有 App:没东西可截,不是错误
         val empty = FrameScreen().apply { this.empty = true }
         assertTrue(toolDispatcher(empty, visionEnabled = true).execute(call("phone_back")).images.isEmpty())
+    }
+
+    @Test fun captureFailureKeepsElementFallbackAndRejectsBlackImages() = runTest {
+        val s = FrameScreen(listOf("搜索", "设置")).apply { captureError = ScreenDiagnosis.DISPLAY_CAPTURE_UNAVAILABLE }
+        val d = toolDispatcher(s, visionEnabled = true, imageOps = JvmTestImageOps)
+        val observed = d.execute(call("phone_observe"))
+        assertEquals(ScreenDiagnosis.DISPLAY_CAPTURE_UNAVAILABLE, observed.content.s("captureError"))
+        assertEquals(2, observed.content["elements"]!!.jsonArray.size)
+        assertTrue(observed.images.isEmpty())
+        assertNull(observed.content["protected"])
+        assertEquals(0, s.shots)
+
+        val screenshot = d.execute(call("phone_screenshot")).content
+        assertEquals(ScreenDiagnosis.DISPLAY_CAPTURE_UNAVAILABLE, screenshot.s("error"))
+        assertEquals("false", screenshot.s("recoverable"))
+        assertTrue(screenshot.s("message").contains("cannot distinguish"))
+
+        val action = d.execute(call("phone_back"))
+        assertTrue(action.images.isEmpty())
+        assertEquals(ScreenDiagnosis.DISPLAY_CAPTURE_UNAVAILABLE,
+            (action.content["screen"] as JsonObject).s("captureError"))
+        assertEquals(0, s.shots)
     }
 
     @Test fun inlineScreenAttachesItsOwnShotOnce() = runTest {

@@ -5,6 +5,9 @@ import com.wangzan101.mika.core.agent.DO_STEPS_TOOL
 import com.wangzan101.mika.core.cap.phone.AppPacing
 import com.wangzan101.mika.core.cap.phone.PHONE
 import com.wangzan101.mika.core.cap.phone.PhoneCapability
+import com.wangzan101.mika.core.cap.root.RootCapability
+import com.wangzan101.mika.core.cap.root.RootGroup
+import com.wangzan101.mika.core.cap.root.RootPort
 import com.wangzan101.mika.core.cap.sandbox.SandboxCapability
 import com.wangzan101.mika.core.cap.sandbox.SANDBOX
 import com.wangzan101.mika.core.cap.sandbox.SandboxGroup
@@ -43,7 +46,7 @@ import com.wangzan101.mika.core.userscreen.UserScreenSource
 
 /**
  * 一个任务的工具:装上手机、网页、沙箱三种能力和核心工具。这是唯一同时认识几种能力的地方。
- * 没给端口的能力照样装上(工具都不提供),按名字查声明时它们的工具也查得到。
+ * 没给端口的能力照样装上(工具都不提供),按名字查声明时它们的工具也查得到。root 命令例外:没给端口就整个不装。
  */
 fun toolDispatcher(
     screen: ScreenPort,
@@ -78,10 +81,10 @@ fun toolDispatcher(
     adaptiveVision: Boolean = false,
     /** 提速开关 deepLinks:提供打开链接的工具。 */
     deepLinks: Boolean = false,
-    /** 记忆;和 [utterances] 都给了才提供 memory_search / memory_save。 */
+    /** 记忆;和 [utterances] 都给了才提供 memory_search / memory_save / memory_edit。 */
     memory: MemoryStore? = null,
     profile: ProfileStore? = null,
-    /** 用户本次说过的话,memory_save 的引文据此校验;AgentLoop 往里加。 */
+    /** 用户本次说过的话,memory_save / memory_edit 的引文据此校验;AgentLoop 往里加。 */
     utterances: UserUtterances? = null,
     /** 本次任务所在的对话;记进记忆的出处。 */
     conversationId: String? = null,
@@ -101,6 +104,7 @@ fun toolDispatcher(
     imageOps: ImageOps? = vision?.ops,
     /** 开局约束允许的能力；旧调用方不传时仍得到今天的工具。 */
     runSpec: RunSpec = RunSpec(RunId("legacy"), "legacy", "legacy"),
+    /** 这次任务接上的所有外部 MCP 端点(不分来源,调用方在一处拼好);每个成为一个能力,按 serverId 区分。 */
     mcpServers: List<McpConnection> = emptyList(),
     /** 存下一个定时任务,并说明能不能准时(见 [Scheduled])。 */
     scheduleTrigger: ((TriggerDefinition) -> Scheduled)? = null,
@@ -114,9 +118,13 @@ fun toolDispatcher(
     selfConfig: com.wangzan101.mika.core.settings.SelfConfig? = null,
     /** 存下的运行记录;给了、而这个对话之前有记过运行的轮次时提供 history_read(查之前几轮读到的东西)。 */
     runRecords: RunRecords? = null,
+    /** 以 root 跑命令(已 root 的手机上用户打开了「允许 Mika 执行 root 命令」才给);为空时 root 工具不登记。 */
+    root: RootPort? = null,
+    /** 用户配置并启用的通用网页搜索;为空时保持原有浏览器搜索路径。 */
+    webSearch: com.wangzan101.mika.core.search.WebSearch? = null,
 ): ToolDispatcher {
     val config = ToolConfig(visionEnabled, skills, recordFrames, vision, inlineScreen, adaptiveVision, memory, profile, utterances, conversationId,
-        imageOps, scheduleTrigger, scheduleAdmin, runSpec, childHost, userScreens, personalSkills, selfConfig, runRecords)
+        imageOps, scheduleTrigger, scheduleAdmin, runSpec, childHost, userScreens, personalSkills, selfConfig, runRecords, webSearch)
     val providers: List<CapabilityProvider> = listOf(
         object : CapabilityProvider {
             override val id = PHONE
@@ -131,7 +139,12 @@ fun toolDispatcher(
             override fun open(spec: RunSpec) = SandboxCapability(sandbox, workspace, visionEnabled,
                 onSandboxCommand, onSandboxProgress, onSandboxPreparing, onSandboxScript)
         },
-    ) + mcpServers.map(::McpClientProvider)
+    ) + listOfNotNull(root?.let { port ->
+        object : CapabilityProvider {
+            override val id = RootCapability.KEY.name
+            override fun open(spec: RunSpec) = RootCapability(port)
+        }
+    }) + mcpServers.map(::McpClientProvider)
     return RunAssembler(providers).assemble(runSpec, config, stableRefs, FORMER_PREFIX, RENAMED, RETIRED, MOVED)
 }
 
@@ -177,7 +190,7 @@ fun recordedTools(): ToolIndex = legacyNames().let { legacy -> ToolIndex(allTool
 
 /** Mika 所有可能提供的工具,按发给模型的顺序。 */
 internal fun allTools(): List<AgentTool> =
-    GeneralGroup.tools + PhoneCapability.tools() + WebGroup.tools + SandboxGroup.tools
+    GeneralGroup.tools + PhoneCapability.tools() + WebGroup.tools + SandboxGroup.tools + RootGroup.tools
 
 /** Mika 所有可能提供的工具的声明。 */
 fun knownTools(): ToolIndex = ToolIndex(allTools())

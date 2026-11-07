@@ -5,6 +5,7 @@ import android.accessibilityservice.AccessibilityServiceInfo
 import android.accessibilityservice.GestureDescription
 import android.content.Intent
 import android.graphics.Bitmap
+import android.util.Log
 import android.graphics.Path
 import android.app.Notification
 import android.os.Build
@@ -40,9 +41,12 @@ open class ScreenAccessibility : AccessibilityService() {
             }
         }
         _instance.value = this
+        // 配对时读码、引导页打勾都看它;连上和断开各记一句,排查「明明开着却当没开」
+        Log.i(TAG, "accessibility service connected")
     }
 
     override fun onUnbind(intent: Intent?): Boolean {
+        Log.i(TAG, "accessibility service unbound")
         clearInstance()
         return super.onUnbind(intent)
     }
@@ -112,7 +116,7 @@ open class ScreenAccessibility : AccessibilityService() {
             .setDisplayId(displayId)
             .apply { strokes.forEach(::addStroke) }
             .build()
-        return suspendCancellableCoroutine { cont ->
+        suspend fun send(): Boolean = suspendCancellableCoroutine { cont ->
             val callback = object : GestureResultCallback() {
                 override fun onCompleted(gestureDescription: GestureDescription) {
                     if (cont.isActive) cont.resume(true)
@@ -124,6 +128,8 @@ open class ScreenAccessibility : AccessibilityService() {
             }
             if (!service.dispatchGesture(gesture, callback, null) && cont.isActive) cont.resume(false)
         }
+        // 注入是在用户屏幕上操作别的 App,不是操作 Mika 自己的浮层;所有单点、双击和拖动统一隔离
+        return service.overlayHost?.passInjectedGesturesThrough { send() } ?: send()
     }
 
     /** 截一张用户屏幕(主屏)的结果:画面,或屏上有防截屏窗口,或截不到(错误码)。 */
@@ -217,6 +223,7 @@ open class ScreenAccessibility : AccessibilityService() {
             onBufferOverflow = BufferOverflow.DROP_OLDEST,
         )
 
+        private const val TAG = "MikaA11y"
         private val _instance = MutableStateFlow<ScreenAccessibility?>(null)
         /** 已连接的服务实例;服务未开启或已断开时为 null。 */
         val instance: StateFlow<ScreenAccessibility?> = _instance.asStateFlow()

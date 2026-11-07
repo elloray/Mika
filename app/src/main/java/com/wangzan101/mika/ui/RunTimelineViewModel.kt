@@ -63,6 +63,10 @@ data class TimelineHeader(
     val verdict: String,
     val duration: String?,
     val modelCalls: Int,
+    /** 这次运行的步数上限;不限制或旧记录为 null。 */
+    val stepLimit: Int? = null,
+    /** 用了几步(和 [stepLimit] 一起显示);步数用完后的最后一轮收尾记作第上限加一步,不算一步,所以不超过上限。 */
+    val stepsUsed: Int = 0,
     val usedMemory: List<String> = emptyList(),
     /** 这次运行的小结;记录里没有开始事件时为 null(只显示用时)。 */
     val metrics: RunMetrics? = null,
@@ -98,6 +102,7 @@ class RunTimelineViewModel(
         val ended = events.filterIsInstance<RunEvent.TaskEnded>().lastOrNull()
         val startMs = summary?.startedAtMs ?: events.first().atMs
         val endMs = summary?.endedAtMs ?: ended?.atMs
+        val metrics = RunMetrics.of(events, runId)
         val header = TimelineHeader(
             goal = summary?.goal ?: started?.goal.orEmpty(),
             criteria = summary?.criteria?.takeIf { it.isNotEmpty() }
@@ -109,8 +114,10 @@ class RunTimelineViewModel(
             verdict = verdictLabel(summary?.verdict ?: events.filterIsInstance<RunEvent.Verifier>().lastOrNull()?.verdict),
             duration = endMs?.let { duration(it - startMs) },
             modelCalls = events.count { it is RunEvent.ModelReply },
+            stepLimit = started?.stepLimit,
+            stepsUsed = metrics?.steps?.let { n -> started?.stepLimit?.let { minOf(n, it) } ?: n } ?: 0,
             usedMemory = resolveMemory(events.filterIsInstance<RunEvent.MemoryUsed>().lastOrNull()?.ids.orEmpty()),
-            metrics = RunMetrics.of(events, runId),
+            metrics = metrics,
         )
         return TimelineUi.Ready(header, steps(events, toolLabels::label))
     }
@@ -287,6 +294,7 @@ class RunTimelineViewModel(
             "verification_failed" to tr(R.string.verify_failed),
             "parallel_tool_call_skipped" to tr(R.string.err_parallel_skipped),
             "screenshot_unavailable" to tr(R.string.err_no_screenshot),
+            "display_capture_unavailable" to tr(R.string.err_no_screenshot),
             "vision_unavailable" to tr(R.string.err_vision),
             "payment_requires_takeover" to tr(R.string.err_payment),
             "finish_missing_evidence" to tr(R.string.err_no_evidence),

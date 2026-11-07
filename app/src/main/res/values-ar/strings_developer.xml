@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="dev_adaptive">قراءة العناصر أولاً والصور عند الحاجة</string>
+    <string name="dev_adaptive_sub">يتجنب إرسال الصور عندما تكفي شجرة واجهة المستخدم؛ ويضيف صورة عندما لا تكفي</string>
+    <string name="dev_inline">عرض تغييرات الشاشة بعد الإجراءات</string>
+    <string name="dev_inline_sub">يلقي نظرة على الشاشة بعد كل إجراء، بدلاً من إجراء قراءة منفصلة</string>
+    <string name="dev_batch">تنفيذ عدة خطوات عند التأكد</string>
+    <string name="dev_batch_sub">ينفذ بعض الخطوات دفعة واحدة من دون التوقف لسؤال النموذج</string>
+    <string name="dev_deep_links">فتح الصفحة المطلوبة مباشرة</string>
+    <string name="dev_deep_links_sub">يستخدم الروابط للانتقال مباشرة إلى صفحات داخل التطبيقات بدلاً من التنقل بالنقر</string>
+    <string name="dev_light">تنفيذ الخطوات السهلة بالنموذج الخفيف</string>
+    <string name="dev_light_sub">ينفذ النموذج الخفيف الأسرع الخطوات السهلة، ويتولى النموذج الرئيسي المهام الصعبة</string>
+    <string name="dev_replay">تكرار ما نجح في المرة السابقة</string>
+    <string name="dev_replay_sub">يعيد تشغيل المسارات المحفوظة للمهام السابقة؛ ويعيد التحكم إلى النموذج إذا لم تتطابق</string>
+    <string name="dev_parallel">تشغيل المحادثات بالتوازي</string>
+    <string name="dev_parallel_sub">تحصل مهام المحادثات المختلفة على شاشة افتراضية لكل منها وتعمل معاً</string>
+    <string name="dev_compaction">ملخصات منظّمة للمهام الطويلة</string>
+    <string name="dev_compaction_sub">عند الحاجة إلى تلخيص خطوات كثيرة، تسجل الملاحظات الهدف والحقائق والتقدم والخطوة التالية</string>
+    <string name="dev_group">آلية عمل Mika</string>
+    <string name="dev_autonomy">الوضع المستقل</string>
+    <string name="dev_autonomy_sub">عند تفعيله، لا تطلب Mika الموافقة حتى قبل الدفع وتكمل المهمة مباشرة؛ وعند إيقافه، لا تطلبها إلا قبل الدفع</string>
+    <string name="dev_note">تؤثر هذه المفاتيح في طريقة عمل Mika وسرعتها. يُفضّل عادةً إبقاؤها على الإعدادات الافتراضية.</string>
+    <string name="dev_grounding">تم التحقق من تحديد المواقع بالرؤية</string>
+    <string name="dev_grounding_sub">فعّل هذا الخيار بعد اختبار نموذج الرؤية %1$s للتأكد من دقته في تحديد العناصر؛ وعند إيقافه، تحتاج المواضع التي يحددها إلى أدلة أخرى قبل أن تنقر عليها Mika.</string>
+    <string name="dev_speed">السرعة</string>
+    <string name="dev_experiments">التجارب</string>
+    <string name="dev_run_log">سجلات التشغيل</string>
+</resources>

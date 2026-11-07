@@ -15,6 +15,7 @@
     <string name="tool_check_dialog">대화상자 확인</string>
     <string name="tool_gesture">멀티터치 제스처</string>
     <string name="tool_shell">시스템 명령</string>
+    <string name="tool_root">root 명령</string>
     <string name="tool_find_element">화면에서 찾기</string>
     <string name="tool_collect">여러 화면에서 수집</string>
     <string name="tool_phone_run">휴대전화 동작 여러 개</string>

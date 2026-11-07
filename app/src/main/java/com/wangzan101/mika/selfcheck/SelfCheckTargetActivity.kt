@@ -18,6 +18,7 @@ import android.widget.ScrollView
 import android.widget.TextView
 import android.view.View
 import com.wangzan101.mika.R
+import com.wangzan101.mika.i18n.AppLanguage
 import com.wangzan101.mika.i18n.tr
 import com.wangzan101.mika.cap.phone.shell.SystemIntents
 import java.lang.ref.WeakReference
@@ -38,6 +39,10 @@ class SelfCheckTargetActivity : Activity() {
     private lateinit var count: TextView
     private lateinit var tick: TextView
     private lateinit var strip: View
+
+    override fun attachBaseContext(newBase: Context) {
+        super.attachBaseContext(AppLanguage.wrap(newBase))
+    }
 
     private val ticker = object : Runnable {
         override fun run() {

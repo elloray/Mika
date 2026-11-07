@@ -6,6 +6,7 @@ import com.wangzan101.mika.core.uistate.ScreenDiagnosis
 import com.wangzan101.mika.core.uistate.ScreenState
 import com.wangzan101.mika.core.tool.Args
 import com.wangzan101.mika.core.tool.HINT_PROTECTED
+import com.wangzan101.mika.core.tool.HINT_DISPLAY_CAPTURE
 import com.wangzan101.mika.core.tool.HINT_UNSUPPORTED_BROWSER
 import com.wangzan101.mika.core.tool.Risk
 import com.wangzan101.mika.core.tool.ToolContext
@@ -44,6 +45,7 @@ internal class Diagnose(f: ScreenFamily) : ScreenTool(f, "diagnose") {
                     })
                     ScreenState.LOADING -> put("hint", Feedback["screen.loading"])
                     ScreenState.PROTECTED -> put("hint", HINT_PROTECTED)
+                    ScreenState.CAPTURE_UNAVAILABLE -> put("hint", HINT_DISPLAY_CAPTURE)
                     // 被限制访问:除了交给用户,还要别马上重试
                     ScreenState.NEEDS_HUMAN -> put("hint", if (c.takeoverReason == "access_blocked") Feedback["barrier.access_blocked"]
                         else Feedback.format("screen.needs_human", "reason" to c.takeoverReason))

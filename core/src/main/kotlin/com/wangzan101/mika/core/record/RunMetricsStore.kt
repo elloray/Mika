@@ -3,6 +3,8 @@ package com.wangzan101.mika.core.record
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.json.Json
 import java.io.File
+import java.nio.file.Files
+import java.nio.file.StandardCopyOption
 
 /**
  * 每次运行一份小结([RunMetrics]),一行一份存在 [file](JSON Lines),只留最近 [keep] 份;运行记录只留最近 30 次,
@@ -15,6 +17,21 @@ class RunMetricsStore(private val file: File, private val keep: Int = DEFAULT_KE
 
     /** 旧的在前。 */
     fun all(): List<RunMetrics> = synchronized(LOCK) { read() }
+
+    /**
+     * 这几次运行的小结,按运行编号;没有的不在里面。只解析含这些编号的行(解析后再核对编号),
+     * 不把整个文件(最多 [keep] 份)都解析一遍。
+     */
+    fun byIds(runIds: Set<String>): Map<String, RunMetrics> = synchronized(LOCK) {
+        val ids = runIds.filter { it.isNotEmpty() }
+        if (ids.isEmpty() || !file.isFile) return@synchronized emptyMap()
+        val lines = runCatching { file.readLines() }.getOrDefault(emptyList())
+        lines.asSequence()
+            .filter { line -> ids.any { line.contains(it) } }
+            .mapNotNull { runCatching { JSON.decodeFromString(RunMetrics.serializer(), it) }.getOrNull() }
+            .filter { it.runId in runIds }
+            .associateBy { it.runId }
+    }
 
     /** 最近 [n] 份(旧的在前);[n] 为 null 时全部。 */
     fun recent(n: Int?): List<RunMetrics> = all().let { if (n == null) it else it.takeLast(n) }
@@ -42,7 +59,7 @@ class RunMetricsStore(private val file: File, private val keep: Int = DEFAULT_KE
             file.parentFile?.mkdirs()
             val tmp = File(file.path + ".tmp")
             tmp.writeText(list.takeLast(keep).joinToString("") { JSON.encodeToString(RunMetrics.serializer(), it) + "\n" })
-            if (!tmp.renameTo(file)) error("rename failed")
+            Files.move(tmp.toPath(), file.toPath(), StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE)
         }
     }
 

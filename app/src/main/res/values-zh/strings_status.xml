@@ -53,6 +53,7 @@
     <string name="turn_on_go">去开启</string>
     <string name="banner_a11y_not_running">无障碍服务没有运行</string>
     <string name="banner_a11y_not_running_detail">需要关掉再打开一次</string>
+    <string name="banner_a11y_restricted_detail">先在应用信息里允许受限制的设置</string>
     <string name="banner_a11y_locked">开机后还没解锁过手机，无障碍服务没在运行</string>
     <string name="banner_a11y_locked_detail">解锁一次后会自己恢复，不用改设置</string>
     <string name="banner_no_model">还没有能用的模型</string>
@@ -68,6 +69,8 @@
     <string name="explain_a11y_off">打开无障碍服务</string>
     <string name="explain_a11y_off_body">Mika 用无障碍服务读取和操作它自己的虚拟屏。在系统设置的「无障碍」里找到 Mika（有的手机放在「已下载的应用」或「已安装的服务」里），把它打开。</string>
     <string name="explain_a11y_not_running_body">系统设置里显示 Mika 的无障碍服务是开着的，但它实际没有在运行（Mika 被强行停止后常会这样）。请到无障碍设置里把 Mika 关掉，再重新打开。</string>
+    <string name="explain_a11y_restricted_off_body">如果安卓阻止开启 Mika，请打开 Mika 的应用信息，在菜单里选择「允许受限制的设置」（如果有此项），然后回到无障碍设置开启 Mika。</string>
+    <string name="explain_a11y_restricted_body">安卓可能会阻止从应用商店以外安装的应用绑定无障碍服务，直到允许受限制的设置。打开 Mika 的应用信息，在菜单里选择「允许受限制的设置」（如果有此项），然后到无障碍设置里将 Mika 关闭后重新开启。</string>
     <string name="explain_no_model">添加模型</string>
     <string name="explain_no_model_body">Mika 需要一个支持工具调用的大模型来思考和操作。填上服务商的地址、模型名和 API Key 即可。</string>
     <string name="explain_focus">建议安卓 14 及以上</string>

@@ -1,6 +1,17 @@
 "use strict";
 
 const STRINGS = {
+  attachFile: ["附加文件", "Attach files"],
+  removeFile: ["移除 {name}", "Remove {name}"],
+  downloadFile: ["下载 {name}", "Download {name}"],
+  uploadingFile: ["正在上传 {name}（{index}/{total}）", "Uploading {name} ({index}/{total})"],
+  downloadingFile: ["正在下载 {name}…", "Downloading {name}…"],
+  fileSaved: ["文件已交给浏览器保存。", "File sent to the browser for saving."],
+  fileLimit: ["最多可选 9 个文件，合计不超过 200 MiB。", "Choose up to 9 files totalling at most 200 MiB."],
+  filesNeedUpdate: ["此手机版本或设备不支持任务附件。", "Task attachments are unavailable on this phone or version."],
+  uploadRejected: ["{name} 未传完。附件已保留，请检查手机连接和剩余空间后重试。", "{name} did not finish uploading. Your attachments are still here. Check the connection and free space, then try again."],
+  resultUnavailable: ["文件已变化或无法读取，请在手机上检查后重新导出。", "The file changed or is unavailable. Check it on the phone and export it again."],
+  fileTransferFailed: ["文件传输未完成，请检查连接后重试。", "File transfer did not complete. Check the connection and try again."],
   title: ["Mika · 会话桌面", "Mika · Conversation desk"],
   heading: ["会话桌面", "Conversation desk"],
   displayLanguage: ["界面语言", "Language"],
@@ -137,6 +148,45 @@ const STRINGS = {
   errFallback: ["暂时无法更新任务。", "Cannot update tasks right now."],
   keptList: ["保留上次读取的会话。", "Showing the last successful read."],
   taskGone: ["手机已找不到之前选中的任务。", "The phone no longer knows the previously selected task."],
+  historyHint: ["手机保存的对话与近期远程任务", "Saved phone conversations and recent remote tasks"],
+  historyOff: ["在手机「连接电脑 → 高级设置」打开「允许电脑查看历史记录」，即可查看手机上的对话和 Trace。", "In Connect a computer → Advanced on the phone, allow computers to view history to read saved conversations and traces."],
+  phoneReadOnly: ["在手机上继续此对话", "Continue this conversation on the phone"],
+  olderChats: ["加载更多对话", "Load more conversations"],
+  olderTurns: ["加载更早的轮次", "Load earlier turns"],
+  historyLoading: ["正在读取手机记录…", "Reading saved phone records…"],
+  historyFailed: ["未能读取这份记录，请重试。", "Could not read this record. Try again."],
+  retryHistory: ["重试读取", "Try again"],
+  traceTitle: ["详细 Trace", "Detailed Trace"],
+  traceRecording: ["录制中，随任务更新", "Recording · updates with the task"],
+  traceMissing: ["这次运行没有可读取的详细 Trace，可能未开启录制或已按容量清理。", "No detailed trace is available. Recording may have been off, or the archive may have been removed by storage rotation."],
+  runMissing: ["这轮没有可读取的运行记录。", "No saved run record is available for this turn."],
+  tracePartial: ["这份 Trace 包含未完整录制的内容。", "This trace includes incomplete recording."],
+  traceEmpty: ["这一页没有模型请求或工具调用。", "This page has no model attempts or tool calls."],
+  requestN: ["第 {step} 步 · 请求 {attempt} · {name}", "Step {step} · attempt {attempt} · {name}"],
+  traceTiming: ["{status} · {ms} ms", "{status} · {ms} ms"],
+  traceTokens: ["输入 {input} · 缓存 {cached} · 未命中 {uncached} · 输出 {output}", "Input {input} · cached {cached} · uncached {uncached} · output {output}"],
+  traceDifference: ["首处变化 · {path}", "First change · {path}"],
+  traceBody: ["查看请求与回复", "Read request and reply"],
+  traceNoBody: ["这次请求没有录下正文。", "No body was recorded for this request."],
+  traceOk: ["完成", "Completed"],
+  traceError: ["错误", "Error"],
+  traceCancelled: ["取消", "Cancelled"],
+  traceIncomplete: ["部分记录", "Partial"],
+  savedEvents: ["手机保存的运行记录", "Saved run events"],
+  clippedRecord: ["这条记录较长，当前仅显示开头。", "This long record shows only its beginning."],
+  previousPage: ["上一页", "Previous page"],
+  nextPage: ["下一页", "Next page"],
+  pageN: ["第 {n} 页", "Page {n}"],
+  closeBody: ["收起正文", "Hide body"],
+  pendingRun: ["待核对的提交 · {id}", "Submission to check · {id}"],
+  lostReceipt: ["手机可能已受理。连接恢复后，点「查找原任务」核对。", "The phone may have accepted this task. Once connected, choose Find task to check."],
+  recoveredRun: ["已按编号确认手机收到任务 · {id}", "Submission confirmed by its task ID · {id}"],
+  lookupRun: ["查找原任务", "Find task"],
+  retryRun: ["用同一编号重试", "Retry with the same ID"],
+  forgetRun: ["放弃核对", "Dismiss"],
+  forgetConfirm: ["放弃核对不会取消手机上的任务。之后再次发送会创建新任务，确定放弃？", "Dismiss this receipt? Any task on the phone keeps running. Sending again will create a new task."],
+  notReceived: ["手机暂未查到这个编号。要再提交，请用同一编号重试。", "The phone does not have this ID yet. Retry with the same ID if you still want to submit it."],
+  removedRun: ["这次提交已受理过，所属对话后来被删除。", "This submission was accepted and its conversation was later deleted."],
 };
 
 const $ = id => document.getElementById(id);
@@ -180,7 +230,7 @@ const clock = ms =>
   new Date(ms).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit", second: "2-digit" });
 const byId = (items, id) => items?.find(task => task.task_id === id);
 const label = task =>
-  (task?.goal || "")
+  (task?.request_text || task?.input_files?.[0]?.name || task?.goal || "")
     .trim()
     .split(/[\r\n。！？!?；;]/, 1)[0]
     .trim() || t("remoteTask");
@@ -202,9 +252,16 @@ function groupTasks(tasks) {
 // The private launch link is the only source of the browser session.
 const ticket = location.hash.slice(1) || sessionStorage.getItem("deskSession");
 if (location.hash) {
+  if (sessionStorage.getItem("deskSession") !== ticket) sessionStorage.removeItem("deskPendingRun");
   sessionStorage.setItem("deskSession", ticket);
   for (const key of ["deskGroup", "selectedTask"]) sessionStorage.removeItem(key);
   history.replaceState(null, "", location.pathname);
+}
+let pendingRun = JSON.parse(sessionStorage.getItem("deskPendingRun") || "null");
+function setPendingRun(value) {
+  pendingRun = value;
+  if (value) sessionStorage.setItem("deskPendingRun", JSON.stringify(value));
+  else sessionStorage.removeItem("deskPendingRun");
 }
 let overview = null,
   groups = [],
@@ -221,10 +278,13 @@ let revision = 0,
   retryDelay = 0,
   writeWarning = "",
   autoDisclosure = false;
+const attachmentDrafts = new Map();
 const drafts = new Map(),
   observed = new Map(),
   exchanges = new Map(),
   expandedGoals = new Set();
+const savedChats = new Map(), savedTurns = new Map();
+let moreChats = null, recordView = null, recordBody = null, recordRequest = 0, bodyRequest = 0;
 let composerKey = "",
   transcriptKey = "",
   transcriptSignature = "",
@@ -254,7 +314,8 @@ function chooseGroup(key) {
   setNav(false);
   invalidate();
   render();
-  schedule();
+  recordView = recordBody = null;
+  schedule(true);
 }
 
 function setNav(open) {
@@ -355,17 +416,204 @@ function noteProgress(tasks) {
   }
 }
 
+function mergeHistoryGroups() {
+  const merged = groupTasks(overview?.tasks || []);
+  for (const chat of savedChats.values()) {
+    let g = merged.find(item => item.key === "chat:" + chat.id);
+    if (!g) {
+      g = { key: "chat:" + chat.id, turns: [], primary: null };
+      merged.push(g);
+    }
+    g.title = chat.title;
+    g.updated = chat.updated_at_ms;
+    g.conversation = chat.id;
+  }
+  for (const g of merged) {
+    g.conversation ||= g.primary?.conversation;
+    const saved = savedTurns.get(g.conversation);
+    if (saved) {
+      const remote = new Map(g.turns.filter(task => task.run_id).map(task => [task.run_id, task]));
+      const remoteIds = new Map(g.turns.map(task => [task.task_id, task]));
+      const ids = new Set(saved.turns.map(task => task.run_id).filter(Boolean));
+      const sources = new Set(saved.turns.map(task => task.source_task_id).filter(Boolean));
+      g.turns = [
+        ...saved.turns.map(task => {
+          const current = remote.get(task.run_id) || remoteIds.get(task.source_task_id);
+          return current ? { ...task, ...current, read_only: false } : task;
+        }),
+        ...g.turns.filter(task => !ids.has(task.run_id) && !sources.has(task.task_id))
+      ].sort((a, b) => a.turn_index != null && b.turn_index != null
+        ? a.turn_index - b.turn_index : (a.started_at_ms || 0) - (b.started_at_ms || 0));
+      g.primary = [...g.turns].reverse().sort((a, b) => urgency(a) - urgency(b))[0] || null;
+    }
+  }
+  groups = merged.sort((a, b) => (a.primary ? urgency(a.primary) : 2) - (b.primary ? urgency(b.primary) : 2) ||
+    (b.updated || b.primary?.started_at_ms || 0) - (a.updated || a.primary?.started_at_ms || 0));
+}
+
+async function loadSavedTurns(conversation, offset = 0, at = revision) {
+  try {
+    const page = await call("history_turns", { conversation, offset: String(offset) });
+    if (at !== revision || !overview?.history_enabled) return;
+    const inspecting = byId(group()?.turns, inspectId);
+    const previous = savedTurns.get(conversation)?.turns || [];
+    const turns = new Map(previous.filter(task => task.turn_index < page.total && (offset !== 0 || !task.live))
+      .map(task => [task.turn_index, task]));
+    for (const task of page.turns) turns.set(task.turn_index, task);
+    const ordered = [...turns.values()].sort((a, b) => a.turn_index - b.turn_index);
+    // Offsets count backwards from the newest turn. Older cached pages can be
+    // separated from that end by a gap after the phone adds new turns.
+    let contiguous = 0;
+    while (turns.has(page.total - contiguous - 1)) contiguous++;
+    savedTurns.set(conversation, { turns: ordered, next_offset: contiguous < page.total ? contiguous : null });
+    mergeHistoryGroups();
+    if (inspecting?.source_task_id && !byId(group()?.turns, inspectId)) {
+      const replacement = group()?.turns.find(task => task.source_task_id === inspecting.source_task_id);
+      if (replacement) { inspectId = replacement.task_id; recordView = recordBody = null; recordRequest++; bodyRequest++; }
+    }
+  } catch (error) {
+    if (at !== revision) return;
+    if (error.code === "history_disabled") forgetHistory();
+    else if (error.http_status === 404) {
+      savedChats.delete(conversation); savedTurns.delete(conversation); mergeHistoryGroups();
+    } else message("notice", t("historyFailed"));
+  }
+}
+
+function forgetHistory() {
+  if (overview) overview.history_enabled = false;
+  savedChats.clear(); savedTurns.clear(); moreChats = null;
+  recordView = recordBody = null;
+  recordRequest++; bodyRequest++;
+  mergeHistoryGroups();
+}
+
+async function loadSavedRun(task, offset = 0) {
+  if (!task?.run_id || !overview?.history_enabled || task.task_id !== inspectId) return;
+  const request = ++recordRequest;
+  const prior = recordView?.taskId === task.task_id && recordView.offset === offset ? recordView.data : null;
+  recordView = { taskId: task.task_id, offset, ...(prior ? { data: prior } : { loading: true }) };
+  renderProcess();
+  try {
+    const data = await call("history_run", { conversation: task.conversation, run_id: task.run_id, offset: String(offset) });
+    if (request !== recordRequest || inspectId !== task.task_id) return;
+    recordView = { taskId: task.task_id, offset, data };
+  } catch (error) {
+    if (request !== recordRequest || inspectId !== task.task_id) return;
+    if (error.code === "history_disabled") forgetHistory();
+    else recordView = { taskId: task.task_id, offset, error: error.http_status === 404 ? "runMissing" : "historyFailed" };
+  }
+  render();
+  schedule();
+}
+
+async function loadTraceBody(span, offset = 0) {
+  const task = byId(group()?.turns, inspectId);
+  if (!task?.run_id || !overview?.history_enabled) return;
+  const request = ++bodyRequest;
+  recordBody = { span, offset, loading: true };
+  renderProcess();
+  try {
+    const page = await call("history_body", { conversation: task.conversation, run_id: task.run_id, span_id: span, offset: String(offset) });
+    if (request !== bodyRequest || inspectId !== task.task_id) return;
+    recordBody = { span, offset, ...page };
+  } catch (error) {
+    if (request !== bodyRequest || inspectId !== task.task_id) return;
+    if (error.code === "history_disabled") forgetHistory();
+    else recordBody = { span, offset, error: "historyFailed" };
+  }
+  render();
+}
+
+function pageButtons(offset, next, size, kind) {
+  const bar = el("div", "trace-pages");
+  for (const [name, value] of [["previousPage", Math.max(0, offset - size)], ["nextPage", next]]) {
+    const button = el("button", "", t(name));
+    button.type = "button";
+    button.dataset[kind] = String(value ?? 0);
+    button.disabled = !online || (name === "previousPage" ? offset === 0 : next == null);
+    bar.append(button);
+    if (name === "previousPage") bar.append(el("span", "", t("pageN", { n: Math.floor(offset / size) + 1 })));
+  }
+  return bar;
+}
+
+function renderSavedRun(content, task) {
+  if (!overview?.capabilities.includes("history")) return;
+  const box = el("div", "saved-run");
+  content.append(processSection(t("traceTitle"), box));
+  if (!overview.history_enabled) { box.append(el("p", "process-note", t("historyOff"))); return; }
+  if (!task.run_id) { box.append(el("p", "process-note", t("runMissing"))); return; }
+  const view = recordView?.taskId === task.task_id ? recordView : null;
+  if (!view || (view.loading && !view.data)) { box.append(el("p", "process-note", t("historyLoading"))); return; }
+  if (view.error) {
+    box.append(el("p", "process-note", t(view.error)));
+    const retry = el("button", "", t("retryHistory"));
+    retry.type = "button"; retry.dataset.recordPage = String(view.offset); box.append(retry);
+    return;
+  }
+  const data = view.data;
+  if (!data.trace_available) box.append(el("p", "process-note", t("traceMissing")));
+  else if (data.recording || data.trace_status === "partial")
+    box.append(el("p", "process-note", t(data.recording ? "traceRecording" : "tracePartial")));
+  if (data.trace_available && !data.rows.length) box.append(el("p", "process-note", t("traceEmpty")));
+  const count = value => value == null ? t("unknown") : new Intl.NumberFormat().format(value);
+  for (const row of data.rows) {
+    const entry = el("div", "trace-entry");
+    const title = row.attempt == null ? t("stepN", { n: row.step ?? 0 }) + " · " + row.name
+      : t("requestN", { step: row.step ?? 0, attempt: row.attempt, name: row.name });
+    entry.append(el("h4", "", title));
+    const status = t(({ ok: "traceOk", error: "traceError", cancelled: "traceCancelled" })[row.status] || "traceIncomplete");
+    entry.append(el("p", "process-note", t("traceTiming", { status, ms: count(row.duration_ms) })));
+    if (row.attempt != null) entry.append(el("p", "trace-tokens", t("traceTokens", {
+      input: count(row.input), cached: count(row.cached), uncached: count(row.uncached), output: count(row.output)
+    })));
+    if (row.difference) entry.append(el("p", "process-note", t("traceDifference", { path: row.difference })));
+    if (row.context_change) entry.append(el("p", "process-value", row.context_change));
+    if (row.captured) {
+      const selected = recordBody?.span === row.id;
+      const button = el("button", "trace-body-toggle", t(selected ? "closeBody" : "traceBody"));
+      button.type = "button"; button.dataset.bodySpan = row.id;
+      button.setAttribute("aria-expanded", String(selected));
+      entry.append(button);
+      if (selected) {
+        if (recordBody.loading || recordBody.error)
+          entry.append(el("p", "process-note", t(recordBody.error || "historyLoading")));
+        else {
+          entry.append(el("pre", "trace-body", recordBody.text));
+          entry.append(pageButtons(recordBody.offset, recordBody.next_offset, 3000, "bodyPage"));
+        }
+      }
+    } else if (row.attempt != null) entry.append(el("p", "process-note", t("traceNoBody")));
+    box.append(entry);
+  }
+  const events = el("details", "saved-events");
+  events.dataset.record = "events";
+  events.append(el("summary", "", t("savedEvents")));
+  if (!data.record_available) events.append(el("p", "process-note", t("runMissing")));
+  for (const [i, event] of data.events.entries()) {
+    const detail = el("details", "trace-event");
+    detail.dataset.record = "event-" + (view.offset + i);
+    const name = (event.step == null ? "" : t("stepN", { n: event.step }) + " · ") + event.type;
+    detail.append(el("summary", "", name), el("pre", "trace-body", event.detail));
+    if (event.truncated) detail.append(el("p", "process-note", t("clippedRecord")));
+    events.append(detail);
+  }
+  box.append(events);
+  if (view.offset || data.next_offset != null) box.append(pageButtons(view.offset, data.next_offset, 20, "recordPage"));
+}
+
 function renderNav() {
   $("new-chat").setAttribute("aria-current", String(groupKey === fresh));
   $("count").textContent = groups.length || "";
-  $("count").title = t("recentHint");
+  $("count").title = t(overview?.history_enabled ? "historyHint" : "recentHint");
   const rows = groups.map(g => {
     const task = g.primary;
-    const shortLabel = { waiting_for_answer: "attention", waiting_on_phone: "handoff" }[task.status];
-    const marker = isActive(task) ? t(shortLabel || task.status) : "";
-    return { key: g.key, name: label(g.turns[0]), count: g.turns.length, marker };
+    const shortLabel = { waiting_for_answer: "attention", waiting_on_phone: "handoff" }[task?.status];
+    const marker = task && isActive(task) ? t(shortLabel || task.status) : "";
+    return { key: g.key, name: g.title || label(g.turns[0]), count: g.turns.length, marker };
   });
-  const signature = JSON.stringify([rows, groupKey, busy, !!overview]);
+  const signature = JSON.stringify([rows, groupKey, busy, !!overview, moreChats, overview?.history_enabled]);
   if (signature === navSignature) return;
   navSignature = signature;
   const list = $("threads"),
@@ -378,12 +626,19 @@ function renderNav() {
     b.dataset.group = row.key;
     b.disabled = busy;
     b.setAttribute("aria-current", String(row.key === groupKey));
-    b.title = row.name + " · " + t("rounds", { n: row.count });
+    b.title = row.name + (row.count ? " · " + t("rounds", { n: row.count }) : "");
     b.append(icon("chat"), el("span", "name", row.name));
     if (row.marker) b.append(el("small", "", row.marker));
     list.append(b);
     if (focus === row.key && !busy) b.focus({ preventScroll: true });
   }
+  if (moreChats != null) {
+    const more = commandButton("history-list", t("olderChats"));
+    more.disabled = busy || !online;
+    list.append(more);
+  }
+  if (overview?.capabilities.includes("history") && !overview.history_enabled)
+    list.append(el("p", "nav-empty", t("historyOff")));
 }
 
 function scrollAnchor() {
@@ -413,14 +668,24 @@ function addTurn(task, index) {
   const id = task.task_id,
     node = el("article", "turn");
   node.dataset.id = id;
-  const turn = t("round", { n: index + 1 });
+  const turn = t("round", { n: (task.turn_index ?? index) + 1 });
   node.setAttribute("aria-label", turn);
   node.append(el("div", "turn-label", turn + (task.started_at_ms ? " · " + date(task.started_at_ms) : "")));
   const request = el("div", "request"),
-    goal = task.goal || t("remoteTask"),
+    goal = task.request_text ?? (task.goal || t("remoteTask")),
     chars = Array.from(goal),
     long = chars.length > 160;
-  request.append(el("p", "", long && !expandedGoals.has(id) ? chars.slice(0, 150).join("") + "…" : goal));
+  if (task.input_files?.length) {
+    const tray = el("div", "file-tray");
+    for (const file of task.input_files) {
+      const chip = el("div", "file-chip");
+      chip.append(icon("attach"), el("span", "file-name", file.name), el("small", "", file.size_label));
+      chip.title = file.name;
+      tray.append(chip);
+    }
+    request.append(tray);
+  }
+  if (goal) request.append(el("p", "", long && !expandedGoals.has(id) ? chars.slice(0, 150).join("") + "…" : goal));
   if (long) {
     const b = commandButton("goal", t(expandedGoals.has(id) ? "collapseGoal" : "expandGoal"), "", id);
     b.className = "expand-text";
@@ -457,14 +722,29 @@ function addTurn(task, index) {
   process.setAttribute("aria-controls", slot.id);
   process.setAttribute("aria-expanded", "false");
   node.append(author, process, slot, el("p", "answer", taskMessage(task)));
+  if (task.text_truncated) node.append(el("p", "guidance", t("clippedRecord")));
   if (task.status === "paused" && task.progress && task.waiting_for && task.progress !== task.waiting_for) {
     node.append(el("p", "guidance", t("waitingCondition") + " · " + task.waiting_for));
   }
   if (task.status === "waiting_on_phone")
     node.append(el("p", "guidance", [task.app, t("handoffGuide")].filter(Boolean).join(" · ")));
+  if (task.files?.length) {
+    const list = el("div", "result-files");
+    for (const file of task.files) {
+      const button = commandButton("download", file.name, "download", id);
+      button.querySelector("span").className = "file-name";
+      button.dataset.fileId = file.id;
+      button.setAttribute("aria-label", t("downloadFile", { name: file.name }));
+      button.title = button.getAttribute("aria-label");
+      button.disabled = !online || busy;
+      button.append(el("small", "", fileSize(file.size)));
+      list.append(button);
+    }
+    node.append(list);
+  }
   const tools = el("div", "turn-tools");
   if (task.status === "done" && task.answer) tools.append(commandButton("copy", t("copyResult"), "copy", id));
-  if (isActive(task)) {
+  if (isActive(task) && !task.read_only) {
     if (
       currentTask()?.task_id !== id &&
       (task.status === "waiting_for_answer" ||
@@ -506,6 +786,12 @@ function renderTurns() {
   const focusedInProcess = processContent.contains(focus);
   container.replaceChildren();
   if (g) {
+    if (!g.turns.length) container.append(el("p", "guidance", t("historyLoading")));
+    if (savedTurns.get(g.conversation)?.next_offset != null) {
+      const more = commandButton("history-turns", t("olderTurns"));
+      more.disabled = busy || !online;
+      container.append(more);
+    }
     g.turns.forEach((task, index) => container.append(addTurn(task, index)));
   } else {
     const empty = el("div", "empty"),
@@ -561,19 +847,27 @@ function renderProcess() {
     return;
   }
   const hist = observed.get(inspectId),
-    n = g.turns.indexOf(task) + 1;
+    n = (task.turn_index ?? g.turns.indexOf(task)) + 1;
   const rows = hist?.rows || [],
     focusedRow = rows.includes(selectedObservation) ? selectedObservation : rows.at(-1);
-  const sig = JSON.stringify([task, n, rows.length, rows.at(-1)?.at, hist?.trimmed, rows.indexOf(focusedRow)]);
+  const sig = JSON.stringify([task, n, rows.length, rows.at(-1)?.at, hist?.trimmed, rows.indexOf(focusedRow), recordView, recordBody, overview?.history_enabled]);
   if (sig === processSignature) return;
   processSignature = sig;
   const content = processContent,
-    keepDetails = content.dataset.id === inspectId && content.querySelector("details")?.open;
+    keepDetails = content.dataset.id === inspectId && content.querySelector(".process-facts")?.open;
+  const openRecords = new Set(content.dataset.id === inspectId
+    ? Array.from(content.querySelectorAll("details[data-record][open]"), n => n.dataset.record) : []);
   const focusStep =
     content.contains(document.activeElement) && document.activeElement.hasAttribute("data-observation");
+  const focused = content.contains(document.activeElement) ? document.activeElement : null;
+  const focusAttribute = focused && ["data-body-span", "data-body-page", "data-record-page"].find(name => focused.hasAttribute(name));
+  const focusValue = focusAttribute ? focused.getAttribute(focusAttribute) : null;
+  const focusRecord = focused?.tagName === "SUMMARY" ? focused.parentElement.dataset.record : null;
   content.dataset.id = inspectId;
   content.setAttribute("aria-label", t("round", { n }) + " · " + t("process"));
   content.replaceChildren();
+  renderSavedRun(content, task);
+  for (const detail of content.querySelectorAll("details[data-record]")) detail.open = openRecords.has(detail.dataset.record);
   const timeline = el("div");
   if (rows.length) {
     const list = el("ol", "events");
@@ -595,7 +889,7 @@ function renderProcess() {
     timeline.append(list);
     if (hist.trimmed) timeline.append(el("p", "process-note", t("recentChanges", { n: hist.rows.length })));
   } else timeline.append(el("p", "process-note", t(isActive(task) ? "observingNow" : "noSteps")));
-  content.append(processSection(t("observed"), timeline));
+  if (rows.length || !recordView?.data?.record_available) content.append(processSection(t("observed"), timeline));
   if (focusedRow) {
     const reading = el("div", "event-reading");
     reading.append(
@@ -642,6 +936,8 @@ function renderProcess() {
   details.append(fields);
   content.append(details);
   if (focusStep) content.querySelector('.event-choice[aria-pressed="true"]')?.focus({ preventScroll: true });
+  else if (focusAttribute) content.querySelector(`[${focusAttribute}="${CSS.escape(focusValue)}"]`)?.focus({ preventScroll: true });
+  else if (focusRecord) content.querySelector(`[data-record="${CSS.escape(focusRecord)}"] > summary`)?.focus({ preventScroll: true });
 }
 
 function toggleProcess(id) {
@@ -652,6 +948,9 @@ function toggleProcess(id) {
   const viewport = scroller.getBoundingClientRect();
   const previousTop = trigger.getBoundingClientRect().top;
   inspectId = inspectId === id ? null : id;
+  recordView = recordBody = null;
+  recordRequest++;
+  bodyRequest++;
   selectedObservation = null;
   setNav(false);
   renderProcess();
@@ -660,6 +959,7 @@ function toggleProcess(id) {
     scroller.scrollTop += trigger.getBoundingClientRect().top - previousTop;
   }
   if (inspectId) {
+    loadSavedRun(byId(group()?.turns, inspectId));
     const triggerTop = trigger.getBoundingClientRect().top;
     if (triggerTop < viewport.top || slot.getBoundingClientRect().bottom > viewport.bottom) {
       scroller.scrollTop += triggerTop - viewport.top - 8;
@@ -674,6 +974,9 @@ function composeTarget() {
     if (groupKey && groupKey !== fresh) return { kind: "wait", mode: "unavailableChat", hint: "unavailableHint" };
     return { kind: "run", key: fresh, mode: "newChat", hint: "newPlaceholder", send: "submit" };
   }
+  if (!task) return { kind: "wait", mode: "historyLoading", hint: "historyLoading" };
+  if (task.read_only && (isActive(task) || !task.conversation?.startsWith("mcp-")))
+    return { kind: "wait", mode: "phoneReadOnly", hint: "phoneReadOnly" };
   const turn = g.turns.indexOf(task) + 1;
   if (task.status === "waiting_for_answer")
     return {
@@ -715,6 +1018,81 @@ function composeTarget() {
     };
   return { kind: "wait", mode: "noConversation", hint: "noConversation" };
 }
+function fileSize(bytes) {
+  const scale = bytes >= 1048576 ? 1048576 : bytes >= 1024 ? 1024 : 1;
+  return new Intl.NumberFormat(undefined, { maximumFractionDigits: 1 }).format(bytes / scale) +
+    " " + ({ 1: "B", 1024: "KiB", 1048576: "MiB" })[scale];
+}
+
+function addFiles(items) {
+  const route = composeTarget();
+  if (busy || route.kind !== "run") return;
+  if (!overview?.capabilities.includes("task_files")) {
+    message("notice", t("filesNeedUpdate"));
+    return;
+  }
+  const files = [...(attachmentDrafts.get(route.key) || []), ...items];
+  if (files.length > 9 || files.reduce((n, f) => n + f.size, 0) > 200 * 1048576) {
+    message("notice", t("fileLimit"));
+    return;
+  }
+  attachmentDrafts.set(route.key, files);
+  syncComposer();
+  $("goal").focus();
+}
+
+let shownFiles, traySignature = "";
+function syncAttachments(route) {
+  const files = attachmentDrafts.get(route.key);
+  const supported = !!overview?.capabilities.includes("task_files");
+  $("attach-file").hidden = !supported || route.kind !== "run";
+  $("attach-file").disabled = busy || !online;
+  const signature = [route.key, busy, lang].join("|");
+  if (shownFiles !== files || signature !== traySignature) {
+    shownFiles = files;
+    traySignature = signature;
+    const tray = $("attachments");
+    tray.replaceChildren();
+    for (const [index, file] of (files || []).entries()) {
+      const chip = el("div", "file-chip");
+      const remove = commandButton("remove", "", "x");
+      remove.lastElementChild.remove();
+      remove.disabled = busy;
+      remove.setAttribute("aria-label", t("removeFile", { name: file.name }));
+      remove.addEventListener("click", () => {
+        attachmentDrafts.set(route.key, files.filter((_, i) => i !== index));
+        syncComposer();
+        $("goal").focus();
+      });
+      chip.title = file.name;
+      chip.append(icon("attach"), el("span", "file-name", file.name), el("small", "", fileSize(file.size)), remove);
+      tray.append(chip);
+    }
+  }
+  return files?.length || 0;
+}
+
+$("attach-file").addEventListener("click", () => $("file-picker").click());
+$("file-picker").addEventListener("change", () => {
+  addFiles(Array.from($("file-picker").files));
+  $("file-picker").value = "";
+});
+$("goal").addEventListener("paste", event => {
+  const clipboard = event.clipboardData;
+  if (!clipboard || composeTarget().kind !== "run") return;
+  let images = Array.from(clipboard.files).filter(file => file.type.startsWith("image/"));
+  if (!images.length) images = Array.from(clipboard.items)
+    .filter(item => item.kind === "file" && item.type.startsWith("image/"))
+    .map(item => item.getAsFile()).filter(Boolean);
+  if (!images.length) return;
+  event.preventDefault();
+  addFiles(images.map(file => {
+    if (file.name) return file;
+    const suffix = ({ "image/jpeg": ".jpg", "image/png": ".png", "image/webp": ".webp", "image/gif": ".gif" })[file.type] || "";
+    return new File([file], "clipboard-image" + suffix, { type: file.type });
+  }));
+});
+
 let optionsSignature = "";
 function syncComposer() {
   const route = composeTarget(),
@@ -732,7 +1110,10 @@ function syncComposer() {
   $("compose-label").textContent = t(route.send || "message");
   $("submit-goal").setAttribute("aria-label", t(route.send || "submit"));
   $("submit-goal").title = t(route.send || "submit");
-  $("submit-goal").disabled = !online || busy || route.kind === "wait" || !goal.value.trim();
+  const attached = syncAttachments(route);
+  goal.required = !attached;
+  $("submit-goal").disabled = !online || busy || route.kind === "wait" || (route.kind === "run" && !!pendingRun) || (!goal.value.trim() && !attached) ||
+    (!!attached && !overview?.capabilities.includes("task_files"));
   const opts = Array.isArray(route.options) ? route.options : [];
   const sig = JSON.stringify([key, opts, busy, online]);
   if (sig === optionsSignature) return;
@@ -756,13 +1137,19 @@ function syncComposer() {
 
 function render() {
   const g = group();
-  const title = g ? label(g.turns[0]) : t(groupKey && groupKey !== fresh ? "heading" : "newChat");
+  const title = g ? g.title || label(g.turns[0]) : t(groupKey && groupKey !== fresh ? "heading" : "newChat");
   $("thread-title").textContent = title;
   $("thread-title").title = title;
   $("thread-meta").textContent = g ? t("rounds", { n: g.turns.length }) : "";
   $("new-chat").disabled = busy;
   $("refresh").disabled = busy;
   $("pick-device").disabled = busy;
+  $("pending-run").hidden = !pendingRun || busy;
+  if (pendingRun) {
+    message("pending-label", t("pendingRun", { id: pendingRun.fields.request_id }));
+    $("lookup-run").disabled = !online;
+    $("retry-run").disabled = !online || !overview?.capabilities.includes("task_recovery");
+  }
   renderNav();
   renderTurns();
   syncComposer();
@@ -828,9 +1215,11 @@ function updateDevice(next) {
 }
 
 function showProblem(e) {
-  if (e.code === "outcome_unknown") writeWarning = t("errOutcomeUnknown");
+  if (e.code === "upload_failed") { message("notice", e.message); return; }
   const key = (e.code === "device_offline" && deviceStates.get(e.state)) || errorNames[e.code];
-  const detail = key ? t(key) : e.message || t("errFallback");
+  const detail = e.code === "outcome_unknown" && pendingRun && (!e.task_id || e.task_id === pendingRun.fields.request_id)
+    ? t("lostReceipt") : key ? t(key) : e.message || t("errFallback");
+  if (e.code === "outcome_unknown") writeWarning = detail;
   // A phone rejecting an outdated action is still a connected phone.
   if (e.http_status === 409 && e.code !== "device_selection" && e.code !== "device_pinned" && online) {
     message("notice", detail);
@@ -856,19 +1245,26 @@ function showProblem(e) {
 }
 
 async function call(action, fields = {}) {
-  const write = !["overview", "select", "watch", "status"].includes(action);
+  const write = !["overview", "select", "watch", "status", "discard_upload", "download"].includes(action) && !action.startsWith("history_");
+  return deskRequest("/desk", JSON.stringify({ action, ...fields }), { "Content-Type": "application/json" }, write, action === "download", action);
+}
+
+async function deskRequest(path, body, headers, write = false, download = false, action = "") {
   let response, data;
   try {
-    response = await fetch("/desk", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "X-Mika-Desk": ticket || "" },
-      body: JSON.stringify({ action, ...fields })
-    });
+    response = await fetch(path, { method: "POST", headers: { ...headers, "X-Mika-Desk": ticket || "" }, body });
+    if (download && response.ok && response.headers.get("Content-Type") === "application/octet-stream") {
+      return await response.blob();
+    }
     if (response.headers.get("Content-Type")?.includes("application/json")) data = await response.json();
+    if (action?.startsWith("history_") && [401, 403].includes(response.status)) forgetHistory();
   } catch {
     throw { code: write ? "outcome_unknown" : "desk_offline" };
   }
-  if (data?.error) throw data.error;
+  if (data?.error) {
+    if ([401, 403].includes(data.error.http_status) && overview?.history_enabled) forgetHistory();
+    throw data.error;
+  }
   if (!response.ok || !data) {
     if (response.status === 403) throw { code: "session" };
     throw { code: write && (response.ok || response.status >= 500) ? "outcome_unknown" : "desk_offline" };
@@ -883,14 +1279,16 @@ async function refresh({ device, watchId, at = revision } = {}) {
   else next = await call("overview");
   if (at !== revision) return false;
   const keep = inspectId || anchorId;
-  if (keep && !byId(next.tasks, keep) && groupKey !== fresh) {
+  // Saved turn identifiers are local to the history view; the task-control API accepts remote UUIDs.
+  const savedId = keep && /^(run|turn|live)-/.test(keep);
+  if (keep && !savedId && !byId(next.tasks, keep) && !byId(group()?.turns, keep)?.read_only && groupKey !== fresh) {
     try {
       const task = await call("status", { task_id: keep });
       if (at !== revision) return false;
       if (!groupKey || threadOf(task) === groupKey) next.tasks.push(task);
     } catch (e) {
       if (at !== revision) return false;
-      if (e.http_status !== 404) throw e;
+      if (![404, 410].includes(e.http_status)) throw e;
       if (keep === inspectId) inspectId = null;
       if (keep === anchorId) {
         anchorId = null;
@@ -900,19 +1298,49 @@ async function refresh({ device, watchId, at = revision } = {}) {
     }
   }
   noteProgress(next.tasks);
-  groups = groupTasks(next.tasks);
+  if (next.history_enabled) {
+    const page = next.history, previous = overview?.history_enabled ? overview.history : null;
+    // The next page's offset is relative to the current ordering. Keep older
+    // selections visible, but restart paging if the first page changed.
+    if (!previous || previous.next_offset !== page.next_offset || previous.conversations.length !== page.conversations.length ||
+        page.conversations.some((chat, i) => chat.id !== previous.conversations[i].id))
+      moreChats = page.next_offset ?? null;
+    if (page.next_offset == null) savedChats.clear();
+    for (const chat of page.conversations) savedChats.set(chat.id, chat);
+  } else {
+    savedChats.clear(); savedTurns.clear(); moreChats = null; recordView = recordBody = null;
+    recordRequest++; bodyRequest++;
+  }
+  overview = next;
+  mergeHistoryGroups();
+  const recovered = pendingRun && byId(next.tasks, pendingRun.fields.request_id);
+  if (recovered) {
+    const { key, fields } = pendingRun;
+    const draft = drafts.get(key);
+    // Confirm from the ordinary read without sending another command or replacing an edited draft.
+    const atSubmission = groupKey === (fields.conversation ? threadOf(recovered) : fresh);
+    acknowledgeSubmission(recovered, key, fields.goal, atSubmission && (!draft || draft.trim() === fields.goal) && !inspectId);
+    message("notice", t("recoveredRun", { id: recovered.task_id }));
+  }
   if (!groupKey) {
     const legacy = byId(next.tasks, anchorId),
       chosen = legacy ? threadOf(legacy) : groups[0]?.key || fresh;
     rememberGroup(chosen, legacy?.task_id || groups.find(g => g.key === chosen)?.turns.at(-1)?.task_id);
   }
-  const current = currentTask();
+  const current = byId(group()?.turns, preferredTask) || currentTask();
   if (current && anchorId !== current.task_id) rememberGroup(groupKey, current.task_id);
-  overview = next;
   online = true;
   retryDelay = 0;
   updateDevice(next);
   message("error", writeWarning);
+  const selected = group();
+  if (overview.history_enabled && selected?.conversation) {
+    await loadSavedTurns(selected.conversation, 0, at);
+    if (at !== revision) return false;
+    const inspected = byId(group()?.turns, inspectId);
+    if (inspected && (!recordView?.data || recordView.data.recording || isActive(inspected)))
+      await loadSavedRun(inspected, recordView?.offset || 0);
+  }
   return true;
 }
 
@@ -923,13 +1351,13 @@ function invalidate() {
 
 function watchedTask() {
   const sel = currentTask();
-  return sel && isActive(sel) ? sel : overview?.tasks.find(isActive);
+  return sel && !sel.read_only && isActive(sel) ? sel : overview?.tasks.find(isActive);
 }
 
 function schedule(immediate = false) {
   clearTimeout(updateTimer);
   if (busy || observing || document.hidden) return;
-  updateTimer = setTimeout(() => observe(immediate), immediate ? 0 : retryDelay || (watchedTask() ? 750 : 8000));
+  updateTimer = setTimeout(() => observe(immediate), immediate ? 0 : retryDelay || (watchedTask() ? 750 : recordView?.data?.recording ? 4000 : 8000));
 }
 
 async function observe(immediate) {
@@ -972,27 +1400,112 @@ async function work(fn, write = false) {
   }
 }
 
+function acknowledgeSubmission(task, key, text, select) {
+  if (drafts.get(key)?.trim() === text) {
+    drafts.delete(key);
+    if (composerKey === key) $("goal").value = "";
+  }
+  setPendingRun(null);
+  writeWarning = "";
+  if (select) {
+    preferredTask = task.task_id;
+    inspectId = null;
+    rememberGroup(threadOf(task), task.task_id);
+  }
+}
+
+function openSubmittedTask(task, key, text) {
+  acknowledgeSubmission(task, key, text, true);
+  const recent = overview?.tasks || [];
+  const tasks = byId(recent, task.task_id)
+    ? recent.map(old => old.task_id === task.task_id ? task : old)
+    : [task, ...recent];
+  overview = { ...overview, tasks };
+  mergeHistoryGroups();
+  noteProgress(tasks);
+  render();
+}
+
+async function recoverSubmission(retry) {
+  if (!pendingRun || !online) return;
+  const { key, fields } = pendingRun;
+  let opened = false;
+  await work(async () => {
+    let task;
+    try {
+      task = retry ? await call("run", fields) : await call("status", { task_id: fields.request_id });
+    } catch (e) {
+      if (!retry && e.http_status === 404) return message("notice", t("notReceived"));
+      if (e.http_status !== 410) throw e;
+      setPendingRun(null);
+      writeWarning = "";
+      message("error", "");
+      return message("notice", t("removedRun"));
+    }
+    openSubmittedTask(task, key, fields.goal);
+    opened = true;
+    message("notice", "");
+    await refresh();
+  });
+  if (opened) $(processSlotId(fields.request_id))?.closest(".turn")?.scrollIntoView({ block: "nearest" });
+}
+$("lookup-run").addEventListener("click", () => recoverSubmission(false));
+$("retry-run").addEventListener("click", () => recoverSubmission(true));
+$("forget-run").addEventListener("click", () => {
+  if (!busy && confirm(t("forgetConfirm"))) {
+    setPendingRun(null);
+    writeWarning = "";
+    message("error", "");
+    message("notice", "");
+    render();
+  }
+});
+
 async function submit() {
   const route = composeTarget(),
     goal = $("goal"),
     text = goal.value.trim(),
     key = route.key;
-  if (!online || busy || !text || !key || route.kind === "wait") return;
+  const files = attachmentDrafts.get(key) || [];
+  if (!online || busy || (!text && !files.length) || !key || route.kind === "wait" || (route.kind === "run" && pendingRun)) return;
   await work(async () => {
     if (route.kind === "run") {
       const fields = { goal: text };
       if (route.conversation) fields.conversation = route.conversation;
-      const task = await call("run", fields);
-      drafts.delete(key);
-      goal.value = "";
-      preferredTask = null;
-      inspectId = null;
-      const tasks = [task, ...(overview?.tasks || []).filter(old => old.task_id !== task.task_id)];
-      overview = { ...overview, tasks };
-      groups = groupTasks(tasks);
-      noteProgress(tasks);
-      rememberGroup(threadOf(task), task.task_id);
-      render();
+      const uploads = [];
+      let task;
+      try {
+        for (const file of files) {
+          message("notice", t("uploadingFile", { name: file.name, index: uploads.length + 1, total: files.length }));
+          try {
+            const receipt = await deskRequest("/desk/upload", file, { "Content-Type": "application/octet-stream",
+              "X-Mika-Filename": encodeURIComponent(file.name) });
+            uploads.push(receipt.upload_id);
+          } catch (error) {
+            if (error.code === "session") throw error;
+            throw { code: "upload_failed", message: t(error.code === "incompatible_api" ? "filesNeedUpdate" : "uploadRejected", { name: file.name }) };
+          }
+        }
+        if (uploads.length) fields.attachments = uploads;
+        if (overview.capabilities.includes("task_recovery")) {
+          fields.request_id = crypto.randomUUID();
+          setPendingRun({ key, fields });
+        }
+        task = await call("run", fields);
+      } catch (error) {
+        const rejected = error.code !== "outcome_unknown" && error.http_status >= 400 && error.http_status < 500;
+        if (fields.request_id && rejected) setPendingRun(null);
+        if (error.code !== "outcome_unknown" && !pendingRun) {
+          for (const id of uploads) await call("discard_upload", { upload_id: id }).catch(() => {});
+        }
+        // A recoverable submission already keeps the staged IDs, including across a tab reload.
+        if (pendingRun) attachmentDrafts.delete(key);
+        throw error;
+      } finally {
+        if (files.length) message("notice", "");
+      }
+      attachmentDrafts.delete(key);
+      openSubmittedTask(task, key, text);
     } else {
       const id = route.task.task_id,
         receipt = await call(route.kind, { task_id: id, text });
@@ -1018,6 +1531,12 @@ $("new-chat").addEventListener("click", () => {
 $("threads").addEventListener("click", ev => {
   const b = ev.target.closest("button[data-group]");
   if (b && !busy) chooseGroup(b.dataset.group);
+  if (ev.target.closest('[data-action="history-list"]') && moreChats != null) work(async () => {
+    const page = await call("history_list", { offset: String(moreChats) });
+    for (const chat of page.conversations) savedChats.set(chat.id, chat);
+    moreChats = page.next_offset;
+    mergeHistoryGroups();
+  });
 });
 $("open-nav").addEventListener("click", () => setNav(true));
 $("close-nav").addEventListener("click", () => {
@@ -1057,6 +1576,21 @@ function collapseProcess() {
   if (returnFocus) $(processSlotId(old))?.previousElementSibling?.focus({ preventScroll: true });
 }
 processContent.addEventListener("click", ev => {
+  const action = ev.target.closest("button");
+  if (action?.dataset.recordPage != null) {
+    recordBody = null; bodyRequest++;
+    loadSavedRun(byId(group()?.turns, inspectId), Number(action.dataset.recordPage));
+    return;
+  }
+  if (action?.dataset.bodyPage != null && recordBody) {
+    loadTraceBody(recordBody.span, Number(action.dataset.bodyPage));
+    return;
+  }
+  if (action?.dataset.bodySpan) {
+    if (recordBody?.span === action.dataset.bodySpan) { recordBody = null; bodyRequest++; renderProcess(); }
+    else loadTraceBody(action.dataset.bodySpan);
+    return;
+  }
   const b = ev.target.closest("button[data-observation]");
   if (!b) return;
   selectedObservation = observed.get(inspectId)?.rows[Number(b.dataset.observation)] || null;
@@ -1075,6 +1609,11 @@ document.addEventListener("keydown", e => {
 $("transcript").addEventListener("click", async ev => {
   const b = ev.target.closest("button[data-action]");
   if (!b) return;
+  if (b.dataset.action === "history-turns") {
+    const conversation = group()?.conversation, offset = savedTurns.get(conversation)?.next_offset;
+    if (conversation && offset != null) await work(() => loadSavedTurns(conversation, offset));
+    return;
+  }
   const task = byId(group()?.turns, b.dataset.task);
   if (!task) return;
   const id = task.task_id;
@@ -1087,6 +1626,26 @@ $("transcript").addEventListener("click", async ev => {
       else expandedGoals.add(id);
       renderTurns();
       break;
+    case "download": {
+      const file = task.files?.find(item => item.id === b.dataset.fileId);
+      if (!file || !online || busy) return;
+      await work(async () => {
+        message("notice", t("downloadingFile", { name: file.name }));
+        try {
+          const blob = await call("download", { task_id: id, file_id: file.id });
+          if (!(blob instanceof Blob) || blob.size !== file.size) throw new Error(t("fileTransferFailed"));
+          const link = document.createElement("a");
+          link.href = URL.createObjectURL(blob);
+          link.download = file.name;
+          link.click();
+          setTimeout(() => URL.revokeObjectURL(link.href), 60_000);
+          message("notice", t("fileSaved"));
+        } catch (error) {
+          message("notice", t([404, 409].includes(error.http_status) || error.code === "file_changed" ? "resultUnavailable" : "fileTransferFailed"));
+        }
+      });
+      break;
+    }
     case "copy":
       try {
         await navigator.clipboard.writeText(task.answer);

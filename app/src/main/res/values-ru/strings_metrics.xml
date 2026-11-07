@@ -31,7 +31,8 @@
     <string name="metrics_output_tokens">Выходные токены</string>
     <string name="usage_cached">Попадания в кеш</string>
     <string name="metrics_no_usage">Расход не сообщён</string>
-    <string name="metrics_all_calls">Все запросы к модели</string>
+    <string name="metrics_all_calls">Все логические вызовы модели</string>
+    <string name="metrics_all_http_calls">Все HTTP-запросы</string>
     <plurals name="metrics_all_calls_value">
         <item quantity="one">%1$d (включая вспомогательные и повторные)</item>
         <item quantity="few">%1$d (включая вспомогательные и повторные)</item>

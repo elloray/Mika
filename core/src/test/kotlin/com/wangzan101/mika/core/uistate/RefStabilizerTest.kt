@@ -31,7 +31,7 @@ class RefStabilizerTest {
         assertEquals("w1", a.snapshotId)
         assertTrue(st.resolve(a.ref("搜索"), "w1") is Resolved.Current)
         // 别的前缀的同号编号不是这块屏的
-        assertEquals(Resolved.Stale, st.resolve(a.ref("搜索"), "p1"))
+        assertEquals(Resolved.Stale(StaleCause.SnapshotUnknown), st.resolve(a.ref("搜索"), "p1"))
     }
 
     @Test fun unchangedElementKeepsRef() {
@@ -125,8 +125,8 @@ class RefStabilizerTest {
         val st = RefStabilizer()
         val a = st.next(shot(el("一", 100, 100), el("二", 200, 200)))
         st.next(shot(el("二", 200, 200)))
-        assertEquals(Resolved.Stale, st.resolve(a.ref("一"), "s1"))
-        assertEquals(Resolved.Stale, st.resolve(a.ref("一"), "s2"))
+        assertEquals(Resolved.Stale(StaleCause.RefRetired), st.resolve(a.ref("一"), "s1"))
+        assertEquals(Resolved.Stale(StaleCause.RefRetired), st.resolve(a.ref("一"), "s2"))
     }
 
     @Test fun refNotInGivenSnapshotOrUnknownSnapshotIsStale() {
@@ -134,10 +134,26 @@ class RefStabilizerTest {
         st.next(shot(el("一", 100, 100)))
         val b = st.next(shot(el("一", 100, 100), el("二", 200, 200)))
         // @e2 是第二屏才有的:配第一屏的 snapshotId 不成立
-        assertEquals(Resolved.Stale, st.resolve(b.ref("二"), "s1"))
-        assertEquals(Resolved.Stale, st.resolve(b.ref("一"), "s9"))
-        assertEquals(Resolved.Stale, st.resolve(b.ref("一"), "port2"))
-        assertEquals(Resolved.Stale, st.resolve("@e99", "s2"))
+        assertEquals(Resolved.Stale(StaleCause.RefNotInSnapshot), st.resolve(b.ref("二"), "s1"))
+        assertEquals(Resolved.Stale(StaleCause.SnapshotUnknown), st.resolve(b.ref("一"), "s9"))
+        assertEquals(Resolved.Stale(StaleCause.SnapshotUnknown), st.resolve(b.ref("一"), "port2"))
+        assertEquals(Resolved.Stale(StaleCause.RefRetired), st.resolve("@e99", "s2"))
+    }
+
+    @Test fun evictedSnapshotTakesPriorityOverRefState() {
+        val st = RefStabilizer()
+        val a = st.next(shot(el("一", 100, 100), el("二", 200, 200), el("旧", 300, 300)))
+        val retired = a.ref("旧")
+        st.next(shot(el("一", 100, 100), el("二", 200, 200)))
+        repeat(18) { st.next(shot(el("一", 100, 100), el("二", 200, 200))) }
+        // s1 是仍保留的最旧一屏:还能区分编号状态,正常旧编号也仍能翻译。
+        assertTrue(st.resolve(a.ref("二"), "s1") is Resolved.Current)
+        assertEquals(Resolved.Stale(StaleCause.RefRetired), st.resolve(retired, "s1"))
+        assertEquals(Resolved.Stale(StaleCause.RefRetired), st.resolve("@e99", "s1"))
+        st.next(shot(el("一", 100, 100), el("二", 200, 200)))
+        // s1 被裁掉后无法知道当时有哪些编号:snapshot_unknown 优先于未知/退役编号。
+        assertEquals(Resolved.Stale(StaleCause.SnapshotUnknown), st.resolve(retired, "s1"))
+        assertEquals(Resolved.Stale(StaleCause.SnapshotUnknown), st.resolve("@e99", "s1"))
     }
 
     @Test fun singleSameNameNewRowGetsNewRef() {
@@ -196,7 +212,7 @@ class RefStabilizerTest {
         st.next(shot(el("确定", 500, 700)))
         val d = st.next(shot(el("确定", 500, 800)))
         assertEquals(a.ref("确定"), d.ref("确定"))
-        assertEquals(Resolved.Stale, st.resolve(a.ref("确定"), "s1"))
+        assertEquals(Resolved.Stale(StaleCause.ElementMoved), st.resolve(a.ref("确定"), "s1"))
         assertTrue(st.resolve(a.ref("确定"), "s3") is Resolved.Current)
     }
 }

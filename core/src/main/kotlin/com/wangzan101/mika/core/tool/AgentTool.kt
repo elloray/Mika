@@ -30,8 +30,9 @@ enum class Verb {
     SetAlarm, SetTimer, ShowAlarms, AddCalendarEvent, SetWheel,
     Navigate, ReadPage, EvaluateJs, SiteCommand, Tabs, Downloads, Upload, SiteMode, Script, Interact, Capture, WaitFor, KeepOpen,
     RunCommand, RunBundledScript, ReadFile, WriteFile, SearchFiles, ShareFile,
+    RootCommand,
     Wait, AskUser, RequestConfirmation, HandToUser, HandleObstacle, EndNotDone,
-    KnowledgeSearch, KnowledgeRead, SkillSearch, SkillRead, SkillSave, MemorySearch, MemorySave, ProfileEdit, HistoryRead,
+    KnowledgeSearch, KnowledgeRead, SkillSearch, SkillRead, SkillSave, MemorySearch, MemorySave, MemoryEdit, ProfileEdit, HistoryRead, WebSearch,
     ScheduleTask,
     SpawnAgent, SettingsList, SettingsSet,
 }
@@ -88,6 +89,8 @@ internal interface AgentTool : ToolInfo {
     val risk: Risk
     /** 非界面能力可直接声明审批风险；界面工具仍按目标和当前观察判。 */
     val approvalRisk: ApprovalRisk? get() = null
+    /** 按这次调用的参数声明的审批风险(同一个工具有的调用要问、有的不用,如 root 命令);默认同 [approvalRisk]。 */
+    fun approvalRisk(args: JsonObject): ApprovalRisk? = approvalRisk
     val concurrency: Concurrency get() = Concurrency.Serial
     /** 不可逆判定按什么看这次调用的目标;External 的工具必须给,其余为 null(不判)。 */
     val gateTarget: GateTarget? get() = null

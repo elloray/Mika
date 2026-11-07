@@ -28,7 +28,7 @@ import kotlin.system.exitProcess
  * 内置助手进程的入口。Mika 经本机无线调试(adbd 的 exec: 服务)以 shell 身份启动它:
  * `CLASSPATH=<base.apk> app_process /system/bin --nice-name=<包名>:helper com.wangzan101.mika.shell.HelperMain <包名> <Mika 的 uid> <签名指纹>`,
  * 一次性口令从标准输入读一行(见 [HelperHandoff.command])。电脑经 USB 调试跑「用电脑启动」脚本时起的也是它,命令和参数相同
- * (见 [HelperHandoff.usbScript])。
+ * (见 [HelperHandoff.usbScript]);已 root 的手机上经 `su 2000 -c` 以 shell 身份起的也是它(见 [HelperHandoff.rootCommand])。
  *
  * 特权逻辑全在 [ShellService];这里只负责把它的 Binder 交给 Mika,并且在 Mika 进程结束后不退出:
  * 撤掉 Mika 留下的改动,等 Mika 再起来时重新交接。Mika 死后一会儿还没回来、而它交来的心愿([RestoreWish])要拉起来时,
@@ -202,7 +202,7 @@ object HelperProcess {
          */
         private fun maybeRestore() {
             val now = System.currentTimeMillis()
-            when (val d = restorePolicy.decide(wish, appBack = appToken != null || retrying, now)) {
+            when (val d = restorePolicy.decide(wish, appBack = appToken != null || retrying, now, forceStopped = forceStopped())) {
                 HelperRestorePolicy.Decision.Restore -> Unit
                 HelperRestorePolicy.Decision.AppBack -> return
                 else -> {
@@ -214,6 +214,15 @@ object HelperProcess {
             if (wish.accessibility) restoreAccessibility()
             retrying = true
             redeliver(0)
+        }
+
+        /** 强行停止会由系统记下 stopped 标记;读取失败时不猜,维持原有的异常恢复路径。 */
+        private fun forceStopped(): Boolean = runCatching {
+            val info = context.packageManager.getApplicationInfo(packageName, 0)
+            info.flags and android.content.pm.ApplicationInfo.FLAG_STOPPED != 0
+        }.getOrElse { t ->
+            Log.w(TAG, "cannot read stopped state of $packageName", t)
+            false
         }
 
         /** 把 Mika 的无障碍服务追加回系统列表、打开总开关;别的服务不动。失败只记日志,照样去拉 Mika(它起来后自己还会修)。 */

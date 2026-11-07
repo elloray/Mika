@@ -31,7 +31,8 @@ class IrreversibleDetectorTest {
         assertEquals(IrrevAction.pay, d.classify("phone_tap", args("""{"ref":"@e3","snapshotId":"s1"}"""), s)?.action)
         assertNull(d.matchName("发送给朋友的那张照片在哪里"))
         for ((w, a) in listOf("删除" to IrrevAction.delete, "退出群聊" to IrrevAction.delete, "提交订单" to IrrevAction.order,
-            "立即购买" to IrrevAction.order, "转账" to IrrevAction.pay, "发 布" to IrrevAction.send, "报名" to IrrevAction.order)) {
+            "立即购买" to IrrevAction.order, "转账" to IrrevAction.pay, "确认捐赠" to IrrevAction.pay, "立即捐款" to IrrevAction.pay,
+            "发 布" to IrrevAction.send, "报名" to IrrevAction.order)) {
             assertEquals(w, a, d.matchName(w))
         }
     }
@@ -46,7 +47,7 @@ class IrreversibleDetectorTest {
         assertEquals(IrrevAction.order, d.classify("phone_tap", args("""{"x":[400,600],"y":650}"""), s)?.action)
         assertNull(d.classify("phone_tap", args("""{"x":500,"y":300}"""), s))
         for ((w, a) in listOf("Send" to IrrevAction.send, "post" to IrrevAction.send, "Pay now" to IrrevAction.pay,
-            "Delete" to IrrevAction.delete, "Clear all" to IrrevAction.delete, "Checkout" to IrrevAction.order)) {
+            "Donate now" to IrrevAction.pay, "Delete" to IrrevAction.delete, "Clear all" to IrrevAction.delete, "Checkout" to IrrevAction.order)) {
             assertEquals(w, a, d.matchName(w))
         }
         val r = snap(el("@e1", "", listOf(0, 0, 100, 100), res = "com.chat:id/btnSend"))

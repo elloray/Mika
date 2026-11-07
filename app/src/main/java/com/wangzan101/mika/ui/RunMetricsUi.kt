@@ -101,6 +101,7 @@ object RunMetricsCopy {
         add(tr(R.string.usage_cached) to UsageCopy.tokens(m.cachedTokens))
         if (m.callsWithoutUsage > 0) add(tr(R.string.metrics_no_usage) to trPlural(R.plurals.times, m.callsWithoutUsage))
         m.allCalls?.let { add(tr(R.string.metrics_all_calls) to trPlural(R.plurals.metrics_all_calls_value, it)) }
+        m.allHttpCalls?.let { add(tr(R.string.metrics_all_http_calls) to trPlural(R.plurals.times, it)) }
         add(tr(R.string.metrics_steps) to trPlural(R.plurals.chat_steps_n, m.steps))
         add(tr(R.string.metrics_observe_act) to tr(R.string.metrics_observe_act_value, m.observeCalls, m.actCalls))
     }

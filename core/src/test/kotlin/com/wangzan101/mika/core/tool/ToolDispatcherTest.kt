@@ -330,10 +330,23 @@ class ToolDispatcherTest {
         assertEquals(0, back["required"]!!.jsonArray.size)
     }
 
-    @Test fun listAppsReturnsPlainPackagesAndLabels() = runTest {
+    @Test fun listAppsReturnsEachPackageOnceAndOmitsFalseFlags() = runTest {
         val c = toolDispatcher(FakeScreen()).execute(call("phone_list_apps")).content
-        assertEquals("com.x", c["packages"]!!.jsonArray[0].jsonPrimitive.content)
-        assertEquals("X", c["apps"]!!.jsonArray[0].jsonObject["label"]!!.jsonPrimitive.content)
+        assertNull("包名只在 apps 里出现,不再另带一份完整 packages 数组", c["packages"])
+        val app = c["apps"]!!.jsonArray.single().jsonObject
+        assertEquals("com.x", app["package"]!!.jsonPrimitive.content)
+        assertEquals("X", app["label"]!!.jsonPrimitive.content)
+        assertFalse("blocked" in app)
+        assertFalse("screenShareAllowed" in app)
+
+        val restricted = object : ScreenPort by FakeScreen() {
+            override val appAccess = com.wangzan101.mika.core.access.AppAccessPolicy {
+                com.wangzan101.mika.core.access.AppAccessState(blocked = setOf("com.x"), shareAllowed = setOf("com.x"))
+            }
+        }
+        val marked = toolDispatcher(restricted).execute(call("phone_list_apps")).content["apps"]!!.jsonArray.single().jsonObject
+        assertEquals(true, marked["blocked"]!!.jsonPrimitive.boolean)
+        assertEquals(true, marked["screenShareAllowed"]!!.jsonPrimitive.boolean)
     }
 
     @Test fun unknownToolNamesTool() = runTest {

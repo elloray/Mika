@@ -6,6 +6,7 @@ import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextClearance
 import androidx.compose.ui.test.performTextInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -38,11 +39,17 @@ class MemoryScreenTest {
         override fun save(items: List<MemoryItem>) {}
     }, System::currentTimeMillis, { java.util.UUID.randomUUID().toString() })
 
-    private fun show() {
+    private fun show(opened: MutableList<String>? = null) {
         val dir = InstrumentationRegistry.getInstrumentation().targetContext.cacheDir
         val vm = MemoryViewModel(store, MemorySettings(File(dir, "memory-screen-test.json").apply { delete() }), null,
             CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate))
-        compose.setContent { MemoryScreen(vm) {} }
+        compose.setContent {
+            MemoryScreen(
+                vm, onBack = {},
+                webSitesCount = opened?.let { 3 }, onOpenWebSites = { opened?.add("web") },
+                routes = opened?.let { 8 }, onOpenRoutes = { opened?.add("routes") },
+            )
+        }
     }
 
     @Test fun addEditDeleteRoundTrip() {
@@ -75,5 +82,14 @@ class MemoryScreenTest {
         compose.onNodeWithText("没有等你确认的东西").assertExists()
         compose.onNodeWithTag("segment-Memories").performClick()
         assertEquals(1, compose.onAllNodesWithTag("memory-row").fetchSemanticsNodes().size)
+    }
+
+    @Test fun savedDataRowsOpenWebsiteSignInsAndRoutes() {
+        val opened = mutableListOf<String>()
+        show(opened)
+        compose.onNodeWithText("记忆与数据").assertExists()
+        compose.onNodeWithText("网站登录").performScrollTo().performClick()
+        compose.onNodeWithText("记住的操作路线").performScrollTo().performClick()
+        assertEquals(listOf("web", "routes"), opened)
     }
 }

@@ -110,7 +110,10 @@ class NetProxyTest {
         val net = NetProxy { "http://${server.hostName}:${server.port}" }
         server.enqueue(MockResponse().setHeader("Content-Type", "text/event-stream").setBody("data: a\n\ndata: b\n\n"))
         val events = mutableListOf<String>()
-        HttpSupport.stream(net.client(), Request.Builder().url("http://api.example.test/v1/chat").build(), events::add)
+        HttpSupport.stream(net.client(), Request.Builder().url("http://api.example.test/v1/chat").build()) { event ->
+            events += event
+            false
+        }
         assertEquals(listOf("a", "b"), events)
         assertEquals("GET http://api.example.test/v1/chat HTTP/1.1", server.takeRequest().requestLine)
     }

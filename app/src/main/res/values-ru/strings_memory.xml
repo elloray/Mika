@@ -78,4 +78,14 @@
     <string name="skills_archived">В архиве</string>
     <string name="skills_archive">В архив</string>
     <string name="skills_changed_lines">Изменённые строки:</string>
+    <string name="skills_get">Получить навыки</string>
+    <string name="skills_share">Поделиться навыком</string>
+    <string name="skills_import">Импортировать навык</string>
+    <string name="skills_import_sub">Вставьте навык, которым с вами поделились</string>
+    <string name="skills_import_hint">Сначала он попадёт в «На проверке» и не будет использоваться, пока вы его не прочитаете и не примете.</string>
+    <string name="skills_import_confirm">Импортировать</string>
+    <string name="skill_imported">Импортировано. Проверьте в разделе «На проверке».</string>
+    <string name="skills_imported">Импортирован</string>
+    <string name="skill_builtin_name">Встроенный навык с таким названием уже есть. Переименуйте и попробуйте снова.</string>
+    <string name="skill_draft_pending">Черновик с таким названием уже ждёт проверки. Сначала разберитесь с ним.</string>
 </resources>

@@ -11,11 +11,13 @@ class ChannelOutboxTest {
     private class FakeChannel(override val confirms: Boolean = true) : Channel {
         override val id = "fake"
         val sent = mutableListOf<Delivery>()
+        val acknowledged = mutableListOf<String>()
         var outcome = SendOutcome.Delivered
         var alive = true
         private var sink: ChannelInputSink? = null
         override fun isAlive(peer: ChannelPeer) = alive
         override fun start(sink: ChannelInputSink): AutoCloseable { this.sink = sink; return AutoCloseable { this.sink = null } }
+        override fun acknowledge(messageId: String) { acknowledged += messageId }
         override suspend fun send(peer: ChannelPeer, delivery: Delivery): SendOutcome { sent += delivery; return outcome }
         suspend fun receive(input: ChannelInput) { sink?.receive(input) }
     }
@@ -44,6 +46,7 @@ class ChannelOutboxTest {
         channel.receive(ChannelInput.Confirm(peer, "a2", ConfirmChoice.Once))
         outbox.deliver(channel, peer, Delivery.Result("d3", "thread", "done"))
         assertEquals(listOf("answer:A", "confirm:Once"), received)
+        assertEquals(listOf("m1"), channel.acknowledged)
         assertEquals(listOf(input, confirm, Delivery.Result("d3", "thread", "done")), channel.sent)
         assertEquals(DeliveryState.Delivered, outbox.deliver(channel, peer, input).state)
         assertEquals(3, channel.sent.size)
@@ -64,6 +67,45 @@ class ChannelOutboxTest {
         channel.receive(ChannelInput.Confirm(peer, "a", ConfirmChoice.Once))
         channel.receive(ChannelInput.Confirm(peer.copy(peerId = "stranger"), "a", ConfirmChoice.Once))
         assertEquals(emptyList<String>(), events)
+    }
+
+    @Test fun unmarkedTextStartsNewTaskEvenWhileAskIsActive() = runBlocking {
+        val channel = FakeChannel()
+        val ask = Delivery.Ask("d", "thread", "a1", Delivery.Ask.Kind.Input, "which?")
+        val events = mutableListOf<String>()
+        val gateway = ChannelGateway(MemoryOwnerIdentity().also { it.bind(peer) }, { ask }, object : ChannelGateway.Route {
+            override suspend fun newTask(peer: ChannelPeer, messageId: String, text: String) { events += "new:$text" }
+            override suspend fun answer(threadId: String, askId: String, text: String): Boolean { events += "answer:$text"; return true }
+            override suspend fun confirm(threadId: String, askId: String, choice: ConfirmChoice) = false
+            override suspend fun stop(runId: RunId) = Unit
+            override suspend fun cancelAsk(threadId: String) { events += "cancelAsk" }
+        })
+        gateway.start(channel)
+
+        channel.receive(ChannelInput.Text(peer, "m-new", "a different task"))
+        channel.receive(ChannelInput.Text(peer, "m-old", "another task", replyToAskId = "old-ask"))
+
+        assertEquals(listOf("cancelAsk", "new:a different task", "cancelAsk", "new:another task"), events)
+        assertEquals(emptyList<String>(), channel.acknowledged)
+    }
+
+    @Test fun rejectedAnswerStaysUnacknowledgedForRedelivery() = runBlocking {
+        val channel = FakeChannel()
+        val ask = Delivery.Ask("d", "thread", "a1", Delivery.Ask.Kind.Input, "which?")
+        var answerCalls = 0
+        val gateway = ChannelGateway(MemoryOwnerIdentity().also { it.bind(peer) }, { ask }, object : ChannelGateway.Route {
+            override suspend fun newTask(peer: ChannelPeer, messageId: String, text: String) = Unit
+            override suspend fun answer(threadId: String, askId: String, text: String): Boolean { answerCalls++; return false }
+            override suspend fun confirm(threadId: String, askId: String, choice: ConfirmChoice) = false
+            override suspend fun stop(runId: RunId) = Unit
+            override suspend fun cancelAsk(threadId: String) = Unit
+        })
+        gateway.start(channel)
+
+        channel.receive(ChannelInput.Text(peer, "m1", "A", replyToAskId = "a1"))
+
+        assertEquals(1, answerCalls)
+        assertEquals(emptyList<String>(), channel.acknowledged)
     }
 
     @Test fun uncertainSendIsNeverBlindlyRetried() = runBlocking {

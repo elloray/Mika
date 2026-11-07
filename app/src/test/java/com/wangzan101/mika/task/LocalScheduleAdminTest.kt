@@ -11,9 +11,10 @@ class LocalScheduleAdminTest {
     private val second = TriggerDefinition("plan-b", "thread-b", "工作提醒", 2000)
     private val plans = mutableListOf(first, second)
     private val calls = mutableListOf<String>()
+    private val refused = mutableSetOf<String>()
     private val admin = LocalScheduleAdmin(
         plans = { plans.toList() },
-        changeEnabled = { id, enabled -> calls += "enabled:$id:$enabled" },
+        changeEnabled = { id, enabled -> calls += "enabled:$id:$enabled"; id !in refused },
         delete = { id -> calls += "delete:$id" },
         changeTime = { id, atMs -> calls += "time:$id:$atMs" },
         executeNow = { id -> calls += "run:$id" },
@@ -35,6 +36,12 @@ class LocalScheduleAdminTest {
         assertEquals(listOf(
             "enabled:plan-a:false", "enabled:plan-a:true", "time:plan-a:3000", "run:plan-a", "delete:plan-a",
         ), calls)
+    }
+
+    @Test fun runtimeRefusalIsPassedBack() {
+        refused += first.id
+        assertFalse(admin.setEnabled("thread-a", first.id, true))
+        assertEquals(listOf("enabled:plan-a:true"), calls)
     }
 
     @Test fun foreignAndMissingPlansNeverReachTheRuntime() {

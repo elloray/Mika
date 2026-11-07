@@ -9,6 +9,8 @@ import org.junit.Test
 import java.io.ByteArrayOutputStream
 import java.io.DataInputStream
 import java.math.BigInteger
+import java.net.InetAddress
+import java.net.InetSocketAddress
 import java.net.ServerSocket
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
@@ -61,6 +63,26 @@ class AdbPairingTest {
     }
 
     @Test
+    fun pairingUsesTheVerifiedMappedLoopbackAddress() {
+        FakePairingServer("123456").use { server ->
+            val peer = AdbPairing(client).pair(" [::ffff:127.0.0.1] ", server.port, "123456")
+            server.join()
+            assertNull(server.error)
+            assertEquals("adb-FAKE0001-abc123", peer.data)
+        }
+    }
+
+    @Test
+    fun pairingRejectsHostileLookalikeHostsBeforeConnecting() {
+        for (host in listOf("127.evil.com", "127.0.0.1.example.com", "localhost.example.com")) {
+            val e = assertThrows(host, AdbPairingException::class.java) {
+                AdbPairing(client).pair(host, 5555, "123456", timeoutMs = 50)
+            }
+            assertEquals(host, AdbPairingException.Reason.NOT_LOCAL, e.reason)
+        }
+    }
+
+    @Test
     fun connectFailureIsReported() {
         val port = ServerSocket(0).use { it.localPort }
         val e = assertThrows(AdbPairingException::class.java) { AdbPairing(client).pair("127.0.0.1", port, "1", timeoutMs = 2000) }
@@ -70,17 +92,17 @@ class AdbPairingTest {
     /** 两端导出一致,且空 context 与不带 context 相同(Android 端传空数组)。 */
     @Test
     fun tls13ExporterAgreesAndIgnoresEmptyContext() {
-        ServerSocket(0, 1, java.net.InetAddress.getLoopbackAddress()).use { ss ->
+        ServerSocket(0, 1, InetAddress.getByAddress(byteArrayOf(127, 0, 0, 1))).use { ss ->
             val serverTls = TestTls.tls(TestTls.device)
             var serverSide: ByteArray? = null
             val t = kotlin.concurrent.thread {
                 ss.accept().use { p ->
-                    val s = serverTls.wrap(p, "127.0.0.1", ss.localPort, client = false)
+                    val s = serverTls.wrap(p, InetSocketAddress(p.localAddress, ss.localPort), client = false)
                     serverSide = org.conscrypt.Conscrypt.exportKeyingMaterial(s, AdbPairing.EXPORT_LABEL, null, 64)
                     s.inputStream.read()
                 }
             }
-            client.connect("127.0.0.1", ss.localPort, 5000).use { s ->
+            client.connect(InetSocketAddress(InetAddress.getByAddress(byteArrayOf(127, 0, 0, 1)), ss.localPort), 5000).use { s ->
                 assertEquals("TLSv1.3", s.session.protocol)
                 val a = org.conscrypt.Conscrypt.exportKeyingMaterial(s, AdbPairing.EXPORT_LABEL, null, 64)
                 val b = org.conscrypt.Conscrypt.exportKeyingMaterial(s, AdbPairing.EXPORT_LABEL, ByteArray(0), 64)

@@ -15,6 +15,7 @@
     <string name="tool_check_dialog">检查弹窗</string>
     <string name="tool_gesture">多点手势</string>
     <string name="tool_shell">系统命令</string>
+    <string name="tool_root">root 命令</string>
     <string name="tool_find_element">查找界面控件</string>
     <string name="tool_collect">采集多屏内容</string>
     <string name="tool_phone_run">连续操作手机</string>

@@ -68,6 +68,18 @@ class PrerequisitesTest {
     }
 
     @Test
+    fun restrictedSettingsStateReachesTheAccessibilityProblem() {
+        val c = Prerequisites.check(
+            ready.copy(accessibility = AccessibilityState.EnabledNotRunning, restrictedSettings = true),
+            hasMainModel = true,
+        )
+        assertEquals(
+            listOf(Problem.Accessibility(AccessibilityState.EnabledNotRunning, restrictedSettings = true)),
+            c.problems,
+        )
+    }
+
+    @Test
     fun notificationsOffOnlyWarns() {
         val c = Prerequisites.check(ready.copy(notificationsAllowed = false), hasMainModel = true)
         assertTrue(c.canStartTask)

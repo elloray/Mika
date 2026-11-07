@@ -14,7 +14,7 @@ import kotlinx.coroutines.flow.update
  * 1. 手机操作助手不可用 → 暂停,等它恢复且用户点「继续」;
  * 2. 任务被挪到主屏(用户在主屏打开了这个 App)→ 暂停,用户点「继续」后才把它挪回虚拟屏;
  *    Mika 不自己判断用户是否用完,避免在用户眼前把 App 抽走;
- * 3. 屏幕熄灭或锁屏 → 等待解锁,亮屏并解锁后自动继续。
+ * 3. 屏幕熄灭或锁屏 → 定时任务按本机授权尝试唤醒/解锁，其他任务等待解锁；亮屏并解锁后自动继续。
  * 前两条只在这一步用的是手机(phone 为 true)时才查:网页、沙箱上的步骤不需要助手,也不会被挪到主屏。
  * 另外,用户在浏览器页上亲手摸了借给任务的页面([onUserOnPage])→ 不论哪种屏都先停下,用户点「继续」再接着做。
  * 不碰界面的步骤(模型推理、读屏)不经过这里,照常进行。
@@ -22,6 +22,10 @@ import kotlinx.coroutines.flow.update
 class TaskGate(
     private val locked: StateFlow<Boolean>,
     private val shellAvailable: StateFlow<Boolean>,
+    /** 写操作前同步重读系统锁屏状态，避免熄屏广播尚未处理时放行。 */
+    private val refreshLocked: (() -> Unit)? = null,
+    /** 无人值守任务遇到锁屏时调用;返回解锁状态,返回前必须按系统状态刷新 [locked]。 */
+    private val unattendedUnlock: (suspend () -> String)? = null,
     private val moveBack: suspend () -> Boolean,
 ) {
     private val movedAway = MutableStateFlow(false)
@@ -55,6 +59,7 @@ class TaskGate(
 
     suspend fun pass(phone: () -> Boolean = { true }, setWaiting: (TaskState?) -> Unit) {
         while (true) {
+            refreshLocked?.invoke()
             val onPhone = phone()
             when {
                 userOnPage.value -> {
@@ -71,7 +76,13 @@ class TaskGate(
                 }
                 locked.value -> {
                     setWaiting(TaskState.Held(LOCKED))
-                    locked.first { !it }
+                    if (unattendedUnlock == null) {
+                        locked.first { !it }
+                    } else {
+                        val status = unattendedUnlock.invoke()
+                        // 无人值守时不能无限等用户来解锁；只认刷新后的系统状态，不认流程自称成功。
+                        if (locked.value) throw UnattendedLockException(tr(R.string.trigger_unlock_failed), status)
+                    }
                 }
                 else -> {
                     setWaiting(null)
@@ -117,3 +128,6 @@ class TaskGate(
         val USER_ON_PAGE: String get() = tr(R.string.gate_user_on_page)
     }
 }
+
+/** 无人值守任务无法通过系统锁屏；保留不含凭据的状态码,由任务服务转成有结果通知的失败终态。 */
+internal class UnattendedLockException(message: String, val status: String) : Exception("$message [$status]")

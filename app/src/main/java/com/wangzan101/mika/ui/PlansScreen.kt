@@ -3,14 +3,11 @@ package com.wangzan101.mika.ui
 import com.wangzan101.mika.R
 import com.wangzan101.mika.i18n.tr
 import com.wangzan101.mika.i18n.trPlural
-import com.wangzan101.mika.ui.components.keepsKeyboard
-import com.wangzan101.mika.ui.components.KeyboardDismissArea
 import android.content.Context
 import androidx.activity.compose.BackHandler
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.OutlinedTextField
+import com.wangzan101.mika.chat.ConversationStore
+import com.wangzan101.mika.ui.components.MikaDialog
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -23,12 +20,16 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.LifecycleResumeEffect
+import com.wangzan101.mika.core.trigger.CONDITION_COOLDOWN
+import com.wangzan101.mika.core.trigger.CONDITION_NOT_MET
+import com.wangzan101.mika.core.trigger.ConditionNotify
 import com.wangzan101.mika.core.trigger.TriggerDefinition
 import com.wangzan101.mika.core.trigger.TriggerWindow
 import com.wangzan101.mika.core.trigger.TriggerWindowState
 import com.wangzan101.mika.task.ExactAlarmGuide
 import com.wangzan101.mika.task.TriggerRuntime
 import com.wangzan101.mika.ui.components.ActionSheet
+import com.wangzan101.mika.ui.components.BarIconButton
 import com.wangzan101.mika.ui.components.ButtonKind
 import com.wangzan101.mika.ui.components.ButtonSize
 import com.wangzan101.mika.ui.components.EmptyNote
@@ -48,18 +49,18 @@ import com.wangzan101.mika.ui.theme.MikaTheme
 import com.wangzan101.mika.ui.theme.MikaType
 import java.time.Instant
 import com.wangzan101.mika.i18n.uiLocale
-import java.time.LocalDateTime
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 
 /**
  * 已保存的定时任务:分「进行中」「已停用」两段,每条三行(做什么、什么时候与下次、上次结果),右边开关。
- * 点一行升起操作面板(看对话、立即执行、改时间、删除)。页面只读账本,修改后让调度器重新布置系统闹钟。
+ * 点一行升起操作面板(看对话、立即执行、编辑、删除)。右上角可手动新建；保存后让调度器重新布置系统闹钟。
  */
 @Composable
 fun PlansScreen(context: Context, onBack: () -> Unit, onOpenConversation: (String) -> Unit) {
     BackHandler(onBack = onBack)
     var snapshot by remember { mutableStateOf(TriggerRuntime.snapshot(context)) }
+    var creating by remember { mutableStateOf<String?>(null) }
     var editing by remember { mutableStateOf<TriggerDefinition?>(null) }
     var deleting by remember { mutableStateOf<TriggerDefinition?>(null) }
     var acting by remember { mutableStateOf<TriggerDefinition?>(null) }
@@ -72,15 +73,22 @@ fun PlansScreen(context: Context, onBack: () -> Unit, onOpenConversation: (Strin
         onPauseOrDispose {}
     }
     fun refresh() { snapshot = TriggerRuntime.snapshot(context) }
-    fun act(block: () -> Unit) {
+    fun act(block: () -> Unit): Boolean =
         runCatching { block(); refresh(); error = null }
             .onFailure { error = it.message ?: tr(R.string.op_failed) }
-    }
+            .isSuccess
 
     val (running, stopped) = snapshot.triggers.sortedBy { it.nextAtMs }.partition { it.enabled }
     val shown = if (segment == 0) running else stopped
 
-    SubPage(tr(R.string.drawer_plans), onBack) {
+    SubPage(
+        tr(R.string.drawer_plans), onBack,
+        right = {
+            BarIconButton(MikaIcons.Plus, tr(R.string.plans_add), {
+                creating = ConversationStore.shared(context).newConversation()
+            })
+        },
+    ) {
         if (!exact) {
             StateCard(
                 MikaIcons.Alarm, ExactAlarmGuide.TITLE, tr(R.string.plans_alarm_body),
@@ -123,21 +131,29 @@ fun PlansScreen(context: Context, onBack: () -> Unit, onOpenConversation: (Strin
         )
     }
 
+    creating?.let { threadId ->
+        PlanEditorDialog(
+            original = null,
+            newThreadId = threadId,
+            onDismiss = { creating = null },
+            onSave = { plan ->
+                if (act { TriggerRuntime.schedule(context, plan) }) creating = null
+            },
+        )
+    }
+
     editing?.let { plan ->
-        var value by remember(plan.id) { mutableStateOf(formatPlanTime(plan.nextAtMs)) }
-        AlertDialog(onDismissRequest = { editing = null }, title = { Text(tr(R.string.plans_edit_title)) },
-            text = { KeyboardDismissArea { OutlinedTextField(value, { value = it }, Modifier.keepsKeyboard(), label = { Text(tr(R.string.plans_edit_label)) },
-                singleLine = true) } },
-            confirmButton = { TextButton(onClick = {
-                val at = runCatching { LocalDateTime.parse(value, PLAN_TIME).atZone(ZoneId.systemDefault()).toInstant().toEpochMilli() }
-                    .getOrNull()
-                if (at == null || at <= System.currentTimeMillis()) error = tr(R.string.plans_need_future)
-                else { act { TriggerRuntime.reschedule(context, plan.id, at) }; editing = null }
-            }) { Text(tr(R.string.save)) } },
-            dismissButton = { TextButton(onClick = { editing = null }) { Text(tr(R.string.cancel)) } })
+        PlanEditorDialog(
+            original = plan,
+            newThreadId = plan.threadId,
+            onDismiss = { editing = null },
+            onSave = { updated ->
+                if (act { TriggerRuntime.schedule(context, updated) }) editing = null
+            },
+        )
     }
     deleting?.let { plan ->
-        AlertDialog(onDismissRequest = { deleting = null }, title = { Text(tr(R.string.plans_delete_title)) },
+        MikaDialog(onDismissRequest = { deleting = null }, title = { Text(tr(R.string.plans_delete_title)) },
             text = { Text(plan.goal) },
             confirmButton = { TextButton(onClick = { act { TriggerRuntime.remove(context, plan.id) }; deleting = null }) {
                 Text(tr(R.string.confirm_delete), color = MikaTheme.colors.bad)
@@ -167,14 +183,16 @@ private fun PlanRow(plan: TriggerDefinition, last: TriggerWindow?, first: Boolea
         else -> tr(R.string.plans_once)
     }
     val when_ = if (plan.enabled) tr(R.string.plans_next, repeat, formatPlanTime(plan.nextAtMs)) else "$repeat · $status"
-    val subtitle = plan.conditionGoal?.let { tr(R.string.plans_condition, it, when_) } ?: when_
+    val subtitle = plan.conditionGoal?.let {
+        tr(if (plan.notifyWhen == ConditionNotify.EachTimeMet) R.string.plans_condition_each else R.string.plans_condition, it, when_)
+    } ?: when_
     val c = MikaTheme.colors
     val delivered = last?.state == TriggerWindowState.Delivered
     // 一次性的任务做完后不能再打开;循环的和从没跑过的可以
     val canToggle = plan.enabled || plan.intervalMs != null || plan.calendarTime != null || last == null
     ListRow(
         null, plan.reminderText ?: plan.goal, subtitle, first = first,
-        detail = last?.let { tr(R.string.plans_last, formatPlanTime(it.dueAtMs), windowLabel(it.state)) } ?: tr(R.string.plans_never_run),
+        detail = last?.let { lastResult(plan, it) } ?: tr(R.string.plans_never_run),
         detailColor = if (delivered) c.ok else c.ink3,
         onClick = onClick,
     ) { MikaSwitch(plan.enabled, onToggle, enabled = canToggle) }
@@ -182,9 +200,20 @@ private fun PlanRow(plan: TriggerDefinition, last: TriggerWindow?, first: Boolea
 
 private val PLAN_TIME: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")
 private fun formatPlanTime(ms: Long): String = PLAN_TIME.format(Instant.ofEpochMilli(ms).atZone(ZoneId.systemDefault()))
-private fun windowLabel(state: TriggerWindowState): String = when (state) {
+/** 上次结果:时间、结果;那次检查记下了值时一起显示(检查失败、结果未知的那一次没有值,不拿更早的充数)。 */
+private fun lastResult(plan: TriggerDefinition, w: TriggerWindow): String {
+    val value = plan.lastValue?.takeIf { w.state in setOf(TriggerWindowState.Skipped, TriggerWindowState.ActionDispatched, TriggerWindowState.Delivered) }
+    return if (value != null) tr(R.string.plans_last_value, formatPlanTime(w.dueAtMs), windowLabel(w), value)
+    else tr(R.string.plans_last, formatPlanTime(w.dueAtMs), windowLabel(w))
+}
+
+private fun windowLabel(w: TriggerWindow): String = when (w.state) {
     TriggerWindowState.Delivered -> tr(R.string.plans_delivered)
-    TriggerWindowState.Skipped -> tr(R.string.plans_unchanged)
+    TriggerWindowState.Skipped -> when (w.reason) {
+        CONDITION_NOT_MET -> tr(R.string.plans_not_met)
+        CONDITION_COOLDOWN -> tr(R.string.plans_cooldown)
+        else -> tr(R.string.plans_unchanged)
+    }
     TriggerWindowState.Failed -> tr(R.string.plans_check_failed)
     TriggerWindowState.Unknown -> tr(R.string.plans_result_pending)
     TriggerWindowState.Claimed, TriggerWindowState.Dispatched, TriggerWindowState.ActionDispatched -> tr(R.string.plans_running_now)

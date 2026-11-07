@@ -1,1 +1,1 @@
-Search what the user has told Mika to remember (facts, preferences, approved ways of doing things). Returns up to 8 {id, kind, content}. Try other words if the first query finds nothing.
+Search what the user has told Mika to remember (facts, preferences, approved ways of doing things). Returns up to 8 {id, kind, content}. Try other words if the first query finds nothing. The latest result set defines the candidate ids that memory_edit may target.

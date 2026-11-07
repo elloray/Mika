@@ -1,0 +1,79 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="selfcheck_title">فحص التوافق الذاتي</string>
+    <string name="selfcheck_row_sub">تعرّف على ما يعمل على هذا الهاتف وأرسل تقريرًا</string>
+    <string name="selfcheck_intro">يستغرق نحو دقيقة واحدة. لا يؤثر في تطبيقاتك الأخرى، ولا يغيّر الإعدادات، ولا يستخدم الشبكة. يُرجى البقاء في هذه الصفحة أثناء تشغيله.</string>
+    <string name="selfcheck_start">ابدأ</string>
+    <string name="selfcheck_again">إعادة التشغيل</string>
+    <string name="selfcheck_cancel">إلغاء</string>
+    <string name="selfcheck_task_running">هناك مهمة قيد التشغيل. ابدأ الفحص الذاتي بعد انتهائها.</string>
+    <string name="selfcheck_checks">الفحوصات</string>
+    <string name="selfcheck_report">التقرير</string>
+    <string name="selfcheck_copy">نسخ التقرير</string>
+    <string name="selfcheck_github">الإبلاغ على GitHub</string>
+    <string name="selfcheck_copied">نُسخ التقرير</string>
+    <string name="selfcheck_github_copied">نُسخ التقرير. الصقه في «تقرير الفحص الذاتي» في الصفحة التي ستُفتح.</string>
+    <string name="selfcheck_report_note">لا يتضمن التقرير سوى طراز الهاتف وإصدار النظام ونتيجة كل فحص، ولا يتضمن الحسابات أو قوائم التطبيقات أو محتواك. يمكنك قراءته قبل نشره.</string>
+
+    <string name="selfcheck_check_device">الجهاز</string>
+    <string name="selfcheck_check_permissions">الأذونات</string>
+    <string name="selfcheck_check_helper">المساعد المضمّن</string>
+    <string name="selfcheck_check_display">الشاشة الافتراضية</string>
+    <string name="selfcheck_check_launch">فتح التطبيقات</string>
+    <string name="selfcheck_check_reading">قراءة الشاشة</string>
+    <string name="selfcheck_check_actions">النقر والكتابة</string>
+    <string name="selfcheck_check_alive">استمرار التشغيل</string>
+    <string name="selfcheck_check_main">بقاء شاشتك دون تغيير</string>
+    <string name="selfcheck_check_browser">المتصفح المضمّن</string>
+    <string name="selfcheck_check_sandbox">بيئة العزل</string>
+    <string name="selfcheck_check_copies">نسخ التطبيقات</string>
+
+    <string name="selfcheck_status_pending">قيد الانتظار</string>
+    <string name="selfcheck_status_running">جارٍ الفحص</string>
+    <string name="selfcheck_status_pass">ناجح</string>
+    <string name="selfcheck_status_partial">ناجح جزئيًا</string>
+    <string name="selfcheck_status_fail">فاشل</string>
+    <string name="selfcheck_status_skipped">تم التخطي</string>
+
+    <string name="selfcheck_line_pending">لم يبدأ بعد</string>
+    <string name="selfcheck_line_running">جارٍ الفحص…</string>
+    <string name="selfcheck_line_pass">يعمل</string>
+    <string name="selfcheck_line_needs">تم التخطي: يجب أن ينجح «%1$s» أولًا</string>
+    <string name="selfcheck_line_other">لم ينجح. راجع التقرير لمعرفة التفاصيل.</string>
+
+    <string name="selfcheck_advice_too_old">هذا النظام أقدم من Android 12، لذا لا يتوفر التحكم بالهاتف. وما زالت المحادثة والويب وبيئة العزل تعمل.</string>
+    <string name="selfcheck_advice_no_wireless">لا يتضمن هذا النظام تصحيح الأخطاء اللاسلكي. يمكنك بدء التحكم بالهاتف من كمبيوتر عبر USB بدلًا من ذلك.</string>
+    <string name="selfcheck_advice_phone_unavailable">لا تستطيع هذه البيئة تشغيل التطبيقات على هاتفك (لا تتوفر خيارات المطوّر أو ميزة تصحيح الأخطاء اللاسلكي)؛ وتعمل المحادثة والويب والملفات والحسابات كالمعتاد.</string>
+    <string name="selfcheck_advice_a11y_off">إمكانية الوصول متوقفة. فعّل إمكانية الوصول الخاصة بـ Mika من الإعدادات › التحكم بالهاتف.</string>
+    <string name="selfcheck_advice_a11y_restart">إمكانية الوصول مفعّلة لكنها لا تعمل. أوقف إمكانية الوصول الخاصة بـ Mika ثم أعد تشغيلها من إعدادات النظام.</string>
+    <string name="selfcheck_advice_notifications">الإشعارات محظورة، لذا لن ترى تقدّم المهام أو تنبيهات «تحتاج إليك».</string>
+    <string name="selfcheck_advice_battery">استخدام البطارية مقيّد، لذا قد يتوقف Mika في الخلفية. يمكنك إلغاء هذا القيد من الاستعادة والإصلاح.</string>
+    <string name="selfcheck_advice_setup">المساعد المضمّن لا يعمل. أكمل الإعداد من الإعدادات › التحكم بالهاتف، ثم أعد الفحص.</string>
+    <string name="selfcheck_advice_display">تعذّر إنشاء الشاشة الافتراضية لـ Mika. أعد توصيل المساعد وحاول مجددًا؛ وإذا استمر الإخفاق، يُرجى الإبلاغ عنه.</string>
+    <string name="selfcheck_advice_focus">لا تملك شاشة Mika الافتراضية تركيزًا مستقلًا، لذا قد تفقد شاشتك تركيز الإدخال لفترة وجيزة أثناء عمل Mika. سيظل كل شيء يعمل.</string>
+    <string name="selfcheck_advice_launch">لم تُفتح صفحة على شاشة Mika الافتراضية. يُرجى الإبلاغ عن ذلك.</string>
+    <string name="selfcheck_advice_on_main">فُتحت إعدادات النظام على شاشتك بدلًا من شاشة Mika الافتراضية. يُرجى الإبلاغ عن ذلك.</string>
+    <string name="selfcheck_advice_settings_in_use">إعدادات النظام مفتوحة على شاشتك، لذا لم تُفتح في هذه الخطوة. أغلقها وأعد الفحص.</string>
+    <string name="selfcheck_advice_read">تعذّرت قراءة عناصر التحكم في الصفحة. أوقف إمكانية الوصول الخاصة بـ Mika ثم أعد تشغيلها، وبعدها أعد الفحص.</string>
+    <string name="selfcheck_advice_blank">صورة الشاشة الافتراضية سوداء بالكامل أو فارغة. يُرجى الإبلاغ عن ذلك.</string>
+    <string name="selfcheck_advice_action">لم تُنفّذ بعض الإجراءات (راجع التقرير). يُرجى الإبلاغ عن ذلك.</string>
+    <string name="selfcheck_advice_frames">تتوقف الشاشة الافتراضية عن التحديث بعد فترة، لذا قد تتعطل المهام. يُرجى الإبلاغ عن ذلك.</string>
+    <string name="selfcheck_advice_main">تغيّرت شاشتك أثناء الفحص. إذا بقيت في هذه الصفحة، يُرجى الإبلاغ عن ذلك.</string>
+    <string name="selfcheck_advice_no_webview">لا يتوفر WebView صالح للاستخدام على هذا النظام، لذا لا يعمل المتصفح المضمّن. ثبّت مكوّن WebView للنظام أو حدّثه.</string>
+    <string name="selfcheck_advice_web">تعذّرت على المتصفح المضمّن قراءة صفحة الاختبار المحلية أو النقر عليها. يُرجى الإبلاغ عن ذلك.</string>
+    <string name="selfcheck_advice_sandbox_unsupported">لا تتوفر بيئة العزل إلا على هواتف ARM ذات 64 بت.</string>
+    <string name="selfcheck_advice_sandbox_not_prepared">لم تُجهّز بيئة العزل بعد. تصبح جاهزة عند استخدامها لأول مرة في مهمة؛ بعدها أعد الفحص.</string>
+    <string name="selfcheck_advice_sandbox_failed">لم تُنتج أوامر بيئة العزل النتيجة المتوقعة. يمكنك إعادة ضبط البيئة من الملفات وبيئة الحوسبة ثم المحاولة مجددًا.</string>
+    <string name="selfcheck_advice_timeout">استغرق هذا الفحص وقتًا طويلًا. أعد تشغيله؛ وإذا استمر انتهاء المهلة، يُرجى الإبلاغ عن ذلك.</string>
+    <string name="selfcheck_advice_error">واجه هذا الفحص خطأ. يُرجى الإبلاغ عنه.</string>
+    <string name="selfcheck_advice_out_of_time">انتهت مهلة الفحص الذاتي قبل إجراء هذا الفحص.</string>
+    <string name="selfcheck_advice_cancelled">أُلغي.</string>
+
+    <string name="selfcheck_target_title">صفحة الفحص الذاتي في Mika</string>
+    <string name="selfcheck_target_note">هذه صفحة اختبار خاصة بـ Mika. ينقر فحص التوافق الذاتي هنا ويكتب، ولا يؤثر في تطبيقاتك الأخرى.</string>
+    <string name="selfcheck_target_taps">النقرات: %1$d</string>
+    <string name="selfcheck_target_button">انقر هنا</string>
+    <string name="selfcheck_target_input">اكتب هنا</string>
+    <string name="selfcheck_target_tick">النبضة %1$d</string>
+    <string name="selfcheck_target_row">الصف %1$d</string>
+</resources>

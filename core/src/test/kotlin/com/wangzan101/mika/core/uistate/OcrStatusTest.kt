@@ -19,9 +19,14 @@ import org.junit.Test
 
 /** 树不够用、屏上文字也读不到时,读屏结果要说为什么(ocr),提示要指向看图找。 */
 class OcrStatusTest {
-    private class Screen(val ocr: suspend () -> List<VisibleTextLine>?, val changing: Boolean = false) : ScreenPort by FakeScreen() {
+    private class Screen(
+        val ocr: suspend () -> List<VisibleTextLine>?,
+        val changing: Boolean = false,
+        val unreadableApp: String? = null,
+    ) : ScreenPort by FakeScreen() {
         // 一个没名字的节点:App 自己画界面
-        override suspend fun snapshot() = ScreenSnapshot("p1", "com.example", emptyList(), 1080, 2400, changedDuringRead = changing)
+        override suspend fun snapshot() = ScreenSnapshot("p1", "com.example", emptyList(), 1080, 2400,
+            changedDuringRead = changing, unreadableApp = unreadableApp)
         override suspend fun peek() = snapshot()
         override suspend fun readVisibleText() = ocr()
         override suspend fun screenshotPng(): ByteArray = JvmTestImageOps.encode(108, 240) { _, _ -> 128 }
@@ -41,6 +46,16 @@ class OcrStatusTest {
         // 没配看图模型时不提看图工具
         val plain = observe(Screen({ emptyList() }))
         assertEquals(Feedback.format("tree_poor.no_text", "ocr" to "empty"), plain.s("hint"))
+    }
+
+    @Test fun unreadableWindowStillLeadsToVisualFallback() = runTest {
+        val r = observe(Screen({ emptyList() }, unreadableApp = "com.example"), vision = true)
+        assertEquals("false", r.s("readable"))
+        assertEquals("unusable", r.s("treeQuality"))
+        val visual = Feedback.format("tree_poor.no_text.visual", "ocr" to "empty")
+        assertEquals(Feedback.format("unreadable_window.fallback", "app" to "com.example", "fallback" to visual), r.s("hint"))
+        assertTrue(r.s("hint")!!.contains("do not launch it again"))
+        assertFalse(r.s("hint")!!.contains("press back"))
     }
 
     @Test fun eachReasonForNoTextIsNamed() = runTest {

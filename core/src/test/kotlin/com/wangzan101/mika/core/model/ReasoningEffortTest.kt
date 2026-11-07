@@ -53,8 +53,25 @@ class ReasoningEffortTest {
                 ResponsesModel(server.url("/v1").toString(), BearerToken.fixed("k"), "m", caps, OkHttpClient(), reasoningEffort = "high")
                     .complete("", user, emptyList())
                 fail("Expected an unsupported-effort error")
-            } catch (e: ModelError.BadResponse) { assertTrue(e.message.orEmpty().contains("Unsupported effort")) }
+            } catch (e: ModelError.ReasoningEffortRejected) { assertTrue(e.detail.contains("Unsupported effort")) }
             assertEquals(1, server.requestCount)
+        }
+    }
+
+    @Test fun rejectedUltraKeepsTheServerDetailAndDoesNotBlameTheEndpoint() = runTest {
+        MockWebServer().use { server ->
+            server.start()
+            val detail = "Invalid value: 'ultra'. Supported values are: 'none', 'minimal', 'low', 'medium', 'high', 'xhigh', and 'max'."
+            server.enqueue(MockResponse().setResponseCode(400).setBody(
+                """{"error":{"type":"invalid_request_error","param":"reasoning.effort","message":"$detail"}}""",
+            ))
+            try {
+                ResponsesModel(server.url("/v1").toString(), BearerToken.fixed("k"), "m", caps, OkHttpClient(), chatGptPlan = true,
+                    reasoningEffort = "ultra").complete("", user, emptyList())
+                fail("Expected a rejected-effort error")
+            } catch (e: ModelError.ReasoningEffortRejected) {
+                assertEquals(detail, e.detail)
+            }
         }
     }
 

@@ -89,6 +89,21 @@ class AdbConnectPortTest {
     }
 
     @Test
+    fun notLocalStopsImmediatelyInsteadOfTryingOtherPorts() = runTest {
+        attempts.clear()
+        try {
+            chain(4000, 5000, Cache()).connect { _, port ->
+                attempts += port
+                throw AdbConnectionException(Reason.NOT_LOCAL, "not local")
+            }
+            fail("expected NOT_LOCAL")
+        } catch (e: AdbConnectionException) {
+            assertEquals(Reason.NOT_LOCAL, e.reason)
+        }
+        assertEquals(listOf(4000), attempts)
+    }
+
+    @Test
     fun aCandidateThatKeepsRejectingDoesNotStopTheOthers() = runTest {
         val cache = Cache()
         assertEquals("conn@5001", chain(null, null, cache, mdnsAll = listOf(5000, 5001)).connect(opener(5001, unauthorized = 5000)))

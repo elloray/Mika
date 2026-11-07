@@ -20,7 +20,7 @@ import com.wangzan101.mika.ui.steersAroundDraft
 sealed interface ThreadItem {
     val key: String
 
-    /** 你说的话(原话和任务进行中插的话):右边的小气泡;[note] 是插的话下面那行去向(「已收到，下一步处理」),没有为 null。 */
+    /** 你说的话(原话和任务进行中插的话):右边的小气泡;[note] 是插的话下面那行去向(「已收到，下一步调整当前任务」),没有为 null。 */
     data class User(override val key: String, val text: String, val note: String? = null) : ThreadItem
 
     /** 一行小字:操作过 App 或网页的那一轮收成的一行(「✓ 微信 · 办好了」),或纯聊天没办成、停了、还在想时那一行。 */
@@ -107,12 +107,15 @@ object CapsuleThreads {
     fun liveItems(r: CardRun, places: List<String>, summarizing: Set<String> = emptySet()): List<ThreadItem> {
         val run = r.run
         val base = run.runId?.let { "r$it" } ?: "l${run.key}"
+        // 任务正等着用户处理时,引导要到继续后才生效,插话下面那行小字说清楚
+        val paused = r.kind == CapsuleKind.NeedTakeover || r.kind == CapsuleKind.NeedConfirm ||
+            r.kind == CapsuleKind.NeedAnswer || r.kind == CapsuleKind.NeedStep || r.kind == CapsuleKind.Held
         // 原话,再是进行中插的话(带着去向,和对话页同一套说法);插话之前已经说完的、被它打断的那段回复排在它前面。
         // 还没交给模型的插话排在正在写的回答后面(和对话页一样,见 steersAroundDraft)
         fun steer(n: SteerNote) = listOfNotNull(
             n.finished?.takeIf(String::isNotBlank)?.let { ThreadItem.Answer("$base-f${n.id}", it) },
             n.interrupted?.takeIf(String::isNotBlank)?.let { ThreadItem.Answer("$base-c${n.id}", it, cut = true) },
-            ThreadItem.User("$base-s${n.id}", n.text, steerLabel(n.state)),
+            ThreadItem.User("$base-s${n.id}", n.text, steerLabel(n.state, paused)),
         )
         val (joined, waiting) = steersAroundDraft(run.steers)
         val user = listOfNotNull(run.goal.takeIf(String::isNotBlank)?.let { ThreadItem.User("$base-u0", it) }) + joined.flatMap(::steer)

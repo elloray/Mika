@@ -11,6 +11,7 @@ import android.util.Log
 import com.wangzan101.mika.MikaApp
 import com.wangzan101.mika.R
 import com.wangzan101.mika.i18n.tr
+import com.wangzan101.mika.settings.FeatureFlags
 import com.wangzan101.mika.task.TaskService
 
 /**
@@ -30,7 +31,8 @@ class McpService : Service() {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         TaskService.ensureChannels(this)
-        val applied = runCatching { McpModes.apply(intent?.action, runtime.settings, runtime.usb, runtime.relaySettings) }
+        val quitting = FeatureFlags.get(this).quitRequested()
+        val applied = !quitting && runCatching { McpModes.apply(intent?.action, runtime.settings, runtime.usb, runtime.relaySettings) }
             .onFailure { Log.w("MikaMcp", "could not update computer access settings", it) }.isSuccess
         // startForegroundService 之后必须尽快进前台,哪怕马上就要退出;系统不让进前台时就此退出,不让进程崩
         val foreground = runCatching {
@@ -40,7 +42,7 @@ class McpService : Service() {
                 startForeground(NOTIFICATION_ID, notification())
             }
         }.onFailure { Log.w("MikaMcp", "computer access service could not enter the foreground", it) }.isSuccess
-        val ready = foreground && applied && runCatching { runtime.sync() }
+        val ready = foreground && !FeatureFlags.get(this).quitRequested() && applied && runCatching { runtime.sync() }
             .onFailure { Log.w("MikaMcp", "could not start computer access", it) }.getOrDefault(false)
         if (!ready) {
             runtime.stopServer()

@@ -1,5 +1,7 @@
 package com.wangzan101.mika.cap.phone.a11y
 
+import android.content.Intent
+import android.os.SystemClock
 import android.view.Display
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
@@ -7,6 +9,7 @@ import com.wangzan101.mika.cap.phone.a11y.DeviceSupport.SETTINGS
 import com.wangzan101.mika.cap.phone.a11y.DeviceSupport.TEST_PACKAGE
 import com.wangzan101.mika.cap.phone.a11y.DeviceSupport.pollUntil
 import com.wangzan101.mika.cap.phone.a11y.DeviceSupport.sh
+import com.wangzan101.mika.cap.phone.shell.MainScreenWatch
 import com.wangzan101.mika.core.uistate.ActionResult
 import kotlinx.coroutines.runBlocking
 import org.junit.After
@@ -34,7 +37,7 @@ class MainScreenSpillDeviceTest {
             ctx.getSystemService(android.hardware.display.DisplayManager::class.java).getDisplay(Display.DEFAULT_DISPLAY).getRealMetrics(it)
         }
         val shell = DeviceSupport.shell()
-        val d = com.wangzan101.mika.cap.phone.display.AgentDisplay(shell, m.widthPixels, m.heightPixels, m.densityDpi)
+        val d = com.wangzan101.mika.cap.phone.display.AgentDisplay(shell, m.widthPixels, m.heightPixels, m.densityDpi, InstrumentationRegistry.getInstrumentation().targetContext.getSystemService(android.hardware.display.DisplayManager::class.java))
         DeviceSupport.Agent(d, AndroidScreen(DeviceSupport.service(), shell, DeviceSupport.ready(d)))
     }
     private val screen get() = agent.screen
@@ -133,5 +136,55 @@ class MainScreenSpillDeviceTest {
             assertEquals(target, shell.packageOfTask(top))
         }
         assertEquals("main screen top did not come back", mainBefore, pollUntil(3_000) { shell.topTaskId(Display.DEFAULT_DISPLAY).takeIf { it == mainBefore } })
+    }
+
+    /** 真实任务栈里先回桌面、再打开 App：即使没有语义点击，这条用户导航也不能判成 Agent 外溢。 */
+    @Test
+    fun returningHomeBeforeOpeningAnAppIsUserNavigation() = runBlocking<Unit> {
+        noTaskYet()
+        val pm = InstrumentationRegistry.getInstrumentation().targetContext.packageManager
+        val homeApps = pm.queryIntentActivities(Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME), 0)
+            .map { it.activityInfo.packageName }.toSet()
+        assertTrue("no home handler", homeApps.isNotEmpty())
+        val ownPackage = InstrumentationRegistry.getInstrumentation().targetContext.packageName
+        sh("am start --display 0 -n $ownPackage/com.wangzan101.mika.ui.MainActivity")
+        assertNotNull("Mika did not come to the main screen", pollUntil(3_000) {
+            shell.topTaskId(Display.DEFAULT_DISPLAY).takeIf { shell.packageOfTask(it) == ownPackage }
+        })
+        val topBefore = shell.topTaskId(Display.DEFAULT_DISPLAY)
+        val since = SystemClock.uptimeMillis()
+        shell.watchMainScreen(6_000)
+        sh("am start --display 0 -a ${Intent.ACTION_MAIN} -c ${Intent.CATEGORY_HOME}")
+        assertNotNull("home did not come to the front", pollUntil(3_000) {
+            shell.topTaskId(Display.DEFAULT_DISPLAY).takeIf { shell.packageOfTask(it) in homeApps }
+        })
+        val launch = pm.getLaunchIntentForPackage(target)
+        assertNotNull("no launcher activity for $target", launch)
+        sh("am start --display 0 -n ${launch!!.component!!.flattenToShortString()}")
+        assertNotNull("target did not come to the front", pollUntil(3_000) {
+            shell.topTaskId(Display.DEFAULT_DISPLAY).takeIf { shell.packageOfTask(it) == target }
+        })
+
+        val arrivals = arrivalsSince(since)
+        assertTrue("home navigation was not recorded", arrivals.any { it.packageName in homeApps })
+        val verdicts = MainScreenSpill.decide(arrivals, since, 6_000, topBefore,
+            homeApps + InstrumentationRegistry.getInstrumentation().targetContext.packageName, emptyList(), homeApps)
+        assertTrue("user-opened app was judged an agent spill: $verdicts", verdicts.none { it.arrival.packageName == target })
+    }
+
+    private fun arrivalsSince(since: Long): List<MainScreenSpill.Arrival> {
+        val b = shell.mainArrivals(since)
+        assertNotNull("no main-screen arrivals", b)
+        val tasks = b!!.getIntArray(MainScreenWatch.KEY_TASK)!!
+        val packages = b.getStringArray(MainScreenWatch.KEY_PACKAGE)!!
+        val users = b.getIntArray(MainScreenWatch.KEY_USER)!!
+        val at = b.getLongArray(MainScreenWatch.KEY_AT)!!
+        val from = b.getIntArray(MainScreenWatch.KEY_FROM)!!
+        val same = b.getBooleanArray(MainScreenWatch.KEY_SAME_TASK)!!
+        val standard = b.getBooleanArray(MainScreenWatch.KEY_STANDARD)!!
+        val now = b.getIntArray(MainScreenWatch.KEY_NOW)!!
+        return tasks.indices.map { i ->
+            MainScreenSpill.Arrival(tasks[i], packages[i], users[i], at[i], from[i], same[i], standard[i], now[i])
+        }
     }
 }

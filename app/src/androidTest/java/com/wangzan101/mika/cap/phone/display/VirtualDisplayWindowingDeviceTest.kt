@@ -26,7 +26,7 @@ class VirtualDisplayWindowingDeviceTest {
             @Suppress("DEPRECATION")
             context.getSystemService(DisplayManager::class.java).getDisplay(Display.DEFAULT_DISPLAY).getRealMetrics(it)
         }
-        val display = AgentDisplay(shell, metrics.widthPixels, metrics.heightPixels, metrics.densityDpi)
+        val display = AgentDisplay(shell, metrics.widthPixels, metrics.heightPixels, metrics.densityDpi, context.getSystemService(DisplayManager::class.java))
         val mainTask = shell.topTaskId(Display.DEFAULT_DISPLAY)
         try {
             assertEquals(0, shell.startSystemAction(display.displayId, SelfCheckTargetActivity.intent(context), null))

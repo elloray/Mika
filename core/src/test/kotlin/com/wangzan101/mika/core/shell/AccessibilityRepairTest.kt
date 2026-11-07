@@ -29,8 +29,10 @@ class AccessibilityRepairTest {
         val result: PermissionResult = PermissionResult.Done,
         var direct: Boolean = false,
         unlocked: Boolean = true,
+        var allowed: Boolean = true,
     ) {
         val userUnlocked = MutableStateFlow(unlocked)
+        val active = MutableStateFlow(allowed)
         val service = MutableStateFlow(initial)
         val helper = MutableStateFlow(helperStatus)
         val restarts = mutableListOf<Long>()
@@ -47,11 +49,12 @@ class AccessibilityRepairTest {
             consent = { consent },
             direct = { direct },
             now = { scope.currentTime },
+            allowed = { allowed },
         )
 
         fun start(s: TestScope) {
             scope = s
-            s.backgroundScope.launch { repair.watch(service, helper, userUnlocked) }
+            s.backgroundScope.launch { repair.watch(service, helper, userUnlocked, active) }
             s.runCurrent()
         }
     }
@@ -109,6 +112,19 @@ class AccessibilityRepairTest {
         val rig = Rig(consent = RecoveryConsent(declined = setOf(RecoveryCapability.Accessibility))).also { it.start(this) }
         advanceTimeBy(60_000)
         assertEquals(emptyList<Long>(), rig.restarts)
+    }
+
+    @Test
+    fun explicitExitSuppressesRepairUntilManualLaunch() = runTest {
+        val rig = Rig(allowed = false).also { it.start(this) }
+        advanceTimeBy(60_000)
+        assertEquals(emptyList<Long>(), rig.restarts)
+        // 手动打开只改变同一个 active/allowed 状态,不另建一套恢复流程
+        rig.allowed = true
+        rig.active.value = true
+        advanceTimeBy(10_000)
+        assertEquals(1, rig.restarts.size)
+        assertTrue(rig.repair.last.value!!.restarted)
     }
 
     @Test

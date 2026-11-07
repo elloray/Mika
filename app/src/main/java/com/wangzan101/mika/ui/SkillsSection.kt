@@ -3,13 +3,15 @@ package com.wangzan101.mika.ui
 import com.wangzan101.mika.R
 import com.wangzan101.mika.i18n.tr
 import androidx.compose.ui.res.stringResource
+import android.content.Intent
+import androidx.compose.ui.platform.LocalContext
 import com.wangzan101.mika.ui.components.keepsKeyboard
 import com.wangzan101.mika.ui.components.KeyboardDismissArea
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.AlertDialog
+import com.wangzan101.mika.ui.components.MikaDialog
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -22,6 +24,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import com.wangzan101.mika.core.knowledge.AppKnowledgeStage
+import com.wangzan101.mika.core.skills.SkillImport
 import com.wangzan101.mika.ui.components.ActionSheet
 import com.wangzan101.mika.ui.components.ButtonKind
 import com.wangzan101.mika.ui.components.ButtonSize
@@ -32,6 +35,7 @@ import com.wangzan101.mika.ui.components.ListRow
 import com.wangzan101.mika.ui.components.MikaButton
 import com.wangzan101.mika.ui.components.MikaSwitch
 import com.wangzan101.mika.ui.components.RowActions
+import com.wangzan101.mika.ui.components.RowChevron
 import com.wangzan101.mika.ui.components.SheetAction
 import com.wangzan101.mika.ui.theme.MikaTheme
 import com.wangzan101.mika.ui.theme.MikaType
@@ -39,12 +43,15 @@ import com.wangzan101.mika.ui.theme.MikaType
 /**
  * 技能相关的两块内容。[pending] 为假是「技能」段:已收下的个人技能(开关即启用/停用)和在用的 App 知识;
  * 为真是「待确认」段里的部分:新技能草稿(看全文、改一改再收下、收下、不要)和 App 知识草稿。
+ * 个人技能可以分享全文出去,别人分享来的全文从「导入技能」粘进来,先进「待确认」(#165)。
  */
 @Composable
 internal fun SkillsSection(vm: MemoryViewModel, ui: SkillsUi, pending: Boolean) {
     var viewing by remember { mutableStateOf<String?>(null) }
     var editing by remember { mutableStateOf<SkillRow?>(null) }
     var acting by remember { mutableStateOf<SkillRow?>(null) }
+    var importing by remember { mutableStateOf(false) }
+    val context = LocalContext.current
     fun toggle(id: String) { viewing = if (viewing == id) null else id }
 
     if (pending) {
@@ -53,7 +60,8 @@ internal fun SkillsSection(vm: MemoryViewModel, ui: SkillsUi, pending: Boolean) 
             GroupCard {
                 ui.drafts.forEachIndexed { i, d ->
                     Column(Modifier.testTag("skill-row")) {
-                        ListRow(null, d.display, d.description.ifBlank { null }, first = i == 0, onClick = { toggle(d.id) })
+                        ListRow(null, d.display, d.description.ifBlank { null }, first = i == 0,
+                            detail = stringResource(R.string.skills_imported).takeIf { d.imported }, onClick = { toggle(d.id) })
                         SkillBody(d, expanded = viewing == d.id)
                         RowActions {
                             MikaButton(stringResource(R.string.skills_accept_try), { vm.approveSkill(d.id) }, size = ButtonSize.Small)
@@ -78,13 +86,20 @@ internal fun SkillsSection(vm: MemoryViewModel, ui: SkillsUi, pending: Boolean) 
             if (ui.installed.isEmpty()) EmptyNote(stringResource(R.string.skills_empty))
             ui.installed.forEachIndexed { i, s ->
                 val state = when { s.suspended -> stringResource(R.string.skills_suspended); s.trial -> stringResource(R.string.skills_trial); else -> null }
-                val detail = listOfNotNull(stringResource(R.string.skills_user_created).takeIf { s.userCreated }, state, s.recent.takeIf { it.isNotEmpty() }?.let { stringResource(R.string.skills_recent, it.joinToString(" · ")) }).joinToString(" · ")
+                val detail = listOfNotNull(stringResource(R.string.skills_user_created).takeIf { s.userCreated },
+                    stringResource(R.string.skills_imported).takeIf { s.imported }, state, s.recent.takeIf { it.isNotEmpty() }?.let { stringResource(R.string.skills_recent, it.joinToString(" · ")) }).joinToString(" · ")
                 Column(Modifier.testTag("skill-row")) {
                     ListRow(null, s.display, s.description.ifBlank { null }, first = i == 0, detail = detail, onClick = { acting = s }) {
                         MikaSwitch(!s.suspended, { on -> if (on) vm.restoreSkill(s.name) else vm.suspendSkill(s.name) })
                     }
                     SkillBody(s, expanded = viewing == s.id)
                 }
+            }
+        }
+        GroupLabel(stringResource(R.string.skills_get))
+        GroupCard {
+            ListRow(null, stringResource(R.string.skills_import), stringResource(R.string.skills_import_sub), first = true, onClick = { importing = true }) {
+                RowChevron()
             }
         }
         val inUse = ui.appKnowledge.filter { it.stage != AppKnowledgeStage.Draft }
@@ -101,6 +116,11 @@ internal fun SkillsSection(vm: MemoryViewModel, ui: SkillsUi, pending: Boolean) 
             s.display,
             listOfNotNull(
                 SheetAction(if (viewing == s.id) stringResource(R.string.skills_hide_full) else stringResource(R.string.skills_view_full)) { toggle(s.id) },
+                SheetAction(stringResource(R.string.skills_share)) {
+                    val send = Intent(Intent.ACTION_SEND).setType("text/plain")
+                        .putExtra(Intent.EXTRA_SUBJECT, s.display).putExtra(Intent.EXTRA_TEXT, SkillImport.shareable(s.markdown))
+                    context.startActivity(Intent.createChooser(send, null))
+                },
                 if (s.canRestore) SheetAction(stringResource(R.string.skills_restore_prev)) { vm.restorePreviousSkill(s.name) } else null,
                 SheetAction(stringResource(R.string.confirm_delete), destructive = true) { vm.deleteSkill(s.name) },
             ),
@@ -108,9 +128,33 @@ internal fun SkillsSection(vm: MemoryViewModel, ui: SkillsUi, pending: Boolean) 
         )
     }
 
+    if (importing) {
+        var text by remember { mutableStateOf("") }
+        var problem by remember { mutableStateOf<String?>(null) }
+        MikaDialog(
+            onDismissRequest = { importing = false },
+            title = { Text(stringResource(R.string.skills_import)) },
+            text = {
+                KeyboardDismissArea {
+                    Column {
+                        Text(stringResource(R.string.skills_import_hint), style = MikaType.Hint, color = MikaTheme.colors.ink3)
+                        OutlinedTextField(text, { text = it; problem = null }, Modifier.fillMaxWidth().padding(top = 8.dp).heightIn(min = 240.dp).keepsKeyboard().testTag("skill-import"))
+                        problem?.let { Text(it, Modifier.padding(top = 6.dp), style = MikaType.Hint, color = MikaTheme.colors.bad) }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton({ problem = vm.importSkill(text); if (problem == null) importing = false }, enabled = text.isNotBlank()) {
+                    Text(stringResource(R.string.skills_import_confirm))
+                }
+            },
+            dismissButton = { TextButton({ importing = false }) { Text(stringResource(R.string.cancel)) } },
+        )
+    }
+
     editing?.let { d ->
         var text by remember(d.id) { mutableStateOf(d.markdown) }
-        AlertDialog(
+        MikaDialog(
             onDismissRequest = { editing = null },
             title = { Text(stringResource(R.string.skills_edit_title)) },
             text = { KeyboardDismissArea { OutlinedTextField(text, { text = it }, Modifier.fillMaxWidth().heightIn(min = 240.dp).keepsKeyboard().testTag("skill-markdown")) } },

@@ -51,6 +51,25 @@ class ClassifiedRiskTest {
         assertEquals(Risk(ActionRisk.Change), assess("phone_tap", on = shop))
     }
 
+    @Test fun arbitraryAmountsDoNotTurnOrdinaryActionsIntoPayments() {
+        val salary = screen.copy(elements = screen.elements + listOf(
+            el("@e7", "TextView", "150-200元/天", listOf(0, 600, 999, 660)),
+            el("@e8", "Button", "提交", listOf(0, 700, 999, 760)),
+        ))
+        // 金额只是页面内容,不是这一步要付的钱;区间也不能把提交、联系或删除升级成付款
+        assertEquals(Risk(ActionRisk.External), assess("phone_tap", Irreversible(IrrevAction.submit, "提交"), on = salary))
+        assertEquals(Risk(ActionRisk.External), assess("phone_tap", Irreversible(IrrevAction.submit, "立即沟通"), on = salary))
+        assertEquals(Risk(ActionRisk.Irreversible), assess("phone_tap", Irreversible(IrrevAction.delete, "删除"), on = salary))
+        // 合计、付款面板才是应付上下文;明确下单、付款不依赖页面金额
+        assertEquals(true, assess("phone_tap", Irreversible(IrrevAction.submit, "提交"), on = shop).payment)
+        val unreadableTotal = screen.copy(elements = screen.elements + el("@e9", "TextView", "合计", listOf(0, 600, 999, 660)))
+        assertEquals(false, assess("phone_tap", Irreversible(IrrevAction.submit, "提交"), on = unreadableTotal).payment)
+        val paySheet = salary.copy(elements = salary.elements + el("@e9", "TextView", "付款方式", listOf(0, 800, 999, 860)))
+        assertEquals(true, assess("phone_tap", Irreversible(IrrevAction.submit, "提交"), on = paySheet).payment)
+        assertEquals(true, assess("phone_tap", Irreversible(IrrevAction.order, "提交订单"), on = salary).payment)
+        assertEquals(true, assess("phone_tap", Irreversible(IrrevAction.pay, "确认转账"), on = salary).payment)
+    }
+
     @Test fun coordinateTapsUseTheSmallestElementThere() {
         assertEquals("修改密码", ClassifiedRisk.target(verb("phone_tap"), buildJsonObject { put("x", 500); put("y", 250) }, screen)?.name)
     }

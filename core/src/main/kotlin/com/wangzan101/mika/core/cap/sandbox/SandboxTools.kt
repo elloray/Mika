@@ -29,6 +29,7 @@ import com.wangzan101.mika.core.tool.ArgError
 import com.wangzan101.mika.core.tool.Args
 import com.wangzan101.mika.core.tool.ToolExecution
 import com.wangzan101.mika.core.tool.ToolIndex
+import com.wangzan101.mika.core.tool.OutputClip
 import com.wangzan101.mika.core.workspace.GatedFile
 import com.wangzan101.mika.core.workspace.SandboxError
 import com.wangzan101.mika.core.knowledge.ScriptManifest

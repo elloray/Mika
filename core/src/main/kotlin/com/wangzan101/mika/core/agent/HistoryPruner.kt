@@ -205,12 +205,12 @@ object HistoryPruner {
         null
     }
 
-    /** 界面状态:元素表和长字段换成 [OMITTED],结局字段留着。 */
+    /** 界面状态:元素表、窗口树和长字段换成 [OMITTED],结局字段留着。 */
     private fun shrinkInterface(content: String): String {
         val obj = parse(content) ?: return content
         val small = obj.mapValues { (k, v) ->
-            val long = v is JsonPrimitive && v.isString && v.content.length > LONG_TEXT
-            if (k == "elements" || (long && k !in OUTCOME)) JsonPrimitive(OMITTED) else v
+            val long = if (v is JsonPrimitive) v.isString && v.content.length > LONG_TEXT else v.toString().length > LONG_TEXT
+            if (k == "elements" || k == "tree" || (long && k !in OUTCOME)) JsonPrimitive(OMITTED) else v
         }
         return JsonObject(small).toString()
     }

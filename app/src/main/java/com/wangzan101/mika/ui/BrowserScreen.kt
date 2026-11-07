@@ -19,7 +19,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import com.wangzan101.mika.browser.PageAskMode
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.material3.AlertDialog
+import com.wangzan101.mika.ui.components.MikaDialog
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
@@ -212,7 +212,7 @@ private fun openOutside(context: Context, url: String): String? = try {
 private fun PageDialogBox(d: PageDialog, answer: (Boolean, String?) -> Unit) {
     var input by remember(d) { mutableStateOf(d.defaultText.orEmpty()) }
     val leave = d.kind == PageDialog.BEFORE_UNLOAD
-    AlertDialog(
+    MikaDialog(
         onDismissRequest = { answer(false, null) },
         title = { Text(if (leave) tr(R.string.browser_leave_q) else tr(R.string.browser_page_says)) },
         text = {

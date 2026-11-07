@@ -78,4 +78,14 @@
     <string name="skills_archived">アーカイブ済み</string>
     <string name="skills_archive">アーカイブ</string>
     <string name="skills_changed_lines">変更した行:</string>
+    <string name="skills_get">スキルを取得</string>
+    <string name="skills_share">スキルを共有</string>
+    <string name="skills_import">スキルをインポート</string>
+    <string name="skills_import_sub">共有してもらったスキルの全文を貼り付けます</string>
+    <string name="skills_import_hint">まず「確認待ち」に入り、内容を見て受け入れるまでは使われません。</string>
+    <string name="skills_import_confirm">インポート</string>
+    <string name="skill_imported">インポートしました。「確認待ち」で確認してください。</string>
+    <string name="skills_imported">インポート済み</string>
+    <string name="skill_builtin_name">同じ名前の組み込みスキルがあります。名前を変えてもう一度試してください。</string>
+    <string name="skill_draft_pending">同じ名前の下書きが確認待ちです。先にそちらを処理してください。</string>
 </resources>

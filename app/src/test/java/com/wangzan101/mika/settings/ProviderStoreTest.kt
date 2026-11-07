@@ -4,6 +4,7 @@ import com.wangzan101.mika.core.model.Capabilities
 import com.wangzan101.mika.core.model.ChatModel
 import com.wangzan101.mika.core.model.ListedModel
 import com.wangzan101.mika.core.model.Message
+import com.wangzan101.mika.core.model.ModelError
 import com.wangzan101.mika.core.model.ModelEndpoint
 import com.wangzan101.mika.core.model.ModelProtocol
 import com.wangzan101.mika.core.model.ModelReply
@@ -15,14 +16,18 @@ import com.wangzan101.mika.core.model.Usage
 import com.wangzan101.mika.core.usage.UsagePurpose
 import com.wangzan101.mika.core.usage.UsageSource
 import kotlinx.coroutines.test.runTest
+import okhttp3.mockwebserver.MockResponse
+import okhttp3.mockwebserver.MockWebServer
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
+import org.junit.Assert.fail
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
 import java.io.File
+import java.util.concurrent.TimeUnit
 import javax.crypto.KeyGenerator
 
 class ProviderStoreTest {
@@ -85,6 +90,84 @@ class ProviderStoreTest {
         assertEquals(600_000, reloaded.modelFor(ModelRole.Main)!!.capabilities.compactionTriggerTokens)
         assertTrue(reloaded.setModelContext(reloaded.configFor(ModelRole.Main)!!.id, ModelContextSettings()))
         assertNull(store().provider(first.id)!!.contextSettings["m1"])
+    }
+
+    @Test fun perModelReadTimeoutFlowsIntoTheClientSetupAndPersists() {
+        // #295:慢速本地推理服务(例如经隧道访问)一次生成可以超过全局默认的 120 秒读超时;
+        // 每模型配置的读超时随 ModelContextSettings 存取,并进到建模型用的 ClientSetup 里。
+        val s = store()
+        val first = connected(s)
+        s.use(ModelRole.Main, first.id, "m1", none)
+        val cfg = s.configFor(ModelRole.Main)!!
+        val saved = ModelContextSettings(readTimeoutSeconds = 600)
+        assertTrue(s.setModelContext(cfg.id, saved))
+        s.modelFor(ModelRole.Main)
+        assertEquals(600, setups.last().readTimeoutSeconds)
+        val reloaded = store()
+        reloaded.use(ModelRole.Main, first.id, "m1", none)
+        assertEquals(saved, reloaded.provider(first.id)!!.contextSettings["m1"])
+        reloaded.modelFor(ModelRole.Main)
+        assertEquals(600, setups.last().readTimeoutSeconds)
+    }
+
+    @Test fun configuredReadTimeoutAppliesToTheRealHttpClient() = runTest {
+        MockWebServer().use { server ->
+            server.start()
+            // 响应头故意晚于单模型的一秒读超时;若配置没进入 OkHttp,这里不会抛 Network。
+            server.enqueue(MockResponse().setHeadersDelay(2, TimeUnit.SECONDS).setBody("{}"))
+            val s = ProviderStore(tmp.root, AesGcmKeyCipher { key })
+            val p = s.connect("Local", ProviderConfig.Kind.OpenAiCompat, server.url("/v1").toString(), "k", listOf(ListedModel("m")))
+            s.use(ModelRole.Main, p.id, "m", none)
+            val cfg = s.configFor(ModelRole.Main)!!
+            assertTrue(s.setModelContext(cfg.id, ModelContextSettings(readTimeoutSeconds = 1)))
+            try {
+                s.modelFor(ModelRole.Main)!!.complete("", emptyList(), emptyList())
+                fail("Expected the configured read timeout")
+            } catch (_: ModelError.Network) {
+                // 真实适配器在读取响应头时超时,而不只是 ClientSetup 里保存了一个数字。
+            }
+        }
+    }
+
+    @Test fun readTimeoutMustFitOkHttpRange() {
+        val s = store()
+        val first = connected(s)
+        s.use(ModelRole.Main, first.id, "m1", none)
+        val cfg = s.configFor(ModelRole.Main)!!
+        assertFalse(s.setModelContext(cfg.id, ModelContextSettings(readTimeoutSeconds = 0)))
+        assertFalse(s.setModelContext(cfg.id, ModelContextSettings(readTimeoutSeconds = -5)))
+        assertFalse(s.setModelContext(cfg.id, ModelContextSettings(readTimeoutSeconds = 2_147_484)))
+        assertTrue(s.setModelContext(cfg.id, ModelContextSettings(readTimeoutSeconds = 2_147_483)))
+    }
+
+    @Test fun previouslySavedOversizeReadTimeoutFallsBackWithoutLosingContextLimits() {
+        val s = store()
+        val first = connected(s)
+        s.use(ModelRole.Main, first.id, "m1", none)
+        val cfg = s.configFor(ModelRole.Main)!!
+        assertTrue(s.setModelContext(cfg.id, ModelContextSettings(1_000_000, 600_000, 600)))
+        val file = tmp.root.resolve("providers.json")
+        file.writeText(file.readText().replace("\"readTimeoutSeconds\":600", "\"readTimeoutSeconds\":2147484"))
+
+        val reloaded = store()
+        assertEquals(ModelContextSettings(1_000_000, 600_000), reloaded.provider(first.id)!!.contextSettings["m1"])
+        assertEquals(1_000_000, reloaded.modelFor(ModelRole.Main)!!.capabilities.contextTokens)
+        assertNull(setups.last().readTimeoutSeconds)
+    }
+
+    /** 预设改了默认上下文后,按旧默认存下的配置读入时跟上去;用户改过的和写了每模型窗口的不动(见 repairStaleContextDefaults)。 */
+    @Test fun stalePresetWindowIsRepairedOnLoadButUserValuesAreNot() {
+        val s = store()
+        val deepseek = s.connect("DeepSeek", ProviderConfig.Kind.OpenAiCompat, "https://api.deepseek.com", "k", listOf(ListedModel("deepseek-flash")))
+        val other = connected(s)
+        s.use(ModelRole.Main, deepseek.id, "deepseek-flash", none)
+        s.use(ModelRole.Light, other.id, "m1", none)
+        // 用户给另一条配置单独写过窗口:不动
+        assertTrue(s.setModelContext(s.configFor(ModelRole.Light)!!.id, ModelContextSettings(windowTokens = 32_000)))
+        val reloaded = store()
+        assertEquals(1_000_000, reloaded.configFor(ModelRole.Main)!!.capabilities.contextTokens)
+        // 预设默认没变的(示例地址不对应任何预设)和用户写过的都不动
+        assertEquals(64_000, reloaded.configFor(ModelRole.Light)!!.capabilities.contextTokens)
     }
 
     @Test fun manualTriggerUsesCoreBoundsAndASmallerReselectedWindowKeepsTheStoredValue() {
@@ -652,6 +735,10 @@ class ProviderStoreTest {
         val r = RoleChoices(main = "a", vision = RoleChoice.SameAsMain, light = RoleChoice.Model("b"))
         assertEquals("a", r.resolve(ModelRole.Vision))
         assertEquals("b", r.resolve(ModelRole.Light))
+        assertFalse(r.sameModel(ModelRole.Main, ModelRole.Light))
+        assertTrue(r.sameModel(ModelRole.Main, ModelRole.Vision))
+        assertTrue(RoleChoices(main = "a").sameModel(ModelRole.Main, ModelRole.Light))
+        assertFalse(RoleChoices().sameModel(ModelRole.Main, ModelRole.Light))
         assertEquals(setOf("a", "b"), r.referenced)
         assertNull(RoleChoices().resolve(ModelRole.Light))
         assertNull(r.with(ModelRole.Light, RoleChoice.Off))

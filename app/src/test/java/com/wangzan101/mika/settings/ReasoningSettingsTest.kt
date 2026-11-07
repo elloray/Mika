@@ -113,6 +113,28 @@ class ReasoningSettingsTest {
         }
     }
 
+    // 预设里官方文档写明档位的兼容服务商(DeepSeek)按预设给;列表写明过的仍以列表为准,自定义地址照旧不猜
+    @Test fun presetLevelsFillInWhenTheListingDeclaresNone() {
+        val s = store()
+        val p = s.connect("DeepSeek", ProviderConfig.Kind.OpenAiCompat, "https://api.deepseek.com", "k", listOf(ListedModel("deepseek-flash")))
+        s.use(ModelRole.Main, p.id, "deepseek-flash", caps)
+        val options = ReasoningOptions.of(s.configFor(ModelRole.Main)!!, p.models!!.first())!!
+        assertEquals(listOf("none", "low", "high", "max"), options.levels)
+        assertFalse(options.fromProvider)
+        // 档位进得了 setReasoningEffort 的校验,也到得了请求
+        assertTrue(s.setReasoningEffort(ModelRole.Main, "none"))
+        s.modelFor(ModelRole.Main)
+        assertEquals("none", setups.last().reasoningEffort)
+        // 列表写明档位的以列表为准
+        val declared = ProviderConfig("c2", ProviderConfig.Kind.OpenAiCompat, "https://agg.example/v1", "m2", caps)
+        val listed = ReasoningOptions.of(declared, ListedModel("m2", reasoningEfforts = listOf("low")))!!
+        assertEquals(listOf("low"), listed.levels)
+        assertTrue(listed.fromProvider)
+        // 对不上预设的地址(自定义)没有档位
+        val custom = ProviderConfig("c3", ProviderConfig.Kind.OpenAiCompat, "https://custom.example/v1", "m3", caps)
+        assertNull(ReasoningOptions.of(custom, ListedModel("m3")))
+    }
+
     // Anthropic 列表写明的档位照给;只接受按预算思考的模型能思考但没有可选档位,也不接受档位
     @Test fun anthropicOffersExactlyTheCatalogLevels() {
         val cfg = ProviderConfig("c", ProviderConfig.Kind.Anthropic, "https://api.anthropic.example", "m", caps)
@@ -155,7 +177,7 @@ class ReasoningSettingsTest {
         assertNull(ReasoningOptions.of(old.configFor(ModelRole.Main)!!, oldListed))
     }
 
-    @Test fun metadataRefreshKeepsTheSavedChoiceButAllowsResettingAnUnavailableLevel() {
+    @Test fun metadataRefreshDropsAnUnavailableChoiceAndUsesServerDefault() {
         val s = store()
         val p = connected(s)
         s.use(ModelRole.Main, p.id, "m", caps)
@@ -163,9 +185,27 @@ class ReasoningSettingsTest {
         s.connect("Responses", ProviderConfig.Kind.OpenAiResponses, "https://example.test/v1", "k",
             listOf(ListedModel("m", reasoning = false)))
         val reloaded = store()
-        assertEquals("high", reloaded.roles.value.reasoningEffort(ModelRole.Main))
+        assertNull(reloaded.roles.value.reasoningEffort(ModelRole.Main))
         assertFalse(reloaded.setReasoningEffort(ModelRole.Main, "high"))
         assertTrue(reloaded.setReasoningEffort(ModelRole.Main, null))
+        reloaded.modelFor(ModelRole.Main)
+        assertNull(setups.last().reasoningEffort)
+    }
+
+    @Test fun chatGptCatalogCannotIntroduceUltraAndAnOldUltraChoiceFallsBackToDefault() {
+        val s = store()
+        val p = s.connect("ChatGPT", ProviderConfig.Kind.ChatGpt, "https://example.test/v1", "k",
+            listOf(ListedModel("m", reasoningEfforts = listOf("low", "ultra", "max"))))
+        s.use(ModelRole.Main, p.id, "m", caps)
+        val listed = s.provider(p.id)!!.models!!.single()
+        assertEquals(listOf("low", "max"), ReasoningOptions.of(s.configFor(ModelRole.Main)!!, listed)!!.levels)
+        assertFalse(s.setReasoningEffort(ModelRole.Main, "ultra"))
+        assertTrue(s.setReasoningEffort(ModelRole.Main, "low"))
+        // 模拟旧版本已经落盘的 ultra:读入时清掉,不能继续发出去让每次调用都 HTTP 400。
+        val file = tmp.root.resolve("providers.json")
+        file.writeText(file.readText().replace("\"reasoningEffort\":\"low\"", "\"reasoningEffort\":\"ultra\""))
+        val reloaded = store()
+        assertNull(reloaded.roles.value.reasoningEffort(ModelRole.Main))
         reloaded.modelFor(ModelRole.Main)
         assertNull(setups.last().reasoningEffort)
     }

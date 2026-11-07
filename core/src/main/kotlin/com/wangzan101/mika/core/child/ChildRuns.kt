@@ -33,7 +33,7 @@ data class ChildResult(val id: RunId, val phase: ChildPhase, val text: String)
 
 fun interface ChildRunHost { suspend fun spawn(spec: RunSpec, format: String?): ChildResult }
 
-/** 子 Run 先保存结论再交给父 Run；父 Run 消失时保留 Unknown 记录，不自动重跑。 */
+/** 子 Run 先保存结论预览再交给父 Run；父 Run 消失时保留 Unknown 记录，不自动重跑。 */
 class ChildAgentRunner(
     private val create: (RunSpec) -> AgentLoop,
     private val store: ChildRunStore,
@@ -57,12 +57,13 @@ class ChildAgentRunner(
                 else -> "no result"
             }
             val phase = if (end == TaskState.Cancelled) ChildPhase.Interrupted else ChildPhase.Completed
-            val answer = raw.take(MAX_RESULT_CHARS)
-            val checked = if (format == "json" && runCatching { Json.parseToJsonElement(answer) }.isFailure)
-                "$answer\n(the child run's JSON did not pass validation; the original text is kept)" else answer
-            store.save(ChildRecord(spec.id.value, parent.value, phase, checked, clock()))
+            val checked = if (format == "json" && runCatching { Json.parseToJsonElement(raw) }.isFailure)
+                "$raw\n(the child run's JSON did not pass validation; the original text is kept)" else raw
+            // 只截短落盘预览;交回父 Run 的原文由 spawn_agent 按本次请求的额度截断并报告原长。
+            val preview = checked.take(MAX_RESULT_CHARS)
+            store.save(ChildRecord(spec.id.value, parent.value, phase, preview, clock()))
             if (!ownerAlive(parent)) {
-                store.save(ChildRecord(spec.id.value, parent.value, ChildPhase.Unknown, checked, clock()))
+                store.save(ChildRecord(spec.id.value, parent.value, ChildPhase.Unknown, preview, clock()))
                 return ChildResult(spec.id, ChildPhase.Unknown, checked)
             }
             return ChildResult(spec.id, phase, checked)
@@ -77,6 +78,7 @@ class ChildAgentRunner(
     fun cancelAll(parent: RunId) { synchronized(active) { active[parent]?.toList() }.orEmpty().forEach(AgentLoop::cancel) }
 
     companion object {
+        /** 子任务记录的落盘预览上限,不是交回父任务的结果上限。 */
         const val MAX_RESULT_CHARS = 4000
         private const val INTERRUPTED = "interrupted"
     }

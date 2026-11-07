@@ -27,6 +27,8 @@ interface TakeoverPort {
     suspend fun moveBack(taskId: Int): Boolean
     /** 开或关该 App 的声音。 */
     fun setSound(packageName: String, on: Boolean)
+    /** 用户明确恢复声音;实现要连同本次任务的自动静音规则一起更新。 */
+    fun unmute(packageName: String) = setSound(packageName, true)
     /** 开始数用户在主屏上对该包的操作;App 交到用户手上时调用。 */
     fun watchInput(packageName: String)
     /** 此刻数到的操作和所在页面;没在数时为 null。 */
@@ -202,6 +204,18 @@ class Takeover(
 
     /** 「我自己做完了」:Agent 不再操作,只核实结果并结束。 */
     suspend fun finishedMyself(key: Int? = null): Boolean = giveBack(HandBack(HandBackOutcome.complete, userFinished = true), key)
+
+    /**
+     * 浮层恢复声音只接管真正交到用户手上的 App;等待接管、网页接管或没有目标包都返回 false,
+     * 让调用方走普通手机音频路径。返回 true 表示这条接管路径已处理,不代表 shell 写操作一定成功。
+     */
+    @Synchronized
+    fun unmute(): Boolean {
+        if (_stage.value != Stage.HandedOver || handedWeb) return false
+        val packageName = handedPackage ?: return false
+        port.unmute(packageName)
+        return true
+    }
 
     /** 「跳过」:不处理,告诉 Agent 没有发生交回;App 若在主屏先挪回,挪不回就保持原状。 */
     suspend fun skip(key: Int? = null): Boolean = giveBack(HandBack(HandBackOutcome.skipped), key)

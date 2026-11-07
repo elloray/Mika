@@ -48,4 +48,6 @@
         <item quantity="other">%1$d steps at once</item>
     </plurals>
     <string name="and_more">" and more"</string>
+    <string name="capsule_hide">Turn off capsule</string>
+    <string name="capsule_hidden_hint">Floating capsule turned off. You can turn it back on in %1$s › %2$s.</string>
 </resources>

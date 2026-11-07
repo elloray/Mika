@@ -16,7 +16,7 @@ import com.wangzan101.mika.core.tool.ToolDef
 import com.wangzan101.mika.core.tool.ToolExecution
 import com.wangzan101.mika.core.tool.Verb
 import com.wangzan101.mika.core.tool.argStr
-import com.wangzan101.mika.core.tool.fail
+import com.wangzan101.mika.core.tool.refExpired
 import com.wangzan101.mika.core.tool.int
 import com.wangzan101.mika.core.tool.str
 import com.wangzan101.mika.core.uistate.toPx
@@ -88,7 +88,7 @@ internal class Tap(f: ScreenFamily) : ScreenTool(f, "tap") {
 
     /** 点 find_visually 找到的点:先重新截图,和找到时的画面差太多(或截不到)就不点。 */
     private suspend fun tapLocated(ref: String, snapshotId: String, twice: Boolean, ctx: ToolContext): ToolExecution {
-        val (x, y) = locatedPixel(ctx, ref, snapshotId) ?: return fail("ref_expired", Feedback["located_stale"])
+        val (x, y) = locatedPixel(ctx, ref, snapshotId) ?: return refExpired(Feedback["located_stale"], "located_stale")
         val info = ctx.locatedInfo[ref]
         val target = info?.target
         val r = ctx.action(tapAt(ctx, x, y, twice))

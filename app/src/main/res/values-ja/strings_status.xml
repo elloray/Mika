@@ -53,6 +53,7 @@
     <string name="turn_on_go">オンにする</string>
     <string name="banner_a11y_not_running">ユーザー補助サービスが動作していません</string>
     <string name="banner_a11y_not_running_detail">いったんオフにして、もう一度オンにしてください</string>
+    <string name="banner_a11y_restricted_detail">Mika のアプリ情報で「制限された設定」を許可してください</string>
     <string name="banner_a11y_locked">スマホを起動してからまだロックを解除していないため、ユーザー補助サービスが動作していません</string>
     <string name="banner_a11y_locked_detail">ロックを解除すると復帰します。設定を変える必要はありません</string>
     <string name="banner_no_model">使えるモデルがまだありません</string>
@@ -68,6 +69,8 @@
     <string name="explain_a11y_off">ユーザー補助サービスをオンにする</string>
     <string name="explain_a11y_off_body">Mika は、ユーザー補助サービスを使って、自分の仮想画面を読み取って操作します。システム設定の「ユーザー補助」で Mika を探し(機種によっては「ダウンロードしたアプリ」や「インストール済みのサービス」の中にあります)、オンにしてください。</string>
     <string name="explain_a11y_not_running_body">システム設定では Mika のユーザー補助サービスがオンになっていますが、実際には動作していません(Mika を強制停止したあとによく起こります)。ユーザー補助の設定で Mika をいったんオフにして、もう一度オンにしてください。</string>
+    <string name="explain_a11y_restricted_off_body">Android で Mika をオンにできない場合は、Mika のアプリ情報を開き、メニューに「制限された設定を許可」があれば選択してください。その後、ユーザー補助の設定に戻り、Mika をオンにしてください。</string>
+    <string name="explain_a11y_restricted_body">Android では、アプリストア以外からインストールしたアプリについて、「制限された設定」を許可するまでユーザー補助サービスへの接続をブロックする場合があります。Mika のアプリ情報を開き、メニューに「制限された設定を許可」があれば選択してください。その後、ユーザー補助の設定で Mika をいったんオフにして、もう一度オンにしてください。</string>
     <string name="explain_no_model">モデルを追加</string>
     <string name="explain_no_model_body">Mika が考えて行動するには、ツール呼び出しに対応した大規模言語モデルが必要です。プロバイダーの URL、モデル名、API キーを入力するだけです。</string>
     <string name="explain_focus">Android 14 以降をおすすめします</string>

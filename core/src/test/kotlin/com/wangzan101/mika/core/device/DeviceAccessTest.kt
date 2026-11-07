@@ -29,12 +29,18 @@ class DeviceAccessTest {
         var current = DeviceState(false, true, true, true, true, true)
         var wakes = 0
         var dismisses = 0
+        var reveals = 0
         var entries = 0
         var inputWorks = true
         var readyTarget = true
         var suspendInput = false
         var falselyReportsWake = false
         var targetHook: () -> Unit = {}
+        var visibleKind: CredentialKind? = null
+        var detect: (() -> CredentialKind?)? = null
+        var diagnostics: List<String> = emptyList()
+        override suspend fun detectedCredentialKind() = detect?.invoke() ?: visibleKind
+        override suspend fun credentialDiagnostics() = diagnostics
         override suspend fun state() = current
         override suspend fun wake(): Boolean { wakes++; if (!falselyReportsWake) current = current.copy(interactive = true); return true }
         override suspend fun dismiss(): Boolean {
@@ -42,7 +48,8 @@ class DeviceAccessTest {
             if (!current.secure) current = current.copy(keyguardShowing = false, deviceLocked = false)
             return true
         }
-        override suspend fun credentialReady(kind: CredentialKind): Boolean { targetHook(); return readyTarget }
+        override suspend fun revealCredential(): Boolean { reveals++; return true }
+        override suspend fun credentialReady(kind: CredentialKind): Boolean { targetHook(); return readyTarget && (visibleKind == null || visibleKind == kind) }
         override suspend fun enter(credential: DeviceCredential): Boolean {
             entries++
             if (suspendInput) awaitCancellation()
@@ -109,6 +116,121 @@ class DeviceAccessTest {
         s.kind = null
         assertEquals("credential_required", d.unlock().status)
         assertEquals(0, p.entries)
+    }
+
+    @Test fun unsupportedKeyguardReturnsDiagnosticsWithoutCredentials() = runTest {
+        val p = Port().apply {
+            readyTarget = false
+            diagnostics = listOf("systemui_windows=1", "field[id=com.android.systemui:id/pinEntry,match=none]")
+        }
+        val s = Store()
+        val result = DeviceAccess(p, s, 10, 30).unlock()
+        assertEquals("unsupported_keyguard", result.status)
+        assertEquals(p.diagnostics, result.keyguardDiagnostics)
+        assertEquals(p.diagnostics, result.toJson()["keyguard_diagnostics"]?.let { json ->
+            (json as kotlinx.serialization.json.JsonArray).map { (it as kotlinx.serialization.json.JsonPrimitive).content }
+        })
+        val wire = result.toJson().toString()
+        assertFalse(wire.contains("123456"))
+        assertFalse(s.attemptBlocked)
+        assertEquals(0, p.entries)
+        assertTrue(s.last!!.value.all { it == '\u0000' })
+    }
+
+    @Test fun wrongStoredKindIsReportedWithoutSubmittingOrBlockingTheCredential() = runTest {
+        for (stored in CredentialKind.entries) {
+            val visible = CredentialKind.entries.single { it != stored }
+            val p = Port().apply { visibleKind = visible }
+            val s = Store().apply { kind = stored }
+            val result = DeviceAccess(p, s, 10, 30).unlock()
+            assertEquals("credential_kind_mismatch", result.status)
+            assertEquals(stored, result.storedKind)
+            assertEquals(visible, result.detectedKind)
+            val json = result.toJson()
+            assertEquals(kotlinx.serialization.json.JsonPrimitive(stored.name.lowercase()), json["stored_kind"])
+            assertEquals(kotlinx.serialization.json.JsonPrimitive(visible.name.lowercase()), json["detected_kind"])
+            assertTrue(json["message"].toString().contains("Re-enter"))
+            assertFalse(json.toString().contains("123456"))
+            assertFalse(json.toString().contains("Test pass!"))
+            assertEquals(0, p.entries)
+            assertFalse(s.attemptBlocked)
+            assertTrue(s.last!!.value.all { it == '\u0000' })
+        }
+    }
+
+    @Test fun cancellingTypeDetectionWipesTheCredentialWithoutStartingAnAttempt() = runTest {
+        val p = Port().apply {
+            readyTarget = false
+            detect = { throw kotlinx.coroutines.CancellationException("cancelled") }
+        }
+        val s = Store()
+        try {
+            DeviceAccess(p, s, 10, 30).unlock()
+            fail("cancellation must propagate")
+        } catch (_: kotlinx.coroutines.CancellationException) { }
+        assertEquals(0, p.entries)
+        assertFalse(s.attemptBlocked)
+        assertTrue(s.last!!.value.all { it == '\u0000' })
+    }
+
+    @Test fun typeDetailsAreAbsentFromOrdinaryStateAndWakeResponses() = runTest {
+        val d = DeviceAccess(Port(), Store())
+        for (r in listOf(d.state(), d.wake())) {
+            assertNull(r.storedKind)
+            assertNull(r.detectedKind)
+            assertTrue(r.keyguardDiagnostics.isEmpty())
+            assertFalse(r.toJson().containsKey("stored_kind"))
+            assertFalse(r.toJson().containsKey("detected_kind"))
+            assertFalse(r.toJson().containsKey("keyguard_diagnostics"))
+            assertFalse(r.toJson().containsKey("message"))
+        }
+    }
+
+    @Test fun recognizedButUnreadyMatchingFieldStillReportsUnsupported() = runTest {
+        val p = Port().apply { readyTarget = false; visibleKind = CredentialKind.Pin }
+        val s = Store()
+        assertEquals("unsupported_keyguard", DeviceAccess(p, s, 10, 30).unlock().status)
+        assertEquals(0, p.entries)
+        assertFalse(s.attemptBlocked)
+        assertTrue(s.last!!.value.all { it == '\u0000' })
+    }
+
+    @Test fun secureKeyguardGetsOneGenericRevealBeforeReportingUnsupported() = runTest {
+        val p = Port().apply { readyTarget = false }
+        val s = Store()
+        val d = DeviceAccess(p, s, 10, 30)
+        assertEquals("unsupported_keyguard", d.unlock().status)
+        assertEquals(1, p.reveals)
+        assertEquals(0, p.entries)
+        // 下一次明确调用是新的一次解锁流程,可以重新导航;同一次绝不反复滑。
+        assertEquals("unsupported_keyguard", d.unlock().status)
+        assertEquals(2, p.reveals)
+        assertFalse(s.attemptBlocked)
+    }
+
+    @Test fun revealCanExposeTheAlreadyStoredCredentialKind() = runTest {
+        val p = Port().apply {
+            readyTarget = false
+            targetHook = { if (reveals > 0) readyTarget = true }
+        }
+        val s = Store()
+        assertEquals("unlocked", DeviceAccess(p, s, 10, 50).unlock().status)
+        assertEquals(1, p.reveals)
+        assertEquals(1, p.entries)
+        assertFalse(s.attemptBlocked)
+    }
+
+    @Test fun readyOrManuallyUnlockedKeyguardIsNotNeedlesslySwiped() = runTest {
+        val ready = Port()
+        assertEquals("unlocked", DeviceAccess(ready, Store(), 10, 30).unlock().status)
+        assertEquals(0, ready.reveals)
+        val manual = Port().apply {
+            readyTarget = false
+            targetHook = { current = current.copy(keyguardShowing = false, deviceLocked = false) }
+        }
+        assertEquals("unlocked", DeviceAccess(manual, Store(), 10, 30).unlock().status)
+        assertEquals(0, manual.reveals)
+        assertEquals(0, manual.entries)
     }
 
     @Test fun concurrentRequestsSubmitTheCredentialOnlyOnce() = runTest {

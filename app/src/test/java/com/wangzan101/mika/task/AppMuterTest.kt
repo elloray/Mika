@@ -143,6 +143,67 @@ class AppMuterTest {
         assertEquals("allow", audio.modes["video.app"])
     }
 
+    @Test fun manualUnmuteKeepsSoundUntilTaskEnd() {
+        audio.modes["video.app"] = "allow"
+        muter.opened("video.app", null)
+        assertTrue(muter.unmute("video.app", null))
+        assertEquals("allow", audio.modes["video.app"])
+        // 用户明确要有声:再次打开、重新冒出和提前静音都不能改回去
+        muter.opened("video.app", null)
+        muter.beforeOpen("video.app", null)
+        assertEquals(listOf("video.app"), audio.mutes)
+        assertNull(store.saved)
+        // 已经没有待恢复的静音,任务收尾也不会把用户的选择撤销
+        assertTrue(record.restoreAll())
+        assertEquals("allow", audio.modes["video.app"])
+    }
+
+    @Test fun manualUnmuteSurvivesTakeoverCycles() {
+        audio.modes["video.app"] = "allow"
+        muter.opened("video.app", null)
+        assertTrue(muter.unmute("video.app", null))
+        // 后续接管交回仍会调用 opened;用户这次任务里的选择继续有效
+        assertTrue(muter.release("video.app", null))
+        muter.opened("video.app", null)
+        assertTrue(muter.release("video.app", null))
+        muter.opened("video.app", null)
+        assertEquals(listOf("video.app"), audio.mutes)
+        assertEquals("allow", audio.modes["video.app"])
+    }
+
+    @Test fun manualUnmuteWithoutLedgerAlsoSkipsFutureAutomaticMute() {
+        assertTrue(muter.unmute("video.app", 10))
+        muter.beforeOpen("video.app", 10)
+        muter.opened("video.app", 10)
+        assertTrue(audio.mutes.isEmpty())
+        assertTrue(failed.isEmpty())
+    }
+
+    @Test fun failedManualUnmuteKeepsLedgerAndRepeatedClickRetries() {
+        audio.modes["video.app"] = "allow"
+        muter.beforeOpen("video.app", null)
+        audio.failing += "video.app"
+        assertFalse(muter.unmute("video.app", null))
+        assertEquals("ignore", audio.modes["video.app"])
+        assertEquals(mapOf("video.app" to "allow"), store.saved)
+        // 启动被拒仍可按 early 记录重试;用户再点一次也同样能恢复
+        audio.failing -= "video.app"
+        assertTrue(muter.unmute("video.app", null))
+        assertEquals("allow", audio.modes["video.app"])
+        assertNull(store.saved)
+    }
+
+    @Test fun failedManualUnmuteRemainsCoveredByTaskEndRestore() {
+        audio.modes["video.app"] = "allow"
+        muter.opened("video.app", null)
+        audio.failing += "video.app"
+        assertFalse(muter.unmute("video.app", null))
+        audio.failing -= "video.app"
+        assertTrue(record.restoreAll())
+        assertEquals("allow", audio.modes["video.app"])
+        assertNull(store.saved)
+    }
+
     @Test fun audioKeyRoundTrips() {
         assertEquals("a.app", AppAudioKey.of("a.app", null))
         assertEquals("a.app@999", AppAudioKey.of("a.app", 999))

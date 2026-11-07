@@ -72,6 +72,22 @@ class ToolDispatcherEffectTest {
         assertEquals(false, r.changed)
     }
 
+    @Test fun currentAdequateTreeOverridesAnEarlierUnusableRead() = runTest {
+        var empty = true
+        val s = object : ScreenPort by FakeScreen() {
+            private fun current() = if (empty) ScreenSnapshot("empty", "com.x", emptyList(), 1080, 2400)
+            else page("一", "二", "三", "四", "五", "六")
+            override suspend fun snapshot() = current()
+            override suspend fun peek() = current()
+        }
+        val d = toolDispatcher(s)
+        assertEquals("unusable", d.execute(call("phone_observe")).content["treeQuality"]!!.jsonPrimitive.content)
+        empty = false
+        val c = d.execute(call("phone_tap", """{"x":500,"y":500}""")).content
+        assertEquals("no_effect", c.kind())
+        assertEquals(null, c["effect"]!!.jsonObject["treeBlind"])
+    }
+
     @Test fun portThatAlreadyWaitedIsNotWaitedForAgain() = runTest {
         val s = LateScreen({ currentTime }, page("列表"), page("详情", "价格", "加入购物车"), afterMs = 0, result = ActionResult.Ok(changed = true))
         val r = toolDispatcher(s).execute(call("phone_back"))

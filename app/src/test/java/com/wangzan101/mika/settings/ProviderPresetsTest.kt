@@ -59,6 +59,22 @@ class ProviderPresetsTest {
         }
     }
 
+    /** DeepSeek 的 V4 两个模型上下文都是 1M:窗口按旧默认 64k 时压缩频繁改写前缀,前缀缓存整段失效。 */
+    @Test fun deepSeekPresetUsesTheFullWindow() {
+        val deepseek = preset("DeepSeek")
+        assertEquals(1_000_000, deepseek.capabilities.contextTokens)
+        assertFalse(deepseek.capabilities.vision)
+    }
+
+    /** 预置的思考档位只来自官方文档:DeepSeek 的 reasoning_effort 可能值是 none/low/high/max(none 关思考),别名不预置。 */
+    @Test fun reasoningLevelsAreCuratedAndOfficialOnly() {
+        assertEquals(listOf("none", "low", "high", "max"), preset("DeepSeek").reasoningLevels)
+        // 没核实的店家一律不预置,界面上照旧不出档位(见 ReasoningOptions)
+        ProviderPresets.all.filter { it.label != "DeepSeek" }.forEach { p ->
+            assertEquals(p.label, emptyList<String>(), p.reasoningLevels)
+        }
+    }
+
     /** Coding Plan 的 Key 和标准 API 不通用;地址要落在官方分开的 OpenAI 兼容端点上。 */
     @Test fun codingPlanUsesItsOwnDocumentedEndpoint() {
         val standard = preset("智谱")
@@ -66,5 +82,14 @@ class ProviderPresetsTest {
         assertEquals("https://open.bigmodel.cn/api/coding/paas/v4", coding.baseUrl)
         assertEquals(ProviderConfig.Kind.OpenAiCompat, coding.kind)
         assertNotEquals(standard.baseUrl, coding.baseUrl)
+    }
+
+    /** 托管多家模型的 OpenAI 兼容网关:不给 familyTokens,地址认得出是它。 */
+    @Test fun requestyIsAnOpenAiCompatGateway() {
+        val requesty = preset("Requesty")
+        assertEquals("https://router.requesty.ai/v1", requesty.baseUrl)
+        assertEquals(ProviderConfig.Kind.OpenAiCompat, requesty.kind)
+        assertEquals(emptyList<String>(), requesty.familyTokens)
+        assertEquals("Requesty", ProviderPresets.forHost("https://router.requesty.ai/v1/")?.label)
     }
 }

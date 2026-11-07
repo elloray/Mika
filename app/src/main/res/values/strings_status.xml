@@ -55,6 +55,7 @@
     <string name="turn_on_go">Turn on</string>
     <string name="banner_a11y_not_running">Accessibility service isn’t running</string>
     <string name="banner_a11y_not_running_detail">Turn it off and on again</string>
+    <string name="banner_a11y_restricted_detail">Allow restricted settings in Mika’s app info</string>
     <string name="banner_a11y_locked">The phone hasn’t been unlocked since it started, so the accessibility service isn’t running</string>
     <string name="banner_a11y_locked_detail">It comes back once you unlock the phone, no settings to change</string>
     <string name="banner_no_model">No usable model yet</string>
@@ -70,6 +71,8 @@
     <string name="explain_a11y_off">Turn on the accessibility service</string>
     <string name="explain_a11y_off_body">Mika uses the accessibility service to read and control its own virtual screen. Find Mika under Accessibility in system settings (on some phones it’s under “Downloaded apps” or “Installed services”) and turn it on.</string>
     <string name="explain_a11y_not_running_body">System settings show Mika’s accessibility service as on, but it isn’t actually running (this often happens after Mika is force-stopped). Turn Mika off in accessibility settings, then on again.</string>
+    <string name="explain_a11y_restricted_off_body">If Android blocks you from turning on Mika, open Mika’s app info and choose “Allow restricted settings” from the menu if that option is available. Then return to Accessibility and turn on Mika.</string>
+    <string name="explain_a11y_restricted_body">Android may block accessibility for apps installed outside an app store until restricted settings are allowed. Open Mika’s app info, open its menu, and choose “Allow restricted settings” if it is available. Then turn Mika off and on again under Accessibility.</string>
     <string name="explain_no_model">Add a model</string>
     <string name="explain_no_model_body">Mika needs a large language model with tool calling to think and act. Just enter the provider’s URL, the model name and an API key.</string>
     <string name="explain_focus">Android 14 or later recommended</string>

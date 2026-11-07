@@ -88,4 +88,6 @@
     <string name="timeline_exported">已保存用量记录</string>
     <string name="timeline_export_failed">没能导出用量记录，请检查记录是否还在、所选位置能否写入。</string>
     <string name="timeline_running">进行中</string>
+    <string name="timeline_step_limit">步数</string>
+    <string name="timeline_step_limit_value">%1$d / %2$d</string>
 </resources>

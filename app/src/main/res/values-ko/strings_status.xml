@@ -53,6 +53,7 @@
     <string name="turn_on_go">켜기</string>
     <string name="banner_a11y_not_running">접근성 서비스가 실행 중이 아니에요</string>
     <string name="banner_a11y_not_running_detail">껐다가 다시 켜세요</string>
+    <string name="banner_a11y_restricted_detail">Mika 앱 정보에서 제한된 설정을 허용하세요</string>
     <string name="banner_a11y_locked">시작한 뒤 휴대전화 잠금을 해제하지 않아서 접근성 서비스가 실행되지 않아요</string>
     <string name="banner_a11y_locked_detail">잠금을 해제하면 다시 동작해요. 바꿀 설정은 없어요</string>
     <string name="banner_no_model">사용할 수 있는 모델이 아직 없어요</string>
@@ -68,6 +69,8 @@
     <string name="explain_a11y_off">접근성 서비스 켜기</string>
     <string name="explain_a11y_off_body">Mika는 접근성 서비스로 자체 가상 화면을 읽고 제어해요. 시스템 설정의 접근성에서 Mika를 찾아 켜세요(휴대전화에 따라 “다운로드한 앱”이나 “설치된 서비스” 아래에 있어요).</string>
     <string name="explain_a11y_not_running_body">시스템 설정에는 Mika의 접근성 서비스가 켜져 있다고 나오지만 실제로는 실행 중이 아니에요(Mika를 강제 종료한 뒤에 자주 생겨요). 접근성 설정에서 Mika를 껐다가 다시 켜세요.</string>
+    <string name="explain_a11y_restricted_off_body">Android에서 Mika를 켤 수 없다면 Mika의 앱 정보를 열고 메뉴에 “제한된 설정 허용”이 있으면 선택하세요. 그런 다음 접근성 설정으로 돌아가 Mika를 켜세요.</string>
+    <string name="explain_a11y_restricted_body">Android에서는 앱 스토어 밖에서 설치한 앱의 접근성 서비스 연결을 제한된 설정을 허용할 때까지 차단할 수 있어요. Mika 앱 정보를 열고 메뉴에 “제한된 설정 허용”이 있으면 선택하세요. 그다음 접근성 설정에서 Mika를 껐다가 다시 켜세요.</string>
     <string name="explain_no_model">모델 추가</string>
     <string name="explain_no_model_body">Mika가 생각하고 행동하려면 도구 호출을 지원하는 대규모 언어 모델이 필요해요. 제공업체의 URL, 모델 이름, API 키만 입력하면 돼요.</string>
     <string name="explain_focus">Android 14 이상 권장</string>

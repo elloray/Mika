@@ -74,9 +74,9 @@ class UnavailableApprovalTest {
     }
 
     @Test fun remoteLoopCanExplainDenialWithoutCrashingOrExecutingIt() = runTest {
-        // A combined accessibility label can also be classified as a paid action.
+        // A combined accessibility label with an explicit total is still a paid action.
         // Preserve that decision here: this regression only repairs its delivery.
-        for (label in listOf("确认支付", "Study notes\n2.99元\n删除\n编辑")) {
+        for (label in listOf("确认支付", "Study notes\n合计 2.99元\n删除\n编辑")) {
             val screen = DeniedPaymentScreen(label)
             val message = "The action was not run; the phone owner must handle it."
             val model = FakeModel(

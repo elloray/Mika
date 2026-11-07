@@ -23,6 +23,19 @@ class McpSettingsTest {
         assertFalse(settings().enabled.value)
     }
 
+    @Test fun historyConsentIsOffForOldSettingsAndPersistsIndependently() {
+        val original = settings()
+        original.setEnabled(true)
+        assertFalse(original.historyEnabled.value)
+        original.setHistoryEnabled(true)
+        assertTrue(settings().historyEnabled.value)
+        original.setEnabled(false)
+        assertTrue(settings().historyEnabled.value)
+        original.setHistoryEnabled(false)
+        assertFalse(settings().historyEnabled.value)
+        assertFalse(settings().enabled.value)
+    }
+
     @Test fun unreadableFileMeansOff() {
         tmp.root.resolve("mcp.json").writeText("{oops")
         assertFalse(settings().enabled.value)

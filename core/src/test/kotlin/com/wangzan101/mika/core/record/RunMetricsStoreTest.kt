@@ -81,4 +81,16 @@ class RunMetricsStoreTest {
         assertTrue(first.containsKey("observeMs"))
         assertTrue(first.containsKey("judged"))
     }
+
+    @Test fun byIdsReadsOnlyTheAskedRuns() {
+        val s = RunMetricsStore(file)
+        (1..4).forEach { s.append(m("r$it", total = it * 1_000L)) }
+        // "r1" 是 "r10" 的一部分:按行粗筛后再核对编号,不会多拿
+        s.append(m("r10"))
+        val got = s.byIds(setOf("r1", "r3", "gone"))
+        assertEquals(setOf("r1", "r3"), got.keys)
+        assertEquals(3_000L, got.getValue("r3").totalMs)
+        assertEquals(emptyMap<String, RunMetrics>(), s.byIds(emptySet()))
+        assertEquals(emptyMap<String, RunMetrics>(), RunMetricsStore(tmp.root.resolve("none.jsonl")).byIds(setOf("r1")))
+    }
 }

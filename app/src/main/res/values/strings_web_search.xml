@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="web_search_title">Web search</string>
+    <string name="web_search_row_sub">Optional search service; browser search is always available</string>
+    <string name="web_search_hint">Off by default. Mika sends query and count parameters to your HTTP JSON endpoint. The optional key is sent as a Bearer token and stored encrypted on this phone. Search results are treated as untrusted.</string>
+    <string name="web_search_enabled">Enable web search</string>
+    <string name="web_search_endpoint">Search endpoint URL</string>
+    <string name="web_search_api_key">API key (optional)</string>
+    <string name="web_search_invalid_endpoint">Enter an HTTP or HTTPS URL without query parameters.</string>
+    <string name="web_search_action">Search the web</string>
+</resources>

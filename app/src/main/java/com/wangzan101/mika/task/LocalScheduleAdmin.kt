@@ -6,7 +6,7 @@ import com.wangzan101.mika.core.trigger.TriggerDefinition
 
 class LocalScheduleAdmin internal constructor(
     private val plans: () -> List<TriggerDefinition>,
-    private val changeEnabled: (String, Boolean) -> Unit,
+    private val changeEnabled: (String, Boolean) -> Boolean,
     private val delete: (String) -> Unit,
     private val changeTime: (String, Long) -> Unit,
     private val executeNow: (String) -> Unit,
@@ -25,8 +25,7 @@ class LocalScheduleAdmin internal constructor(
 
     override fun setEnabled(threadId: String, id: String, enabled: Boolean): Boolean {
         if (!owned(threadId, id)) return false
-        changeEnabled(id, enabled)
-        return true
+        return changeEnabled(id, enabled)
     }
 
     override fun remove(threadId: String, id: String): Boolean {

@@ -1,4 +1,4 @@
-<!-- translated-from: README.md @ 960f4051ce73 -->
+<!-- translated-from: README.md @ 84f9797eaed8 -->
 <div align="center">
 
 <img src="../media/logo.png" alt="Mika" width="88" />
@@ -138,7 +138,7 @@
 
 **能用自己電腦上跑的模型嗎？** 可以，服務商選「自定義」，填區域網路位址即可。
 
-**App 有繁體中文介面嗎？** 有。介面有繁體中文、簡體中文、英文、日文、韓文、西班牙文、葡萄牙文、俄文和印尼文，跟隨系統語言，也可以在 設定 › 語言 裡切換。
+**App 有繁體中文介面嗎？** 有。介面有繁體中文、簡體中文、英文、阿拉伯語、日文、韓文、西班牙文、葡萄牙文、俄文和印尼文，跟隨系統語言，也可以在 設定 › 語言 裡切換。
 
 **更新從哪裡來？** 只從本倉庫的 [Releases](https://github.com/wangzan101/Mika/releases) 發布；App 裡「關於 › 檢查更新」也能直接升級。
 
@@ -158,8 +158,8 @@
 
 <a href="https://star-history.com/#wangzan101/Mika&Date">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=wangzan101/Mika&type=Date&theme=dark&v=20261101-1623" />
-    <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=wangzan101/Mika&type=Date&v=20261101-1623" width="600" />
+    <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=wangzan101/Mika&type=Date&theme=dark&v=20261104-2107" />
+    <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=wangzan101/Mika&type=Date&v=20261104-2107" width="600" />
   </picture>
 </a>
 

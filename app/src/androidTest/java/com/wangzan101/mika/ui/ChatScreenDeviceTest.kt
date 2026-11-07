@@ -221,6 +221,24 @@ class ChatScreenDeviceTest {
         shot("08-drawer")
     }
 
+    @Test
+    fun sentTurnIsVisibleAtTheTailOfALongConversation() {
+        val store = ConversationStore(context)
+        val id = store.newConversation()
+        repeat(30) { i ->
+            store.append(id, Turn("旧问题 $i", "旧回答 $i\n" + "这是一段用于撑满长会话视口的历史内容。\n".repeat(8), "succeeded"), emptyList())
+        }
+        compose.runOnUiThread { vm.openConversation(id) }
+        compose.waitUntil(5_000) { vm.ui.value.conversationId == id && vm.ui.value.exchanges.size == 30 }
+        compose.waitForIdle()
+
+        val message = "刚发送的新一轮必须直接显示"
+        compose.runOnUiThread { assertTrue(vm.send(message, anyway)) }
+        compose.waitUntil(5_000) { vm.ui.value.exchanges.size == 31 }
+        // 不能只 assertExists:回归的正是新行已存在、却被旧布局行数留在视口外。
+        compose.onNodeWithText(message).assertIsDisplayed()
+    }
+
     /** 附件按钮只在沙箱不是「此设备不支持」时出现(未安装、安装中、坏了都还能装、能修)。 */
     @Test
     fun attachButtonHiddenOnlyWhenSandboxUnsupported() {

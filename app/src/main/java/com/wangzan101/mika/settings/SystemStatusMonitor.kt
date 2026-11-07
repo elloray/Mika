@@ -89,6 +89,7 @@ class SystemStatusMonitor(context: Context, private val shell: BuiltinShellContr
         usbDebugging = DeveloperSettings.usbDebugging(app.contentResolver),
         restrictedSettings = restrictedSettings(),
         helperRestart = shell.restart,
+        rootStart = shell.rootStart,
     )
 
     private fun channelImportance(id: String): Int? =

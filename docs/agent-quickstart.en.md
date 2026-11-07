@@ -63,6 +63,16 @@ Use the connection method the user picked on the phone (Settings › Connect a c
 
 State `unauthorized`: ask the user to allow USB debugging on the phone. `offline`: ask them to replug the cable. Connection information unreadable (`connection_info`): ask them to unlock the phone and open Mika once, then run `connect` again.
 
+## Export a run record
+
+If a task is stuck or the result looks wrong, pull the redacted record (the same events as the phone's process view, without screenshot files) and line it up with `task status`:
+
+```sh
+mika task export TASK_OR_RUN_ID --json
+```
+
+The header states `task_id`, `conversation_id` and run_id. `partial: true` means it is still in progress. An unknown id is an explicit error, not an empty record.
+
 ## Notes
 
 - Do not submit phone tasks; never print or echo the token.

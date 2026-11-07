@@ -9,6 +9,7 @@ import com.wangzan101.mika.cap.phone.shell.AppAudioKey
  * - [opened]:Mika 屏上冒出一个 App(启动的目标,或从别的 App 里点开、另一份顶上来的):没静过就静,静不了记成「可能出声」。
  * - [notOpened]:启动被拒(没装、用户正用着…),提前静上又没开出来的那个马上还原,不让它在任务期间白白没声。
  * - [release]:用户接管时把这个 App 的声音还回去;之后再 [opened] 又会静上。
+ * - [unmute]:用户明确恢复声音;这次任务里之后不再自动静它,即使接管交回也保持有声。
  *
  * 不碰的:Mika 自己;没有桌面入口的系统包(系统界面、选择框、权限框这一类,静了会连带系统的声音);
  * 用户此刻在主屏上看得见的(静音按包作用,静了用户手上的也没声)。设置里关掉静音时一个也不静。
@@ -16,7 +17,7 @@ import com.wangzan101.mika.cap.phone.shell.AppAudioKey
  */
 class AppMuter(
     private val audio: AudioMute,
-    /** 设置 › 干活时的「打开的 App 静音」;每次现读,任务中途关掉也算数。 */
+    /** 设置 › 任务运行的「打开的 App 静音」;每次现读,任务中途关掉也算数。 */
     private val enabled: () -> Boolean,
     /** 这个包能不能静(见类说明的「不碰的」前两条)。 */
     private val mutable: (packageName: String) -> Boolean,
@@ -31,10 +32,13 @@ class AppMuter(
     /** 启动前静上、还没见它开出来的键:启动被拒时据此还原。 */
     private val early = HashSet<String>()
 
+    /** 用户明确恢复过声音的键;这次任务里不再自动静它。 */
+    private val unmuted = HashSet<String>()
+
     @Synchronized
     fun beforeOpen(packageName: String, user: Int?) {
         val key = AppAudioKey.of(packageName, user)
-        if (key in muted || !wanted(packageName) || onMainScreen(packageName, user)) return
+        if (key in muted || key in unmuted || !wanted(packageName) || onMainScreen(packageName, user)) return
         if (audio.mute(key)) {
             muted += key
             early += key
@@ -45,7 +49,7 @@ class AppMuter(
     fun opened(packageName: String, user: Int?) {
         val key = AppAudioKey.of(packageName, user)
         early -= key
-        if (key in muted || !wanted(packageName)) return
+        if (key in muted || key in unmuted || !wanted(packageName)) return
         // 用户在主屏上正用着它:不静,照实说它可能出声
         if (onMainScreen(packageName, user) || !audio.mute(key)) {
             failed(packageName)
@@ -68,6 +72,20 @@ class AppMuter(
         early -= key
         if (!audio.restore(key)) return false
         muted -= key
+        return true
+    }
+
+    /**
+     * 用户明确恢复声音。成功后本次任务不再自动静它;失败时保留静音与持久化记录,
+     * 重复点击可以重试,任务收尾的 restoreAll 也仍能恢复。
+     */
+    @Synchronized
+    fun unmute(packageName: String, user: Int?): Boolean {
+        val key = AppAudioKey.of(packageName, user)
+        if (!audio.restore(key)) return false
+        early -= key
+        muted -= key
+        unmuted += key
         return true
     }
 

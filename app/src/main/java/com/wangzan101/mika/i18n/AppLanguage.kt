@@ -13,7 +13,7 @@ import java.util.Locale
 
 /**
  * App 界面的语言:跟随系统,或者选定下面的一种。资源里英文是默认(`values/`),简体中文在 `values-zh/`、繁体中文在 `values-b+zh+Hant/`,
- * 其他语言各在 `values-<语言>/`(印尼语沿用安卓的旧代码 `values-in/`)。安卓按语言和文字体系挑资源,
+ * 阿拉伯语在 `values-ar/`,其他语言各在 `values-<语言>/`(印尼语沿用安卓的旧代码 `values-in/`)。安卓按语言和文字体系挑资源,
  * 所以「跟随系统」时系统语言有译文就显示它,没有就显示英文;某种语言缺了哪条,那条也显示英文。
  *
  * 安卓 13 起由系统的「应用语言」管(LocaleManager):系统记住选择、套到整个进程、重建界面,
@@ -24,6 +24,7 @@ enum class AppLanguage(val tag: String?, val speechTag: String?) {
     System(null, null),
     SimplifiedChinese("zh-Hans", "zh-CN"),
     TraditionalChinese("zh-Hant", "zh-TW"),
+    Arabic("ar", "ar-MA"),
     English("en", "en-US"),
     Japanese("ja", "ja-JP"),
     Korean("ko", "ko-KR"),

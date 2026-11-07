@@ -101,8 +101,9 @@ class NioPortScanner(
     private val connectTimeoutMs: Long = 150,
 ) : LocalPortScanner {
     override suspend fun openPorts(host: String, ports: IntRange, skip: Set<Int>, budgetMs: Long): List<Int> = withContext(Dispatchers.IO) {
+        val address = AdbHosts.ownAddress(host) ?: return@withContext emptyList()
         val ctx = currentCoroutineContext()
-        sweep(InetAddress.getByName(host), ports, skip, System.currentTimeMillis() + budgetMs) { ctx.isActive }
+        sweep(address, ports, skip, System.currentTimeMillis() + budgetMs) { ctx.isActive }
     }
 
     private fun sweep(addr: InetAddress, ports: IntRange, skip: Set<Int>, deadline: Long, active: () -> Boolean): List<Int> {
@@ -160,8 +161,9 @@ class NioPortScanner(
     }.getOrDefault(false)
 
     override fun speaksAdbTls(host: String, port: Int, timeoutMs: Int): Boolean = try {
+        val target = AdbHosts.ownSocketAddress(host, port) ?: return false
         Socket().use { s ->
-            s.connect(InetSocketAddress(host, port), timeoutMs)
+            s.connect(target, timeoutMs)
             if (s.localPort == port && s.localAddress == s.inetAddress) return false
             s.soTimeout = timeoutMs
             s.getOutputStream().apply {

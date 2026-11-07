@@ -4,6 +4,7 @@
     <string name="model_context_note">Blank fields use automatic values. Settings apply on the next task to all roles using this provider and model.</string>
     <string name="model_context_window">Context window (tokens)</string>
     <string name="model_context_trigger">Compaction trigger (tokens)</string>
+    <string name="model_context_read_timeout">Read timeout (seconds)</string>
     <string name="model_context_auto">Auto · %1$d</string>
     <string name="model_context_integer">Enter a positive whole number.</string>
     <string name="model_context_range">Allowed range (tokens) · %1$d–%2$d</string>

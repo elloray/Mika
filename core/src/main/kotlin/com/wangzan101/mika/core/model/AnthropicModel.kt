@@ -149,7 +149,7 @@ class AnthropicModel(
         status == 401 || status == 403 -> ModelError.Auth()
         status == 402 || body.contains("credit balance is too low") -> ModelError.QuotaExceeded()
         status == 429 -> ModelError.RateLimited(HttpSupport.retryAfterMs(retryAfter))
-        status == 413 || body.contains("prompt is too long") -> ModelError.ContextTooLong()
+        status == 413 || body.contains("prompt is too long") || ModelHttp.contextTooLong(status, body) -> ModelError.ContextTooLong()
         status == 404 -> ModelError.ModelNotFound(model, ModelAccessErrors.jsonDetail(body))
         status == 529 || body.contains("overloaded_error") -> ModelError.Server(529)
         status in 500..599 -> ModelError.Server(status)
@@ -291,15 +291,15 @@ private class AnthropicStream(
     private var reason: String? = null
     private var stopped = false
 
-    fun accept(data: String) {
+    fun accept(data: String): Boolean {
         val root = try { json.parseToJsonElement(data).jsonObject }
         catch (e: Exception) { throw ModelError.BadResponse("流式响应不是合法 JSON", e) }
         when ((root["type"] as? JsonPrimitive)?.contentOrNull) {
             "message_start" -> usage = (root["message"] as? JsonObject)?.get("usage") as? JsonObject
             "content_block_start" -> {
-                val index = (root["index"] as? JsonPrimitive)?.intOrNull ?: return
-                val b = root["content_block"] as? JsonObject ?: return
-                val type = (b["type"] as? JsonPrimitive)?.contentOrNull ?: return
+                val index = (root["index"] as? JsonPrimitive)?.intOrNull ?: return false
+                val b = root["content_block"] as? JsonObject ?: return false
+                val type = (b["type"] as? JsonPrimitive)?.contentOrNull ?: return false
                 blocks[index] = Block(type,
                     id = (b["id"] as? JsonPrimitive)?.contentOrNull.orEmpty(),
                     name = (b["name"] as? JsonPrimitive)?.contentOrNull.orEmpty(),
@@ -313,9 +313,9 @@ private class AnthropicStream(
                 }
             }
             "content_block_delta" -> {
-                val index = (root["index"] as? JsonPrimitive)?.intOrNull ?: return
-                val block = blocks[index] ?: return
-                val delta = root["delta"] as? JsonObject ?: return
+                val index = (root["index"] as? JsonPrimitive)?.intOrNull ?: return false
+                val block = blocks[index] ?: return false
+                val delta = root["delta"] as? JsonObject ?: return false
                 when ((delta["type"] as? JsonPrimitive)?.contentOrNull) {
                     "text_delta" -> (delta["text"] as? JsonPrimitive)?.contentOrNull?.let {
                         block.text.append(it); visible.append(it); onText(visible.toString())
@@ -335,6 +335,7 @@ private class AnthropicStream(
             "message_stop" -> stopped = true
             "error" -> throw ModelError.BadResponse(root["error"].toString().take(200))
         }
+        return stopped
     }
 
     fun finish(): ModelReply {

@@ -51,6 +51,7 @@ import com.wangzan101.mika.task.TaskService
 import com.wangzan101.mika.task.TaskService.Companion.isActive
 import com.wangzan101.mika.takeover.TakeoverQueue
 import com.wangzan101.mika.ui.ChatCopy
+import com.wangzan101.mika.ui.FollowUpMode
 import com.wangzan101.mika.ui.VoiceCopy
 import com.wangzan101.mika.i18n.tr
 import com.wangzan101.mika.voice.HoldToTalk
@@ -89,10 +90,11 @@ import kotlinx.coroutines.withTimeoutOrNull
  * Mika 界面在不在前台([AppForeground])、屏幕亮没亮([DeviceStateWatcher])、无障碍服务在不在交给 [CapsuleModel],
  * 按它的结果经 [com.wangzan101.mika.cap.phone.a11y.OverlayHost] 加上、挪动或拆掉浮层窗口。
  * 点一颗或胶囊展开卡片([CapsuleCards] 定内容,只说一件事),点卡片外面、收起按钮或返回收回成一颗(看过的不再展开,模型记着);卡片和胶囊上的按钮都转成任务服务现有的动作。
- * 一颗和卡片各在一个窗口里、各待各的位置(见 [window]):展开时一颗那个窗口空出来,卡片在自己的窗口里从那一颗的方位缩放、淡入,
+ * 一颗和卡片各在一个窗口里、各待各的位置(见 [window]):展开时一颗那个窗口显式隐藏,卡片在自己的窗口里从那一颗的方位缩放、淡入,
  * 收起时缩回去,一颗再在边上冒出来([OverlayMotion]:只动图层,不挪窗口,也不逐帧改窗口大小)。
- * 双击一颗或胶囊(见 [DoubleTap]:单击要等双击的时限过去才展开)把用户此刻的屏幕发给卡片里那段对话,和在卡片里发一句话走同一条路;
- * 卡片输入框左边的截屏按钮截下来先挂在输入框上面,可以补一句再发。截的时候浮层先藏起来,截完再出来,一颗上闪一下。
+ * 双击一颗或胶囊(见 [DoubleTap]:单击要等双击的时限过去才展开,两下还要同来源、落点相近)把用户此刻的屏幕截进那张卡片的输入框预览,
+ * 不直接发出;用户看过预览、按发送后才和在卡片里发一句话走同一条路。卡片输入框左边的截屏按钮也挂在输入框上面,可以补一句再发。
+ * 截的时候浮层先藏起来,截完再出来,一颗上闪一下。
  * 卡片底部的输入框点开时浮层才能接收键盘,发出、收起、点外面、按返回时马上还回去;输入法弹出时胶囊和卡片挪到它上面。
  * 长按一颗或胶囊说话(见 [CapsuleTalk]、[CapsuleVoicePanel]):按着时整屏压暗、胶囊旁边浮出面板和「取消」「改一改」两个落点,
  * 松开直接发给单击会展开的那张卡片(和双击发屏幕同一套找目标),拖到「改一改」打开卡片、字在输入框里,拖到「取消」丢掉;
@@ -123,20 +125,38 @@ class CapsuleController(
 
     private var view by mutableStateOf<CapsuleView.Shown?>(null)
     private var card by mutableStateOf<CardView?>(null)
+    /** 同进程的排队队列;卡片按自己的对话数明确排队的项。 */
+    private var followUps by mutableStateOf<List<com.wangzan101.mika.task.QueuedFollowUp>>(emptyList())
     private var preview by mutableStateOf<Bitmap?>(null)
     private var zoomed by mutableStateOf(false)
     private var dock by mutableStateOf(flags.capsuleDock())
     private var inputUi by mutableStateOf(CardInputUi())
     /** 截到一屏时加一:一颗上闪一下。 */
     private var flash by mutableIntStateOf(0)
-    private val taps = DoubleTap(ViewConfiguration.getDoubleTapTimeout().toLong())
+    private val taps = DoubleTap(
+        ViewConfiguration.getDoubleTapTimeout().toLong(),
+        ViewConfiguration.get(context).scaledTouchSlop.toFloat(),
+    )
+    private data class Touch(val at: Long, val x: Float, val y: Float, val source: Int)
+    /** 最近一次胶囊窗口的 ACTION_DOWN;Compose 的 onClick 不带触摸信息,在这里补上。 */
+    private var capsuleTouch: Touch? = null
     private var tapJob: Job? = null
+
+    /** 任何不是普通第二下的交互都从这里打断待定点击,避免跨操作拼出双击。 */
+    private fun resetTaps() {
+        tapJob?.cancel()
+        taps.reset()
+        capsuleTouch = null
+    }
+
     /** 正在截屏(浮层藏着):这时的点按、再截都不算。 */
     private var capturing = false
     /** 在卡片里发了话的那个对话:展开时跟着它的任务,好看到回答。 */
     private var follow: String? = null
     /** 空闲卡片接着的最近那段对话(点开空闲图标时读一次)。 */
     private var idle: CardView.Chat? = null
+    /** 卡片标题栏的电源按钮点过:卡片里换成「完全退出」的确认,不马上退。 */
+    private var quitConfirm by mutableStateOf(false)
 
     /** 长按说话;[talkIdle] 是空闲图标上开始说时去读的最近那段对话(说完发给它)。 */
     private val talk = CapsuleTalk(context, { (context.applicationContext as MikaApp).voice }, scope, ::spoken)
@@ -200,7 +220,7 @@ class CapsuleController(
 
     /**
      * 两个浮层窗口,各自待在自己的位置上,展开、收起时谁都不挪:[window] 放一颗、胶囊和那一条,停在边上;[cardWindow] 放卡片,
-     * 左右居中(收起时里面是空的,窗口没有大小,不挡下面的 App)。一个窗口在一颗和卡片的位置间来回挪,系统会把挪动做成滑过去的动画
+     * 左右居中(收起时显式设为不可见,里面随后空出来,不挡下面的 App)。一个窗口在一颗和卡片的位置间来回挪,系统会把挪动做成滑过去的动画
      * (安卓原版的窗口移动动画),看上去是一颗从中间滑回边上、卡片从边上滑到中间。
      */
     private var window: OverlayWindow? = null
@@ -221,15 +241,21 @@ class CapsuleController(
 
     fun start() {
         val screen = DeviceStateWatcher(context) { -1 }
+        // 用户点了「完全退出」:按开关关着算,直到用户重新打开 Mika([resume] 清掉标记后再亮出来)
+        val mode = combine(flags.capsuleModeChanges(), flags.quitChanges()) { m, quit -> if (quit) CapsuleMode.Off else m }
         scope.launch {
             combine(
-                combine(runs(), flags.capsuleModeChanges(), foreground.visible, screen.locked, ScreenAccessibility.instance) { r, m, f, l, a -> Snapshot(r, m, f, l, a) },
+                combine(runs(), combine(mode, flags.capsuleIdleOpacityChanges()) { m, o -> m to o }, foreground.visible, screen.locked, ScreenAccessibility.instance) { r, settings, f, l, a ->
+                    Snapshot(r, settings.first, f, l, a, opacity = settings.second)
+                },
                 ticks,
                 keeper.page,
             ) { s, _, kept -> s.copy(kept = kept) }.collect(::render)
         }
         // 说话面板出来时铺满整屏(压暗背后),收起时回到没有大小
         scope.launch { snapshotFlow { talk.active }.collect { panelWindow?.setFullScreen(it) } }
+        // 排队条:卡片按自己的对话显示还有几件
+        scope.launch { (context.applicationContext as MikaApp).followUpQueue.changes.collect { followUps = it } }
         // 停止后的交代写好(或写不成)时那一轮已改进对话:重读记下的轮次
         scope.launch { tasks.summarizing.collect { threadOf?.let(::loadPast) } }
         // 对话删掉了:见 [forget]
@@ -249,6 +275,7 @@ class CapsuleController(
         // 转屏:按记下的边和比例重新摆;系统给新尺寸可能稍晚一点,过一会儿再摆一次
         context.registerComponentCallbacks(object : ComponentCallbacks {
             override fun onConfigurationChanged(newConfig: Configuration) {
+                resetTaps()
                 place()
                 scope.launch {
                     delay(ROTATE_SETTLE_MS)
@@ -261,11 +288,24 @@ class CapsuleController(
         })
     }
 
+    /** 用户点了「完全退出」:马上拆掉浮层。进程可能被无障碍服务重新拉起,届时按退出标记不再画(见 [start])。 */
+    fun stopNow() {
+        quitConfirm = false
+        hide()
+    }
+
+    /** 用户又打开了 Mika:退出标记已清掉,按此刻的状态重新画(进程没被杀、又回到前台时用得上)。 */
+    fun resume() {
+        quitConfirm = false
+        refresh()
+    }
+
     private data class Snapshot(
         val runs: List<CapsuleRun>, val mode: CapsuleMode, val mikaInForeground: Boolean, val locked: Boolean,
         val service: ScreenAccessibility?,
         /** 任务结束后留在后台运行的那一页。 */
         val kept: KeptPage? = null,
+        val opacity: CapsuleIdleOpacity = CapsuleIdleOpacity.DEFAULT,
     )
 
     /**
@@ -351,6 +391,7 @@ class CapsuleController(
         val nowLook = listOf(shown.kind, shown.pill, shown.count, shown.needCount)
         if (nowLook != look) {
             look = nowLook
+            resetTaps()
             wake()
         } else fade()
         _showing.value = true
@@ -374,10 +415,13 @@ class CapsuleController(
         cardWindow = cardW
         panelWindow = panel
         windowOn = service
-        for (it in listOf(ball, cardW)) {
-            it.onResize(::place)
-            it.onTouch(::wake)
+        syncWindowVisibility()
+        for (it in listOf(ball, cardW)) it.onResize(::place)
+        ball.onTouch { e ->
+            wake()
+            capsuleTouch = Touch(e.eventTime, e.rawX, e.rawY, e.source)
         }
+        cardW.onTouch { wake() }
         cardW.onBack(::back)
         watchIme(service)
         return ball
@@ -401,8 +445,7 @@ class CapsuleController(
     }
 
     private fun hide() {
-        tapJob?.cancel()
-        taps.reset()
+        resetTaps()
         snap?.cancel()
         fadeJob?.cancel()
         look = null
@@ -431,13 +474,22 @@ class CapsuleController(
         expanded = false
         closing = false
         cardOut = false
+        syncWindowVisibility()
         follow = null
         zoomed = false
+        quitConfirm = false
         cardHandle = null
         closeInput()
         inputUi = inputUi.collapsed()
         watchPreview(null)
         updateThread(null, emptyList())
+    }
+
+    /** 两个窗口交替时显式显隐;空内容只负责排版,不承担把系统窗口旧帧撤下屏幕的职责。 */
+    private fun syncWindowVisibility() {
+        val visible = capsuleWindowVisibility(expanded, cardOut, closing)
+        window?.setVisible(visible.capsule)
+        cardWindow?.setVisible(visible.card)
     }
 
     // ---------- 输入 ----------
@@ -481,21 +533,28 @@ class CapsuleController(
         val c = card ?: return
         val kind = CapsuleCards.input(c)?.kind ?: return
         if (text.isEmpty() && shot == null) return
+        val mode = inputUi.followUpMode
         inputUi = CardInputUi()
         cardWindow?.setFocusable(false)
-        if (shot != null) deliver(c, kind, shot, text) else submit(c, kind, text, CapsuleCards.conversationOf(c))
+        if (shot != null) deliver(c, kind, shot, text, mode) else submit(c, kind, text, CapsuleCards.conversationOf(c), mode)
         refresh()
     }
 
     /** 按输入框此刻交给谁([kind])发出 [text];开始说时进 [conversationId](为 null 时新开一个)。 */
-    private fun submit(c: CardView, kind: CardInputKind, text: String, conversationId: String?) {
+    private fun submit(c: CardView, kind: CardInputKind, text: String, conversationId: String?, mode: FollowUpMode = FollowUpMode.Steer) {
         val run = when (c) {
             is CardView.Detail -> c.run.run
             is CardView.Chat -> c.run?.run
             is CardView.Kept -> null
         }
         when (kind) {
-            CardInputKind.Steer -> run?.let { TaskService.start(context, text, it.conversationId, messageId = UUID.randomUUID().toString()) }
+            CardInputKind.Steer -> run?.let {
+                if (mode == FollowUpMode.Queue) {
+                    TaskService.enqueueFollowUp(context, it.conversationId, UUID.randomUUID().toString(), text)
+                } else {
+                    TaskService.start(context, text, it.conversationId, messageId = UUID.randomUUID().toString())
+                }
+            }
             CardInputKind.Answer -> run?.let { TaskService.answer(context, text, it.key) }
             CardInputKind.Continue -> run?.let { startIn(it.conversationId, text) }
             CardInputKind.Start -> startIn(conversationId ?: ConversationStore.shared(context).newConversation(), text)
@@ -506,7 +565,7 @@ class CapsuleController(
      * 截下的屏幕连同附言 [words] 发出:先存进这句话要去的那个对话(新对话这时就定下编号),
      * 再写成带屏幕的一句话([UserScreenMessage])照常发出;存不下就不发。
      */
-    private fun deliver(c: CardView, kind: CardInputKind, shot: CapturedScreen, words: String) {
+    private fun deliver(c: CardView, kind: CardInputKind, shot: CapturedScreen, words: String, mode: FollowUpMode = FollowUpMode.Steer) {
         val access = (context.applicationContext as MikaApp).appAccess.current()
         if (shot.sourcePackages.isEmpty() || shot.sourcePackages.any { !access.canShare(it) }) {
             inputUi = inputUi.copy(screen = null)
@@ -523,17 +582,17 @@ class CapsuleController(
                 android.widget.Toast.makeText(context, tr(R.string.appaccess_share_expired), android.widget.Toast.LENGTH_SHORT).show()
                 return@launch
             }
-            submit(c, kind, UserScreenMessage.compose(saved.id, words), conversationId)
+            submit(c, kind, UserScreenMessage.compose(saved.id, words), conversationId, mode)
             refresh()
         }
     }
 
     /**
-     * 双击:把此刻的屏幕发给单击会展开的那张卡片里的对话,和在那张卡片里发一句话一样(在跑时插话、问你时作为回答、
-     * 办完接着说、空闲时接着最近的对话或开新对话),然后展开卡片看回答。那张卡片没有输入框(要你接管、同意)时
-     * 没有地方可发,就和单击一样展开。
+     * 双击或读屏的截屏操作:展开单击会打开的那张卡片,把此刻的屏幕挂到现有输入框的预览上。
+     * 这里只截屏和填 [PendingScreen],不保存进对话、不提交;用户检查预览后按现有发送键,才由 [send] 调 [deliver]。
+     * 那张卡片没有输入框(要你接管、同意)时没有地方预览,就和单击一样只展开。
      */
-    private fun sendScreen() {
+    private fun previewScreen() {
         val v = view ?: return
         if (capturing) return
         scope.launch {
@@ -544,11 +603,12 @@ class CapsuleController(
                 expand()
                 return@launch
             }
-            val shot = captureScreen() ?: return@launch
-            deliver(target, kind, shot, "")
             CapsuleCards.conversationOf(target)?.let { follow = it }
             open()
             refresh()
+            val shot = captureScreen() ?: return@launch
+            val thumb = withContext(Dispatchers.Default) { shot.jpeg?.let(::screenThumbnail) }
+            if (expanded) inputUi = inputUi.copy(screen = PendingScreen(shot, thumb))
         }
     }
 
@@ -747,7 +807,7 @@ class CapsuleController(
         fadeJob?.cancel()
         val v = view ?: return
         val idleFor = System.currentTimeMillis() - lastActive
-        alpha = if (expanded) 1f else CapsuleFade.alpha(v.kind, v.needCount, v.pill, idleFor)
+        alpha = if (expanded) 1f else CapsuleFade.alpha(v.kind, v.needCount, v.pill, idleFor, last?.opacity?.alpha ?: CapsuleIdleOpacity.DEFAULT.alpha)
         if (!expanded && idleFor < CapsuleFade.IDLE_MS) fadeJob = scope.launch {
             delay(CapsuleFade.IDLE_MS - idleFor)
             fade()
@@ -897,6 +957,7 @@ class CapsuleController(
         override fun start() {
             val w = window ?: return
             val a = area() ?: return
+            resetTaps()
             snap?.cancel()
             wake()
             dragging = true
@@ -928,7 +989,8 @@ class CapsuleController(
                 return
             }
             val x = CapsuleDocking.dragX(dragStartX + dx.toInt(), a, w.width)
-            dock = CapsuleDocking.release(x, y, w.width, w.height, a)
+            val base = area(ime = false) ?: a
+            dock = CapsuleDocking.release(x, y, w.width, w.height, a, base)
             flags.setCapsuleDock(dock)
             snapTo(x, y, CapsuleDocking.dockedX(dock.side, a, w.width))
         }
@@ -956,6 +1018,7 @@ class CapsuleController(
 
     /** 读屏时代替拖动:换到另一边。 */
     private fun swapSide() {
+        resetTaps()
         dock = dock.copy(side = if (dock.side == DockSide.Left) DockSide.Right else DockSide.Left)
         flags.setCapsuleDock(dock)
         place()
@@ -999,8 +1062,7 @@ class CapsuleController(
         val v = view ?: return
         // 松开后还在转时可以重新按:上一段由 talk.begin 丢掉
         if (capturing || (talk.active && !talk.released) || !canTalk()) return
-        tapJob?.cancel()
-        taps.reset()
+        resetTaps()
         wake()
         clearNote()
         val loading = if (v.kind == CapsuleKind.Idle) scope.async { loadIdle() } else null
@@ -1061,7 +1123,7 @@ class CapsuleController(
             refresh()
             return
         }
-        submit(target, kind, text, CapsuleCards.conversationOf(target))
+        submit(target, kind, text, CapsuleCards.conversationOf(target), inputUi.followUpMode)
         showNote(CapsuleVoice.sent(kind, text), CapsuleKind.Done, opensMika = false, NOTE_SENT_MS)
         refresh()
     }
@@ -1075,6 +1137,7 @@ class CapsuleController(
     }
 
     private fun showNote(text: String, kind: CapsuleKind, opensMika: Boolean, ms: Long) {
+        resetTaps()
         note = CapsuleNote(text, kind, opensMika, ++noteCount)
         wake()
         noteJob?.cancel()
@@ -1089,22 +1152,36 @@ class CapsuleController(
         note = null
     }
 
-    /** 胶囊上闪着一句时点它:那句说要打开 Mika 就打开,否则收掉那句、照常点按。 */
+    /** 胶囊上闪着一句时点它:那句说要打开 Mika 就打开,否则只收掉那句;这一下不参与单击或双击计时。 */
     private fun tapCapsule() {
         val n = note
         clearNote()
-        if (n?.opensMika == true) open(null) else tap()
+        if (n != null) {
+            resetTaps()
+            if (n.opensMika) open(null)
+            return
+        }
+        val touch = capsuleTouch
+        capsuleTouch = null
+        val age = touch?.let { SystemClock.uptimeMillis() - it.at }
+        if (touch == null || age == null || age !in 0..taps.timeoutMs) {
+            // 读屏直接执行 onClick,没有 MotionEvent:它是一次明确的单击,不和之前摸过胶囊拼成双击
+            resetTaps()
+            expand()
+            return
+        }
+        tap(touch)
     }
 
     // ---------- 点按与卡片 ----------
 
-    /** 点一颗或胶囊:第一下先等一等,双击的时限里没有第二下才展开卡片;有就是双击,发出此刻的屏幕。 */
-    private fun tap() {
+    /** 真实触摸点一颗或胶囊:两下要在系统时限内、同一位置附近且来源相同;单击仍等双击时限过去再展开。 */
+    private fun tap(touch: Touch) {
         if (capturing) return
-        when (taps.tap(SystemClock.uptimeMillis())) {
+        when (taps.tap(touch.at, touch.x, touch.y, touch.source)) {
             DoubleTap.Tap.Double -> {
                 tapJob?.cancel()
-                sendScreen()
+                previewScreen()
             }
             DoubleTap.Tap.First -> {
                 tapJob?.cancel()
@@ -1139,6 +1216,7 @@ class CapsuleController(
         if (!expanded) anchorY = placedY + (window?.height ?: 0) / 2
         expanded = true
         closing = false
+        syncWindowVisibility()
     }
 
     /** 点在窗口外面:先关掉放大的画面,再收起卡片。 */
@@ -1165,6 +1243,7 @@ class CapsuleController(
             return
         }
         closing = true
+        syncWindowVisibility()
     }
 
     private fun closed() {
@@ -1209,20 +1288,51 @@ class CapsuleController(
         override fun dropScreen() {
             inputUi = inputUi.copy(screen = null)
         }
+        override fun setFollowUpMode(mode: FollowUpMode) {
+            inputUi = inputUi.copy(followUpMode = mode)
+        }
+        override fun askQuit() {
+            closeInput()
+            // 确认卡片没有自己的标题栏可拖,别拿上一张卡片的位置当把手
+            cardHandle = null
+            applyDrag()
+            quitConfirm = true
+        }
+        override fun cancelQuit() {
+            quitConfirm = false
+        }
+        override fun quit() {
+            com.wangzan101.mika.quit.MikaQuit.quit(context)
+        }
         override fun closeKeptPage() {
             keeper.close(KeptPageClose.User)
             collapse()
         }
+        override fun hideCapsule() {
+            // 和设置 › 悬浮胶囊里选「关闭」同一处:开关一变,render 按 CapsuleModel 收掉胶囊和卡片(hide),任务和通知不受影响
+            flags.setCapsuleMode(CapsuleMode.Off)
+            android.widget.Toast.makeText(context, CardCopy.hiddenHint(), android.widget.Toast.LENGTH_LONG).show()
+        }
     }
 
-    /** 卡片窗口里:展开时是卡片,收起时什么都没有(窗口没有大小)。 */
+    /** 卡片窗口里:展开时是卡片,收起时窗口先显式隐藏、内容随后清空。标题栏的电源按钮点过时换成退出的确认。 */
     @Composable
     private fun CardOverlay() {
         val c = card ?: return
         MikaTheme(reduceMotion = animationsOff(context)) {
             val height = if (cardHeight > 0) with(LocalDensity.current) { cardHeight.toDp() } else Dp.Unspecified
-            OverlayMotion(open = !closing, origin = ::cardOrigin, onClosed = ::closed, onOpened = { cardOut = true }) {
-                CapsuleCard(c, preview, zoomed, actions, { elapsed(it) }, input = inputUi, thread = thread, height = height, onHandle = ::onHandle)
+            OverlayMotion(open = !closing, origin = ::cardOrigin, onClosed = ::closed, onOpened = {
+                cardOut = true
+                syncWindowVisibility()
+            }) {
+                if (quitConfirm) QuitCard(actions, height)
+                else CapsuleCard(
+                    c, preview, zoomed, actions, { elapsed(it) }, input = inputUi, thread = thread, height = height, onHandle = ::onHandle,
+                    queuedCount = CapsuleCards.conversationOf(c)?.let { id ->
+                        followUps.count { it.conversationId == id && !it.claimed && it.source == com.wangzan101.mika.task.QueuedSource.Explicit }
+                    } ?: 0,
+                    onQueued = { CapsuleCards.conversationOf(c)?.let(::open) },
+                )
             }
         }
     }
@@ -1253,7 +1363,7 @@ class CapsuleController(
                 CapsuleContent(
                     v,
                     onTap = ::tapCapsule,
-                    onSendScreen = ::sendScreen,
+                    onSendScreen = ::previewScreen,
                     flash = flash,
                     onStop = { v.runKey?.let { TaskService.cancel(context, it) } },
                     onHandBack = { v.runKey?.let { TaskService.handBack(context, runKey = it) } },
@@ -1327,6 +1437,12 @@ class CapsuleController(
         const val IME_POLL_MS = 30L
     }
 }
+
+/** 一颗和卡片两个窗口此刻该不该显示;卡片收尾完成后无论动画停在哪一帧都不能再显示。 */
+internal data class CapsuleWindowVisibility(val capsule: Boolean, val card: Boolean)
+
+internal fun capsuleWindowVisibility(expanded: Boolean, cardOut: Boolean, closing: Boolean): CapsuleWindowVisibility =
+    CapsuleWindowVisibility(capsule = !expanded || !cardOut || closing, card = expanded)
 
 /** 胶囊上临时闪的一句:[kind] 定前面的标记(办好了是勾、没办成是叹号);[opensMika] 时点它打开 Mika;[id] 每句不同(胶囊按它重新定宽)。 */
 private data class CapsuleNote(val text: String, val kind: CapsuleKind, val opensMika: Boolean, val id: Int)

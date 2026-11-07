@@ -96,6 +96,8 @@ class AdbConnectPort(
                         try {
                             return open(ep.host, ep.port).also { cache.save(ep.port); connected = true }
                         } catch (e: AdbConnectionException) {
+                            // 地址策略失败不是这个端口暂时不可用:不能换端口继续,更不能稍后自动重试。
+                            if (e.reason == AdbConnectionException.Reason.NOT_LOCAL) throw e
                             val tls = e.reason == AdbConnectionException.Reason.UNAUTHORIZED ||
                                 e.reason == AdbConnectionException.Reason.TLS_FAILED
                             if (tls && !retried) {

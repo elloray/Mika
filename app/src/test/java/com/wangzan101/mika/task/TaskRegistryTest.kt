@@ -1,6 +1,7 @@
 package com.wangzan101.mika.task
 
 import com.wangzan101.mika.core.run.RunId
+import com.wangzan101.mika.core.run.ChannelPeer
 import com.wangzan101.mika.core.run.RunPhase
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -117,15 +118,46 @@ class TaskRegistryTest {
         assertEquals(RunPhase.Preparing, registry.store.get(RunId(b.key))?.phase)
     }
 
+    @Test fun channelMessageIsExecutedOnlyOnceAndKeepsItsReplyAddress() {
+        val peer = ChannelPeer("wechat", "owner", "thread")
+        val first = registry.tryStart("thread", "任务", queueInConversation = true,
+            channelPeer = peer, channelMessageId = "message-1")
+        val duplicate = registry.tryStart("thread", "任务", queueInConversation = true,
+            channelPeer = peer, channelMessageId = "message-1")
+        assertTrue(first is StartResult.Started)
+        assertSame(StartResult.DuplicateChannelMessage, duplicate)
+        val key = (first as StartResult.Started).run.key
+        assertEquals(peer, registry.store.get(RunId(key))?.channelPeer)
+        assertEquals("message-1", registry.store.get(RunId(key))?.channelMessageId)
+        assertEquals(1, registry.runs().size)
+    }
+
+    @Test fun consecutiveChannelMessagesQueueInOrderWithoutMergingOrRepeatingRedeliveries() {
+        val peer = ChannelPeer("wechat", "owner", "thread")
+        val first = registry.tryStart("thread", "相同的话", queueInConversation = true,
+            channelPeer = peer, channelMessageId = "message-1")
+        val second = registry.tryStart("thread", "相同的话", queueInConversation = true,
+            channelPeer = peer, channelMessageId = "message-2")
+        val redelivered = registry.tryStart("thread", "相同的话", queueInConversation = true,
+            channelPeer = peer, channelMessageId = "message-2")
+
+        assertTrue(first is StartResult.Started)
+        assertTrue(second is StartResult.Queued)
+        assertSame(StartResult.DuplicateChannelMessage, redelivered)
+        assertEquals(listOf("相同的话", "相同的话"), registry.runs().map { it.goal })
+    }
+
     @Test fun messagesAtFinishingBoundaryAreKeptInOrder() {
         val run = (registry.tryStart("thread", "原来的") as StartResult.Started).run
-        assertFalse(registry.deferOrStart("thread", "first"))
-        assertFalse(registry.deferOrStart("thread", "second"))
+        assertFalse(registry.deferOrStart("thread", "first", "id-1"))
+        assertFalse(registry.deferOrStart("thread", "second", "id-2"))
         // 对话还有任务:不交出
-        assertEquals(emptyList<Pair<String, String>>(), registry.takeReady())
+        assertEquals(emptyList<QueuedFollowUp>(), registry.takeReady())
         registry.onEnded(run)
-        assertEquals(listOf("thread" to "first", "thread" to "second"), registry.takeReady())
-        assertEquals(emptyList<Pair<String, String>>(), registry.takeReady())
+        // 同一对话一次只取一件;第一件跑完之前第二件继续排着
+        assertEquals(listOf("first"), registry.takeReady().map { it.text })
+        assertEquals(listOf("second"), registry.takeReady().map { it.text })
+        assertEquals(emptyList<QueuedFollowUp>(), registry.takeReady())
     }
 
     // 收尾和留话同时发生:要么当场开始,要么留下后在收尾时交出,不会两头都落空
@@ -133,11 +165,11 @@ class TaskRegistryTest {
         repeat(200) { i ->
             val run = (registry.tryStart("t$i", "原来的") as StartResult.Started).run
             var startedNow = false
-            val t = Thread { startedNow = registry.deferOrStart("t$i", "插话") }
+            val t = Thread { startedNow = registry.deferOrStart("t$i", "插话", "id-$i") }
             t.start()
             registry.onEnded(run)
             t.join()
-            val handedOut = registry.takeReady().any { it.first == "t$i" }
+            val handedOut = registry.takeReady().any { it.conversationId == "t$i" }
             assertTrue("message $i lost or duplicated", startedNow != handedOut)
         }
     }
@@ -146,9 +178,9 @@ class TaskRegistryTest {
     @Test fun deferredMessageStartsWhenItsConversationIsFree() {
         val a = (registry.tryStart("a", "一") as StartResult.Started).run
         registry.tryStart("b", "别的对话")
-        assertFalse(registry.deferOrStart("a", "下一件"))
+        assertFalse(registry.deferOrStart("a", "下一件", "id-a"))
         registry.onEnded(a)
-        assertEquals(listOf("a" to "下一件"), registry.takeReady())
-        assertTrue(registry.deferOrStart("c", "空着的对话"))
+        assertEquals(listOf("下一件"), registry.takeReady().map { it.text })
+        assertTrue(registry.deferOrStart("c", "空着的对话", "id-c"))
     }
 }

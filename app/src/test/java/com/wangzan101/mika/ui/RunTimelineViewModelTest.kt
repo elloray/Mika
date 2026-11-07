@@ -79,6 +79,36 @@ class RunTimelineViewModelTest {
         assertEquals(1, m.modelCalls)
     }
 
+    @Test fun headerCarriesTheStepLimit() {
+        val limited = run("查天气") {
+            event(RunEvent.TaskStarted(clock, "查天气", "m1", stepLimit = 60))
+            event(RunEvent.TaskEnded(clock + 1_000, "succeeded", "晴"))
+        }
+        assertEquals(60, ready(limited).header.stepLimit)
+        val unlimited = run("看电量") {
+            event(RunEvent.TaskStarted(clock, "看电量", "m1"))
+            event(RunEvent.TaskEnded(clock + 1_000, "succeeded", "85%"))
+        }
+        assertNull(ready(unlimited).header.stepLimit)
+    }
+
+    /** 步数用完后的收尾那一轮记作第上限加一步:显示用了几步时不算它,不会出现 4 / 3。 */
+    @Test fun stepsUsedNeverExceedsTheLimit() {
+        val id = run("查快递") {
+            event(RunEvent.TaskStarted(clock, "查快递", "m1", stepLimit = 3))
+            (1..4).forEach { step -> event(RunEvent.ModelReply(clock + step * 1_000L, step, "", null, null, 500, 10, 0, 900, repliedAtMs = clock + step * 1_000L)) }
+            event(RunEvent.TaskEnded(clock + 5_000, "failed", "已达到 3 步上限"))
+        }
+        assertEquals(3, ready(id).header.stepsUsed)
+        val early = run("看电量") {
+            event(RunEvent.TaskStarted(clock, "看电量", "m1", stepLimit = 30))
+            event(RunEvent.ModelReply(clock + 1_000, 1, "", null, null, 500, 10, 0, 900, repliedAtMs = clock + 1_000))
+            event(RunEvent.ModelReply(clock + 2_000, 2, "85%", null, null, 500, 10, 0, 900, repliedAtMs = clock + 2_000))
+            event(RunEvent.TaskEnded(clock + 3_000, "succeeded", "85%"))
+        }
+        assertEquals(2, ready(early).header.stepsUsed)
+    }
+
     @Test fun groupsEventsIntoSteps() {
         val long = "先".repeat(100)
         val id = run("看电量") {

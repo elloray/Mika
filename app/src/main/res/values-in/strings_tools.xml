@@ -15,6 +15,7 @@
     <string name="tool_check_dialog">Periksa dialog</string>
     <string name="tool_gesture">Gestur multisentuh</string>
     <string name="tool_shell">Perintah sistem</string>
+    <string name="tool_root">Perintah root</string>
     <string name="tool_find_element">Cari di layar</string>
     <string name="tool_collect">Kumpulkan dari beberapa layar</string>
     <string name="tool_phone_run">Beberapa tindakan ponsel</string>

@@ -49,9 +49,9 @@ private class Failure(val message: Int, val detail: String? = null)
  * 中文按文字体系分,和资源目录(values-zh / values-b+zh+Hant)一致。
  */
 private fun classifierLanguage(locale: java.util.Locale): String = when {
-    locale.language != "zh" -> "English"
     locale.script == "Hant" || locale.country in setOf("TW", "HK", "MO") -> "Traditional Chinese"
-    else -> "Simplified Chinese"
+    locale.language == "zh" -> "Simplified Chinese"
+    else -> locale.getDisplayLanguage(java.util.Locale.ENGLISH)
 }
 
 @Composable
@@ -184,7 +184,7 @@ fun AppAccessScreen(onBack: () -> Unit, classifyApps: Boolean = true) {
         }
     }
     if (confirmingClassify) {
-        AlertDialog(
+        MikaDialog(
             onDismissRequest = { confirmingClassify = false },
             title = { Text(stringResource(R.string.appaccess_send_title)) },
             text = { Text(stringResource(R.string.appaccess_send_body)) },
@@ -196,7 +196,7 @@ fun AppAccessScreen(onBack: () -> Unit, classifyApps: Boolean = true) {
         )
     }
     if (recommending) {
-        AlertDialog(
+        MikaDialog(
             onDismissRequest = { recommending = false },
             title = { Text(stringResource(R.string.appaccess_recommend_title)) },
             text = {
@@ -226,7 +226,7 @@ fun AppAccessScreen(onBack: () -> Unit, classifyApps: Boolean = true) {
         )
     }
     editing?.let { pkg ->
-        AlertDialog(onDismissRequest = { editing = null }, title = { Text(stringResource(R.string.appaccess_edit_category)) }, text = {
+        MikaDialog(onDismissRequest = { editing = null }, title = { Text(stringResource(R.string.appaccess_edit_category)) }, text = {
             Column { AppCategory.entries.forEach { category ->
                 TextButton({
                     save { store.classify(mapOf(pkg to AppClassification(category, "", manual = true))) }

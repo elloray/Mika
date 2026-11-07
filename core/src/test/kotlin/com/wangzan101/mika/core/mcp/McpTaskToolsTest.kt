@@ -64,6 +64,8 @@ class McpTaskToolsTest {
     }
 
     @Test fun runTaskValidatesArguments() = runTest {
+        rejects(McpTaskTools.RUN, args("goal" to "hi", "request_id" to null), "request_id")
+        rejects(McpTaskTools.RUN, args("goal" to "hi", "request_id" to "not-a-uuid"), "request_id")
         rejects(McpTaskTools.RUN, args(), "goal")
         rejects(McpTaskTools.RUN, args("goal" to "   "), "goal")
         rejects(McpTaskTools.RUN, args("goal" to 5), "goal must be a string")

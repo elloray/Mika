@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="viewer_no_open_app">لا يوجد تطبيق يمكنه فتح هذا الملف</string>
+    <string name="viewer_no_share_app">لا يوجد تطبيق يمكنه مشاركة هذا الملف</string>
+    <string name="viewer_open_elsewhere">الفتح باستخدام تطبيق آخر</string>
+    <string name="viewer_unsupported">لا يمكن عرض هذا الملف في Mika.</string>
+    <string name="viewer_read_error">حدث خطأ أثناء قراءة هذا الملف.</string>
+    <string name="viewer_page">الصفحة %1$d</string>
+    <string name="viewer_truncated">هذا الملف كبير؛ لا يُعرض سوى بدايته.</string>
+</resources>

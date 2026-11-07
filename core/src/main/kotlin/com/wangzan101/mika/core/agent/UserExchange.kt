@@ -83,6 +83,15 @@ internal class UserExchange(
     fun answerInput(text: String, askId: String? = null): Boolean =
         if (matches(askId)) inputReply?.complete(text) ?: false else false
 
+    /** 渠道的新指令取代旧提问：结束这次等待，不让旧任务无限占着会话。 */
+    fun cancelInput(askId: String): Boolean {
+        val ask = activeAsk
+        if (ask?.askId != askId || ask.kind != Delivery.Ask.Kind.Input) return false
+        val pending = inputReply ?: return false
+        pending.cancel()
+        return true
+    }
+
     fun answerConfirmation(choice: ConfirmChoice, askId: String? = null): Boolean =
         if (matches(askId)) confirmationReply?.complete(choice) ?: false else false
 

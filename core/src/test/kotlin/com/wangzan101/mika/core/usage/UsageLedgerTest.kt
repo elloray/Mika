@@ -35,6 +35,19 @@ class UsageLedgerTest {
         assertEquals(UsageCounts(150, 15, 40, calls = 3, callsWithoutUsage = 1), l.row(1000, main))
     }
 
+    @Test fun compatibilityRetriesCountAttemptsWithoutDuplicatingFinalUsage() {
+        val l = ledger()
+        l.record(main, Usage(100, 10, 40), httpAttempts = 2)
+        l.record(main, null, httpAttempts = 0)
+        assertEquals(UsageCounts(100, 10, 40, calls = 2, callsWithoutUsage = 1), l.row(1000, main))
+    }
+
+    @Test fun localFailureWithoutHttpDoesNotCreateAnEmptyUsageRow() {
+        val l = ledger()
+        l.record(main, null, httpAttempts = 0)
+        assertTrue(l.snapshot().rows.isEmpty())
+    }
+
     @Test fun differentPurposeHourOrProviderAreSeparateCells() {
         val l = ledger()
         l.record(main, Usage(1, 1))

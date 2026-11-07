@@ -11,6 +11,7 @@ import java.io.DataInputStream
 import java.io.IOException
 import java.io.OutputStream
 import java.net.InetAddress
+import java.net.InetSocketAddress
 import java.net.ServerSocket
 import java.net.Socket
 import java.util.concurrent.CopyOnWriteArrayList
@@ -29,7 +30,7 @@ class FakeAdbd(
 ) : AutoCloseable {
     enum class Mode { TLS, PLAIN, LEGACY_AUTH }
 
-    private val server = ServerSocket(0, 4, InetAddress.getLoopbackAddress())
+    private val server = ServerSocket(0, 4, InetAddress.getByAddress(byteArrayOf(127, 0, 0, 1)))
     val port: Int get() = server.localPort
     val received = CopyOnWriteArrayList<AdbMessage>()
     @Volatile var error: Throwable? = null
@@ -70,7 +71,7 @@ class FakeAdbd(
                 out.write(AdbMessage(AdbMessage.STLS, AdbMessage.STLS_VERSION, 0).encode()); out.flush()
                 val stls = readMsg(input) ?: return
                 check(stls.command == AdbMessage.STLS && stls.arg0 == AdbMessage.STLS_VERSION)
-                val ssl = tls.wrap(plain, "127.0.0.1", port, client = false)
+                val ssl = tls.wrap(plain, InetSocketAddress(plain.localAddress, port), client = false)
                 val key = ssl.session.peerCertificates[0].publicKey.encoded
                 if (authorized.none { it.publicKey.encoded.contentEquals(key) }) { ssl.close(); return }
                 input = DataInputStream(ssl.inputStream)
@@ -231,6 +232,30 @@ class AdbConnectionTest {
     fun deviceWithoutAuthSkipsTls() {
         FakeAdbd(emptyList(), FakeAdbd.Mode.PLAIN).use { d ->
             AdbConnection.open("127.0.0.1", d.port, tls).use { c -> assertEquals("p\n", c.exec("echo p").readText()) }
+        }
+    }
+
+    @Test
+    fun localhostAndMappedLoopbackConnectThroughTheVerifiedAddress() {
+        // 原字符串带空白、方括号或 IPv4-mapped 形式;只有直接使用核对过的 InetAddress 才能连上。
+        for (host in listOf(" localhost. ", " [::ffff:127.0.0.1] ")) {
+            FakeAdbd(listOf(TestTls.client)).use { d ->
+                AdbConnection.open(host, d.port, tls).use { c ->
+                    assertEquals(host, "ok\n", c.exec("echo ok").readText())
+                }
+                d.awaitSessionEnd()
+                assertNull(host, d.error)
+            }
+        }
+    }
+
+    @Test
+    fun hostileLookalikeHostsAreRejectedBeforeConnecting() {
+        for (host in listOf("127.evil.com", "127.0.0.1.example.com", "evil.localhost", "::ffff:192.0.2.1")) {
+            val e = assertThrows(host, AdbConnectionException::class.java) {
+                AdbConnection.open(host, 5555, tls, timeoutMs = 50)
+            }
+            assertEquals(host, AdbConnectionException.Reason.NOT_LOCAL, e.reason)
         }
     }
 

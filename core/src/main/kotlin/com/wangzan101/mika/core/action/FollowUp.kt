@@ -1,5 +1,6 @@
 package com.wangzan101.mika.core.action
 
+import com.wangzan101.mika.core.gate.ConfirmationRequest
 import com.wangzan101.mika.core.guard.GuardVerdict
 import com.wangzan101.mika.core.tool.ToolExecution
 import kotlinx.serialization.json.JsonObject
@@ -14,6 +15,12 @@ interface FollowUp {
 
     /** 被确认关卡拦下:说明交给模型之后、记进运行记录之前。 */
     fun refused(content: JsonObject) {}
+
+    /**
+     * 不在屏上、工具声明要问的一步([request] 是给用户看的申报):当场问用户,返回用户的决定(同意时 ok 为 true,
+     * 同意已记进确认关卡);问不了人为 null(这一步就不做)。
+     */
+    suspend fun approve(request: ConfirmationRequest): ToolExecution? = null
 
     companion object {
         val NONE = object : FollowUp {}

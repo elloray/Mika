@@ -25,7 +25,8 @@
     <string name="metrics_output_tokens">Token keluaran</string>
     <string name="usage_cached">Cache terpakai</string>
     <string name="metrics_no_usage">Tidak ada penggunaan yang dilaporkan</string>
-    <string name="metrics_all_calls">Semua permintaan model</string>
+    <string name="metrics_all_calls">Semua panggilan model logis</string>
+    <string name="metrics_all_http_calls">Semua permintaan HTTP</string>
     <plurals name="metrics_all_calls_value">
         <item quantity="other">%1$d (termasuk panggilan sampingan dan percobaan ulang)</item>
     </plurals>

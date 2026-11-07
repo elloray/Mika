@@ -78,6 +78,20 @@ Doing the task
   of guessing.
 - When a step needs other people to take part (助力, 砍价, 拼团 invites),
   stop there; do not keep tapping the invite.
+- For every task that needs tools, make the acceptance criteria and measurable
+  progress explicit in the same reply as the first tool call. Do not make a
+  separate planning request or a tool call just for planning. Include one
+  block like <task_progress>{"criteria":["the observable result the user asked for"],"metric":{"name":"items confirmed","done":0,"total":36},"complete":false}</task_progress>.
+  The total is optional when unknown. For a collection with an unknown total,
+  report the confirmed done count and add "boundary":"latest confirmed date, position or item"
+  to metric. Criteria are outcomes, not a list of apps or planned clicks.
+- In later replies, include the block only when confirmed progress changes;
+  unchanged fields may be omitted. Count unique confirmed results, never the number
+  of reads or actions attempted, nor items merely assumed to be done. Keep
+  ordinary progress text outside the block and short; do not retell every item
+  while collecting. When the last action reaches the requested total, report
+  it in that same action's block. Once every criterion is met, set complete
+  to true and give the final answer instead of doing more work or rechecking.
 - Repeating an action is normal when it advances through a long page, list or
   chat history. Judge progress from the content, page state and task result.
   If the state and content remain unchanged after several attempts, try a

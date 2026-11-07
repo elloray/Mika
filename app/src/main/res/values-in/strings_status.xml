@@ -53,6 +53,7 @@
     <string name="turn_on_go">Aktifkan</string>
     <string name="banner_a11y_not_running">Layanan aksesibilitas tidak berjalan</string>
     <string name="banner_a11y_not_running_detail">Matikan lalu aktifkan lagi</string>
+    <string name="banner_a11y_restricted_detail">Izinkan setelan dibatasi di info aplikasi Mika</string>
     <string name="banner_a11y_locked">Ponsel belum dibuka kuncinya sejak dinyalakan, jadi layanan aksesibilitas tidak berjalan</string>
     <string name="banner_a11y_locked_detail">Akan kembali setelah Anda membuka kunci ponsel, tanpa perlu mengubah setelan</string>
     <string name="banner_no_model">Belum ada model yang bisa dipakai</string>
@@ -68,6 +69,8 @@
     <string name="explain_a11y_off">Aktifkan layanan aksesibilitas</string>
     <string name="explain_a11y_off_body">Mika memakai layanan aksesibilitas untuk membaca dan mengendalikan layar virtualnya sendiri. Cari Mika di Aksesibilitas pada setelan sistem (di beberapa ponsel ada di bawah “Aplikasi yang diunduh” atau “Layanan terpasang”) dan aktifkan.</string>
     <string name="explain_a11y_not_running_body">Setelan sistem menunjukkan layanan aksesibilitas Mika aktif, tetapi sebenarnya tidak berjalan (ini sering terjadi setelah Mika dihentikan paksa). Matikan Mika di setelan aksesibilitas, lalu aktifkan lagi.</string>
+    <string name="explain_a11y_restricted_off_body">Jika Android mencegah Anda mengaktifkan Mika, buka info aplikasi Mika dan pilih «Izinkan setelan dibatasi» dari menu jika opsi tersebut tersedia. Lalu kembali ke Aksesibilitas dan aktifkan Mika.</string>
+    <string name="explain_a11y_restricted_body">Android dapat mencegah aplikasi yang dipasang di luar toko aplikasi terhubung ke aksesibilitas sampai setelan dibatasi diizinkan. Buka info aplikasi Mika, buka menunya, lalu pilih «Izinkan setelan dibatasi» jika tersedia. Setelah itu, nonaktifkan Mika lalu aktifkan lagi di Aksesibilitas.</string>
     <string name="explain_no_model">Tambahkan model</string>
     <string name="explain_no_model_body">Mika memerlukan model bahasa besar dengan pemanggilan alat untuk berpikir dan bertindak. Cukup masukkan URL penyedia, nama model, dan kunci API.</string>
     <string name="explain_focus">Disarankan Android 14 atau lebih baru</string>

@@ -244,4 +244,16 @@ class MemoryStoreTest {
         assertTrue(s.undo(a.undoToken))
         assertTrue(s.items.value.isEmpty())
     }
+
+    @Test fun duplicateIdsNeverAddUpdateOrDelete() {
+        val first = MemoryItem("same", MemoryKind.fact, "甲", emptyList(), said, MemoryStatus.active, createdAt = 0, updatedAt = 0)
+        val second = first.copy(content = "乙")
+        val p = FakePersistence(listOf(first, second))
+        val s = MemoryStore(p, clock = { now }, ids = { "same" })
+        assertEquals("duplicate_id", rejectCode(s.add(MemoryKind.fact, "丙", emptyList(), said)))
+        assertEquals("duplicate_id", rejectCode(s.update("same", "改过的", null, said)))
+        assertEquals("duplicate_id", rejectCode(s.forget("same")))
+        assertEquals(listOf("甲", "乙"), s.items.value.map { it.content })
+        assertEquals(0, p.saves)
+    }
 }

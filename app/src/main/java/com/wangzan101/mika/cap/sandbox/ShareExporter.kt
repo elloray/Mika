@@ -17,6 +17,7 @@ import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.withContext
 import java.io.InputStream
+import java.security.MessageDigest
 
 class FileTooLarge(val bytes: Long) : Exception("file is larger than ${ShareRules.MAX_BYTES shr 20} MB")
 
@@ -46,6 +47,7 @@ class ShareExporter(private val context: Context) {
             put(MediaStore.Downloads.IS_PENDING, 1)
         }
         val uri = resolver.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, values) ?: throw IllegalStateException("MediaStore insert failed")
+        val digest = MessageDigest.getInstance("SHA-256")
         var size = 0L
         try {
             resolver.openOutputStream(uri)!!.use { out ->
@@ -59,6 +61,7 @@ class ShareExporter(private val context: Context) {
                     // 检查之后文件又变大了:同样按上限算
                     if (size > ShareRules.MAX_BYTES) throw FileTooLarge(size)
                     out.write(buf, 0, n)
+                    digest.update(buf, 0, n)
                 }
             }
             currentCoroutineContext().ensureActive()
@@ -68,7 +71,7 @@ class ShareExporter(private val context: Context) {
             throw e
         }
         val actual = displayName(uri) ?: name
-        return SharedFile(actual, size, "Download/Mika/$actual", uri.toString())
+        return SharedFile(actual, size, "Download/Mika/$actual", uri.toString(), digest.digest().joinToString("") { "%02x".format(it) })
     }
 
     /**

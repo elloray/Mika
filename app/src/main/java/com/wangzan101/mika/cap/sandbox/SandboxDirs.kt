@@ -5,6 +5,8 @@ import com.wangzan101.mika.core.workspace.WorkspaceFileGate
 import java.io.File
 import java.security.MessageDigest
 import com.wangzan101.mika.core.workspace.SandboxTree
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 /**
  * 沙箱在宿主上的目录:`files/sandbox/` 下的根文件系统、工作区、技能、/proc 替身;PRoot 的临时目录在缓存里;
@@ -31,6 +33,20 @@ class SandboxDirs internal constructor(
     fun workspace(conversationId: String): File = File(work, dirName(conversationId))
 
     fun lib(name: String): File = File(nativeDir, name)
+
+    /**
+     * 删、换沙箱里的命令写得到的整棵目录(工作区、运行环境)都经这里:拿着 [tree] 的独占许可在 IO 线程里做,
+     * 等在跑的命令和别的写入都结束才开始,做完之前新的命令、导入也等着,免得一边删一边有人往里写。
+     * 代价:删一个大目录要多久,所有对话的沙箱命令就要等多久。等许可时情况可能变了(比如对话又有了任务),
+     * 要看的条件在 [block] 里拿到许可后再查。
+     */
+    suspend fun <T> exclusiveWrite(block: suspend () -> T): T = tree.exclusive { withContext(Dispatchers.IO) { block() } }
+
+    /** 删掉对话 [conversationId] 的整个工作区(按句柄删、不跟进链接,见 [exclusiveWrite])。 */
+    suspend fun deleteWorkspace(conversationId: String) = deleteWorkDir(workspace(conversationId).name)
+
+    /** 删掉 `work/` 下名为 [dirName] 的工作区。 */
+    suspend fun deleteWorkDir(dirName: String) = exclusiveWrite { gate.deleteTree(work, dirName) }
 
     /**
      * 绑定前把要绑的目录都建好:源目录不存在时 PRoot 会往标准错误写一句警告,

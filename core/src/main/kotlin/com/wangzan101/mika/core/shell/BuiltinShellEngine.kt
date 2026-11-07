@@ -33,11 +33,22 @@ interface BuiltinShellPlatform {
     suspend fun launchHelper()
     /** 让正在跑的助手撤掉改动并退出;没有就什么都不做。 */
     fun stopHelper()
-    /** 删掉配对钥匙和交接口令。 */
+    /** 删掉配对钥匙和交接口令;「用 root 启动」也一并关掉(解除配对就是停止手机操作,看门狗不再经 su 把助手起回来)。 */
     fun forget()
     /** 没配对时收下过助手(是电脑经 USB 起的):它停了要告诉用户怎么再起,而不是当作从没设置过。持久化。 */
     fun usbStarted(): Boolean
     fun setUsbStarted(on: Boolean)
+    /** 「用 root 启动」此刻能不能用(用户的开关、有没有 su、su 上一次的答复);默认没有这条路。 */
+    fun rootStart(): RootStart = RootStart.Off
+    /**
+     * 经 su 以 shell 身份起助手(不等交接),返回 su 的答复:[SuAnswer.Granted] 时助手已在起,交接由引擎等;
+     * 手机上找不到 su 了为 null。失败抛异常(当作原因不明)。
+     */
+    suspend fun launchHelperAsRoot(): SuAnswer? = null
+    /** 记下 su 的答复,持久化;null 是忘掉上一次的拒绝(用户点了重试)。 */
+    fun setRootAnswer(answer: SuAnswer?) {}
+    /** 用户明确点了 Root 失败后的重试。返回 true 表示平台已发起异步授权,完成后会通知引擎。 */
+    fun requestRootStart(): Boolean = false
 }
 
 /** 看门狗重起助手的间隔:第 n 次失败后等 base·2^(n-1),封顶 [maxMs];连续失败 [maxAttempts] 次后停下等人或等开关变化。 */
@@ -54,23 +65,27 @@ object BuiltinShellFailures {
         // 配对端口连不上:配对窗口已经关了(端口随窗口一起消失)
         AdbPairingException.Reason.CONNECT_FAILED -> BuiltinShellFailure.PairingWindowClosed
         AdbPairingException.Reason.TLS_FAILED, AdbPairingException.Reason.PROTOCOL -> BuiltinShellFailure.Unknown
+        AdbPairingException.Reason.NOT_LOCAL -> BuiltinShellFailure.NotLocal
     }
 
     fun ofConnection(reason: AdbConnectionException.Reason) = when (reason) {
         AdbConnectionException.Reason.UNAUTHORIZED -> BuiltinShellFailure.AuthorizationRevoked
+        AdbConnectionException.Reason.NOT_LOCAL -> BuiltinShellFailure.NotLocal
         AdbConnectionException.Reason.CONNECT_FAILED,
         AdbConnectionException.Reason.TLS_FAILED,
         AdbConnectionException.Reason.PROTOCOL -> BuiltinShellFailure.ConnectFailed
     }
 
-    /** 看门狗自己再试有没有用:钥匙被撤销、没 Wi-Fi 要等用户或开关变化。 */
+    /** 看门狗自己再试有没有用:钥匙被撤销、地址不合法、没 Wi-Fi 要等用户或开关变化。 */
     fun retryable(f: BuiltinShellFailure) = f == BuiltinShellFailure.ConnectFailed ||
         f == BuiltinShellFailure.HelperStartFailed || f == BuiltinShellFailure.Unknown
 }
 
 /**
  * 内置助手的状态与看门狗。[helper] 有值就是助手的 Binder 在手(Running);
- * 没有时:配过对就先等 [graceMs](还活着的助手会在 Mika 进程起来后自己交接),再经 adbd 起一个,失败按 [backoff] 重试。
+ * 没有时:Mika 自己起得来(用户打开了「用 root 启动」且能用,或配过对)就先等 [graceMs](还活着的助手会在 Mika 进程起来后自己交接),
+ * 再起一个:先经 su(见 [BuiltinShellPlatform.rootStart]),不行或没打开再经 adbd;失败按 [backoff] 重试。
+ * su 拒绝或不回话时记下来,不再自己去问,等用户点重试。
  * 要起助手时无线调试关着,有 [autoOn] 就先替用户打开(条件和停下的规矩见 [WirelessDebuggingAutoOn])。
  */
 class BuiltinShellEngine(
@@ -108,16 +123,27 @@ class BuiltinShellEngine(
         else -> HelperRestart.None
     }
 
+    override val rootStart: Boolean get() = platform.rootStart() == RootStart.Ready
+
+    /** Mika 自己起得来助手:经 su(打开了且能用)或经已配对的无线调试。 */
+    private fun selfStart(): Boolean = rootStart || platform.paired()
+
     private fun initialStatus(): BuiltinShellStatus = when {
         helper.value != null -> BuiltinShellStatus.Running
+        selfStart() -> BuiltinShellStatus.Connecting
         // 电脑起过的助手可能还活着,等它来交接
-        !platform.paired() -> if (platform.usbStarted()) BuiltinShellStatus.Connecting else BuiltinShellStatus.NotPaired
-        else -> BuiltinShellStatus.Connecting
+        platform.usbStarted() -> BuiltinShellStatus.Connecting
+        else -> idleStatus()
     }
 
-    /** 没配对、手里也没有助手时的状态:电脑起过的助手停了就照实说,否则就是还没设置。 */
-    private fun unpairedStatus(): BuiltinShellStatus =
-        if (platform.usbStarted()) BuiltinShellStatus.Failed(BuiltinShellFailure.UsbHelperStopped) else BuiltinShellStatus.NotPaired
+    /**
+     * Mika 自己起不来、手里也没有助手时的状态:打开了「用 root 启动」却用不了就说为什么;
+     * 电脑起过的助手停了就照实说;否则就是还没设置。
+     */
+    private fun idleStatus(): BuiltinShellStatus {
+        platform.rootStart().failure?.let { return BuiltinShellStatus.Failed(it) }
+        return if (platform.usbStarted()) BuiltinShellStatus.Failed(BuiltinShellFailure.UsbHelperStopped) else BuiltinShellStatus.NotPaired
+    }
 
     /** 开始看着助手:掉线就重起。只在功能打开时调。 */
     @Synchronized
@@ -130,17 +156,17 @@ class BuiltinShellEngine(
                 if (h != null) {
                     synchronized(this@BuiltinShellEngine) { failures = 0; retryJob?.cancel() }
                     autoOn?.reset()
-                    // 没配对就来了:是电脑经 USB 起的。记下来,它停了才知道该怎么提示
-                    if (!platform.paired()) platform.setUsbStarted(true)
+                    // 没配对、也没用 root 就来了:是电脑经 USB 起的。记下来,它停了才知道该怎么提示
+                    if (!platform.paired() && platform.rootStart() == RootStart.Off) platform.setUsbStarted(true)
                     _status.value = BuiltinShellStatus.Running
-                } else if (!platform.paired()) {
+                } else if (!selfStart()) {
                     // App 刚起来时还活着的助手会自己来交接;用着用着断了也可能是正在换一个新的来交接:
                     // 都先等一会儿再说它停了,免得界面一闪「已停止」
                     if (platform.usbStarted()) {
                         _status.value = BuiltinShellStatus.Connecting
                         schedule(graceMs)
                     } else {
-                        _status.value = unpairedStatus()
+                        _status.value = idleStatus()
                     }
                 } else {
                     if (_status.value == BuiltinShellStatus.Running) _status.value = BuiltinShellStatus.Connecting
@@ -153,10 +179,23 @@ class BuiltinShellEngine(
 
     /** 有人要用助手却没有:没在起、也没排着重试就马上起一次。 */
     fun need() {
-        if (helper.value != null || !platform.paired()) return
+        if (helper.value != null || !selfStart()) return
         synchronized(this) { if (retryJob?.isActive == true) return }
         if (launchLock.isLocked) return
         schedule(0)
+    }
+
+    /**
+     * 「用 root 启动」的开关或 su 的答复变了(用户在设置、引导页里打开、关掉、重新授权):助手不在就按新的情况从头再试;
+     * Mika 自己起不来了就照实改状态。
+     */
+    fun rootChanged() {
+        if (helper.value != null) return
+        synchronized(this) {
+            failures = 0
+            retryJob?.cancel()
+        }
+        if (selfStart()) schedule(0) else _status.value = idleStatus()
     }
 
     /**
@@ -164,7 +203,8 @@ class BuiltinShellEngine(
      * Mika 自己正在写这个开关时不跟着动:系统可能马上拨回去,由写的那一边判断。
      */
     fun wirelessDebuggingChanged() {
-        if (helper.value != null || !platform.paired()) return
+        // 经 su 起助手不看无线调试
+        if (helper.value != null || !platform.paired() || rootStart) return
         if (autoOn?.writing == true) return
         if (platform.wirelessDebugging() == false) {
             _status.value = offStatus()
@@ -225,8 +265,22 @@ class BuiltinShellEngine(
 
     private suspend fun launchOnce(): Unit = launchLock.withLock {
         if (helper.value != null) return@withLock
+        // 先走 root:不用配对、不用 Wi-Fi;不行时配过对就接着走无线调试
+        if (rootStart) {
+            _status.value = BuiltinShellStatus.Connecting
+            val failure = attemptRoot()
+            if (failure == null) {
+                lastError = null
+                _status.value = BuiltinShellStatus.Running
+                return@withLock
+            }
+            if (!platform.paired()) {
+                failed(failure)
+                return@withLock
+            }
+        }
         if (!platform.paired()) {
-            _status.value = unpairedStatus()
+            _status.value = idleStatus()
             return@withLock
         }
         if (platform.wirelessDebugging() == false && !turnOnWirelessDebugging()) return@withLock
@@ -237,6 +291,11 @@ class BuiltinShellEngine(
             _status.value = BuiltinShellStatus.Running
             return@withLock
         }
+        failed(failure)
+    }
+
+    /** 报失败;看门狗自己再试有用的按 [backoff] 排下一次。 */
+    private fun failed(failure: BuiltinShellFailure) {
         _status.value = BuiltinShellStatus.Failed(failure)
         val next = synchronized(this) { ++failures }
         if (BuiltinShellFailures.retryable(failure)) backoff.delayAfter(next)?.let { d ->
@@ -246,6 +305,27 @@ class BuiltinShellEngine(
                     launchOnce()
                 }
             }
+        }
+    }
+
+    /** 经 su 起一次助手并等交接;su 的答复记下来(拒绝、不回话之后就不再自己去问)。 */
+    private suspend fun attemptRoot(): BuiltinShellFailure? {
+        val answer = try {
+            withContext(io) { platform.launchHelperAsRoot() }
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            lastError = describe(e)
+            return BuiltinShellFailure.Unknown
+        } ?: return BuiltinShellFailure.RootUnavailable.also { lastError = "su not found" }
+        platform.setRootAnswer(answer)
+        return when (answer) {
+            SuAnswer.Granted ->
+                if (withTimeoutOrNull(handoffTimeoutMs) { helper.first { it != null } } != null) null
+                else BuiltinShellFailure.HelperStartFailed.also { lastError = "helper handoff timed out (root)" }
+            SuAnswer.Denied -> BuiltinShellFailure.RootDenied.also { lastError = "su denied" }
+            SuAnswer.NoAnswer -> BuiltinShellFailure.RootNoAnswer.also { lastError = "su did not answer" }
+            SuAnswer.WrongUid -> BuiltinShellFailure.RootNoShellUid.also { lastError = "su cannot switch to the shell uid" }
         }
     }
 
@@ -326,6 +406,15 @@ class BuiltinShellEngine(
             failures = 0
             retryJob?.cancel()
         }
+        // 用户看着 su 拒绝、没回话的提示点了重试:由平台明确再请求一次,未授权状态不会自动问 su
+        val s = _status.value
+        if (s is BuiltinShellStatus.Failed && s.reason in ROOT_ASKABLE) {
+            if (platform.requestRootStart()) {
+                _status.value = BuiltinShellStatus.Connecting
+                return
+            }
+            platform.setRootAnswer(null)
+        }
         // 用户点了重试:之前替用户打开无线调试时的拒绝不再算数(不允许的网络上系统会再问一次)
         autoOn?.reset()
         if (helper.value != null) {
@@ -347,5 +436,10 @@ class BuiltinShellEngine(
             platform.setPaired(false)
             _status.value = BuiltinShellStatus.NotPaired
         }
+    }
+
+    private companion object {
+        /** 点重试会再问 su 的几种失败。 */
+        val ROOT_ASKABLE = setOf(BuiltinShellFailure.RootDenied, BuiltinShellFailure.RootNoAnswer, BuiltinShellFailure.RootNoShellUid)
     }
 }

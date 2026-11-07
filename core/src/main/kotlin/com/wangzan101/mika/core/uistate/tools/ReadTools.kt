@@ -5,6 +5,8 @@ import com.wangzan101.mika.core.prompt.Feedback
 import com.wangzan101.mika.core.uistate.ScreenFamily
 import com.wangzan101.mika.core.tool.Args
 import com.wangzan101.mika.core.tool.HINT_PROTECTED
+import com.wangzan101.mika.core.tool.HINT_DISPLAY_CAPTURE
+import com.wangzan101.mika.core.uistate.ScreenDiagnosis
 import com.wangzan101.mika.core.visual.Recall
 import com.wangzan101.mika.core.tool.Risk
 import com.wangzan101.mika.core.tool.ToolContext
@@ -57,7 +59,14 @@ internal class Screenshot(f: ScreenFamily) : ScreenTool(f, "screenshot") {
             put("ok", false); put("error", "protected_content"); put("protected", true)
             put("message", HINT_PROTECTED); put("recoverable", true)
         })
-        val png = screen.screenshotPng() ?: return fail("screenshot_unavailable", Feedback["screenshot_unavailable"])
+        val png = screen.screenshotPng()
+        if (png == null) {
+            val captureError = screen.peek().captureError
+            if (captureError == ScreenDiagnosis.DISPLAY_CAPTURE_UNAVAILABLE) {
+                return fail(captureError, HINT_DISPLAY_CAPTURE, recoverable = false)
+            }
+            return fail("screenshot_unavailable", Feedback["screenshot_unavailable"])
+        }
         val s = ctx.lastSnapshot
         val shots = ctx.shots
         // 和读屏一样登记进回看,旧图被裁掉后还能按 screenshotId 找回;付款页的图不留

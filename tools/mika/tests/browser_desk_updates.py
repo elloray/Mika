@@ -17,7 +17,7 @@ try:
 except ImportError:
     sync_playwright = None
 
-from test_mika_cli import api, SNAPSHOT, TOKEN
+from test_mika_cli import api, DISCOVERY, SNAPSHOT, TOKEN
 from test_mika_desk import desk
 
 
@@ -62,6 +62,42 @@ def read_tasks(tasks, path):
 
 @unittest.skipIf(sync_playwright is None, "Playwright is not installed")
 class DeskUpdatesTest(unittest.TestCase):
+    def test_lost_submission_survives_reload_and_recovers_without_a_second_task(self):
+        for location in ("recent", "older", "missing"):
+            with self.subTest(location=location):
+                accepted = location != "missing"
+                requests, tasks = [], []
+                def respond(method, path, body):
+                    if path == "/api/v1":
+                        return 200, {**DISCOVERY, "capabilities": ["tasks", "task_recovery"]}, {}
+                    if method == "POST" and path == "/api/v1/tasks":
+                        requests.append(body)
+                        if accepted or len(requests) > 1:
+                            tasks.append(snapshot(body["request_id"], "mcp-qa", body["goal"], answer="Recovered"))
+                        return "drop" if len(requests) == 1 else (201, tasks[0], {})
+                    if requests and path == "/api/v1/tasks/" + requests[0]["request_id"]:
+                        return (200, tasks[0], {}) if tasks else (404, {"error": {"code": "not_found"}}, {})
+                    return read_tasks([] if location == "older" else tasks, path)
+
+                with browser_desk(respond) as (page, _):
+                    expect(page.locator("#connection-line")).to_have_text("在线")
+                    page.locator("#goal").fill("核对本周清单")
+                    page.locator("#submit-goal").click()
+                    expect(page.locator("#pending-run")).to_be_visible()
+                    page.reload()
+                    if location != "recent":
+                        expect(page.locator("#lookup-run")).to_be_enabled()
+                        expect(page.locator("#pending-label")).to_contain_text(requests[0]["request_id"])
+                        page.locator("#lookup-run").click()
+                    if not accepted:
+                        expect(page.locator("#notice")).to_contain_text("暂未查到")
+                        page.locator("#retry-run").click()
+                    expect(page.locator(".answer")).to_have_text("Recovered")
+                    expect(page.locator("#pending-run")).to_be_hidden()
+                    self.assertEqual(1 if accepted else 2, len(requests))
+                    self.assertTrue(all(r == requests[0] for r in requests))
+                    self.assertEqual(1, len(tasks))
+
     def test_grouping_continuation_fresh_chat_and_independent_process_target(self):
         conv = "mcp-first"
         tasks = [

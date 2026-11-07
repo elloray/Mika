@@ -139,7 +139,9 @@ internal object PhoneRun : PhoneTool {
             if (!ok) { stop = error ?: "failed"; break }
             if (content["app_switched"] != null) { stop = "app_switched"; break }
             if (content["opened"] != null) { stop = "opened_elsewhere"; break }
-            if ((content["screen"] as? JsonObject)?.get("imageReason") != null) { stop = "screen_needs_review"; break }
+            val screen = content["screen"] as? JsonObject
+            if (content["captureError"] != null || screen?.get("captureError") != null) { stop = "display_capture_unavailable"; break }
+            if (screen?.get("imageReason") != null) { stop = "screen_needs_review"; break }
         }
         val last = run(sub, ctx, commands.size, "phone_list_elements", JsonObject(emptyMap()))
         if (last.content["ok"] == JsonPrimitive(true)) finalScreen = last.content

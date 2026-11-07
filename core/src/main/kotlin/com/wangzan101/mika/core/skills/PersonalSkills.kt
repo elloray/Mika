@@ -19,17 +19,22 @@ data class PersonalSkill(
     val outcomes: List<String>,
     /** 更新草稿起草时读到的原文指纹；收下前必须重新读原文核对。 */
     val baseHash: String? = null,
-    /** 从哪儿来的:[SOURCE_USER] 是用户在任务里要求写下的(`skill_save`);为 null 是从办成的任务里沉淀的。 */
+    /**
+     * 从哪儿来的:[SOURCE_USER] 是用户在任务里要求写下的(`skill_save`);[SOURCE_IMPORTED] 是从别人分享的 SKILL.md 导入的
+     * (见 [SkillImport]);为 null 是从办成的任务里沉淀的。
+     */
     val source: String? = null,
 ) {
     val createdByUser: Boolean get() = source == SOURCE_USER
+    val imported: Boolean get() = source == SOURCE_IMPORTED
 
     /** 停用后恢复时回到哪一档:还没办成过的(沉淀的、用户要求写下的)回到试用,办成过的回到正式。 */
     fun restoredStatus(): SkillStatus =
-        if ((learnedFrom != null || createdByUser) && SkillResult.verified.name !in outcomes) SkillStatus.trial else SkillStatus.active
+        if ((learnedFrom != null || createdByUser || imported) && SkillResult.verified.name !in outcomes) SkillStatus.trial else SkillStatus.active
 
     companion object {
         const val SOURCE_USER = "user"
+        const val SOURCE_IMPORTED = "imported"
     }
 }
 
@@ -66,24 +71,34 @@ interface PersonalSkills {
         /** 把头部的 `name:` 行改成 [name](收下更新草稿、改过全文时,头部名字要和存放的名字一致);没有头部原样返回。 */
         fun withName(markdown: String, name: String): String = withField(markdown, "name", name)
 
-        /** 头部的 [key] 行换成 [value](没有就加上);没有头部的原样返回。 */
+        /** 头部的 [key] 行换成 [value](没有就加上);重复字段只留一个,没有头部的原样返回。 */
         fun withField(markdown: String, key: String, value: String): String {
             val lines = markdown.replace("\r\n", "\n").split("\n").toMutableList()
             if (lines.firstOrNull()?.trimEnd() != "---") return markdown
             val end = (1 until lines.size).firstOrNull { lines[it].trimEnd() == "---" } ?: return markdown
-            val i = (1 until end).firstOrNull { lines[it].startsWith("$key:") }
-            if (i != null) lines[i] = "$key: $value" else lines.add(end, "$key: $value")
+            val matches = (1 until end).filter { isField(lines[it], key) }
+            if (matches.isEmpty()) lines.add(end, "$key: $value") else {
+                lines[matches.first()] = "$key: $value"
+                matches.drop(1).asReversed().forEach(lines::removeAt)
+            }
             return lines.joinToString("\n")
         }
 
-        /** 去掉头部的 [key] 行;没有头部或没有这一行的原样返回。 */
+        /** 去掉头部的全部 [key] 行;没有头部或没有这一行的原样返回。 */
         fun withoutField(markdown: String, key: String): String {
             val lines = markdown.replace("\r\n", "\n").split("\n").toMutableList()
             if (lines.firstOrNull()?.trimEnd() != "---") return markdown
             val end = (1 until lines.size).firstOrNull { lines[it].trimEnd() == "---" } ?: return markdown
-            val i = (1 until end).firstOrNull { lines[it].startsWith("$key:") } ?: return markdown
-            lines.removeAt(i)
+            val matches = (1 until end).filter { isField(lines[it], key) }
+            if (matches.isEmpty()) return markdown
+            matches.asReversed().forEach(lines::removeAt)
             return lines.joinToString("\n")
+        }
+
+        /** 和 FrontMatter 一样接受键名两边的空白。 */
+        private fun isField(line: String, key: String): Boolean {
+            val colon = line.indexOf(':')
+            return colon > 0 && line.substring(0, colon).trim() == key
         }
     }
 }

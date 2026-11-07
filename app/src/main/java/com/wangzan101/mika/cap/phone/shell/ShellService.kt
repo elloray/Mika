@@ -7,6 +7,7 @@ import android.content.ClipData
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.content.pm.ActivityInfo
 import android.content.pm.PackageManager
 import android.content.pm.ResolveInfo
 import android.media.AudioManager
@@ -32,6 +33,7 @@ import android.util.Log
 import android.view.Display
 import android.view.InputDevice
 import android.view.InputEvent
+import android.view.KeyCharacterMap
 import android.view.KeyEvent
 import android.view.MotionEvent
 import android.view.Surface
@@ -41,6 +43,7 @@ import com.wangzan101.mika.core.uistate.PressKeys
 import java.io.File
 import java.io.ByteArrayOutputStream
 import java.lang.reflect.Method
+import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicReference
@@ -61,6 +64,8 @@ class ShellService(
 ) : IMikaShell.Stub() {
     private val context: Context = ShellContext.create()
     private val displays = HashMap<Int, VirtualDisplay>()
+    private var orientationWatch: DisplayOrientationWatch? = null
+    private val requestedOrientations = ConcurrentHashMap<Int, Int>()
     /** 被静音的包 → 静音前的 PLAY_AUDIO 模式("default" 表示原先未设置),落在 [stateDir] 里,进程被杀后下次启动接着恢复。 */
     private val muted = AudioMuteLedger(File(stateDir, "mika_audio_mute_$allowedUid"))
     /** Mika 所在的用户:本来那份 App 装在这里;别的用户里的是另一份(分身、工作资料)。 */
@@ -129,6 +134,7 @@ class ShellService(
         val id = vd.display.displayId
         synchronized(displays) { displays[id] = vd }
         setFullscreenWindowingMode(id)
+        ensureOrientationWatch()
         setImePolicy(id)
         if (DisplayAwake.needed(flags, FLAG_OWN_DISPLAY_GROUP, displayGroup(id))) awake.start(id)
         return id
@@ -177,7 +183,70 @@ class ShellService(
 
     override fun releaseDisplay(displayId: Int) {
         awake.stop(displayId)
-        synchronized(displays) { displays.remove(displayId) }?.release()
+        // 锁里只摘下来,关监听(binder)和放屏在锁外做
+        val (vd, watch) = synchronized(displays) {
+            displays.remove(displayId) to (if (displays.isEmpty()) orientationWatch.also { orientationWatch = null } else null)
+        }
+        watch?.close()
+        if (watch != null) requestedOrientations.clear()
+        vd?.release()
+    }
+
+    /**
+     * STEAL_TOP_FOCUS_DISABLED 保住主屏焦点,但有的系统因此不再采纳后台 Activity 的转屏请求。
+     * 有 Mika 的屏时开一个方向监听,只纠正自己这块屏的方向,保留原来的焦点隔离。
+     * 监听在锁外建(注册要走 binder);两次建屏同时进来时只留一个,多出来的关掉。
+     */
+    private fun ensureOrientationWatch() {
+        if (Build.VERSION.SDK_INT < 34 || synchronized(displays) { orientationWatch != null }) return
+        val watch = runCatching {
+            DisplayOrientationWatch(
+                taskManager,
+                active = { synchronized(displays) { displays.isNotEmpty() } },
+                onRequestedOrientation = { taskId, orientation -> requestedOrientations[taskId] = orientation },
+                onTaskRemoved = { taskId -> requestedOrientations.remove(taskId) },
+                sync = ::syncDisplayOrientations,
+            )
+        }.onFailure { Log.w(TAG, "display orientation watcher unavailable", it) }.getOrNull() ?: return
+        val spare = synchronized(displays) {
+            if (orientationWatch == null && displays.isNotEmpty()) { orientationWatch = watch; null } else watch
+        }
+        spare?.close()
+    }
+
+    /**
+     * 按各屏最上面任务的应用窗口比例纠正屏方向。锁里只拍一份屏的快照;
+     * 查任务、读字段、freezeDisplayRotation 和退回的 `wm` 命令都在锁外,不挡建屏、放屏和启动。
+     */
+    @SuppressLint("PrivateApi")
+    private fun syncDisplayOrientations() {
+        val ours = synchronized(displays) { displays.toMap() }
+        if (ours.isEmpty()) return
+        val top = allTasks().groupBy { TASK_INFO.getField("displayId").getInt(it) }
+        for ((id, vd) in ours) runCatching {
+            val task = top[id]?.firstOrNull() ?: return@runCatching
+            val taskId = TASK_INFO.getField("taskId").getInt(task)
+            val compat = runCatching { TASK_INFO.getField("appCompatTaskInfo").get(task) }.getOrNull() ?: task
+            val cls = compat.javaClass
+            // 安卓 15 起另有明确的 letterbox 标志;14 的宽高只在部分 letterbox 模式下填充。
+            if (runCatching { cls.getField("topActivityBoundsLetterboxed").getBoolean(compat) }.getOrDefault(true).not()) return@runCatching
+            val width = runCatching { cls.getField("topActivityLetterboxWidth").getInt(compat) }.getOrDefault(0)
+            val height = runCatching { cls.getField("topActivityLetterboxHeight").getInt(compat) }.getOrDefault(0)
+            val display = vd.display
+            val mode = display.mode
+            val rotation = DisplayOrientation.rotation(
+                mode.physicalWidth, mode.physicalHeight, display.rotation, width, height,
+                requestedOrientations[taskId] ?: ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED,
+            ) ?: return@runCatching
+            // 快照之后这块屏可能已经放掉了
+            if (!ownDisplay(id)) return@runCatching
+            val ok = runCatching {
+                val wm = Class.forName("android.view.WindowManagerGlobal").getMethod("getWindowManagerService").invoke(null)!!
+                val method = wm.javaClass.methods.first { it.name == "freezeDisplayRotation" }
+                if (method.parameterTypes.size == 3) method.invoke(wm, id, rotation, "mika") else method.invoke(wm, id, rotation)
+            }.isSuccess
+            if (!ok) exec("wm", "user-rotation", "-d", "$id", "lock", "$rotation")
+        }.onFailure { Log.w(TAG, "orientation sync failed on display $id", it) }
     }
 
     /**
@@ -681,19 +750,39 @@ class ShellService(
 
     /**
      * 任务结束:按 [AppsAfterTask] 定下这块屏上每个任务的去留,留下的挪到主屏最后面,再释放这块屏(屏带着
-     * FLAG_DESTROY_CONTENT_ON_REMOVAL,没挪走的随屏关掉)。顺序:定去留 → 挪留下的 → 再看一眼出声的 → 核对主屏最上面 → 释放。
-     * 静音由 Mika 在这之后还原,留下的 App 不会在还原时突然出声。
+     * FLAG_DESTROY_CONTENT_ON_REMOVAL,没挪走的随屏关掉)。顺序:定去留 → 挪留下的 → 再看一眼出声的 → 等它们退到看不见([SettleBehind])
+     * → 还看得见的挪回这块屏 → 释放。静音由 Mika 在这之后还原,留下的 App 不会在还原时突然出声。
      *
      * 挪到最后面的做法(都是安卓原版的接口):先用 WindowContainerTransaction.setHidden 把任务藏起来,
      * 再 moveRootTaskToDisplay 挪到主屏(系统总是把它放在最上面,藏着就不显示、不拿焦点、不让用户正在用的页面暂停),
-     * 接着 reorder 到最后面,最后取消隐藏。哪一步在这台系统上用不了就不再挪,照旧随屏关掉,结果里写明。
+     * 接着在同一个事务里 reorder 到最后面并取消隐藏。隐藏或移动本身失败时照旧随屏关掉。
+     *
+     * 挪和收尾在 [launchLock] 里做;中间等过渡(最多 [SettleBehind.TIMEOUT_MS])不占着锁,别的任务照常能打开 App。
+     * 这段时间里被别的任务拿到它屏上的不再管;留下的任务也要等收尾时才记进 [kept],等的时候 [resumeKept] 不会拿它。
      */
-    override fun finishDisplay(displayId: Int, keep: Array<String>?, close: Array<String>?): Bundle? = synchronized(launchLock) {
-        if (!ownDisplay(displayId)) return null
+    override fun finishDisplay(displayId: Int, keep: Array<String>?, close: Array<String>?): Bundle? {
+        val sorting = synchronized(launchLock) {
+            if (!ownDisplay(displayId)) return null
+            sortAndMove(displayId, keep, close)
+        }
+        val settled = settleBehind(sorting.moved.mapTo(LinkedHashSet()) { it.task.id })
+        return synchronized(launchLock) { closeOut(displayId, sorting, settled) }
+    }
+
+    /** [finishDisplay] 的第一段:留下的([moved])已挪到主屏;[hidden] 是挪过去以后取消隐藏没做成的。 */
+    private class Sorting(
+        val moved: MutableList<AppsAfterTask.Fate>,
+        val closed: MutableList<String>,
+        val notes: MutableSet<String>,
+        val hidden: Set<Int>,
+    )
+
+    private fun sortAndMove(displayId: Int, keep: Array<String>?, close: Array<String>?): Sorting {
         val closed = ArrayList<String>()
         val notes = LinkedHashSet<String>()
         // 已挪到主屏后面的;中途出错也照记,下次打开接得上
         val moved = ArrayList<AppsAfterTask.Fate>()
+        val hidden = HashSet<Int>()
         try {
             val playing = playingUids()
             if (playing == null) notes += AppsAfterTask.NOTE_PLAYBACK_UNKNOWN
@@ -702,46 +791,78 @@ class ShellService(
             val byId = rows.associateBy { idField.getInt(it) }
             val fates = AppsAfterTask.decide(rows.map { afterTaskRow(it, playing) },
                 AppsAfterTask.normalize(keep, myUser), AppsAfterTask.normalize(close, myUser))
-            val mainTop = topTaskId(Display.DEFAULT_DISPLAY)
             var supported = true
             for (f in fates) {
                 if (!f.keep) { closed += AppsAfterTask.closedEntry(f); continue }
                 if (!supported) { closed += AppsAfterTask.closedEntry(f.copy(keep = false, why = AppsAfterTask.Why.MoveUnsupported)); continue }
                 when (keepBehind(byId.getValue(f.task.id))) {
                     Behind.OK -> moved += f
+                    Behind.HIDDEN -> { moved += f; hidden += f.task.id }
                     Behind.UNSUPPORTED -> {
                         supported = false
                         notes += AppsAfterTask.NOTE_MOVE_UNSUPPORTED
                         closed += AppsAfterTask.closedEntry(f.copy(keep = false, why = AppsAfterTask.Why.MoveUnsupported))
                     }
-                    Behind.FAILED -> closed += AppsAfterTask.closedEntry(f.copy(keep = false, why = AppsAfterTask.Why.MoveFailed))
                 }
             }
             // 挪过去之后又出声的(没标过 keep):挪回这块屏,随屏关掉;挪不回就直接关
             val playingNow = if (moved.isEmpty()) null else playingUids()
             val nowLoud = moved.map { f -> AppsAfterTask.recheck(f, task(f.task.id)?.let { playingIn(it, playingNow) }) }.filter { !it.keep }
             for (f in nowLoud) {
-                if (!moveRoot(f.task.id, displayId)) removeTask(f.task.id)
+                sendBackToClose(f.task.id, displayId)
                 moved.removeAll { it.task.id == f.task.id }
                 closed += AppsAfterTask.closedEntry(f)
             }
-            val removed = ensureBehind(moved.map { it.task.id }.toSet(), mainTop)
-            moved.filter { it.task.id in removed }.forEach { closed += AppsAfterTask.closedEntry(it.copy(keep = false, why = AppsAfterTask.Why.MoveFailed)) }
-            moved.removeAll { it.task.id in removed }
         } catch (t: Throwable) {
             Log.e(TAG, "finishDisplay: cannot inspect tasks, closing the rest with the display", t)
             notes += "error ${t.javaClass.simpleName}"
         }
+        return Sorting(moved, closed, notes, hidden)
+    }
+
+    /**
+     * [finishDisplay] 的最后一段,在锁里:按 [SettleBehind.closeOut] 再定一次。等到超时还看得见的挪回这块屏随屏关掉
+     * (和挪过去又出声的同一条路,不留在用户眼前),记成没留下([AppsAfterTask.Why.StillInFront]);已不在主屏的不再记;
+     * 记下留下的,释放屏。没能等(读不了任务列表,[settled] 为 null)时照留,结果里写明没核对上。
+     */
+    private fun closeOut(displayId: Int, sorting: Sorting, settled: SettleBehind.Plan.Done?): Bundle {
+        val (moved, closed, notes) = Triple(sorting.moved, sorting.closed, sorting.notes)
+        if (settled == null) notes += AppsAfterTask.NOTE_SETTLE_UNKNOWN
+        else try {
+            // 等的时候不占锁:回到锁里再看一次,别的任务这会儿把它拿走了、或已经落定的,都不动
+            val ids = moved.mapTo(LinkedHashSet()) { it.task.id }
+            val final = SettleBehind.closeOut(ids, settled.fallback, seenOnMain(ids))
+            for (f in moved.filter { it.task.id in final.fallback }) {
+                Log.w(TAG, "task ${f.task.id} is still in front on the main screen, closing it with display $displayId")
+                sendBackToClose(f.task.id, displayId)
+                closed += AppsAfterTask.closedEntry(f.copy(keep = false, why = AppsAfterTask.Why.StillInFront))
+            }
+            if (final.fallback.isNotEmpty()) notes += AppsAfterTask.NOTE_STILL_IN_FRONT
+            if (final.gone.isNotEmpty()) Log.i(TAG, "tasks ${final.gone} left the main screen while settling; not keeping them")
+            moved.removeAll { it.task.id !in final.kept }
+        } catch (t: Throwable) {
+            Log.e(TAG, "finishDisplay: cannot recheck the main screen", t)
+            notes += "error ${t.javaClass.simpleName}"
+        }
+        // 取消隐藏没做成的:留在主屏但最近任务里看不见,下次打开同一份时 resumeKept 挪回来补上取消隐藏
+        val hidden = moved.count { it.task.id in sorting.hidden }
+        if (hidden > 0) notes += "$hidden ${AppsAfterTask.NOTE_LEFT_HIDDEN}"
         synchronized(kept) { moved.forEach { kept[it.task.id] = it.key } }
         releaseDisplay(displayId)
-        Bundle().apply {
+        return Bundle().apply {
             putStringArray(AppsAfterTask.KEY_KEPT, moved.map { it.key }.toTypedArray())
             putStringArray(AppsAfterTask.KEY_CLOSED, closed.toTypedArray())
             putString(AppsAfterTask.KEY_NOTE, notes.joinToString("; ").ifEmpty { null })
         }
     }
 
-    private enum class Behind { OK, UNSUPPORTED, FAILED }
+    /** 不留的任务挪回 Mika 的屏 [displayId],随屏关掉;挪不回就直接关。 */
+    private fun sendBackToClose(taskId: Int, displayId: Int) {
+        if (!moveRoot(taskId, displayId)) removeTask(taskId)
+    }
+
+    /** OK:挪到主屏最后面了;HIDDEN:挪过去了,但取消隐藏没做成,还藏着;UNSUPPORTED:这台系统挪不了。 */
+    private enum class Behind { OK, HIDDEN, UNSUPPORTED }
 
     /** 任务的一行给 [AppsAfterTask.decide]:键、是不是普通 App 的页面、是不是 Mika 自己的、此刻出不出声。 */
     private fun afterTaskRow(t: Any, playing: Map<Int, Set<String>>?): AppsAfterTask.Task {
@@ -791,7 +912,10 @@ class ShellService(
         }
     }
 
-    /** 把 Mika 屏上的任务 [row] 挪到主屏最后面(做法见 [finishDisplay])。 */
+    /**
+     * 把 Mika 屏上的任务 [row] 挪到主屏最后面。移动成功后 reorder/取消隐藏没做成也不删任务:还看得见的交给 [settleBehind] 等过渡、
+     * 再排到后面;一直藏着的返回 [Behind.HIDDEN],结果里写明,下次 [resumeKept] 挪回来时取消隐藏。
+     */
     private fun keepBehind(row: Any): Behind {
         val id = TASK_INFO.getField("taskId").getInt(row)
         val token = runCatching { TASK_INFO.getField("token").get(row) }.getOrNull() ?: return Behind.UNSUPPORTED
@@ -800,41 +924,71 @@ class ShellService(
             transact { wct -> wctCall(wct, "setHidden", token, false) }
             return Behind.UNSUPPORTED
         }
-        // 放到最后面之前不取消隐藏:取消隐藏时系统不挪它,先取消就会出现在用户眼前
-        val behind = transact { wct -> wctCall(wct, "reorder", token, false) }
-        if (behind && transact { wct -> wctCall(wct, "setHidden", token, false) }) return Behind.OK
-        // 停在半路(藏着或在最上面)都不能留:关掉
-        Log.w(TAG, "task $id could not be put behind on the main screen, removing it")
-        removeTask(id)
-        return Behind.FAILED
+        // 隐藏着 reorder 再取消隐藏,否则系统不挪它;两步放在同一个事务里。
+        val placed = transact { wct ->
+            wctCall(wct, "reorder", token, false)
+            wctCall(wct, "setHidden", token, false)
+        }
+        if (placed) return Behind.OK
+        // 别把它留在隐藏状态;取消隐藏后在上面的,交给 settleBehind 再排到后面。
+        if (transact { wct -> wctCall(wct, "setHidden", token, false) }) return Behind.OK
+        Log.w(TAG, "task $id is still hidden on the main screen; resumeKept will unhide it")
+        return Behind.HIDDEN
+    }
+
+    /** [ids] 里此刻还在主屏上的任务,和它们看不看得见;读不到 isVisible 时按「是不是主屏最上面的任务」看(那里的任务按最近使用排,只作退路)。 */
+    private fun seenOnMain(ids: Set<Int>): List<SettleBehind.Seen> {
+        if (ids.isEmpty()) return emptyList()
+        val idField = TASK_INFO.getField("taskId")
+        val visibleField = runCatching { TASK_INFO.getField("isVisible") }.getOrNull()
+        return tasksOn(Display.DEFAULT_DISPLAY).withIndex().mapNotNull { (index, row) ->
+            val id = idField.getInt(row)
+            if (id !in ids) null else SettleBehind.Seen(id, onMain = true, visible = visibleField?.getBoolean(row) ?: (index == 0))
+        }
     }
 
     /**
-     * 核对:挪过去的任务都没到用户眼前(主屏上看得见)。看得见了(本不该发生)就马上再排到最后面,还看得见就关掉。
-     * 看得见按 TaskInfo.isVisible;读不到这一项的系统按「是不是主屏最上面的任务」看(那里的任务按最近使用排,只作退路)。
-     * [before] 是挪之前主屏最上面的任务,只记进日志。
+     * 等挪到主屏的任务 [moved] 退到用户看不见的地方,规则见 [SettleBehind]。不在 [launchLock] 里调:要等最多 [SettleBehind.TIMEOUT_MS]。
+     * 读不了任务列表时返回 null(调用方照留,结果里写明没核对上)。
      */
-    private fun ensureBehind(moved: Set<Int>, before: Int): Set<Int> {
-        if (moved.isEmpty()) return emptySet()
-        val removed = HashSet<Int>()
-        val visibleField = runCatching { TASK_INFO.getField("isVisible") }.getOrNull()
-        fun inFront(): List<Any> = if (visibleField != null) {
-            tasksOn(Display.DEFAULT_DISPLAY).filter { TASK_INFO.getField("taskId").getInt(it) in moved && visibleField.getBoolean(it) }
-        } else listOfNotNull(tasksOn(Display.DEFAULT_DISPLAY).firstOrNull()?.takeIf { TASK_INFO.getField("taskId").getInt(it) in moved })
-        repeat(2) { attempt ->
-            val front = inFront()
-            if (front.isEmpty()) return removed
-            for (row in front) {
-                val id = TASK_INFO.getField("taskId").getInt(row)
-                Log.w(TAG, "moved task $id is in front on the main screen (top was $before), sending it back")
-                val token = runCatching { TASK_INFO.getField("token").get(row) }.getOrNull()
-                if (attempt == 1 || token == null || !transact { wct -> wctCall(wct, "reorder", token, false) }) {
-                    removeTask(id)
-                    removed += id
+    private fun settleBehind(moved: Set<Int>): SettleBehind.Plan.Done? = try {
+        val start = SystemClock.uptimeMillis()
+        var lastReorder: Long? = null
+        var watching = moved
+        val gone = LinkedHashSet<Int>()
+        var done: SettleBehind.Plan.Done? = null
+        while (done == null) {
+            val now = SystemClock.uptimeMillis()
+            when (val plan = SettleBehind.plan(watching, seenOnMain(watching), now - start, lastReorder?.let { now - it })) {
+                is SettleBehind.Plan.Done -> done = plan.copy(gone = plan.gone + gone)
+                is SettleBehind.Plan.Wait -> {
+                    gone += plan.gone
+                    watching = watching - plan.gone
+                    if (plan.reorder.isNotEmpty()) {
+                        lastReorder = now
+                        sendToBack(plan.reorder)
+                    }
+                    Thread.sleep(SettleBehind.POLL_MS)
                 }
             }
         }
-        return removed
+        if (done.fallback.isNotEmpty()) Log.w(TAG, "moved tasks ${done.fallback} are still visible on the main screen after ${SettleBehind.TIMEOUT_MS}ms")
+        done
+    } catch (t: Throwable) {
+        Log.e(TAG, "cannot watch moved tasks settle on the main screen", t)
+        null
+    }
+
+    /** 把主屏上的这些任务再排到最后面(过渡还没完的不算失败,下一轮再看)。 */
+    private fun sendToBack(ids: Set<Int>) {
+        val idField = TASK_INFO.getField("taskId")
+        for (row in tasksOn(Display.DEFAULT_DISPLAY)) {
+            val id = idField.getInt(row)
+            if (id !in ids) continue
+            Log.w(TAG, "moved task $id is still visible on the main screen, sending it back")
+            val token = runCatching { TASK_INFO.getField("token").get(row) }.getOrNull() ?: continue
+            transact { wct -> wctCall(wct, "reorder", token, false) }
+        }
     }
 
     /** IActivityTaskManager.moveRootTaskToDisplay;接口不在时退回 `am display move-stack`(同一个调用)。 */
@@ -887,6 +1041,11 @@ class ShellService(
         val row = runCatching { keptOnMain(packageName, userId).firstOrNull() }.getOrNull() ?: return false
         val id = TASK_INFO.getField("taskId").getInt(row)
         if (!moveRoot(id, displayId)) return false
+        // 收尾时没来得及取消隐藏的,挪回来补一次。
+        val token = runCatching { TASK_INFO.getField("token").get(row) }.getOrNull()
+        if (token != null && !transact { wct -> wctCall(wct, "setHidden", token, false) }) {
+            Log.w(TAG, "task $id is still hidden after moving it back to display $displayId")
+        }
         synchronized(kept) { kept.remove(id) }
         return true
     }
@@ -954,18 +1113,69 @@ class ShellService(
         return injectPair(down, up, displayId) { exec("input", "-d", "$displayId", "keyevent", "$keyCode") == 0 }
     }
 
-    /** Ctrl+A / Ctrl+V:修饰键写在按键事件的 metaState 里(App 按它认组合键),只放行这两个,只发到 Mika 自己的屏(粘贴不能落到用户的屏上)。 */
-    override fun injectCtrlKey(displayId: Int, keyCode: Int): Boolean {
-        if (!ownDisplay(displayId)) return false
+    /** 自有虚拟屏上的 Ctrl+A / Ctrl+V,同时发送修饰键按下和抬起;松开修饰键失败不会把已经发出的正文判成未发送。 */
+    override fun injectCtrlKey(displayId: Int, keyCode: Int): Int {
+        if (!ownDisplay(displayId)) return AsciiTextKeys.NOT_SENT
         if (keyCode != KeyEvent.KEYCODE_A && keyCode != KeyEvent.KEYCODE_V) {
             Log.w(TAG, "refused ctrl key $keyCode")
-            return false
+            return AsciiTextKeys.NOT_SENT
         }
         val now = SystemClock.uptimeMillis()
         val meta = KeyEvent.META_CTRL_ON or KeyEvent.META_CTRL_LEFT_ON
-        val down = KeyEvent(now, now, KeyEvent.ACTION_DOWN, keyCode, 0, meta, VIRTUAL_KEYBOARD, 0, 0, InputDevice.SOURCE_KEYBOARD)
-        val up = KeyEvent.changeAction(down, KeyEvent.ACTION_UP)
-        return injectPair(down, up, displayId) { false }
+        fun event(code: Int, action: Int, modifiers: Int) = KeyEvent(
+            now, SystemClock.uptimeMillis(), action, code, 0, modifiers,
+            VIRTUAL_KEYBOARD, 0, 0, InputDevice.SOURCE_KEYBOARD,
+        )
+        var modifierDown = false
+        try {
+            if (!inject(event(KeyEvent.KEYCODE_CTRL_LEFT, KeyEvent.ACTION_DOWN, 0), displayId)) return AsciiTextKeys.NOT_SENT
+            modifierDown = true
+            if (!inject(event(keyCode, KeyEvent.ACTION_DOWN, meta), displayId)) return AsciiTextKeys.NOT_SENT
+            val up = event(keyCode, KeyEvent.ACTION_UP, meta)
+            return if (inject(up, displayId) || inject(up, displayId)) AsciiTextKeys.DISPATCHED else AsciiTextKeys.UNCONFIRMED
+        } finally {
+            if (modifierDown) {
+                val up = event(KeyEvent.KEYCODE_CTRL_LEFT, KeyEvent.ACTION_UP, 0)
+                if (ownDisplay(displayId) && !inject(up, displayId) && !inject(up, displayId)) {
+                    Log.w(TAG, "could not release Ctrl on display $displayId")
+                }
+            }
+        }
+    }
+
+    @SuppressLint("DiscouragedPrivateApi")
+    override fun injectAsciiText(displayId: Int, taskId: Int, packageName: String, text: String): Int {
+        if (displayId <= Display.DEFAULT_DISPLAY || !ownDisplay(displayId) || taskId < 0 || !AsciiTextKeys.supports(text)) {
+            return AsciiTextKeys.NOT_SENT
+        }
+        val (events, targetUid) = runCatching {
+            val task = tasksOn(displayId).firstOrNull() ?: return AsciiTextKeys.NOT_SENT
+            val top = TASK_INFO.getField("topActivity").get(task) as? ComponentName
+            if (TASK_INFO.getField("taskId").getInt(task) != taskId || top?.packageName != packageName) {
+                return AsciiTextKeys.NOT_SENT
+            }
+            val uid = if (Build.VERSION.SDK_INT >= 33) {
+                val user = TASK_INFO.getField("userId").getInt(task)
+                val pm = context.packageManager
+                (pm.javaClass.getMethod("getPackageUidAsUser", String::class.java, Int::class.java, Int::class.java)
+                    .invoke(pm, packageName, 0, user) as Int).takeIf { it >= 0 } ?: return AsciiTextKeys.NOT_SENT
+            } else null
+            val keys = KeyCharacterMap.load(KeyCharacterMap.VIRTUAL_KEYBOARD).getEvents(text.toCharArray())
+                ?.takeIf { it.isNotEmpty() } ?: return AsciiTextKeys.NOT_SENT
+            keys to uid
+        }.getOrElse { return AsciiTextKeys.NOT_SENT }
+
+        for (event in events) {
+            if (!ownDisplay(displayId) || (targetUid == null && topTaskId(displayId) != taskId)) {
+                return AsciiTextKeys.UNCONFIRMED
+            }
+            event.source = InputDevice.SOURCE_KEYBOARD
+            val sent = if (targetUid != null) injectTo(event, displayId, targetUid)
+                else inject(event, displayId, waitForFinish = true)
+            // A failed dispatch can leave a prefix. Never replay it through another input route.
+            if (!sent) return AsciiTextKeys.UNCONFIRMED
+        }
+        return AsciiTextKeys.DISPATCHED
     }
 
     override fun listUsers(): String? = sh("pm", "list", "users").takeIf { it.first == 0 }?.second
@@ -1120,6 +1330,8 @@ class ShellService(
      */
     override fun setClipText(text: String): Int = synchronized(clipLock) {
         try {
+            // 上次还原因读不到而没完成时,先再还原一次;仍读不到就不能覆盖此刻可能属于用户的新内容。
+            if (clipSaved && !restoreClip()) return CLIP_UNREADABLE
             if (!clipSaved) {
                 if (!canReadClipboard()) return CLIP_UNREADABLE
                 val prior = clipboard.primaryClip
@@ -1140,16 +1352,17 @@ class ShellService(
             markSensitive(clip)
             clipboard.setPrimaryClip(clip)
             ourText = text
-            CLIP_SET
+            // Android can silently decline the write. Never paste a clipboard we didn't set.
+            if (nowState(text) == ShellClip.Now.Ours) CLIP_SET else CLIP_FAILED
         } catch (t: Throwable) {
             Log.w(TAG, "setClipText failed", t)
             CLIP_FAILED
         }
     }
 
-    override fun restoreClip() = synchronized(clipLock) {
-        if (!clipSaved) return
-        runCatching {
+    override fun restoreClip(): Boolean = synchronized(clipLock) {
+        if (!clipSaved) return true
+        val finished = runCatching {
             val prior = savedClip
             val now = nowState(ourText)
             val action = ShellClip.restore(prior == null, now)
@@ -1159,10 +1372,17 @@ class ShellService(
                 ShellClip.Restore.Clear -> clipboard.clearPrimaryClip()
                 ShellClip.Restore.Leave -> Unit
             }
-        }.onFailure { Log.w(TAG, "restoreClip failed", it) }
-        savedClip = null
-        clipSaved = false
-        ourText = null
+            // 写入也可能被系统悄悄拒绝:再读一次,仍是 Mika 的或此刻读不到都保留记录,下次继续尝试。
+            // 用户已经复制了别的内容时保留用户的新内容,留底可以清掉。
+            val after = nowState(ourText)
+            after != ShellClip.Now.Ours && after != ShellClip.Now.Unreadable
+        }.onFailure { Log.w(TAG, "restoreClip failed", it) }.getOrDefault(false)
+        if (finished) {
+            savedClip = null
+            clipSaved = false
+            ourText = null
+        }
+        finished
     }
 
     override fun savedClipText(): String? = synchronized(clipLock) {
@@ -1170,7 +1390,7 @@ class ShellService(
         runCatching { savedClip?.takeIf { it.itemCount > 0 }?.getItemAt(0)?.text?.toString() }.getOrNull().orEmpty()
     }
 
-    override fun restoreClipText(original: String, ours: String) = synchronized(clipLock) {
+    override fun restoreClipText(original: String, ours: String): Boolean = synchronized(clipLock) {
         runCatching {
             val now = nowState(ours)
             val action = ShellClip.restore(original.isEmpty(), now)
@@ -1180,8 +1400,9 @@ class ShellService(
                 ShellClip.Restore.Clear -> clipboard.clearPrimaryClip()
                 ShellClip.Restore.Leave -> Unit
             }
-        }.onFailure { Log.w(TAG, "restoreClipText failed", it) }
-        Unit
+            val after = nowState(ours)
+            after != ShellClip.Now.Ours && after != ShellClip.Now.Unreadable
+        }.onFailure { Log.w(TAG, "restoreClipText failed", it) }.getOrDefault(false)
     }
 
     /** 剪贴板此刻是不是 Mika 放进去的 [ours];读不到(有内容但取不到)时不当成空的。 */
@@ -1259,6 +1480,7 @@ class ShellService(
 
     override fun wakeDevice(): Boolean = deviceUnlock.wake()
     override fun dismissDeviceKeyguard(): Boolean = deviceUnlock.dismiss()
+    override fun revealDeviceCredential(): Boolean = deviceUnlock.reveal()
     override fun enterDeviceCredential(kind: Int, credential: ByteArray): Boolean = deviceUnlock.enter(kind, credential)
 
     private fun commandResult(code: Int, output: String) = Bundle().apply { putInt("exitCode", code); putString("output", output) }
@@ -1320,7 +1542,11 @@ class ShellService(
             AppAudioKey.parse(key)?.let { (pkg, user) -> audioMuted(pkg, user, false) } ?: synchronized(muted) { muted.remove(key) }
         }
         awake.stopAll()
-        synchronized(displays) { displays.values.toList().also { displays.clear() } }.forEach { it.release() }
+        val (all, watch) = synchronized(displays) {
+            displays.values.toList().also { displays.clear() } to orientationWatch.also { orientationWatch = null }
+        }
+        watch?.close()
+        all.forEach { it.release() }
     }
 
     override fun destroy() {

@@ -6,6 +6,8 @@
     <string name="confirm_order">Place order</string>
     <string name="confirm_submit">Submit</string>
     <string name="confirm_other">Other action</string>
+    <string name="confirm_root">Root command</string>
+    <string name="confirm_root_where">the whole phone (root)</string>
     <string name="confirm_title">Needs your OK: %1$s</string>
     <string name="confirm_in_app">In %1$s</string>
     <string name="confirm_target">To: %1$s</string>

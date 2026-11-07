@@ -24,12 +24,12 @@ object ChatCopy {
     data class Example(val kind: ExampleKind, val text: String)
 
     val examples get() = listOf(
-        Example(ExampleKind.App, tr(R.string.chat_example_message)),
+        Example(ExampleKind.App, tr(R.string.chat_example_follow)),
         Example(ExampleKind.App, tr(R.string.chat_example_group_summary)),
         Example(ExampleKind.Web, tr(R.string.chat_example_jobs)),
-        Example(ExampleKind.App, tr(R.string.chat_example_music)),
+        Example(ExampleKind.App, tr(R.string.chat_example_multi_step)),
         Example(ExampleKind.Device, tr(R.string.chat_example_alarms)),
-        Example(ExampleKind.App, tr(R.string.chat_example_creator)),
+        Example(ExampleKind.App, tr(R.string.chat_example_ai_apps)),
     )
 
     /** 对话页顶栏的标题:固定是 App 名;副标题说此刻在做什么。 */
@@ -45,6 +45,21 @@ object ChatCopy {
      */
     fun plainTitle(text: String): String =
         ScreenCopy.plain(AttachmentMessage.plain(QuoteMessage.words(AttachedPage.words(text)))).lineSequence().firstOrNull { it.isNotBlank() }?.trim().orEmpty()
+
+    /**
+     * 分支的标题:源标题(或第一句话)后面加本地化后缀,总长不超过 [max] 字。
+     * 截的是源标题,后缀留着;按码点截,不会把 emoji 截成半个。
+     */
+    fun branchTitle(base: String, suffix: String, max: Int = 24): String {
+        val room = (max - suffix.length).coerceAtLeast(0)
+        var end = 0
+        var taken = 0
+        while (end < base.length && taken < room) {
+            end += Character.charCount(base.codePointAt(end))
+            taken++
+        }
+        return base.substring(0, end).trimEnd() + suffix
+    }
 
     enum class Tone { Accent, Warn, Ok }
 
@@ -105,15 +120,15 @@ object ChatCopy {
     fun actionLine(a: StepAction): String =
         listOfNotNull(a.label, a.target?.takeIf(String::isNotBlank), effectLabel(a.effect).takeIf(String::isNotBlank)).joinToString(" · ")
 
-    fun placeholder(mode: ComposerMode, hasHistory: Boolean): String = when (mode) {
-        ComposerMode.Busy -> tr(R.string.chat_placeholder_busy)
+    fun placeholder(mode: ComposerMode, hasHistory: Boolean, followUp: FollowUpMode = FollowUpMode.Steer): String = when (mode) {
+        ComposerMode.Busy -> tr(if (followUp == FollowUpMode.Queue) R.string.chat_placeholder_queue else R.string.chat_placeholder_busy)
         ComposerMode.Answer -> tr(R.string.chat_placeholder_answer)
         ComposerMode.Idle -> if (hasHistory) tr(R.string.chat_placeholder_more) else EMPTY_PROMPT
     }
 
-    /** 能按住说话时的灰字(前面配一个小话筒):告诉人能按住说、点一下打字;任务在跑时说的就是插话。 */
-    fun voicePlaceholder(mode: ComposerMode): String = when (mode) {
-        ComposerMode.Busy -> tr(R.string.voice_placeholder_busy)
+    /** 能按住说话时的居中灰字:告诉人能按住说、点一下打字;任务在跑时说的就是插话或排队。 */
+    fun voicePlaceholder(mode: ComposerMode, followUp: FollowUpMode = FollowUpMode.Steer): String = when (mode) {
+        ComposerMode.Busy -> tr(if (followUp == FollowUpMode.Queue) R.string.voice_placeholder_queue else R.string.voice_placeholder_busy)
         ComposerMode.Answer -> tr(R.string.voice_placeholder_answer)
         ComposerMode.Idle -> tr(R.string.voice_placeholder_idle)
     }

@@ -63,4 +63,6 @@
     <string name="mcp_cli_network_sub">把權杖存入電腦上的私人檔案，將命令中的 /path/to/token 換成該檔案路徑。只裝 Skill 時，讓 AI 助手使用隨附指令碼。</string>
     <string name="mcp_copy_token">複製權杖</string>
     <string name="mcp_cli_connection_check">connect 會驗證連線，成功後頂部顯示最近請求。</string>
+    <string name="mcp_history_title">允許電腦查看歷史記錄</string>
+    <string name="mcp_history_detail">連線的電腦可讀取所有對話、執行記錄及已錄製的 Trace 正文，包括已遮蔽敏感資訊的模型請求與回覆。適用於 USB 和私人網路連線。</string>
 </resources>

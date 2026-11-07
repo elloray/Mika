@@ -44,6 +44,8 @@ internal class ToolConfig(
     val selfConfig: com.wangzan101.mika.core.settings.SelfConfig? = null,
     /** 存下的运行记录;给了、而这个对话之前有记过运行的轮次时提供 history_read。 */
     val runRecords: com.wangzan101.mika.core.record.RunRecords? = null,
+    /** 用户配置并启用的网页搜索;为空时不提供 web_search。 */
+    val webSearch: com.wangzan101.mika.core.search.WebSearch? = null,
 )
 
 /**
@@ -86,6 +88,11 @@ internal class ToolContext(
     private val saved = mutableListOf<Change>()
     val savedChanges: List<Change> get() = synchronized(saved) { saved.toList() }
     fun noteSaved(c: Change) = synchronized(saved) { saved += c }
+
+    /** 最近一次 memory_search 返回的稳定编号;null 表示本任务还没搜过,空列表表示最近搜不到。 */
+    @Volatile private var memoryCandidates: List<String>? = null
+    fun noteMemorySearch(ids: List<String>) { memoryCandidates = ids }
+    fun memorySearchCandidates(): List<String>? = memoryCandidates
 
     /** 这次调用的工具会由分发器报实际效果(effect):「没变化」由效果来说,这里不另提示。 */
     var reportsEffect = false

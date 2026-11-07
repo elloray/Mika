@@ -54,7 +54,7 @@ class SkillOutcomesTest {
         assertEquals(SkillResult.failed, SkillOutcomes.resultOf(TaskState.Failed("找不到", FailKind.GaveUp), RunOutcome.Unknown))
         assertEquals(SkillResult.failed, SkillOutcomes.resultOf(TaskState.Failed("步数用完", FailKind.StepLimit), RunOutcome.Unknown))
         // 模型出错、运行环境出问题、操作保护停下:说明不了技能或知识灵不灵
-        for (k in listOf(FailKind.Model, FailKind.Environment, FailKind.Guard))
+        for (k in listOf(FailKind.Model, FailKind.Environment, FailKind.Guard, FailKind.Interrupted))
             assertEquals(k.name, SkillResult.unreviewed, SkillOutcomes.resultOf(TaskState.Failed("x", k), RunOutcome.Unknown))
     }
 }

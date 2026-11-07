@@ -3,7 +3,7 @@ package com.wangzan101.mika.core.visual
 import com.wangzan101.mika.core.prompt.Feedback
 import com.wangzan101.mika.core.tool.RECALL_KEEP
 import com.wangzan101.mika.core.tool.ToolExecution
-import com.wangzan101.mika.core.tool.fail
+import com.wangzan101.mika.core.tool.refExpired
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 
@@ -35,6 +35,6 @@ internal class Shots {
         val p = o["snapshotId"] as? JsonPrimitive ?: return null
         val n = p.content.trim().toIntOrNull() ?: return null
         if (n < 1 || n > lastId) return null
-        return fail("ref_expired", Feedback.format("screenshot_id_as_snapshot", "id" to n))
+        return refExpired(Feedback.format("screenshot_id_as_snapshot", "id" to n), "screenshot_id")
     }
 }

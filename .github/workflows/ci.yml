@@ -1,0 +1,141 @@
+name: CI
+
+# 只做 CI：单元测试、Android 打包、CLI 契约和网关集成。发布（CD）仍是手工流程。
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# 同一个 PR 推新提交时取消上一次还没跑完的，main 上的推送各自跑完。
+concurrency:
+  group: ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  core:
+    name: core (JVM)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: "17"
+      # 默认缓存策略：默认分支可写，其他分支（含 PR）只读。
+      - uses: gradle/actions/setup-gradle@v6
+        with:
+          cache-provider: basic
+      - name: Unit tests
+        run: ./gradlew :core:test --stacktrace
+      - name: Upload test reports
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: core-test-results
+          path: |
+            core/build/test-results/test
+            core/build/reports/tests/test
+          retention-days: 7
+          if-no-files-found: ignore
+
+  cli:
+    name: cli (Python)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: "17"
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+      - uses: gradle/actions/setup-gradle@v6
+        with:
+          cache-provider: basic
+      # cliTest 先跑 cliContractTest（经真实子进程调 Python CLI），再跑 tools/mika/tests 下的 unittest。
+      - name: CLI tests
+        run: ./gradlew :core:cliTest -PmikaPython=python3 --stacktrace
+      - name: Translation tool tests
+        run: python3 -m unittest discover -s tools/i18n -v
+      - name: Translation resource checks
+        run: python3 tools/i18n/translations.py check
+      - name: Upload test reports
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: cli-test-results
+          path: |
+            core/build/test-results/cliContractTest
+            core/build/reports/tests/cliContractTest
+          retention-days: 7
+          if-no-files-found: ignore
+
+  app:
+    name: app (Android)
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: "17"
+      # compileSdk 36；构建工具版本取 AGP 8.7.3 的默认值。action 顺带接受 SDK 许可。
+      - uses: android-actions/setup-android@v4
+        with:
+          packages: "platform-tools platforms;android-36 build-tools;35.0.0"
+      - uses: gradle/actions/setup-gradle@v6
+        with:
+          cache-provider: basic
+      # assembleDebug 验证单测碰不到的打包路径：31MB 的 rootfs、jniLibs 旧式解压、AIDL、Compose。
+      - name: Unit tests and debug build
+        run: ./gradlew :app:testDebugUnitTest :app:assembleDebug --stacktrace
+      - name: Upload test reports
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: app-test-results
+          path: |
+            app/build/test-results/testDebugUnitTest
+            app/build/reports/tests/testDebugUnitTest
+          retention-days: 7
+          if-no-files-found: ignore
+
+  relay:
+    name: relay (Go)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: "17"
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: tools/relay/go.mod
+          cache: true
+          cache-dependency-path: tools/relay/go.sum
+      - uses: gradle/actions/setup-gradle@v6
+        with:
+          cache-provider: basic
+      # relayTest 会先 go build 出真实网关，再在回环上跑 Kotlin→网关→隧道全链路。
+      - name: Relay integration test
+        run: ./gradlew :core:relayTest --stacktrace
+      - name: Upload test reports
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: relay-test-results
+          path: |
+            core/build/test-results/relayTest
+            core/build/reports/tests/relayTest
+          retention-days: 7
+          if-no-files-found: ignore

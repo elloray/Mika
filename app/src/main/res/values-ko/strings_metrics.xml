@@ -25,7 +25,8 @@
     <string name="metrics_output_tokens">출력 토큰</string>
     <string name="usage_cached">캐시 적중</string>
     <string name="metrics_no_usage">보고된 사용량 없음</string>
-    <string name="metrics_all_calls">모든 모델 요청</string>
+    <string name="metrics_all_calls">모든 논리적 모델 호출</string>
+    <string name="metrics_all_http_calls">모든 HTTP 요청</string>
     <plurals name="metrics_all_calls_value">
         <item quantity="other">%1$d (보조 호출과 재시도 포함)</item>
     </plurals>

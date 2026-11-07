@@ -63,4 +63,6 @@
     <string name="mcp_cli_network_sub">Simpan token di berkas pribadi pada komputer, lalu ganti /path/to/token dalam perintah dengan lokasinya. Jika hanya memakai Skill, minta agen memakai klien bawaannya.</string>
     <string name="mcp_copy_token">Salin token</string>
     <string name="mcp_cli_connection_check">connect memverifikasi koneksi. Permintaan yang berhasil akan memperbarui waktu di atas.</string>
+    <string name="mcp_history_title">Izinkan komputer melihat riwayat</string>
+    <string name="mcp_history_detail">Komputer yang terhubung dapat membaca semua percakapan, catatan proses, dan isi Trace yang direkam, termasuk permintaan serta jawaban model dengan data sensitif disamarkan. Berlaku untuk koneksi USB dan jaringan pribadi.</string>
 </resources>

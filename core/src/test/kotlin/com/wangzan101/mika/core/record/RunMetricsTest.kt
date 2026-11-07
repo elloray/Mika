@@ -215,9 +215,11 @@ class RunMetricsTest {
     @Test fun allRequestsComeFromTheTallyEvent() {
         val m = RunMetrics.of(listOf(
             started(0), reply(100, 1, null), RunEvent.TaskEnded(100, "succeeded", "x"),
-            RunEvent.ModelCalls(120, calls = 4, unreported = 1, inputTokens = 900, outputTokens = 30, cachedTokens = 0),
+            RunEvent.ModelCalls(120, calls = 3, unreported = 1, inputTokens = 900, outputTokens = 30, cachedTokens = 0,
+                httpCalls = 4, httpUnreported = 2),
         ))!!
-        assertEquals(4, m.allCalls)
+        assertEquals(3, m.allCalls)
+        assertEquals(4, m.allHttpCalls)
         assertEquals(900L, m.allInputTokens)
         assertEquals(30L, m.allOutputTokens)
         // 收尾后的那一条不改总时长
@@ -252,7 +254,12 @@ class RunMetricsTest {
         val r = RunEvent.decode("""{"type":"model_reply","atMs":1,"step":1,"text":"","tool":null,"argsJson":null,"inputTokens":null,"outputTokens":null,"cachedTokens":null}""")
             as RunEvent.ModelReply
         assertNull(r.repliedAtMs)
-        val calls = RunEvent.decode(RunEvent.encode(RunEvent.ModelCalls(5, 3, 1, 10, 2, 0)))
+        val calls = RunEvent.decode(RunEvent.encode(RunEvent.ModelCalls(5, 3, 1, 10, 2, 0))) as RunEvent.ModelCalls
         assertEquals(RunEvent.ModelCalls(5, 3, 1, 10, 2, 0), calls)
+        assertNull(calls.httpCalls)
+        assertNull(calls.httpUnreported)
+        val old = RunEvent.decode("""{"type":"model_calls","atMs":5,"calls":3,"unreported":1,"inputTokens":10,"outputTokens":2,"cachedTokens":0}""") as RunEvent.ModelCalls
+        assertNull(old.httpCalls)
+        assertNull(old.httpUnreported)
     }
 }

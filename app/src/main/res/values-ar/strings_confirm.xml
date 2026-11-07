@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="confirm_note">كل إجراء ينفق المال يتطلب موافقتك في كل مرة.</string>
+    <string name="confirm_pay">الدفع</string>
+    <string name="confirm_delete">حذف</string>
+    <string name="confirm_order">إتمام الطلب</string>
+    <string name="confirm_submit">إرسال</string>
+    <string name="confirm_other">إجراء آخر</string>
+    <string name="confirm_root">أمر Root</string>
+    <string name="confirm_root_where">الهاتف بالكامل (root)</string>
+    <string name="confirm_title">يتطلب موافقتك: %1$s</string>
+    <string name="confirm_in_app">في %1$s</string>
+    <string name="confirm_target">إلى: %1$s</string>
+    <string name="confirm_content">المحتوى: %1$s</string>
+</resources>

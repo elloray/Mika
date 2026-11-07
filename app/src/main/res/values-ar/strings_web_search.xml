@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="web_search_title">بحث الويب</string>
+    <string name="web_search_row_sub">خدمة بحث اختيارية؛ يظل البحث في المتصفح متاحًا دائمًا</string>
+    <string name="web_search_hint">متوقف افتراضيًا. ترسل Mika المعاملين query وcount إلى نقطة نهاية HTTP JSON التي تحددها. يُرسل المفتاح الاختياري كرمز Bearer ويُخزَّن مشفرًا على هذا الهاتف. تُعامل نتائج البحث كمحتوى غير موثوق.</string>
+    <string name="web_search_enabled">تفعيل بحث الويب</string>
+    <string name="web_search_endpoint">عنوان URL لنقطة نهاية البحث</string>
+    <string name="web_search_api_key">مفتاح API (اختياري)</string>
+    <string name="web_search_invalid_endpoint">أدخل عنوان URL باستخدام HTTP أو HTTPS من دون معاملات استعلام.</string>
+    <string name="web_search_action">البحث في الويب</string>
+</resources>

@@ -33,7 +33,7 @@ sealed interface Permit {
 /**
  * 用户对一次要花钱的操作的同意(询问时只有付款要问):只放行紧接着的那一个匹配操作。
  * 同意绑定申报内容:同一前台 App、同类动作、对象出现在屏上(发送时在标题栏),发送时要发的字与申报相等,
- * 申报的金额在屏上;
+ * 应付上下文里申报的金额在屏上;普通页面上的价格、待遇和区间不是应付金额,不参与核对;
  * 下一次命中的不可逆操作无论对不对得上都用掉它。中间做了打字以外的写操作(包括返回、打开 App)、
  * 或过了 [MAX_STEPS] 步,同意作废。只能同意这一次;只在一次任务内有效,任务开始和结束时 [reset]。
  * 任务循环和界面回答可能在不同线程,读写都加锁。
@@ -85,10 +85,24 @@ class ConfirmationGate {
             screen?.packageName == null || screen.packageName != r.app -> "approved in ${r.app} but the screen shows ${screen?.packageName ?: "unknown"}"
             !targetShown(r, screen) && !(textless(screen) && seenShows(r, seen)) -> "the target \"${r.target}\" is not shown " + (if (r.action == IrrevAction.send) "in the title area" else "on the screen")
             r.action == IrrevAction.send && !contentMatches(r.content, screen, typing) && !(textless(screen) && seenShows(r, seen)) -> "the text to send is not exactly what was approved"
-            !amountShown(r.amount, screen, hit.matched) -> "the approved amount ${r.amount ?: "(none)"} is not on the screen"
+            amountBinds(hit, screen) && !amountShown(r.amount, screen, hit.matched) -> "the approved amount ${r.amount ?: "(none)"} is not on the screen"
             else -> return Permit.Allowed
         }
         return Permit.Mismatch(reason)
+    }
+
+    /**
+     * 不在屏上的一步(工具声明了要问,如会改动东西的 root 命令):同意的就是这一条,申报一字不差才放行。
+     * 有同意时不论结果都用掉它。
+     */
+    @Synchronized fun permitsExactly(ask: ConfirmationRequest, step: Int): Permit {
+        val g = grant ?: return Permit.NoGrant
+        grant = null
+        return when {
+            step - g.step > MAX_STEPS -> Permit.Mismatch("the approval expired ($MAX_STEPS steps)")
+            g.request != ask -> Permit.Mismatch("approved a different action than this one")
+            else -> Permit.Allowed
+        }
     }
 
     /** 读屏里一个带字的元素都没有(自绘界面、画布)。 */
@@ -140,6 +154,16 @@ class ConfirmationGate {
         fun same(x: String) = norm(x).let { if (capped) it.startsWith(c) else it == c }
         if (typing != null) return same(typing)
         return s.elements.any { it.editable && !it.hint && same(it.name) }
+    }
+
+    /**
+     * 金额是否参与这次核对,和风险分类使用同一个应付上下文。明确下单、工具声明的金额动作始终要金额;
+     * 普通提交、删除只有屏上有合计或付款面板时才要,避免把页面里的区间或待遇当成付款并反复要权。
+     */
+    private fun amountBinds(hit: Irreversible, s: ScreenSnapshot): Boolean = when (hit.action) {
+        IrrevAction.order, IrrevAction.pay, IrrevAction.other -> true
+        IrrevAction.send -> false
+        IrrevAction.submit, IrrevAction.delete -> IrreversibleDetector.hasPayableAmount(s)
     }
 
     /**

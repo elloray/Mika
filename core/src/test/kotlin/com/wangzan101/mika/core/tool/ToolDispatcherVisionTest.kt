@@ -20,6 +20,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 import com.wangzan101.mika.core.assembly.toolDispatcher
 import com.wangzan101.mika.core.uistate.interfaces
+import com.wangzan101.mika.core.uistate.ScreenDiagnosis
 
 class ToolDispatcherVisionTest {
     private var seq = 0
@@ -153,6 +154,16 @@ class ToolDispatcherVisionTest {
         assertEquals("no_app_open", empty.s("error"))
         val broken = dispatcher(LocScreen(), com.wangzan101.mika.core.model.ModelError.Network()).execute(call("phone_describe", """{"task":"x","reason":"y"}""")).content
         assertEquals("vision_unavailable", broken.s("error"))
+    }
+
+    @Test fun describeRejectsUnavailableCaptureWithoutCallingVision() = runTest {
+        val model = says()
+        val screen = LocScreen(captureError = ScreenDiagnosis.DISPLAY_CAPTURE_UNAVAILABLE)
+        val d = toolDispatcher(screen, vision = VisionService(model, JvmTestImageOps))
+        val r = d.execute(call("phone_describe", """{"task":"看看画面","reason":"读屏为空"}""")).content
+        assertEquals(ScreenDiagnosis.DISPLAY_CAPTURE_UNAVAILABLE, r.s("error"))
+        assertEquals("false", r.s("recoverable"))
+        assertTrue(model.requests.isEmpty())
     }
 
     @Test fun gateArgsResolveLocatedPoint() = runTest {

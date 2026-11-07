@@ -8,6 +8,7 @@ import android.app.RemoteInput
 import android.content.Context
 import android.content.Intent
 import android.os.Build
+import android.util.Log
 import com.wangzan101.mika.R
 import com.wangzan101.mika.core.shell.BuiltinShellFix
 import com.wangzan101.mika.core.shell.BuiltinShellStatus
@@ -20,8 +21,11 @@ import com.wangzan101.mika.setup.PairingCodeReceiver
 
 /** 配对通知此刻该显示什么。 */
 sealed interface PairingNotice {
-    /** 带输入框的「输入配对码」;[error] 是上一次没成功的原因和怎么办,输入框照样留着。 */
-    data class EnterCode(val port: Int?, val error: String? = null) : PairingNotice
+    /**
+     * 带输入框的「输入配对码」;[error] 是上一次没成功的原因和怎么办,输入框照样留着。
+     * [quiet] 为真时只放进通知栏、不响不弹:还没找到配对窗口时先备好(见 [of])。
+     */
+    data class EnterCode(val port: Int?, val error: String? = null, val quiet: Boolean = false) : PairingNotice
     data object Working : PairingNotice
     data object Done : PairingNotice
     /** 配对后没能连上:回 Mika 看怎么处理。 */
@@ -30,8 +34,10 @@ sealed interface PairingNotice {
     companion object {
         /**
          * 只在用户正在配对的这段时间里用([PairingCoordinator] 开着时)。找到配对窗口才弹输入框;
+         * 还在找时先在通知栏里静静放一个(不带端口,配对时再找):系统可能在切到系统设置后冻结后台的 Mika,
+         * 等找到窗口再发就发不出去了,用户下拉通知栏要能找到它;
          * 配对阶段的失败(码不对、过期、窗口关了)留在通知里重填;要重新配对的失败(配对失效)找到配对窗口后也给输入框,
-         * 和无障碍读码认的一样(PairingScreen.attempt);别的失败请用户回 Mika。
+         * 和无障碍读码认的一样(PairingScreen.attempt),还在找时同样先静静备好;别的失败请用户回 Mika。
          */
         fun of(status: BuiltinShellStatus, discovery: PairingDiscovery): PairingNotice? {
             val port = (discovery as? PairingDiscovery.Found)?.port
@@ -41,9 +47,14 @@ sealed interface PairingNotice {
                 is BuiltinShellStatus.Failed -> when {
                     status.reason.duringPairing -> EnterCode(port, PhoneSetupCopy.notifyRetry(status.reason))
                     status.fix == BuiltinShellFix.RePair && port != null -> EnterCode(port)
+                    status.fix == BuiltinShellFix.RePair && discovery == PairingDiscovery.Searching -> EnterCode(null, quiet = true)
                     else -> Problem(PhoneSetupCopy.failure(status.reason).title)
                 }
-                BuiltinShellStatus.NotPaired, BuiltinShellStatus.WirelessDebuggingOff -> port?.let { EnterCode(it) }
+                BuiltinShellStatus.NotPaired, BuiltinShellStatus.WirelessDebuggingOff -> when (discovery) {
+                    is PairingDiscovery.Found -> EnterCode(discovery.port)
+                    PairingDiscovery.Searching -> EnterCode(null, quiet = true)
+                    PairingDiscovery.Idle -> null
+                }
             }
         }
 
@@ -53,12 +64,12 @@ sealed interface PairingNotice {
         val REALERT_MS = listOf(8_000L, 20_000L, 40_000L)
         val MAX_REALERTS = REALERT_MS.size
 
-        /** 发出 [notice] 前等多久。无障碍没开时找到配对窗口就弹,不等。 */
+        /** 发出 [notice] 前等多久。无障碍没开时找到配对窗口就弹,不等;静静备好的那个也不等(要赶在进程被冻结之前)。 */
         fun delayBefore(notice: PairingNotice, autoRead: Boolean): Long =
-            if (notice is EnterCode && autoRead) AUTO_READ_GRACE_MS else 0L
+            if (notice is EnterCode && autoRead && !notice.quiet) AUTO_READ_GRACE_MS else 0L
 
         /** 已经再提醒过 [sent] 次,下一次隔多久;null 表示不再提醒。 */
-        fun realertAfter(notice: PairingNotice, sent: Int): Long? = if (notice is EnterCode) REALERT_MS.getOrNull(sent) else null
+        fun realertAfter(notice: PairingNotice, sent: Int): Long? = if (notice is EnterCode && !notice.quiet) REALERT_MS.getOrNull(sent) else null
 
         /**
          * [PairingCoordinator] 跟着状态更新通知时的一次计算:这时该显示哪条,显示完是否不再跟。
@@ -121,6 +132,12 @@ object PairingNotifier {
     private const val DONE_TIMEOUT_MS = 8_000L
     /** 填码通知最多留这么久(和找配对窗口的时长一样),App 被杀了也不会一直挂着。 */
     private const val INPUT_TIMEOUT_MS = 10 * 60_000L
+    private const val TAG = "MikaPairing"
+    /**
+     * 静静备好的填码通知单放一组、只让组摘要出声:组里没有摘要,它就不响不弹(minSdk 30 上的静音办法,
+     * 和 AndroidX 的 setSilent 在旧系统上的做法一样)。不另建低优先级频道:有的系统把低优先级通知折进「不重要的通知」,不好找。
+     */
+    private const val QUIET_GROUP = "pairing_quiet"
 
     /** 确保有一个配对频道,返回要用的那个(引导页据此提示、打开它的设置页)。 */
     fun ensureChannel(context: Context): ChannelPlan {
@@ -186,8 +203,13 @@ object PairingNotifier {
                 .setAutoCancel(true).setOnlyAlertOnce(true).setTimeoutAfter(DONE_TIMEOUT_MS)
             is PairingNotice.Problem -> b.setContentTitle(notice.title).setContentText(PhoneSetupCopy.NOTIFY_PROBLEM_TEXT).setAutoCancel(true)
         }
+        // 静静备好的那个:放进通知栏,不响不弹(高优先级频道上也是,minSdk 30 没有 setSilent)
+        if (notice is PairingNotice.EnterCode && notice.quiet) b.setOnlyAlertOnce(true).setGroup(QUIET_GROUP).setGroupAlertBehavior(Notification.GROUP_ALERT_SUMMARY)
         // 没允许通知时系统会丢掉它;引导页在配对这一步先请用户允许
-        runCatching { nm.notify(ID, b.build()) }
+        runCatching { nm.notify(ID, b.build()) }.onFailure { Log.w(TAG, "pairing notification not posted", it) }
+        // 发出去了也可能不弹:总开关、频道的重要程度都记一句(厂商另外的「悬浮通知」开关读不到)
+        if (!nm.areNotificationsEnabled()) Log.w(TAG, "notifications are off for Mika; the pairing notice is dropped")
+        else nm.getNotificationChannel(channel)?.let { if (it.importance < NotificationManager.IMPORTANCE_HIGH) Log.i(TAG, "pairing channel importance ${it.importance}; it won't pop up") }
     }
 
     fun cancel(context: Context) {

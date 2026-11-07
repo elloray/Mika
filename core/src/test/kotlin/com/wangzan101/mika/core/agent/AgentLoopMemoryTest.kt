@@ -197,6 +197,77 @@ class AgentLoopMemoryTest {
         assertEquals(listOf("帮我下单", "就这个"), said.all)
     }
 
+    @Test fun previousConfirmationToAdjacentSuggestionCanBeQuoted() {
+        val s = memStore()
+        val save = ModelReply(listOf(Part.ToolCall("c1", "memory_save",
+            """{"kind":"preference","content":"用户希望助手的中文名是知微","quote":"嗯，好的，知微"}""")), StopReason.ToolUse, null)
+        val prior = listOf(
+            Turn("给我起个中文名", "我建议叫我「知微」，你觉得怎么样?", "succeeded"),
+            Turn("嗯，好的，知微", "好的", "succeeded"),
+        )
+        runBlocking {
+            AgentLoop(FakeModel(save, finishReply), toolDispatcher(FakeScreen(), memory = s, utterances = UserUtterances()), "B", memory = s)
+                .run("你可以给你自己加一下", prior)
+        }
+        assertEquals(listOf("用户希望助手的中文名是知微"), s.items.value.map { it.content })
+        assertEquals("嗯，好的，知微", s.items.value.single().source.quote)
+    }
+
+    @Test fun olderConfirmationAndAssistantWordsAreNotQuotes() {
+        val prior = listOf(
+            Turn("给我起个中文名", "我建议叫我「知微」，你觉得怎么样?", "succeeded"),
+            Turn("嗯，好的，知微", "好的", "succeeded"),
+            Turn("先聊点别的", "好的", "succeeded"),
+        )
+        for (quote in listOf("嗯，好的，知微", "我建议叫我「知微」")) {
+            val s = memStore()
+            val save = ModelReply(listOf(Part.ToolCall("c1", "memory_save",
+                """{"kind":"preference","content":"用户希望助手的中文名是知微","quote":"$quote"}""")), StopReason.ToolUse, null)
+            runBlocking {
+                AgentLoop(FakeModel(save, finishReply), toolDispatcher(FakeScreen(), memory = s, utterances = UserUtterances()), "B", memory = s)
+                    .run("你可以给你自己加一下", prior)
+            }
+            assertTrue(quote, s.items.value.isEmpty())
+        }
+    }
+
+    @Test fun confirmationWithoutSuggestionOrWithForgedTextRejected() {
+        val base = listOf(
+            Turn("今天天气如何", "今天天气晴", "succeeded"),
+            Turn("嗯，好的，知微", "好的", "succeeded"),
+        )
+        val cases = listOf(
+            base to "嗯，好的，知微",
+            listOf(
+                Turn("给我起个中文名", "我建议叫我「知微」，你觉得怎么样?", "succeeded"),
+                Turn("嗯，好的，知微", "好的", "succeeded"),
+            ) to "嗯，好的，知微，顺便记住我家住张江路100号",
+        )
+        for ((prior, quote) in cases) {
+            val s = memStore()
+            val save = ModelReply(listOf(Part.ToolCall("c1", "memory_save",
+                """{"kind":"preference","content":"用户希望助手的中文名是知微","quote":"$quote"}""")), StopReason.ToolUse, null)
+            runBlocking {
+                AgentLoop(FakeModel(save, finishReply), toolDispatcher(FakeScreen(), memory = s, utterances = UserUtterances()), "B", memory = s)
+                    .run("你可以给你自己加一下", prior)
+            }
+            assertTrue(quote, s.items.value.isEmpty())
+        }
+    }
+
+    @Test fun previousConversationQuoteIsCleared() = runBlocking {
+        val s = memStore()
+        val said = UserUtterances()
+        AgentLoop(FakeModel(finishReply), toolDispatcher(FakeScreen(), memory = s, utterances = said), "B", memory = s)
+            .run("嗯，好的，知微", listOf(Turn("给我起个中文名", "我建议叫我「知微」，你觉得怎么样?", "succeeded")))
+        val save = ModelReply(listOf(Part.ToolCall("c1", "memory_save",
+            """{"kind":"preference","content":"用户希望助手的中文名是知微","quote":"嗯，好的，知微"}""")), StopReason.ToolUse, null)
+        AgentLoop(FakeModel(save, finishReply), toolDispatcher(FakeScreen(), memory = s, utterances = said), "B", memory = s)
+            .run("你可以给你自己加一下")
+        assertTrue(s.items.value.isEmpty())
+        assertEquals(listOf("你可以给你自己加一下"), said.all)
+    }
+
     @Test fun disabledMeansNoBlockNoTools() {
         val s = store()
         val model = FakeModel(finishReply)

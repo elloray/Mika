@@ -1,5 +1,7 @@
 package com.wangzan101.mika.core.agent
 
+import com.wangzan101.mika.core.cap.root.RootPort
+import com.wangzan101.mika.core.cap.root.RootRun
 import com.wangzan101.mika.core.knowledge.GuideCatalog
 import com.wangzan101.mika.core.memory.MemoryItem
 import com.wangzan101.mika.core.memory.MemoryPersistence
@@ -46,6 +48,10 @@ class PromptSurfaceTest {
             toolDispatcher(FakeScreen(), web = FakeWebPort(), sandbox = FakeSandbox(SandboxStatus.Ready(network = true)), workspace = { "w" })
         }),
         "phone-sandbox-preparing" to Combo({ toolDispatcher(FakeScreen(), sandbox = FakeSandbox(SandboxStatus.NotInstalled), workspace = { "w" }) }),
+        // 已 root 的手机上用户打开了 root 命令
+        "phone-root" to Combo({ toolDispatcher(FakeScreen(), root = object : RootPort {
+            override suspend fun run(command: String, timeoutMs: Long): RootRun = RootRun.Unavailable
+        }) }),
         "everything" to MemoryStore(Mem(), clock = { 1L }, ids = { "m" }).let { mem ->
             Combo({
                 toolDispatcher(

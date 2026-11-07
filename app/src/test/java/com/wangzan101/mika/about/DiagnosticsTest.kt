@@ -119,6 +119,18 @@ class DiagnosticsTest {
         assertTrue(t, t.contains("last error: AdbConnectionException(CONNECT_FAILED)"))
     }
 
+    @Test
+    fun helperStartupDiagnosticsSeparateLaunchTimeoutFromHandoffRejection() {
+        val snap = snapshot()
+        val timedOut = Diagnostics.render(snap.copy(phone = snap.phone.copy(helperLaunchStage = "handoff_timeout")))
+        assertTrue(timedOut, timedOut.contains("helper launch stage: handoff_timeout"))
+        assertTrue(timedOut, timedOut.contains("helper handoff rejection: none"))
+        val rejected = Diagnostics.render(snap.copy(phone = snap.phone.copy(
+            helperLaunchStage = "handoff_timeout", helperHandoffRejection = "StaleApk",
+        )))
+        assertTrue(rejected, rejected.contains("helper handoff rejection: StaleApk"))
+    }
+
     /** 扫过本机、用户填过端口:只写个数和有没有填,不写端口号。 */
     @Test
     fun connectServiceShowsScanAndManualWithoutPortNumbers() {

@@ -2,19 +2,26 @@
 """Mika's task API client. Standard library only; usable outside the source tree."""
 
 import argparse
+import base64
+import binascii
 import contextlib
+import errno
 import http.client
+import hashlib
 import json
 import math
 import os
 from pathlib import Path
 import re
+import shutil
 import subprocess
 import sys
+import tempfile
 import threading
 import urllib.error
 import urllib.parse
 import urllib.request
+import uuid
 
 VERSION = "0.1.0"
 API = "/api/v1"
@@ -22,6 +29,9 @@ PHONE_FILES = "/sdcard/Android/data/com.wangzan101.mika/files"
 INFO_FILE = PHONE_FILES + "/mcp-usb.json"
 CONNECT_SCRIPT = PHONE_FILES + "/connect-computer.sh"
 MAX_RESPONSE = 4 * 1024 * 1024
+FILE_CHUNK = 128 * 1024
+MAX_ATTACH_BYTES = 200 * 1024 * 1024
+MAX_ATTACH_FILES = 9
 HANDOFF = {"waiting_for_answer", "waiting_on_phone"}
 TERMINAL = {"done", "failed", "cancelled"}
 STATUSES = TERMINAL | HANDOFF | {"starting", "queued", "running", "paused"}
@@ -32,6 +42,10 @@ class CliError(Exception):
     def __init__(self, code, message, exit_code=2, **details):
         super().__init__(message)
         self.code, self.exit_code, self.details = code, exit_code, details
+
+
+class RawExport(str):
+    """Export body already formatted for stdout. Do not JSON-encode it again."""
 
 
 class Parser(argparse.ArgumentParser):
@@ -68,18 +82,25 @@ class Client:
         # Local/private phone traffic should not be sent through an ambient HTTP proxy.
         self.opener = urllib.request.build_opener(urllib.request.ProxyHandler({}), NoRedirect())
 
-    def request(self, method, path="", body=None, *, mutation=False, timeout=None, task_id=None):
+    def request(self, method, path="", body=None, *, mutation=False, timeout=None, task_id=None,
+                accept="application/json", expect="application/json", max_bytes=MAX_RESPONSE):
         data = None if body is None else json.dumps(body, ensure_ascii=False).encode("utf-8")
         req = urllib.request.Request(self.base + path, data=data, method=method, headers={
             "Authorization": "Bearer " + self.token,
-            "Accept": "application/json", "Content-Type": "application/json",
+            "Accept": accept, "Content-Type": "application/json",
             "X-Mika-Client": "mika-cli/" + VERSION,
         })
         try:
             with self.opener.open(req, timeout=timeout or self.timeout) as response:
-                raw = response.read(MAX_RESPONSE + 1)
-                if len(raw) > MAX_RESPONSE or response.headers.get_content_type() != "application/json":
+                raw = response.read(max_bytes + 1)
+                if len(raw) > max_bytes:
+                    if "/export" in path:
+                        raise CliError("export_too_large", "The run record is larger than the CLI can read.")
                     raise ValueError("invalid response")
+                if response.headers.get_content_type() != expect:
+                    raise ValueError("invalid response")
+                if expect != "application/json":
+                    return raw.decode("utf-8")
                 result = json.loads(raw)
                 if not isinstance(result, dict) or "error" in result:
                     raise ValueError("invalid response")
@@ -316,6 +337,8 @@ def task_snapshot(result, client, *, mutation=False, task_id=None):
             client.unknown(task_id)
         raise CliError("protocol", "Mika returned an invalid task snapshot.")
     if task_id is not None and result["task_id"] != task_id:
+        if mutation:
+            client.unknown(task_id)
         raise CliError("protocol", "Mika returned a different task ID.")
     return result
 
@@ -331,15 +354,175 @@ def recent_tasks(client, limit):
     return result
 
 
+def require_files(info):
+    if "task_files" not in info["capabilities"]:
+        raise CliError("incompatible_api", "This phone does not support task files. Update Mika to use attachments and downloads.")
+
+
+def discard_upload(client, upload_id):
+    with contextlib.suppress(CliError):
+        client.request("POST", "/uploads/" + upload_id + "/discard", {})
+
+
+def upload_file(client, name, size, stream):
+    if not 0 <= size <= MAX_ATTACH_BYTES:
+        raise CliError("input", "Attachments must fit within 200 MiB.")
+    upload_id = client.request("POST", "/uploads", {"name": name, "size": size}).get("upload_id")
+    if not isinstance(upload_id, str) or not re.fullmatch(r"[A-Za-z0-9_-]{1,80}", upload_id):
+        raise CliError("protocol", "Invalid upload receipt.")
+    try:
+        offset = 0
+        while offset < size:
+            chunk = stream.read(min(FILE_CHUNK, size - offset))
+            if not chunk:
+                raise CliError("input", "The source file ended before the upload was complete.")
+            reply = client.request("POST", "/uploads/" + upload_id, {
+                "offset": offset, "data": base64.b64encode(chunk).decode("ascii")})
+            offset += len(chunk)
+            if reply.get("next_offset") != offset:
+                raise CliError("protocol", "The phone did not confirm this attachment chunk.")
+        return upload_id
+    except BaseException:
+        discard_upload(client, upload_id)
+        raise
+
+
+def result_file(client, task_id, file_id):
+    result = task_snapshot(client.request("GET", "/tasks/" + task_id), client, task_id=task_id)
+    for item in result.get("files", []):
+        if isinstance(item, dict) and item.get("id") == file_id:
+            if type(item.get("size")) is not int or not 0 <= item["size"] <= 100 * 1024 * 1024:
+                raise CliError("protocol", "Invalid result file size.")
+            return item
+    raise CliError("file_not_found", "This file is not available for the selected task.", 1, http_status=404)
+
+
+def file_chunks(client, task_id, item):
+    digest = hashlib.sha256()
+    offset = 0
+    while True:
+        part = client.request("GET", "/tasks/%s/files/%s?offset=%d" % (task_id, item["id"], offset))
+        try:
+            data = base64.b64decode(part["data"], validate=True)
+        except (KeyError, TypeError, ValueError, binascii.Error):
+            raise CliError("protocol", "Invalid file data from the phone.") from None
+        remaining = item["size"] - offset
+        if part.get("offset") != offset or len(data) != min(FILE_CHUNK, remaining):
+            raise CliError("file_changed", "The result file is incomplete or changed on the phone.")
+        digest.update(data)
+        if len(data) == remaining and item.get("sha256") is not None and digest.hexdigest() != item["sha256"]:
+            raise CliError("file_changed", "The phone file no longer matches what the task exported.")
+        yield data
+        offset += len(data)
+        if offset == item["size"]:
+            return
+
+
+def submit_task(client, goal, conversation, upload_ids, request_id):
+    body = {"goal": goal}
+    if conversation is not None:
+        body["conversation"] = conversation
+    if upload_ids:
+        body["attachments"] = upload_ids
+    if request_id is not None:
+        body["request_id"] = request_id
+    result = client.request("POST", "/tasks", body, mutation=True, task_id=request_id)
+    return task_snapshot(result, client, mutation=True, task_id=request_id)
+
+
+def run_with_files(client, args, info):
+    request_id = args.request_id
+    if "task_recovery" in info["capabilities"]:
+        request_id = request_id or str(uuid.uuid4())
+    elif request_id is not None:
+        raise CliError("incompatible_api", "Update the phone app to submit a recoverable request.")
+    ids = list(getattr(args, "attachments", []))  # The local desk has already staged these.
+    paths = [Path(name) for name in getattr(args, "attach", [])]
+    if ids or paths:
+        require_files(info)
+    try:
+        if paths:
+            if len(paths) > MAX_ATTACH_FILES or any(not p.is_file() for p in paths) or sum(p.stat().st_size for p in paths) > MAX_ATTACH_BYTES:
+                raise CliError("input", "Choose up to 9 regular files totalling at most 200 MiB.")
+            for path in paths:
+                with path.open("rb") as stream:
+                    ids.append(upload_file(client, path.name, os.fstat(stream.fileno()).st_size, stream))
+        task = submit_task(client, args.goal, args.conversation, ids, request_id)
+        ids.clear()  # The phone consumed these in the accepted submission.
+        return task
+    except CliError as exc:
+        if exc.code == "outcome_unknown":
+            ids.clear()  # Submission may still be consuming them. Unused uploads expire.
+        raise
+    except OSError:
+        raise CliError("input", "Could not read an attachment on this computer.") from None
+    finally:
+        # Browser-staged uploads belong to the browser. Clean up files staged by this CLI invocation.
+        if paths:
+            for upload_id in ids:
+                discard_upload(client, upload_id)
+
+
+def publish_download(staged, target):
+    # Both paths are on the same filesystem. Publishing must fail if another writer won the name.
+    if os.name == "nt":
+        os.rename(staged, target)  # Windows rename never replaces an existing name.
+        return
+    try:
+        os.link(staged, target)
+    except OSError as exc:
+        if exc.errno not in {errno.EPERM, errno.ENOTSUP, errno.ENOSYS}:
+            raise
+        # exFAT and some network shares have no hard links. Only create a destination
+        # after verification, with exclusive creation even if it appeared mid-transfer.
+        with staged.open("rb") as source, target.open("xb") as output:
+            try:
+                shutil.copyfileobj(source, output, length=1024 * 1024)
+                output.flush()
+            except OSError:
+                raise CliError("output", "The verified file could not be fully written to this volume. Check the output file.") from None
+
+
+def save_result(client, task_id, file_id, output):
+    if not re.fullmatch(r"[A-Za-z0-9_-]{1,80}", file_id):
+        raise CliError("arguments", "Use a file ID returned by task status.")
+    item = result_file(client, task_id, file_id)
+    target = Path(output)
+    try:
+        if os.path.lexists(target):
+            raise FileExistsError
+        with tempfile.TemporaryDirectory(prefix=".mika-download-", dir=target.parent) as directory:
+            staged = Path(directory) / "file"
+            with staged.open("xb") as stream:
+                for chunk in file_chunks(client, task_id, item):
+                    stream.write(chunk)
+            publish_download(staged, target)
+    except FileExistsError:
+        raise CliError("output", "The output file already exists. Choose a new file name.") from None
+    except OSError as exc:
+        raise CliError("output", "Could not save the result file: " + str(exc.strerror or exc)) from None
+    return {"file": str(target), "size": item["size"], "task_id": task_id}
+
+
 def execute(args, secrets):
     # Validate inputs before opening a connection or invoking the bootstrap script.
     if args.command == "task":
         if args.action == "run":
-            args.goal = text_input(args.goal, args.goal_file, "goal")
+            if (getattr(args, "attach", None) or getattr(args, "attachments", None)) and not args.goal and args.goal_file is None:
+                args.goal = ""
+            else:
+                args.goal = text_input(args.goal, args.goal_file, "goal")
+            if args.request_id is not None:
+                try:
+                    if str(uuid.UUID(args.request_id)) != args.request_id:
+                        raise ValueError
+                except ValueError:
+                    raise CliError("arguments", "request_id must be a canonical lowercase UUID.") from None
         if args.action in {"answer", "steer"}:
             args.text = text_input(args.text, args.text_file, args.action)
         if hasattr(args, "task_id") and not re.fullmatch(r"[A-Za-z0-9_-]+", args.task_id):
-            raise CliError("arguments", "task_id must be an ID returned by Mika.")
+            name = "id" if args.action == "export" else "task_id"
+            raise CliError("arguments", name + " must be an ID returned by Mika.")
     if args.command == "devices":
         if args.url or args.token_file:
             raise CliError("arguments", "devices lists ADB devices; it does not use --url or --token-file.")
@@ -360,10 +543,14 @@ def execute(args, secrets):
             raise CliError("incompatible_api", "This Mika APK does not support task steering; update the phone app.")
         path = "/tasks" + ("/" + args.task_id if hasattr(args, "task_id") else "")
         if action == "run":
-            body = {"goal": args.goal}
-            if args.conversation is not None:
-                body["conversation"] = args.conversation
-            return task_snapshot(client.request("POST", path, body, mutation=True), client, mutation=True)
+            return run_with_files(client, args, info)
+        if action == "download":
+            require_files(info)
+            return save_result(client, args.task_id, args.file_id, args.output)
+        if action == "export":
+            if "run_export" not in info.get("capabilities", []):
+                raise CliError("incompatible_api", "This Mika APK does not support run export.")
+            return export_record(client, args.task_id, args.events)
         if action == "list":
             return recent_tasks(client, args.limit)
         if action in {"status", "wait"}:
@@ -382,6 +569,45 @@ def execute(args, secrets):
                                   not isinstance(result.get("message_id"), str) or not result["message_id"]):
             client.unknown(args.task_id)
         return result
+
+
+def export_record(client, task_id, events):
+    # A run record can be much larger than a task snapshot. Still bounded so a stuck read cannot grow forever.
+    limit = 32 * 1024 * 1024
+    if events:
+        text = client.request("GET", "/tasks/" + task_id + "/export?events=jsonl",
+                              accept="application/x-ndjson, application/json", expect="application/x-ndjson", max_bytes=limit)
+        lines = [line for line in text.splitlines() if line.strip()]
+        if not lines:
+            raise CliError("protocol", "Mika returned an invalid run export.")
+        try:
+            header = json.loads(lines[0])
+            parsed = [json.loads(line) for line in lines[1:]]
+        except ValueError:
+            raise CliError("protocol", "Mika returned an invalid run export.") from None
+        check_export(header, events=False)
+        if "events" in header or any(not isinstance(event, dict) or not isinstance(event.get("type"), str) for event in parsed):
+            raise CliError("protocol", "Mika returned an invalid run export.")
+        return RawExport(text if text.endswith("\n") else text + "\n")
+    result = client.request("GET", "/tasks/" + task_id + "/export", max_bytes=limit)
+    check_export(result, events=True)
+    return result
+
+
+def check_export(result, events):
+    required = ("exportFormat", "partial", "includesScreenshots", "task_id", "conversation_id", "run_id", "run")
+    if not isinstance(result, dict) or any(key not in result for key in required):
+        raise CliError("protocol", "Mika returned an invalid run export.")
+    if (result["exportFormat"] != 1 or type(result["partial"]) is not bool or type(result["includesScreenshots"]) is not bool
+            or result["includesScreenshots"] is not False):
+        raise CliError("protocol", "Mika returned an invalid run export.")
+    for key in ("task_id", "conversation_id", "run_id"):
+        if result[key] is not None and not isinstance(result[key], str):
+            raise CliError("protocol", "Mika returned an invalid run export.")
+    if result["run"] is not None and not isinstance(result["run"], dict):
+        raise CliError("protocol", "Mika returned an invalid run export.")
+    if events and not isinstance(result.get("events"), list):
+        raise CliError("protocol", "Mika returned an invalid run export.")
 
 
 def bounded_int(low, high):
@@ -429,10 +655,16 @@ def parser():
     task = sub.add_parser("task", help="Run and inspect phone tasks", parents=[common])
     actions = task.add_subparsers(dest="action", required=True)
     run = actions.add_parser("run", parents=[common], help="Submit once; return the task ID immediately")
-    goal = run.add_mutually_exclusive_group(required=True)
+    goal = run.add_mutually_exclusive_group()
     goal.add_argument("--goal")
     goal.add_argument("--goal-file", help="UTF-8 file, or - for stdin")
+    run.add_argument("--attach", action="append", default=[], metavar="FILE", help="Attach a local file (repeatable)")
+    download = actions.add_parser("download", parents=[common], help="Save one file exported by a task")
+    download.add_argument("task_id")
+    download.add_argument("file_id", help="ID in the task's files list")
+    download.add_argument("--output", required=True, help="New file path on this computer")
     run.add_argument("--conversation", help="Continue a conversation returned by a previous remote task")
+    run.add_argument("--request-id", help="A lowercase UUID chosen before submission. Query it as the task ID after a lost receipt.")
     for name in ["status", "wait", "answer", "steer", "cancel"]:
         cmd = actions.add_parser(name, parents=[common])
         cmd.add_argument("task_id")
@@ -444,7 +676,21 @@ def parser():
             answer.add_argument("--text-file", help="UTF-8 file, or - for stdin")
     listing = actions.add_parser("list", parents=[common])
     listing.add_argument("--limit", type=bounded_int(1, 50), default=10)
+    export = actions.add_parser("export", parents=[common], help="Export a redacted run by task ID or run ID")
+    export.add_argument("task_id", help="Task ID or run ID")
+    export.add_argument("--events", action="store_true", help="Write the header followed by JSONL events")
     return p
+
+
+def json_flag(argv):
+    """Recognize exactly the long-option prefixes accepted for --json."""
+    for token in argv:
+        if token == "--":
+            break
+        name = token.split("=", 1)[0]
+        if len(name) > 2 and name.startswith("--") and "--json".startswith(name):
+            return True
+    return False
 
 
 def main(argv=None):
@@ -454,7 +700,7 @@ def main(argv=None):
             stream.reconfigure(encoding="utf-8")
     argv = list(sys.argv[1:] if argv is None else argv)
     secrets, code = [], 0
-    compact = "--json" in argv
+    compact = json_flag(argv)
     try:
         args = parser().parse_args(argv)
         for key, default in {"device": None, "url": None, "token_file": None, "adb": "adb", "request_timeout": 15}.items():
@@ -476,7 +722,7 @@ def main(argv=None):
             return serve(args)
         args.progress = args.command in {"devices", "connect", "doctor"}
         result = execute(args, secrets)
-        if isinstance(result.get("status"), str) and result["status"] in {"failed", "cancelled"}:
+        if not isinstance(result, RawExport) and isinstance(result.get("status"), str) and result["status"] in {"failed", "cancelled"}:
             code = 1
     except CliError as exc:
         result = {"error": {"code": exc.code, "message": str(exc), **exc.details}}
@@ -484,6 +730,12 @@ def main(argv=None):
     except KeyboardInterrupt:
         result = {"error": {"code": "interrupted", "message": "Stopped waiting locally; no task cancellation was requested."}}
         code = 130
+    if isinstance(result, RawExport):
+        text = result
+        for secret in secrets:
+            text = text.replace(secret, "[redacted]")
+        print(text, end="" if text.endswith("\n") else "\n")
+        return code
     output = json.dumps(redact(result, secrets), ensure_ascii=False, separators=(",", ":") if compact else None, indent=None if compact else 2)
     print(output, file=sys.stdout if compact or code == 0 else sys.stderr)
     return code

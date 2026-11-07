@@ -3,7 +3,7 @@ package com.wangzan101.mika.core.shell
 import kotlinx.coroutines.flow.StateFlow
 
 /**
- * 内置助手(经本机「无线调试」以 shell 身份拉起的特权进程)此刻的状态。
+ * 内置助手(经本机「无线调试」、电脑或 su 以 shell 身份拉起的特权进程)此刻的状态。
  * 界面、设置页和任务入口都只看它;配对、连接、看门狗的实现各自把结果写成这几种之一。
  */
 sealed interface BuiltinShellStatus {
@@ -34,6 +34,8 @@ enum class BuiltinShellFailure(val defaultFix: BuiltinShellFix, val duringPairin
     WifiNotAllowed(BuiltinShellFix.OpenWirelessDebugging, duringPairing = false),
     /** 连不上本机的无线调试。 */
     ConnectFailed(BuiltinShellFix.Retry, duringPairing = false),
+    /** ADB 目标不是本机自己的地址:调用方错误,不是会自己恢复的网络故障。 */
+    NotLocal(BuiltinShellFix.Retry, duringPairing = false),
     /** 已配对的授权不认了(太久没用被系统撤销,或用户在系统里删了)。 */
     AuthorizationRevoked(BuiltinShellFix.RePair, duringPairing = false),
     /** 配对用的钥匙存着却读不出来了:设备只认那一把,不能悄悄换,要重新配对(配对时才换新钥匙)。 */
@@ -45,6 +47,14 @@ enum class BuiltinShellFailure(val defaultFix: BuiltinShellFix, val duringPairin
      * 再运行一次启动命令。不往无线调试引:有的手机根本没有能用的无线调试。
      */
     UsbHelperStopped(BuiltinShellFix.RunUsbCommand, duringPairing = false),
+    /** 打开了「用 root 启动」,su 却拒绝了:不再自己去问,等用户点重试(重试时 su 会再弹一次授权)。 */
+    RootDenied(BuiltinShellFix.Retry, duringPairing = false),
+    /** su 没回话(授权弹框没人点):同样等用户点重试。 */
+    RootNoAnswer(BuiltinShellFix.Retry, duringPairing = false),
+    /** 打开了「用 root 启动」,手机上却找不到 su 了(root 被去掉了):关掉这一项,或去配对无线调试。 */
+    RootUnavailable(BuiltinShellFix.RePair, duringPairing = false),
+    /** su 答应了,却切不到 shell 身份:这种 su 起不了助手,改用无线调试或电脑。 */
+    RootNoShellUid(BuiltinShellFix.RePair, duringPairing = false),
     Unknown(BuiltinShellFix.Retry, duringPairing = false),
 }
 
@@ -100,6 +110,9 @@ interface BuiltinShellControl {
         paired -> HelperRestart.Wireless
         else -> HelperRestart.None
     }
+
+    /** 用户打开了「用 root 启动」且此刻能用:看门狗先经 su 起助手(状态是正在连接时,界面说正在用 root 启动)。 */
+    val rootStart: Boolean get() = false
 
     /** 开始找配对端口(用户正在去打开配对窗口)。重复调用无害:还在找就从这时起重新计时。 */
     fun startDiscovery()

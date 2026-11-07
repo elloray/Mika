@@ -103,8 +103,8 @@ class WebTab(
 
     // 弹出的标签已经在同站页面上开始加载过:之后再要去别的网站只拦下那次导航,不再关标签
     private var popupCommitted = false
-    /** 替网络代理答过几次账号密码(只在主线程上动)。 */
-    private var proxyAuthAnswers = 0
+    /** 当前主文档的代理认证重试额度(只在主线程上动)。 */
+    private val proxyAuth = WebProxyAuth()
 
     /** 主文档是否正在加载。只在主线程读写。 */
     var loading: Boolean = false
@@ -203,6 +203,7 @@ class WebTab(
                     v.stopLoading()
                     return
                 }
+                proxyAuth.onPageStarted()
                 loading = true
                 armed = true
                 mainFrameFailed = false
@@ -246,12 +247,11 @@ class WebTab(
             // 网络代理要账号密码:只回答设置 › 网络代理 里那个 HTTP 代理,答过几次还在问(账号密码不对)就不再答;
             // 网站自己的登录框不在这里填
             override fun onReceivedHttpAuthRequest(v: WebView, handler: HttpAuthHandler, host: String?, realm: String?) {
-                val credentials = WebProxy.credentialsFor(host)
-                if (credentials == null || proxyAuthAnswers >= MAX_PROXY_AUTH_ANSWERS) {
+                val credentials = proxyAuth.credentialsFor(host)
+                if (credentials == null) {
                     handler.cancel()
                     return
                 }
-                proxyAuthAnswers++
                 handler.proceed(credentials.first, credentials.second)
             }
 
@@ -433,8 +433,6 @@ class WebTab(
 
     companion object {
         private const val TAG = "MikaWebTab"
-        /** 同一个标签页替代理答账号密码的上限:再问就是账号密码不对,不再答,免得一直转。 */
-        private const val MAX_PROXY_AUTH_ANSWERS = 3
         private const val PROFILE = "mika"
 
         /**

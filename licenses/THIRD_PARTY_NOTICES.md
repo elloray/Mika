@@ -204,6 +204,13 @@ The Apache Software Foundation (https://www.apache.org/).
 - License: 0BSD(BSD Zero Clause License);Copyright (C) The XZ for Java authors and contributors
 - Usage: 首次启动时解压自带的运行环境。
 
+## ZXing
+
+- Project: https://github.com/zxing/zxing
+- Artifact: `com.google.zxing:core:3.5.3`
+- License: Apache-2.0(依据 Maven POM)
+- Usage: 以库的形式依赖,未修改其代码;只用于在 Android 本机生成微信绑定二维码。
+
 ## commonmark-java
 
 - Project: https://github.com/commonmark/commonmark-java

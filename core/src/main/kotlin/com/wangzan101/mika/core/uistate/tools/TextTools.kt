@@ -20,7 +20,7 @@ import com.wangzan101.mika.core.tool.ToolExecution
 import com.wangzan101.mika.core.tool.Verb
 import com.wangzan101.mika.core.tool.argStr
 import com.wangzan101.mika.core.tool.bool
-import com.wangzan101.mika.core.tool.fail
+import com.wangzan101.mika.core.tool.refExpired
 import com.wangzan101.mika.core.tool.int
 import com.wangzan101.mika.core.tool.okObj
 import com.wangzan101.mika.core.tool.str
@@ -62,7 +62,7 @@ private suspend fun aim(a: Args, ctx: ToolContext): Pair<FieldAim?, ToolExecutio
     if (ref != null && (x != null || y != null)) throw ArgError("x", "give either ref+snapshotId or x+y, not both")
     if ((x == null) != (y == null)) throw ArgError(if (x == null) "x" else "y", "x and y go together")
     if (ref != null && LOCATED_REF.matches(ref.first)) {
-        val p = locatedPixel(ctx, ref.first, ref.second) ?: return null to fail("ref_expired", Feedback["located_stale"])
+        val p = locatedPixel(ctx, ref.first, ref.second) ?: return null to refExpired(Feedback["located_stale"], "located_stale")
         return FieldAim.Point(p.first, p.second, ref.first) to null
     }
     if (x != null && y != null) {

@@ -1,7 +1,11 @@
 package com.wangzan101.mika.core.cap.sandbox
 
+import java.io.Closeable
 import java.io.File
+import java.io.InputStream
+import java.io.OutputStream
 import com.wangzan101.mika.core.knowledge.ScriptEntry
+import com.wangzan101.mika.core.workspace.SandboxError
 import com.wangzan101.mika.core.workspace.WorkspaceFileGate
 import com.wangzan101.mika.core.workspace.SandboxTree
 import kotlinx.serialization.json.JsonObject
@@ -31,6 +35,13 @@ interface SandboxPort {
 
     /** [cwd]:`/workspace` 下的相对路径,null 为 `/workspace` 本身。 */
     suspend fun run(workspace: String, argv: List<String>, cwd: String?, timeoutMs: Long, onProgress: (String) -> Unit): CommandResult
+
+    /**
+     * 启动一条长驻命令(stdio MCP server),stdin/stdout/stderr 直接接到进程。默认不支持;
+     * 实现必须把进程关在沙箱里,不能让它拿到 App 私有目录。
+     */
+    suspend fun openProcess(workspace: String, argv: List<String>, cwd: String? = null): SandboxProcess =
+        throw SandboxError("sandbox_stdio_unsupported", "This device cannot run stdio MCP servers.", recoverable = true)
 
     /** 当前任务提供手机工具入口时，命令可通过桥接调用；旧实现仍可只实现 [run]。 */
     suspend fun runWithPhone(workspace: String, argv: List<String>, cwd: String?, timeoutMs: Long,
@@ -71,4 +82,11 @@ interface SandboxPort {
 
     /** [skillPath] 下的 [file] 与打包的那份逐字节相同;不同就重新同步一次再核,仍不同为 false。 */
     suspend fun verifyScript(skillPath: String, file: String): Boolean = true
+}
+
+/** [SandboxPort.openProcess] 返回的长驻进程;关闭时整棵进程树结束。 */
+interface SandboxProcess : Closeable {
+    val stdin: OutputStream
+    val stdout: InputStream
+    val stderr: InputStream
 }

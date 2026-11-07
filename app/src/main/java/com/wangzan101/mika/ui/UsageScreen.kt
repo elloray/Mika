@@ -56,6 +56,7 @@ import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -65,6 +66,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.wangzan101.mika.core.usage.ModelUsage
@@ -540,6 +542,7 @@ private data class StackPart(val slot: Int?, val tokens: Long)
 @Composable
 private fun TrendChart(report: UsageReport, selected: String?, today: LocalDate) {
     val c = MikaTheme.colors
+    val rtl = LocalLayoutDirection.current == LayoutDirection.Rtl
     val series = report.series
     if (series.isEmpty()) return
     val byId = report.providers.associateBy { it.id }
@@ -564,26 +567,28 @@ private fun TrendChart(report: UsageReport, selected: String?, today: LocalDate)
         Canvas(
             Modifier.fillMaxSize().testTag("usage-chart")
                 .semantics { contentDescription = "${UsageCopy.TREND}，${UsageCopy.stepLabel(report.step)}" }
-                .pointerInput(series) {
+                .pointerInput(series, rtl) {
                     detectTapGestures { o ->
                         val plot = size.width - gutter.toPx()
-                        if (o.x > plot) return@detectTapGestures
-                        val i = (o.x / (plot / series.size)).toInt().coerceIn(0, series.lastIndex)
+                        val logicalX = if (rtl) size.width - o.x else o.x
+                        if (logicalX > plot) return@detectTapGestures
+                        val i = (logicalX / (plot / series.size)).toInt().coerceIn(0, series.lastIndex)
                         tapped = if (tapped == i) null else i
                     }
                 },
         ) {
             val plot = size.width - gutter.toPx()
+            val plotStart = if (rtl) gutter.toPx() else 0f
             val h = size.height
             val gap = 2.dp.toPx()
             val n = series.size
             val colW = ((plot - gap * (n - 1)) / n).coerceAtLeast(1f)
             val step = if (n > 1) (plot - colW) / (n - 1) else 0f
             val dash = PathEffect.dashPathEffect(floatArrayOf(3.dp.toPx(), 3.dp.toPx()))
-            listOf(0f, 0.5f).forEach { y -> drawLine(c.grid, Offset(0f, h * y), Offset(plot, h * y), 1.dp.toPx(), pathEffect = dash) }
-            drawLine(c.grid, Offset(0f, h), Offset(plot, h), 1.dp.toPx())
+            listOf(0f, 0.5f).forEach { y -> drawLine(c.grid, Offset(plotStart, h * y), Offset(plotStart + plot, h * y), 1.dp.toPx(), pathEffect = dash) }
+            drawLine(c.grid, Offset(plotStart, h), Offset(plotStart + plot, h), 1.dp.toPx())
             stacks.forEachIndexed { i, segs ->
-                val x = i * step
+                val x = plotStart + if (rtl) plot - colW - i * step else i * step
                 var bottom = h
                 segs.forEachIndexed { k, s ->
                     val top = k == segs.lastIndex
@@ -644,13 +649,15 @@ private val GridText = TextStyle(fontSize = 10.5.sp, lineHeight = 14.sp)
 @Composable
 private fun TrendTip(b: UsageBucket, report: UsageReport, index: Int, gutter: Dp, today: LocalDate) {
     val c = MikaTheme.colors
+    val rtl = LocalLayoutDirection.current == LayoutDirection.Rtl
     val rows = b.byProvider.entries.sortedByDescending { it.value }
     Column(
         Modifier.layout { m, cons ->
             val p = m.measure(cons.copy(minWidth = 0, minHeight = 0))
             layout(cons.maxWidth, p.height) {
                 val plot = cons.maxWidth - gutter.roundToPx()
-                val center = plot / report.series.size.toFloat() * (index + 0.5f)
+                val logicalCenter = plot / report.series.size.toFloat() * (index + 0.5f)
+                val center = if (rtl) cons.maxWidth - logicalCenter else logicalCenter
                 p.place((center - p.width / 2f).toInt().coerceIn(0, (cons.maxWidth - p.width).coerceAtLeast(0)), 0)
             }
         }.background(c.ink, TipShape).padding(horizontal = 9.dp, vertical = 6.dp).testTag("usage-chart-tip"),

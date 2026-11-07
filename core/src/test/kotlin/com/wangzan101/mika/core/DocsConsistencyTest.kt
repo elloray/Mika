@@ -72,6 +72,8 @@ class DocsConsistencyTest {
     /** 文档里写的是 App 运行时才有的东西(设备上的目录和文件),不在仓库里;逐个写明为什么。 */
     private val runtimeOnly = mapOf(
         "eval/logged-in.txt" to "评测的人工登录标记,放在设备上 App 的外部文件目录,不进仓库",
+        "usb-start.sh" to "手机助手启动脚本由 App 写到设备外部文件目录,不进仓库",
+        "connect-computer.sh" to "电脑连接脚本由 App 写到设备外部文件目录,不进仓库",
     )
 
     /** 只有仓库根下确有的一级目录或文件开头的路径、以及代码类的短文件名,才是在指仓库里的东西;其余是运行时产物或相对写法。 */

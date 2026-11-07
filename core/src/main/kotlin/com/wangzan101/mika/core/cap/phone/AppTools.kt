@@ -46,9 +46,13 @@ internal object ListApps : PhoneTool {
         val copies = ctx.phone.screen.appCopies().groupBy { it.packageName }
         val access = ctx.phone.screen.appAccess.current()
         return ok {
-            put("packages", JsonArray(apps.map { JsonPrimitive(it.first) }))
             put("apps", JsonArray(apps.flatMap { (p, l) ->
-                listOf(buildJsonObject { put("package", p); put("label", l); put("blocked", p in access.blocked); put("screenShareAllowed", p in access.shareAllowed) }) +
+                listOf(buildJsonObject {
+                    put("package", p); put("label", l)
+                    // false 是默认态,不为每个 App 重复写;这份结果会留在后续每一步的历史里。
+                    if (p in access.blocked) put("blocked", true)
+                    if (p in access.shareAllowed) put("screenShareAllowed", true)
+                }) +
                     copies[p].orEmpty().map { c -> buildJsonObject { put("package", p); put("label", c.label(l)); put("user", c.userId) } }
             }))
         }

@@ -87,6 +87,19 @@ class OpenAiCompatModelTest {
         assertEquals(StopReason.ToolUse, r.stopReason)
     }
 
+    /** 流式请求超长:回 400 的照常认;回 200、在事件流里给一帧错误的,说的是超长也认成超长,别的错误照旧。 */
+    @Test fun contextTooLongIsRecognizedWhenStreaming() = runTest {
+        suspend fun streamError(resp: MockResponse): ModelError {
+            server.enqueue(resp)
+            return try { model().completeStreaming("s", user, emptyList()) {}; throw AssertionError("no error") } catch (e: ModelError) { e }
+        }
+        assertTrue(streamError(MockResponse().setResponseCode(400).setBody("""{"error":{"code":400,"message":"request (25123 tokens) exceeds the available context size (16384 tokens), try increasing it","type":"exceed_context_size_error","n_prompt_tokens":25123,"n_ctx":16384}}""")) is ModelError.ContextTooLong)
+        fun frame(message: String) = MockResponse().setHeader("Content-Type", "text/event-stream")
+            .setBody("data: {\"error\":{\"object\":\"error\",\"message\":\"$message\",\"type\":\"BadRequestError\",\"param\":null,\"code\":400}}\n\ndata: [DONE]\n\n")
+        assertTrue(streamError(frame("The input (25123 tokens) is longer than the model's context length (16384 tokens).")) is ModelError.ContextTooLong)
+        assertTrue(streamError(frame("bad input")) is ModelError.BadResponse)
+    }
+
     /** 整份回复已经收全,只是没发 `[DONE]`:照常说完,不当成流提前断了。 */
     @Test fun eventStreamWithoutDoneStillFinishes() = runTest {
         server.enqueue(
@@ -151,6 +164,19 @@ class OpenAiCompatModelTest {
         assertTrue(zero is ModelError.ModelNotAvailable)
         assertTrue(errorFor(MockResponse().setResponseCode(400).setBody("context_length_exceeded")) is ModelError.ContextTooLong)
         assertTrue(errorFor(MockResponse().setResponseCode(400).setBody("exceeds the maximum context")) is ModelError.ContextTooLong)
+        // 本机跑的服务说超出上下文的原话(第二句是它不能切分的请求):说上下文的大小、长度,不说 context_length
+        assertTrue(errorFor(MockResponse().setResponseCode(400).setBody("""{"error":{"code":400,"message":"request (25123 tokens) exceeds the available context size (16384 tokens), try increasing it","type":"exceed_context_size_error","n_prompt_tokens":25123,"n_ctx":16384}}""")) is ModelError.ContextTooLong)
+        assertTrue(errorFor(MockResponse().setResponseCode(400).setBody("""{"error":{"code":400,"message":"input (25123 tokens) is larger than the max context size (16384 tokens). skipping","type":"exceed_context_size_error","n_prompt_tokens":25123,"n_ctx":16384}}""")) is ModelError.ContextTooLong)
+        assertTrue(errorFor(MockResponse().setResponseCode(400).setBody("""{"object":"error","message":"The input (25123 tokens) is longer than the model's context length (16384 tokens).","type":"BadRequestError","param":null,"code":400}""")) is ModelError.ContextTooLong)
+        assertTrue(errorFor(MockResponse().setResponseCode(400).setBody("""{"error":{"message":"Your input exceeds the context window of this model. Please adjust your input and try again."}}""")) is ModelError.ContextTooLong)
+        // 带图的请求在服务端展开成图片 token 后才超:说的是模型长度
+        assertTrue(errorFor(MockResponse().setResponseCode(400).setBody("""{"error":{"message":"The decoder prompt (length 25123) is longer than the maximum model length of 16384. Make sure that `max_model_len` is no smaller than the number of text tokens plus multimodal tokens. For image inputs, the number of image tokens depends on the number of images, and possibly their aspect ratios as well.","type":"BadRequestError","param":null,"code":400}}""")) is ModelError.ContextTooLong)
+        assertTrue(errorFor(MockResponse().setResponseCode(400).setBody("""{"error":"Trying to keep the first 15857 tokens when context the overflows. However, the model is loaded with context length of only 4096 tokens, which is not enough. Try to load the model with a larger context length, or provide a shorter input. Error Data: n/a, Additional Data: n/a"}""")) is ModelError.ContextTooLong)
+        assertTrue(errorFor(MockResponse().setResponseCode(400).setBody("""{"error":"The number of tokens to keep from the initial prompt is greater than the context length. Try to load the model with a larger context length, or provide a shorter input. Error Data: n/a, Additional Data: n/a"}""")) is ModelError.ContextTooLong)
+        // 提到 context、说的却不是超长:照旧;报错里回显了请求里的「context window」也不算
+        assertTrue(errorFor(MockResponse().setResponseCode(400).setBody("""{"error":{"message":"Invalid value for 'context': expected a string"}}""")) is ModelError.BadResponse)
+        assertTrue(errorFor(MockResponse().setResponseCode(400).setBody("""{"error":{"message":"Invalid type for 'messages[1].content': expected a string","input":"how big is your context window?"}}""")) is ModelError.BadResponse)
+        assertTrue(errorFor(MockResponse().setResponseCode(400).setBody("""{"error":{"message":"Invalid 'tools[3].function.name': string too long. Expected a string with maximum length 64, but got a string with length 67 instead."}}""")) is ModelError.BadResponse)
         assertEquals("m", (errorFor(MockResponse().setResponseCode(404)) as ModelError.ModelNotFound).model)
         // 网关回的 404 不一定是模型名不对:带上它 JSON 里的原话;HTML 页不当原话
         val gateway = errorFor(MockResponse().setResponseCode(404).setBody("""{"error":{"type":"not_found_error","message":"none of group/rpa's models is ready"}}""")) as ModelError.ModelNotFound

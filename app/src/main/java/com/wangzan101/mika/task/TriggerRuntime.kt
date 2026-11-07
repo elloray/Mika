@@ -23,10 +23,13 @@ import com.wangzan101.mika.core.trigger.TriggerEngine
 import com.wangzan101.mika.core.trigger.ConditionOutcome
 import com.wangzan101.mika.core.trigger.TriggerSnapshot
 import com.wangzan101.mika.core.trigger.TriggerWindowState
+import com.wangzan101.mika.core.trigger.rescheduledTo
+import com.wangzan101.mika.core.trigger.afterCheck
+import com.wangzan101.mika.core.trigger.conditionCheckGoal
+import com.wangzan101.mika.core.trigger.revertFire
+import com.wangzan101.mika.settings.FeatureFlags
 import java.io.File
-import java.time.Instant
 import java.time.ZoneId
-import java.time.format.DateTimeFormatter
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -66,7 +69,22 @@ object TriggerRuntime {
             .onFailure { Log.w("MikaTrigger", "exact alarm prompt failed", it) }.isSuccess
     }
 
-    @Synchronized fun rearm(context: Context) { engine(context, store(context)).rearm(System.currentTimeMillis()) }
+    @Synchronized fun rearm(context: Context) {
+        if (FeatureFlags.get(context).quitRequested()) arm(context, null)
+        else engine(context, store(context)).rearm(System.currentTimeMillis())
+    }
+
+    /** 完全退出时只撤系统闹钟,不改计划与待处理账本;下次打开 App 由 [rearm] 接着排。 */
+    @Synchronized fun suspendAlarms(context: Context) = arm(context, null)
+
+    @Synchronized fun fire(context: Context) {
+        // 已发出的广播可能晚于退出到达:不要认领时段,也不要发提醒,重新打开后仍可按原账本恢复
+        if (FeatureFlags.get(context).quitRequested()) {
+            arm(context, null)
+            return
+        }
+        engine(context, store(context)).fire(System.currentTimeMillis())
+    }
 
     /** 设备时区变化后,跟随旧设备时区的当地时间计划重算到新时区;显式钉了其他时区的不动。没有基线(首次使用)就只记下当前时区。 */
     @Synchronized fun syncTimeZone(context: Context) {
@@ -77,8 +95,6 @@ object TriggerRuntime {
         if (previous == null || previous == current) return
         engine(context, store(context)).rezone(System.currentTimeMillis(), previous, ZoneId.of(current))
     }
-
-    @Synchronized fun fire(context: Context) { engine(context, store(context)).fire(System.currentTimeMillis()) }
 
     @Synchronized fun delivered(context: Context, key: String) {
         val store = store(context)
@@ -115,15 +131,15 @@ object TriggerRuntime {
         }
         outcome as ConditionOutcome.Checked
         val trigger = store.get(window.triggerId) ?: return
-        val wasMet = trigger.lastConditionMet == true
-        store.upsert(trigger.copy(lastConditionMet = outcome.met))
-        if (!outcome.met || wasMet) {
-            store.mark(window.key, TriggerWindowState.Skipped, if (wasMet) "condition_unchanged" else "condition_not_met")
+        val decision = trigger.afterCheck(outcome, System.currentTimeMillis(), slotMs = window.dueAtMs)
+        store.upsert(decision.next)
+        if (!decision.fire) {
+            store.mark(window.key, TriggerWindowState.Skipped, decision.reason)
             return
         }
         store.mark(window.key, TriggerWindowState.ActionDispatched)
-        try { TaskService.startTrigger(context, goal, threadId, key, null) }
-        catch (e: Exception) { reportStartFailure(context, store, trigger, window.key, e, resetCondition = true) }
+        try { TaskService.startTrigger(context, goal, threadId, key, null, null) }
+        catch (e: Exception) { reportStartFailure(context, store, trigger, window.key, e, before = trigger) }
     }
 
     @Synchronized fun list(context: Context): List<TriggerDefinition> = store(context).all()
@@ -135,11 +151,9 @@ object TriggerRuntime {
         TriggerSnapshot(it.all(), it.windows())
     }
 
-    @Synchronized fun setEnabled(context: Context, id: String, enabled: Boolean) {
-        val store = store(context)
-        store.get(id)?.let { store.upsert(it.copy(enabled = enabled)) }
-        engine(context, store).rearm(System.currentTimeMillis())
-    }
+    /** 暂停或恢复;改不了(没有这个计划、恢复跑过的一次性计划)时返回 false,见 [TriggerEngine.setEnabled]。 */
+    @Synchronized fun setEnabled(context: Context, id: String, enabled: Boolean): Boolean =
+        store(context).let { engine(context, it).setEnabled(id, enabled, System.currentTimeMillis()) }
 
     @Synchronized fun remove(context: Context, id: String) {
         val store = store(context)
@@ -150,11 +164,7 @@ object TriggerRuntime {
     @Synchronized fun reschedule(context: Context, id: String, nextAtMs: Long) {
         val store = store(context)
         store.get(id)?.let { trigger ->
-            val local = trigger.calendarZone?.let { zone ->
-                DateTimeFormatter.ofPattern("HH:mm").format(Instant.ofEpochMilli(nextAtMs).atZone(ZoneId.of(zone)))
-            }
-            store.upsert(trigger.copy(nextAtMs = nextAtMs, enabled = true,
-                calendarTime = if (trigger.calendarTime != null) local else null))
+            store.upsert(trigger.rescheduledTo(nextAtMs))
         }
         engine(context, store).rearm(System.currentTimeMillis())
     }
@@ -165,7 +175,8 @@ object TriggerRuntime {
         val window = store.claimNow(id, System.currentTimeMillis()) ?: error(tr(R.string.trigger_busy))
         try {
             if (trigger.reminderText != null) deliverReminder(context, store, trigger, window.key)
-            else TaskService.startTrigger(context, trigger.goal, trigger.threadId, window.key, trigger.conditionGoal)
+            else TaskService.startTrigger(context, trigger.goal, trigger.threadId, window.key,
+                trigger.conditionCheckGoal(ZoneId.systemDefault()), trigger.conditionGoal)
             store.mark(window.key, TriggerWindowState.Dispatched)
         } catch (e: Exception) {
             reportStartFailure(context, store, trigger, window.key, e)
@@ -199,7 +210,8 @@ object TriggerRuntime {
     private fun engine(context: Context, store: FileTriggerStore) = TriggerEngine(store,
         { at -> arm(context, at) }, isIdle = { !((context.applicationContext as MikaApp).taskState.busy.value) }) { trigger, window ->
             if (trigger.reminderText != null) deliverReminder(context, store, trigger, window.key)
-            else try { TaskService.startTrigger(context, trigger.goal, trigger.threadId, window.key, trigger.conditionGoal) }
+            else try { TaskService.startTrigger(context, trigger.goal, trigger.threadId, window.key,
+                    trigger.conditionCheckGoal(ZoneId.systemDefault()), trigger.conditionGoal) }
                 catch (e: Exception) { reportStartFailure(context, store, trigger, window.key, e); throw e }
         }
 
@@ -216,11 +228,11 @@ object TriggerRuntime {
     }
 
     private fun reportStartFailure(context: Context, store: FileTriggerStore, trigger: TriggerDefinition,
-        key: String, error: Exception, resetCondition: Boolean = false) {
+        key: String, error: Exception, before: TriggerDefinition? = null) {
         val message = tr(R.string.trigger_not_started_body)
         Log.w("MikaTrigger", "scheduled task could not start", error)
         store.mark(key, TriggerWindowState.Failed, tr(R.string.trigger_start_failed))
-        if (resetCondition) store.get(trigger.id)?.let { store.upsert(it.copy(lastConditionMet = false)) }
+        if (before != null) store.get(trigger.id)?.let { store.upsert(it.revertFire(before)) }
         val conversations = ConversationStore.shared(context)
         val runId = "schedule-failed:$key"
         if (conversations.turns(trigger.threadId).none { it.runId == runId }) {
@@ -266,9 +278,10 @@ object TriggerRuntime {
         val intent = Intent(context, TriggerAlarmReceiver::class.java).setAction(ACTION)
         val pending = PendingIntent.getBroadcast(context, 0, intent, PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
         alarms.cancel(pending)
-        if (atMs != null) {
-            if (canScheduleExactly(context)) alarms.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, atMs, pending)
-            else alarms.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, atMs, pending)
+        val at = atMs?.takeUnless { FeatureFlags.get(context).quitRequested() }
+        if (at != null) {
+            if (canScheduleExactly(context)) alarms.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, at, pending)
+            else alarms.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, at, pending)
         }
     }
 

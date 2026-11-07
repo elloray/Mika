@@ -1,0 +1,22 @@
+<resources>
+    <string name="device_access_group">الإيقاظ وإلغاء القفل عن بُعد</string>
+    <string name="device_access_title">السماح بالإيقاظ وإلغاء القفل عن بُعد</string>
+    <string name="device_access_sub">يمكن لكمبيوتر يملك رمز MCP الخاص بك إيقاظ هذا الهاتف وإلغاء قفله.</string>
+    <string name="device_access_credential">بيانات اعتماد قفل الشاشة</string>
+    <string name="device_access_no_credential">غير مُعدّ · السحب أو عدم وجود قفل شاشة فقط</string>
+    <string name="device_access_pin_saved">حُفظ PIN · انقر للاستبدال</string>
+    <string name="device_access_password_saved">حُفظت كلمة المرور · انقر للاستبدال</string>
+    <string name="device_access_blocked">أُوقف إلغاء القفل مؤقتًا · تحقّق من بيانات الاعتماد واحفظها مجددًا على هذا الهاتف</string>
+    <string name="device_access_clear">إزالة بيانات الاعتماد المحفوظة</string>
+    <string name="device_access_foot">متوقف افتراضيًا. تبقى بيانات الاعتماد مشفّرة على هذا الهاتف ولا تُرسل مطلقًا إلى نموذج أو كمبيوتر. تؤدي محاولة واحدة فاشلة لبيانات الاعتماد إلى إيقاف المحاولات اللاحقة مؤقتًا. بعد إعادة التشغيل، ألغِ قفل الهاتف بنفسك مرة واحدة أولًا. يجب إعداد التحكم بالهاتف.</string>
+    <string name="device_access_pin">PIN</string>
+    <string name="device_access_password">كلمة المرور</string>
+    <string name="device_access_value">بيانات الاعتماد</string>
+    <string name="device_access_value_hint">أدخل قفل الشاشة الحالي</string>
+    <string name="device_access_repeat">تأكيد</string>
+    <string name="device_access_repeat_hint">أعد إدخاله</string>
+    <string name="device_access_save">Save credential</string>
+    <string name="device_access_pin_hint">Use the current 4–16 digit PIN. Saving again allows one new attempt after a failure.</string>
+    <string name="device_access_password_hint">Use the current 4–64 character password: English letters, numbers, spaces and common ASCII symbols. Other characters and pattern locks are not supported.</string>
+    <string name="device_access_save_failed">Could not save. Check the phone storage and try again.</string>
+</resources>

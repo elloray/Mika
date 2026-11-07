@@ -149,6 +149,7 @@ class LoopScenarioTest {
         val end = loop(main, toolDispatcher(screen)).run("点搜索")
         assertTrue("$end", end is TaskState.Succeeded)
         assertTrue("ref_expired" in main.lastResult(2))
+        assertTrue(main.lastResult(2), "\"cause\":\"element_lost\"" in main.lastResult(2))
         snapshot("d_ref_expired", end, "main" to main)
     }
 

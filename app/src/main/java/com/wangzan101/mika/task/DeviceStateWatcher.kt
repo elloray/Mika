@@ -78,6 +78,9 @@ class DeviceStateWatcher(
         }
     }
 
+    /** 本进程刚完成唤醒/解锁后立刻重读，不等下一条系统广播。 */
+    fun refresh() = lock.refresh()
+
     fun close() {
         runCatching { appContext.unregisterReceiver(receiver) }
         scope.cancel()

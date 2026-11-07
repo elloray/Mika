@@ -24,8 +24,8 @@ object AppsAfterTask {
         NotApp("not_app"),
         /** 这台系统挪不了任务,照旧随屏关掉。 */
         MoveUnsupported("move_not_supported"),
-        /** 挪到一半没成,为了不留在用户眼前把它关了。 */
-        MoveFailed("move_failed"),
+        /** 挪到主屏后等到超时还看得见:不能留在用户眼前,挪回 Mika 的屏随屏关掉。 */
+        StillInFront("still_in_front"),
     }
 
     /**
@@ -106,6 +106,12 @@ object AppsAfterTask {
     /** 挪不了时写进 note 的话。 */
     const val NOTE_MOVE_UNSUPPORTED = "move not supported"
     const val NOTE_PLAYBACK_UNKNOWN = "playback unknown"
+    /** 有任务挪过去以后一直看得见,没留下。 */
+    const val NOTE_STILL_IN_FRONT = "still visible on main, closed"
+    /** 前面带个数:挪过去了却没能取消隐藏,最近任务里看不见,下次打开同一份时挪回来补上。 */
+    const val NOTE_LEFT_HIDDEN = "left hidden on main"
+    /** 读不了主屏的任务列表,没核对上留下的是不是已退到后面。 */
+    const val NOTE_SETTLE_UNKNOWN = "behind check unavailable"
 
     // AudioPlaybackConfiguration.PLAYER_STATE_STARTED
     const val PLAYER_STATE_STARTED = 2

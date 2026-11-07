@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="web_search_title">Búsqueda web</string>
+    <string name="web_search_row_sub">Servicio de búsqueda opcional; la búsqueda en el navegador siempre está disponible</string>
+    <string name="web_search_hint">Desactivada de forma predeterminada. Mika envía los parámetros query y count a tu extremo HTTP JSON. La clave opcional se envía como token Bearer y se guarda cifrada en este teléfono. Los resultados se tratan como contenido no confiable.</string>
+    <string name="web_search_enabled">Activar búsqueda web</string>
+    <string name="web_search_endpoint">URL del extremo de búsqueda</string>
+    <string name="web_search_api_key">Clave de API (opcional)</string>
+    <string name="web_search_invalid_endpoint">Introduce una URL HTTP o HTTPS sin parámetros de consulta.</string>
+    <string name="web_search_action">Buscar en la web</string>
+</resources>

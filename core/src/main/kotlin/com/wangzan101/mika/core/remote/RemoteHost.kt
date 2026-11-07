@@ -23,7 +23,9 @@ class RemoteHost(
     private val onError: (Throwable) -> Unit = {},
     loopbackToken: () -> String? = { null },
     device: DeviceAccess? = null,
-    private val endpoints: RemoteEndpoints = RemoteEndpoints(tasks, serverVersion, clock, device),
+    history: RemoteHistory? = null,
+    records: RunExportSource? = null,
+    private val endpoints: RemoteEndpoints = RemoteEndpoints(tasks, serverVersion, clock, device, history, records),
 ) {
     private val access = RemoteAccess(token, clock, loopbackToken = loopbackToken)
     val activity get() = endpoints.activity

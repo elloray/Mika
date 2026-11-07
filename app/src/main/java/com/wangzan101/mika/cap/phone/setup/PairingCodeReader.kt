@@ -1,6 +1,7 @@
 package com.wangzan101.mika.cap.phone.setup
 
 import android.content.Context
+import android.util.Log
 import android.view.Display
 import android.view.accessibility.AccessibilityNodeInfo
 import com.wangzan101.mika.cap.phone.a11y.ScreenAccessibility
@@ -26,12 +27,21 @@ internal object PairingCodeReader {
     /** 窗口内容常常分几次刷出来,等它稳一下再读。 */
     private const val SETTLE_MS = 300L
     private const val MAX_NODES = 400
+    private const val TAG = "MikaPairing"
 
     suspend fun run(context: Context, control: BuiltinShellControl, coordinator: PairingCoordinator) {
-        val settings = SystemPickers.settingsPackage(context.packageManager) ?: return
+        val settings = SystemPickers.settingsPackage(context.packageManager) ?: run {
+            Log.w(TAG, "no system settings app found; not reading the code")
+            return
+        }
         val tried = mutableSetOf<String>()
+        var last: String? = null
         ScreenAccessibility.instance.collectLatest { service ->
-            service ?: return@collectLatest
+            if (service == null) {
+                Log.i(TAG, "accessibility not running; the code goes through the notification")
+                return@collectLatest
+            }
+            Log.i(TAG, "reading the pairing window of $settings")
             service.eventsFor(Display.DEFAULT_DISPLAY)
                 .filter { it.packageName?.toString() == settings }
                 .map { }
@@ -40,9 +50,18 @@ internal object PairingCodeReader {
                 .collect {
                     delay(SETTLE_MS)
                     val portFound = control.pairingDiscovery.value is PairingDiscovery.Found
-                    val attempt = readings(service, settings).firstNotNullOfOrNull {
-                        PairingScreen.attempt(it, portFound, PhoneSetupFlow.effectiveStatus(control.status.value, coordinator.repairing.value), tried)
+                    val status = PhoneSetupFlow.effectiveStatus(control.status.value, coordinator.repairing.value)
+                    val readings = readings(service, settings)
+                    // 只在看到的和上次不同时记一句;码本身不记,只记有没有
+                    val seen = "${readings.size} window(s), code ${readings.any { it.code != null }}, port ${readings.firstNotNullOfOrNull { it.port }}, port found $portFound, status $status"
+                    if (seen != last) {
+                        Log.i(TAG, "saw $seen")
+                        last = seen
+                    }
+                    val attempt = readings.firstNotNullOfOrNull {
+                        PairingScreen.attempt(it, portFound, status, tried)
                     } ?: return@collect
+                    Log.i(TAG, "read a code from the screen; pairing")
                     tried += attempt.code
                     coordinator.pair(attempt.code, attempt.port)
                 }

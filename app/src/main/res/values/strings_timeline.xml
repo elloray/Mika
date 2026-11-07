@@ -92,4 +92,6 @@
     <string name="timeline_exported">Usage records saved</string>
     <string name="timeline_export_failed">Couldn’t export the usage records. Check that the record is available and the destination is writable.</string>
     <string name="timeline_running">Running</string>
+    <string name="timeline_step_limit">Steps</string>
+    <string name="timeline_step_limit_value">%1$d / %2$d</string>
 </resources>

@@ -156,6 +156,11 @@ private fun HeaderGroup(h: TimelineHeader, onExport: () -> Unit) {
             }
         }
         h.metrics?.let { RunMetricsSummary(it) }
+        h.stepLimit?.let { limit ->
+            ListRow(null, stringResource(R.string.timeline_step_limit)) {
+                RowValue(stringResource(R.string.timeline_step_limit_value, h.stepsUsed, limit))
+            }
+        }
         // 还没跑完:这里说「进行中」,下面这些小结(核查、结局)等结束了才有
         if (h.running) {
             ListRow(null, stringResource(R.string.timeline_outcome)) { RowValue(stringResource(R.string.timeline_running), ValueTone.Plain) }

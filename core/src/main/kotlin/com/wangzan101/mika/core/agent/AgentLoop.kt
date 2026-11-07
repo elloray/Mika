@@ -22,6 +22,7 @@ import com.wangzan101.mika.core.action.Refusals
 import com.wangzan101.mika.core.access.AppAccessDenied
 import com.wangzan101.mika.core.model.Author
 import com.wangzan101.mika.core.gate.ConfirmationGate
+import com.wangzan101.mika.core.gate.ConfirmationRequest
 import com.wangzan101.mika.core.knowledge.ChannelAdvisor
 import com.wangzan101.mika.core.knowledge.ChannelFacts
 import com.wangzan101.mika.core.knowledge.KnowledgeEntry
@@ -83,7 +84,19 @@ import com.wangzan101.mika.core.general.VIEW_USER_SCREEN
 
 /** 批做完后另看的一眼:内容和画面同一时刻。 */
 private fun batchViewNote(content: String) = Feedback.format("batch_view_note", "screen" to content)
-private val MEMORY_VERBS = setOf(Verb.MemorySearch, Verb.MemorySave)
+
+/** 进度块取出后，其余文字保持一条助手消息；调用及其私有数据原样保留。 */
+private fun cleanReplyParts(parts: List<Part>, text: String): List<Part> {
+    var textWritten = false
+    return parts.mapNotNull { part ->
+        if (part !is Part.Text) part else if (textWritten) null else {
+            textWritten = true
+            Part.Text(text).takeIf { text.isNotEmpty() }
+        }
+    }
+}
+
+private val MEMORY_VERBS = setOf(Verb.MemorySearch, Verb.MemorySave, Verb.MemoryEdit)
 /** 讨论历史时仍可查本地记忆与技能资料、之前几轮的记录；这些调用不会打开 App 或网站。 */
 private val DISCUSSION_LOOKUP_VERBS = setOf(Verb.MemorySearch, Verb.KnowledgeSearch, Verb.KnowledgeRead, Verb.SkillSearch, Verb.SkillRead, Verb.HistoryRead)
 
@@ -242,7 +255,8 @@ class AgentLoop(
         confirmations?.reset()
         utterances?.clear()
         emit(RunEvent.TaskStarted(now(), Redactor.text(task), model.name,
-            origin = runProvenance.origin.takeIf { it != RunOrigin.Ui }?.name?.lowercase()))
+            origin = runProvenance.origin.takeIf { it != RunOrigin.Ui }?.name?.lowercase(),
+            stepLimit = maxSteps.takeIf { it != Int.MAX_VALUE }))
         var end: TaskState? = null
         replay?.reset()
         lastEnd = null
@@ -311,6 +325,8 @@ class AgentLoop(
     /** 回答追问;没有在等的问题(已超时、已答过)时返回 false,由界面告诉用户回答来晚了。 */
     suspend fun answerInput(text: String): Boolean = user.answerInput(text)
 
+    fun cancelInput(askId: String): Boolean = user.cancelInput(askId)
+
     suspend fun answerConfirmation(approved: Boolean) = answerConfirmation(if (approved) ConfirmChoice.Once else ConfirmChoice.Deny)
 
     suspend fun answerConfirmation(choice: ConfirmChoice) = user.answerConfirmation(choice)
@@ -333,6 +349,12 @@ class AgentLoop(
         earlierGoals = priorTurns.map { it.userText }
         // 之前的轮次只作参考,放在本次任务之前
         val context = Conversation.context(priorTurns)
+        // 仅「上一轮用户明确确认 + 再上一轮助手建议/提问」可供 memory_save 跨轮引用;更早轮次与助手原文不收。
+        val confirmation = rawPrior.lastOrNull()
+        val proposal = rawPrior.dropLast(1).lastOrNull()
+        if (confirmation != null && proposal != null) {
+            utterances?.addPreviousConfirmation(UserWords.said(confirmation.userText, tools), proposal.outcome, proposal.status)
+        }
         utterances?.add(UserWords.said(opening?.words ?: raw, tools))
         // 记忆块:对话上文之后、任务原文之前;用到的条目由代码记下
         usedMemory = emptyList()
@@ -426,6 +448,24 @@ class AgentLoop(
             return advice
         }
         val track = StepTrack()
+        var completion = CompletionPlan()
+        val newData = NewDataTracker()
+        fun progressState() = completion.metric?.state()
+        fun progressText(raw: String): String {
+            val parsed = CompletionPlanBlock.extract(raw)
+            parsed.errors.forEach { emit(RunEvent.State(now(), "task_progress_invalid", RunEvent.clip(it))) }
+            parsed.updates.forEach { update ->
+                val next = try { completion.apply(update) } catch (e: IllegalArgumentException) {
+                    emit(RunEvent.State(now(), "task_progress_invalid", RunEvent.clip(e.message ?: "invalid progress")))
+                    return@forEach
+                }
+                if (next != completion) {
+                    completion = next
+                    emit(completion.event(now()))
+                }
+            }
+            return parsed.text
+        }
         var intent: IntentGate.Intent? = null
         var intentAssessed = false
         // 每次运行只判断一次;判断不出(调用失败、回复不是三个词之一)时为 null,照主模型自己的决定走
@@ -450,7 +490,7 @@ class AgentLoop(
             appendSteers(history, inbox)
             if (maxSteps != Int.MAX_VALUE) TurnPolicy.beforeStep(TurnSnapshot(step, maxSteps))?.let { history += ctx.notice(it.source, it.text) }
             appendRuntimeState(history, place, labels, step)
-            _state.value = TaskState.Running(step, note)
+            _state.value = TaskState.Running(step, note, progress = progressState())
             refreshOffer()
             var asked = now()
             tools.manualControl?.awaitAutomatic()
@@ -486,8 +526,10 @@ class AgentLoop(
                     used = model
                 }
             }
-            val text = reply.parts.filterIsInstance<Part.Text>().joinToString("") { it.text }.trim()
-            history += Message(Role.Assistant, reply.parts, Author.Mika).also { caller.noteReply(it, used, reply.usage) }
+            val rawText = reply.parts.filterIsInstance<Part.Text>().joinToString("") { it.text }.trim()
+            val text = progressText(rawText)
+            val cleanParts = cleanReplyParts(reply.parts, text)
+            history += Message(Role.Assistant, cleanParts, Author.Mika).also { caller.noteReply(it, used, reply.usage) }
             val calls = reply.parts.filterIsInstance<Part.ToolCall>()
             note = text.ifEmpty { calls.firstOrNull()?.name ?: note }
             val tool = calls.firstOrNull()?.name
@@ -497,7 +539,7 @@ class AgentLoop(
             val latencyMs = repliedAtMs - asked - retryWaitMs
             // 随调用写的字是进度说明,界面上的实时那一行先用它
             val narration = text.takeIf { calls.isNotEmpty() && it.isNotEmpty() }
-            _state.value = TaskState.Running(step, note, tool, reason = reason, narration = narration,
+            _state.value = TaskState.Running(step, note, tool, progress = progressState(), reason = reason, narration = narration,
                 preview = text.takeIf { streamReplies && calls.isEmpty() && it.isNotEmpty() })
             // 带调用的回复等执行完再记:要看端口是否报告了密码框
             fun recordReply(argsJson: String?) = emit(RunEvent.ModelReply(
@@ -595,21 +637,21 @@ class AgentLoop(
                 continue
             }
             if (flags.batchSteps && first.name == DO_STEPS_TOOL) {
-                when (val end = batch(first, skipped, history, specs, guards, executor, track, step, note, tool, reason, narration, recordReply = ::recordReply,
+                val end = batch(first, skipped, history, specs, guards, executor, track, step, note, tool, reason, narration, recordReply = ::recordReply,
                     app = { place = it }, steerWaiting = { inbox?.hasSteers() == true },
                     noteVerdicts = { s, sub, v ->
                         // 和单步一样计卡住提醒与同一段字的重复输入
                         val typed = StuckAdvice.typedText(tools.verb(s.tool), parseArgs(s.argsJson), sub?.content)
                         stuckAdvice(v, typed)
-                    })) {
-                    null -> continue
-                    else -> return end
-                }
+                    })
+                if (end != null) return end
+                if (completion.complete) return finalTurn(task, history, specs, step + 1, labels, place, recorder, facts(), inbox, Closeout.Completed, completion)
+                continue
             }
 
             val verb = tools.verb(first.name)
             val offScreen = tools.offScreen(first.name)
-            val running = TaskState.Running(step, note, tool, reason = reason, narration = narration)
+            val running = TaskState.Running(step, note, tool, progress = progressState(), reason = reason, narration = narration)
             gateState = running
             var advice: String? = null
             var waitsForUser = false
@@ -650,6 +692,10 @@ class AgentLoop(
                     history += Message(Role.Tool, listOf(Part.ToolResult(first.id, content.toString(), isError = true)) + skipped, Author.Mika)
                     recordReply(Redactor.args(tools.verb(first.name), first.argsJson, secretField = true))
                 }
+
+                // 不在屏上、要问的一步(会改动东西的 root 命令):用和付款同一张确认卡片当场问,申报就是这一步本身
+                override suspend fun approve(request: ConfirmationRequest): ToolExecution =
+                    user.confirm(Outcome.Confirm(request, request.app), step, running)
             })
             val ran = when (action) {
                 is ActionOutcome.Cancelled -> return TaskState.Cancelled
@@ -672,6 +718,8 @@ class AgentLoop(
                 is ActionOutcome.Ran -> action
             }
             val exec = ran.exec
+            val noNewData = newData.after(verb, exec)
+            if (noNewData) emit(RunEvent.State(now(), "no_new_data", NewDataTracker.LIMIT.toString()))
             if (verb == Verb.HandToUser && (args["reason"] as? JsonPrimitive)?.contentOrNull == PAYMENT) paymentHandedOver = true
             val isError = (exec.content["ok"] as? JsonPrimitive)?.booleanOrNull == false
             noteResultEvents(verb, exec.content)
@@ -706,6 +754,8 @@ class AgentLoop(
                 // 同一份知识不会重复注入
                 is KnowledgeLookup.Site -> if (visitedSites.add(lookup.host)) knowledge?.byDomain(lookup.host).let { injectKnowledge(history, it) }
             }
+            if (completion.complete) return finalTurn(task, history, specs, step + 1, labels, place, recorder, facts(), inbox, Closeout.Completed, completion)
+            if (noNewData) return finalTurn(task, history, specs, step + 1, labels, place, recorder, facts(), inbox, Closeout.NoNewData, completion)
         }
         appendSteers(history, inbox)
         refreshOffer()
@@ -830,7 +880,8 @@ class AgentLoop(
         appendSteers(history, steers)
     }
 
-    private fun previewFor(step: Int): ((String) -> Unit)? = if (!streamReplies) null else { preview ->
+    private fun previewFor(step: Int): ((String) -> Unit)? = if (!streamReplies) null else { raw ->
+        val preview = CompletionPlanBlock.visible(raw)
         val current = _state.value as? TaskState.Running
         // 撤掉之后网络线程可能还送来一段:不再显示,免得屏幕上比历史里多
         if (current?.step == step && interruptedStep != step) _state.value = current.copy(preview = preview.takeIf(String::isNotEmpty))
@@ -942,9 +993,9 @@ class AgentLoop(
      */
     private suspend fun finalTurn(
         task: String, history: MutableList<Message>, specs: List<ToolSpec>, step: Int, labels: Map<String, String>, place: Place?, recorder: ActionRecorder,
-        facts: ReviewFacts, inbox: RunInbox?,
+        facts: ReviewFacts, inbox: RunInbox?, closeout: Closeout = Closeout.StepLimit, completion: CompletionPlan? = null,
     ): TaskState {
-        TurnPolicy.finalTurn().let { history += ctx.notice(it.source, it.text) }
+        TurnPolicy.closeout(closeout, completion?.metric?.state()).let { history += ctx.notice(it.source, it.text) }
         repeat(3) { attempt ->
             appendSteers(history, inbox)
             appendRuntimeState(history, place, labels, step)
@@ -955,10 +1006,10 @@ class AgentLoop(
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
-                return StopRules.stepLimit(maxSteps)
+                return StopRules.closeoutFailed(closeout, maxSteps)
             }
-            val text = reply.parts.filterIsInstance<Part.Text>().joinToString("") { it.text }.trim()
-            history += Message(Role.Assistant, reply.parts, Author.Mika)
+            val text = CompletionPlanBlock.extract(reply.parts.filterIsInstance<Part.Text>().joinToString("") { it.text }.trim()).text
+            history += Message(Role.Assistant, cleanReplyParts(reply.parts, text), Author.Mika)
             val calls = reply.parts.filterIsInstance<Part.ToolCall>()
             val call = calls.firstOrNull { tools.verb(it.name) in TurnPolicy.FINAL_VERBS }
             val retryWaitMs = caller.lastRetryWaitMs
@@ -972,7 +1023,7 @@ class AgentLoop(
             // 收尾模型也可能正在生成时收到插话。最多重答两次，其余交给下一任务。
             if (attempt < 2 && keepFinished(history, inbox)) return@repeat
             if (call == null) {
-                if (calls.isNotEmpty() || text.isEmpty() || reply.stopReason == StopReason.MaxTokens) return StopRules.stepLimit(maxSteps)
+                if (calls.isNotEmpty() || text.isEmpty() || reply.stopReason == StopReason.MaxTokens) return StopRules.closeoutFailed(closeout, maxSteps)
                 return conclude(task, text, step, facts, history = null)!!
             }
             val started = now()
@@ -981,7 +1032,7 @@ class AgentLoop(
             recorder.result(step, call.name, tools.verb(call.name), exec.content, exec.record, null, null, now() - started, "model", call.id)
             return StopRules.afterFinalTurn(exec.outcome, maxSteps)
         }
-        return StopRules.stepLimit(maxSteps)
+        return StopRules.closeoutFailed(closeout, maxSteps)
     }
 
     companion object {

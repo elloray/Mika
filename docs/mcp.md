@@ -125,7 +125,7 @@ curl -s http://192.168.1.23:8765/mcp \
 
 | 工具 | 参数 | 做什么 |
 | --- | --- | --- |
-| `mika_run_task` | `goal`（必填）、`conversation`（可选） | 把一件事交给 Mika，马上返回任务编号 `task_id`。任务记在一个对话里，手机上的对话列表看得到。想接着上一件事说，就把上一个任务返回的 `conversation` 带上。 |
+| `mika_run_task` | `goal`（必填）、`conversation`、`"request_id"`（可选） | 把一件事交给 Mika，马上返回任务编号 `task_id`。任务记在一个对话里，手机上的对话列表看得到。想接着上一件事说，就把上一个任务返回的 `conversation` 带上。 |
 | `mika_task_status` | `task_id` | 任务此刻的状态、最近的进度、在等什么、做完时的回答。 |
 | `mika_wait_task` | `task_id`、`timeout_s`（可选，默认 30，最多 50） | 等到状态变了（比如开始等你回答、做完了）或者到时间，再返回状态。进度说明变了不算，不会一步一返回。 |
 | `mika_answer` | `task_id`、`text` | 回答 Mika 在这个任务里问的问题。 |
@@ -144,6 +144,8 @@ curl -s http://192.168.1.23:8765/mcp \
 - `done`：做完了，带着回答；`verified` 表示回答核对过。
 - `failed`：没做成，带着原因。
 - `cancelled`：停掉了。
+
+支持任务恢复的手机会在 `mika_run_task` 的输入结构里列出 `"request_id"`。调用方可先生成并保存一个小写 UUID，丢回执后用它调用 `mika_task_status`。同一编号、目标和对话参数只启动一次，换目标或换对话需要新编号。进程重启后仍能读终态，未完成的任务会报告 `failed` 和 `failure_kind=interrupted`。已收尾的记录保留 30 天、至多最近 1000 条。
 
 建议的用法：`mika_run_task` → 反复 `mika_wait_task` → 遇到 `waiting_for_answer` 用 `mika_answer` → 直到 `done` / `failed` / `cancelled`。
 

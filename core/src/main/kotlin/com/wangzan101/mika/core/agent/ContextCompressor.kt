@@ -48,8 +48,11 @@ class ContextCompressor(
 ) {
     /** 「真实 / 粗估」比值:每次用量回来就平滑更新([TokenEstimate.calibrated]);只决定什么时候压缩、压到哪一级,不改发过的内容。 */
     private var observed: Double? = null
-    /** 估算乘的比值:校准过用校准值,还没有真实用量时用偏保守的 [UNCALIBRATED_SCALE]。消息和固定开销都乘它。 */
-    internal val scale: Double get() = observed ?: UNCALIBRATED_SCALE
+    /**
+     * 估算乘的比值。真实用量只用来提高这个保守下限,不把后面的增量往下估:
+     * 普通提示词的用量偏低,不代表随后追加的标点密集 JSON 也有同样的字符/token 比。
+     */
+    internal val scale: Double get() = observed?.coerceAtLeast(UNCALIBRATED_SCALE) ?: UNCALIBRATED_SCALE
 
     /** 上一次压缩:它覆盖的完整历史开头 [covered],压成的 [base](粗估 [estimate]);[aggressive]:按模型报超长那一档压的。 */
     private class View(val covered: List<Message>, val base: List<Message>, val folded: Int, val aggressive: Boolean) {
@@ -158,11 +161,13 @@ class ContextCompressor(
         val toolStarts = starts.filter { i -> pruned[i].parts.any { it is Part.ToolCall } }
         if (toolStarts.size <= keep) return Compressed(pruned, 0)
         val cut = toolStarts[toolStarts.size - keep]
-        // 动作自带屏幕:折叠边界前最近一次全量读屏和它之后的差异链不折,差异要靠它们才看得懂(狠压缩时照折,分发器随后发全量);
+        // 动作自带屏幕:折叠边界前最近一次全量读屏不折,留下的差异多半接在它后面(之间的差异读取已在缩短时换成占位;狠压缩时照折,分发器随后发全量);
         val rounds = starts.mapIndexed { k, start -> pruned.subList(start, starts.getOrElse(k + 1) { pruned.size }) }
         val screenRounds = rounds.map(::screenKind)
         val before = starts.count { it < cut }
-        val anchor = if (aggressive || !diffScreens) -1 else (0 until before).lastOrNull { screenRounds[it] == ScreenKind.FULL } ?: -1
+        // 留下的往返里的屏幕自己看得懂(见 selfContained)时,边界前那份全量用不上
+        val anchor = if (aggressive || !diffScreens || selfContained(pruned.subList(cut, pruned.size))) -1
+            else (0 until before).lastOrNull { screenRounds[it] == ScreenKind.FULL } ?: -1
 
         val out = ArrayList<Message>(pruned.subList(0, starts.first()))
         // 每段连续折叠的往返各得一条摘要,放在这一段原来的位置;中间保留的往返把段隔开。
@@ -219,6 +224,24 @@ class ContextCompressor(
             }
         }
         return kind
+    }
+
+    /**
+     * [kept] 里的屏幕不靠更早的读屏也看得懂:至少有一份没被缩短的屏幕,每份差异的基准(`base`)也在其中。
+     * 按 base 对,手机和网页各自的差异链都算得对;缩短成占位的屏幕不算(模型看不到它的内容)。
+     */
+    private fun selfContained(kept: List<Message>): Boolean {
+        val ids = HashSet<String>()
+        val bases = HashSet<String>()
+        for (r in kept.flatMap { it.parts }.filterIsInstance<Part.ToolResult>()) {
+            val obj = (if ("\"snapshotId\"" in r.content) parse(r.content) else null) ?: continue
+            val screens = listOfNotNull(obj.takeIf { it["elements"] is JsonArray }, obj["screen"] as? JsonObject)
+            for (s in screens) {
+                (s["snapshotId"] as? JsonPrimitive)?.contentOrNull?.let(ids::add)
+                (s["base"] as? JsonPrimitive)?.contentOrNull?.let(bases::add)
+            }
+        }
+        return ids.isNotEmpty() && ids.containsAll(bases)
     }
 
     private fun summary(lines: List<String>) = notice((listOf(HEADER, SUMMARY_REMINDER) + lines).joinToString("\n"))

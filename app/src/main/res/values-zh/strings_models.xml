@@ -4,6 +4,7 @@
     <string name="model_context_note">留空使用自动值。同一服务商的同一模型在各用途间共用这份设置，下次任务生效。</string>
     <string name="model_context_window">上下文窗口（token）</string>
     <string name="model_context_trigger">压缩触发点（token）</string>
+    <string name="model_context_read_timeout">读超时（秒）</string>
     <string name="model_context_auto">自动 · %1$d</string>
     <string name="model_context_integer">请输入正整数。</string>
     <string name="model_context_range">可填 %1$d–%2$d 个 token</string>

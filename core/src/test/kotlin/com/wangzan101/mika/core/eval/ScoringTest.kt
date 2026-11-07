@@ -134,6 +134,7 @@ class ScoringTest {
         assertEquals(FailureClass.guard_stop, Scoring.initialClass(read, obs("failed", failReason = reason("已安全停止(no_progress):操作多次后画面一直没有变化。", FailKind.Guard))))
         assertEquals(FailureClass.step_limit, Scoring.initialClass(read, obs("failed", failReason = reason("已达到 60 步上限,任务没有完成。", FailKind.StepLimit))))
         assertEquals(FailureClass.harness, Scoring.initialClass(read, obs("failed", failReason = reason("无障碍服务没有开启", FailKind.Environment))))
+        assertEquals(FailureClass.harness, Scoring.initialClass(read, obs("failed", failReason = reason("任务中断了", FailKind.Interrupted))))
         assertFalse(Scoring.score(impossible, obs("failed", failReason = reason("连接失败", FailKind.Environment))).passed)
     }
 

@@ -2,7 +2,6 @@ package com.wangzan101.mika.ui
 
 import com.wangzan101.mika.R
 import com.wangzan101.mika.i18n.tr
-import com.wangzan101.mika.i18n.uiLocale
 import com.wangzan101.mika.about.CheckStatus
 import com.wangzan101.mika.about.MikaLinks
 import com.wangzan101.mika.about.UpdateState
@@ -30,7 +29,6 @@ object AboutCopy {
     val FEEDBACK_SHEET_SUB: String get() = tr(R.string.about_feedback_sheet_sub)
     val FEEDBACK_GITHUB: String get() = tr(R.string.about_feedback_github)
     val FEEDBACK_GITHUB_SUB: String get() = tr(R.string.about_feedback_github_sub)
-    val FEEDBACK_GROUP: String get() = tr(R.string.about_feedback_group)
 
     val DIAGNOSTICS: String get() = tr(R.string.diagnostics_copy)
     val DIAGNOSTICS_SUB: String get() = tr(R.string.diagnostics_copy_sub)
@@ -41,22 +39,6 @@ object AboutCopy {
     val DIAGNOSTICS_COPIED: String get() = tr(R.string.diagnostics_copied)
     val DIAGNOSTICS_LOADING: String get() = tr(R.string.diagnostics_loading)
 
-    val GROUP: String get() = tr(R.string.about_group)
-    val GROUP_SUB: String get() = tr(R.string.about_group_sub)
-    val GROUP_SHEET_TITLE: String get() = tr(R.string.about_group_sheet_title)
-    val GROUP_SHEET_SUB: String get() = tr(R.string.about_group_sheet_sub)
-    val GROUP_HINT: String get() = tr(R.string.about_group_hint)
-    val SAVE_QR: String get() = tr(R.string.about_save_qr)
-    val QR_SAVED: String get() = tr(R.string.about_qr_saved)
-    val QR_SAVE_FAILED: String get() = tr(R.string.about_qr_save_failed)
-    val GROUP_NO_WECHAT: String get() = tr(R.string.about_group_no_wechat)
-    val GROUP_JOIN_X: String get() = tr(R.string.about_group_join_x)
-
-    /** 界面是英文时交流群面板先放 X 群聊、再放微信群码;中文界面微信在前。按 App 实际显示的语言(资源里的 ui_locale)算,不看系统语言。 */
-    val X_GROUP_FIRST: Boolean get() = uiLocale().language != "zh"
-
-    val FOLLOW: String get() = tr(R.string.about_follow)
-    val FOLLOW_SUB: String get() = tr(R.string.about_follow_sub, MikaLinks.X_HANDLE)
     val REPO: String get() = tr(R.string.about_repo)
     val REPO_SUB: String get() = tr(R.string.about_repo_sub, MikaLinks.REPO_LABEL)
     val GUIDE: String get() = tr(R.string.about_guide)

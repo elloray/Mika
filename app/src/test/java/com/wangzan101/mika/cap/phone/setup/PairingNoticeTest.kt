@@ -17,10 +17,21 @@ import org.junit.Test
 class PairingNoticeTest {
     @get:Rule val texts = ChineseTexts()
 
+    /** 找到配对窗口才弹输入框;还在找时先静静放一个(后台被冻结前就发出去),没在找时不发。 */
     @Test
-    fun codeEntryAppearsOnlyOnceThePairingWindowIsFound() {
-        assertNull(PairingNotice.of(BuiltinShellStatus.NotPaired, PairingDiscovery.Searching))
+    fun codeEntryPopsOnceThePairingWindowIsFoundAndWaitsQuietlyBefore() {
+        assertEquals(PairingNotice.EnterCode(null, quiet = true), PairingNotice.of(BuiltinShellStatus.NotPaired, PairingDiscovery.Searching))
+        assertEquals(PairingNotice.EnterCode(null, quiet = true), PairingNotice.of(BuiltinShellStatus.WirelessDebuggingOff, PairingDiscovery.Searching))
+        assertNull(PairingNotice.of(BuiltinShellStatus.NotPaired, PairingDiscovery.Idle))
         assertEquals(PairingNotice.EnterCode(37001), PairingNotice.of(BuiltinShellStatus.NotPaired, PairingDiscovery.Found(37001)))
+    }
+
+    /** 静静备好的那个:无障碍开着也马上发(要赶在冻结之前),之后不再提醒。 */
+    @Test
+    fun quietEntryIsPostedAtOnceAndNeverRealerts() {
+        val quiet = PairingNotice.EnterCode(null, quiet = true)
+        assertEquals(0L, PairingNotice.delayBefore(quiet, autoRead = true))
+        assertNull(PairingNotice.realertAfter(quiet, 0))
     }
 
     @Test
@@ -49,13 +60,18 @@ class PairingNoticeTest {
         )
     }
 
-    /** 配对失效:引导页让用户重新配对,找到配对窗口后和没配对时一样给输入框;还没找到时照旧请用户回 Mika。 */
+    /** 配对失效:引导页让用户重新配对,找到配对窗口后和没配对时一样给输入框,还在找时一样先静静备好;没在找时照旧请用户回 Mika。 */
     @Test
     fun revokedPairingGetsTheInputOnceThePairingWindowIsFound() {
         val revoked = BuiltinShellStatus.Failed(BuiltinShellFailure.AuthorizationRevoked)
         assertEquals(PairingNotice.EnterCode(37001), PairingNotice.of(revoked, PairingDiscovery.Found(37001)))
-        assertEquals(PairingNotice.Problem("配对失效了"), PairingNotice.of(revoked, PairingDiscovery.Searching))
+        assertEquals(PairingNotice.EnterCode(null, quiet = true), PairingNotice.of(revoked, PairingDiscovery.Searching))
         assertEquals(PairingNotice.Problem("配对失效了"), PairingNotice.of(revoked, PairingDiscovery.Idle))
+        // 用 USB 启动命令起的助手停了:在找配对窗口也不给输入框
+        assertEquals(
+            PairingNotice.Problem("手机助手已停止"),
+            PairingNotice.of(BuiltinShellStatus.Failed(BuiltinShellFailure.UsbHelperStopped), PairingDiscovery.Searching),
+        )
         // 用 USB 启动命令起的助手停了要再运行一次命令,找到配对窗口也不给输入框
         assertEquals(
             PairingNotice.Problem("手机助手已停止"),
@@ -104,14 +120,36 @@ class PairingNoticeTest {
         assertEquals(PairingNotice.Working to false, PairingNotice.follow(revoked, PairingDiscovery.Searching, repairing = false, submitted = true))
         assertEquals(PairingNotice.Working to false, PairingNotice.follow(BuiltinShellStatus.Running, PairingDiscovery.Searching, repairing = false, submitted = true))
         // 没填码时照常按状态算
-        assertEquals(PairingNotice.Problem("配对失效了") to false, PairingNotice.follow(revoked, PairingDiscovery.Searching, repairing = false, submitted = false))
+        assertEquals(PairingNotice.Problem("配对失效了") to false, PairingNotice.follow(revoked, PairingDiscovery.Idle, repairing = false, submitted = false))
     }
 
     @Test
     fun followingEndsOnlyWhenRunningOutsideARepair() {
-        // 重新配对时运行中的旧状态不算配好:不发、不结束
-        assertEquals(null to false, PairingNotice.follow(BuiltinShellStatus.Running, PairingDiscovery.Searching, repairing = true, submitted = false))
+        // 重新配对时运行中的旧状态不算配好:不结束,和没配对时一样先静静备好填码通知
+        assertEquals(PairingNotice.EnterCode(null, quiet = true) to false, PairingNotice.follow(BuiltinShellStatus.Running, PairingDiscovery.Searching, repairing = true, submitted = false))
         assertEquals(PairingNotice.Done to true, PairingNotice.follow(BuiltinShellStatus.Running, PairingDiscovery.Idle, repairing = false, submitted = false))
+    }
+
+    /** 一次配对里通知的先后:先静静备好,找到窗口换成会弹的,填码后正在配对,配上后成功并结束;相邻两条都不一样(换了才重发)。 */
+    @Test
+    fun aPairingRunGoesQuietThenAlertThenWorkingThenDone() {
+        val steps = listOf(
+            BuiltinShellStatus.NotPaired to PairingDiscovery.Searching,
+            BuiltinShellStatus.NotPaired to PairingDiscovery.Found(37001),
+            BuiltinShellStatus.Connecting to PairingDiscovery.Found(37001),
+            BuiltinShellStatus.Running to PairingDiscovery.Idle,
+        ).map { (s, d) -> PairingNotice.follow(s, d, repairing = false, submitted = false) }
+        assertEquals(
+            listOf(
+                PairingNotice.EnterCode(null, quiet = true) to false,
+                PairingNotice.EnterCode(37001) to false,
+                PairingNotice.Working to false,
+                PairingNotice.Done to true,
+            ),
+            steps,
+        )
+        // 找到窗口后那条是会弹、会再提醒的
+        assertEquals(PairingNotice.REALERT_MS[0], PairingNotice.realertAfter(steps[1].first!!, 0))
     }
 
     @Test

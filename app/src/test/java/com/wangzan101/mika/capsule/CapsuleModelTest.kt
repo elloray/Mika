@@ -101,6 +101,7 @@ class CapsuleModelTest {
         assertEquals(CapsuleModel.PREPARING, CapsuleModel.runningText(running(step = 0)))
         assertEquals("照着路线做 3/7", CapsuleModel.runningText(running("在搜牙膏", progress = RunProgress.Replay(3, 7))))
         assertEquals("一次做 4 步", CapsuleModel.runningText(running(progress = RunProgress.Batch(4))))
+        assertEquals("已保存 · 36/36 · 第 36 条", CapsuleModel.runningText(running(progress = RunProgress.Task("已保存", 36, 36, "第 36 条"))))
     }
 
     @Test fun eachStateHasItsLine() {
@@ -443,6 +444,16 @@ class CapsuleModelTest {
         assertEquals(1f, CapsuleFade.alpha(CapsuleKind.NeedConfirm, 1, pill = false, idleFor = 60_000))
         assertEquals(1f, CapsuleFade.alpha(CapsuleKind.Running, 1, pill = false, idleFor = 60_000))
         assertEquals(1f, CapsuleFade.alpha(CapsuleKind.HandedOver, 0, pill = false, idleFor = 60_000))
+    }
+
+    @Test fun configuredIdleOpacityNeverDimsAttentionStates() {
+        for (opacity in CapsuleIdleOpacity.entries) {
+            assertEquals(opacity.alpha, CapsuleFade.alpha(CapsuleKind.Idle, 0, false, 60_000, opacity.alpha))
+            assertEquals(opacity.alpha, CapsuleFade.alpha(CapsuleKind.Running, 0, false, 60_000, opacity.alpha))
+            assertEquals(1f, CapsuleFade.alpha(CapsuleKind.NeedConfirm, 1, false, 60_000, opacity.alpha))
+            assertEquals(1f, CapsuleFade.alpha(CapsuleKind.NeedAnswer, 0, true, 60_000, opacity.alpha))
+            assertEquals(1f, CapsuleFade.alpha(CapsuleKind.HandedOver, 0, false, 60_000, opacity.alpha))
+        }
     }
 
     // ---------- 读屏 ----------

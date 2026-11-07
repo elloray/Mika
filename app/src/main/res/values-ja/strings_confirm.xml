@@ -6,6 +6,8 @@
     <string name="confirm_order">注文する</string>
     <string name="confirm_submit">送信</string>
     <string name="confirm_other">その他の操作</string>
+    <string name="confirm_root">root コマンド</string>
+    <string name="confirm_root_where">スマホ全体(root)</string>
     <string name="confirm_title">許可が必要: %1$s</string>
     <string name="confirm_in_app">%1$s で</string>
     <string name="confirm_target">宛先: %1$s</string>

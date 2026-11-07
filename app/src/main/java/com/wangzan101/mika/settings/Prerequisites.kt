@@ -37,6 +37,8 @@ data class SystemStatus(
     val developerSettingsMissing: Boolean = false,
     /** 系统「USB 调试」开着:开着时 Wi-Fi 断开助手也不停。 */
     val usbDebugging: Boolean = true,
+    /** 用户打开了「用 root 启动手机助手」且此刻能用:看门狗经 su 起助手(不靠 Wi-Fi 和无线调试)。 */
+    val rootStart: Boolean = false,
     /** 系统可能拦着不让打开无障碍(安卓 13 起,没从应用商店装的 App 要先允许受限制的设置)。 */
     val restrictedSettings: Boolean = false,
     /** 助手停了以后靠什么再起来:只用 USB 启动命令起过时,各处都不往无线调试引,说清要再运行命令。 */
@@ -54,8 +56,8 @@ sealed interface Problem {
     data object SystemTooOld : Problem
     /** 内置助手没在运行(没设置、无线调试关着、正在连、出错)。 */
     data class PhoneHelper(val status: BuiltinShellStatus) : Problem
-    /** [userLocked] 为真时没在运行是因为开机后还没解锁过,解锁后会自己恢复,不该让用户去关掉再打开。 */
-    data class Accessibility(val state: AccessibilityState, val userLocked: Boolean = false) : Problem
+    /** [userLocked] 为真时没在运行是因为开机后还没解锁过;[restrictedSettings] 为真时系统可能阻止绑定。 */
+    data class Accessibility(val state: AccessibilityState, val userLocked: Boolean = false, val restrictedSettings: Boolean = false) : Problem
     data object NoModel : Problem
     /** 不挡任务,只是看不到进度和「需要你」提醒。 */
     data object NotificationsOff : Problem
@@ -91,7 +93,7 @@ object Prerequisites {
                 add(Problem.PhoneHelper(status.builtinShell))
             }
             if (status.sdkInt >= MIN_SDK && status.accessibility != AccessibilityState.On) {
-                add(Problem.Accessibility(status.accessibility, status.userLocked))
+                add(Problem.Accessibility(status.accessibility, status.userLocked, status.restrictedSettings))
             }
             if (!hasMainModel) add(Problem.NoModel)
             if (!status.notificationsAllowed) add(Problem.NotificationsOff)

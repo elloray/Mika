@@ -33,6 +33,7 @@
     <string name="task_waiting_display">Queued: starts after the other task finishes</string>
     <string name="task_no_phone_helper">Phone control isn’t ready. Finish “Set up phone control” in Mika. Web and file tasks aren’t affected.</string>
     <string name="task_no_a11y">Mika’s accessibility service is off. Turn on Mika under Accessibility in system settings.</string>
+    <string name="task_a11y_not_running">Mika’s accessibility service is enabled, but Android hasn’t connected it. Turn Mika off and on again under Accessibility in system settings. If Android blocks it, allow restricted settings in Mika’s app info first.</string>
     <string name="task_error">Task error: %1$s</string>
     <string name="task_app_blocked">“%1$s” is disabled, so Mika can’t read or operate it. Allow it in Settings › Application access and try again.</string>
     <string name="task_app_this_app">This app</string>
@@ -56,6 +57,7 @@
     <string name="task_too_old">Phone app control needs Android 12 or later. Chat, web and sandbox tasks are still available.</string>
     <string name="task_shell_died">The phone control helper disconnected and the virtual screen closed. Try again once it reconnects.</string>
     <string name="task_running">Running</string>
+    <string name="channel_task_accepted">Got it — your task is registered.</string>
     <string name="task_step_note">Step %1$d: %2$s</string>
     <string name="task_wait_unlock">Waiting for unlock</string>
     <string name="task_wait_unlock_body">Will continue once you unlock your phone</string>

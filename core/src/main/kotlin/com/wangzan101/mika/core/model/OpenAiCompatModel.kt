@@ -339,16 +339,17 @@ private class OpenAiStream(
     private var done = false
     private var chunks = 0
 
-    fun accept(data: String) {
-        if (data == "[DONE]") { done = true; return }
+    fun accept(data: String): Boolean {
+        if (data == "[DONE]") { done = true; return true }
         val root = try { json.parseToJsonElement(data).jsonObject }
         catch (e: Exception) { throw ModelError.BadResponse("流式响应不是合法 JSON", e) }
-        if (root["error"] != null) throw ModelError.BadResponse(root["error"].toString().take(200))
+        // 有的服务流式请求一开头就出错时回 200,在事件流里给一帧错误;说的是超长,和 400 一样按超长处理
+        root["error"]?.toString()?.let { e -> throw if (ModelHttp.saysContextTooLong(e)) ModelError.ContextTooLong() else ModelError.BadResponse(e.take(200)) }
         chunks++
         usageOf(root["usage"])?.let { usage = it }
-        val choice = (root["choices"] as? JsonArray)?.firstOrNull() as? JsonObject ?: return
+        val choice = (root["choices"] as? JsonArray)?.firstOrNull() as? JsonObject ?: return false
         (choice["finish_reason"] as? JsonPrimitive)?.contentOrNull?.takeIf(String::isNotEmpty)?.let { reason = it }
-        val delta = choice["delta"] as? JsonObject ?: return
+        val delta = choice["delta"] as? JsonObject ?: return false
         ReasoningVia.fields.forEach { via ->
             (delta[via.field!!] as? JsonPrimitive)?.contentOrNull?.let { appendThinking(it, via) }
         }
@@ -370,6 +371,7 @@ private class OpenAiStream(
             (fn?.get("name") as? JsonPrimitive)?.contentOrNull?.let { call.name.append(it) }
             (fn?.get("arguments") as? JsonPrimitive)?.contentOrNull?.let { call.args.append(it) }
         }
+        return done
     }
 
     /** 一次回复里思考只按最先收到的位置记(同一家不会换位置;两个字段都给时只记一份)。 */

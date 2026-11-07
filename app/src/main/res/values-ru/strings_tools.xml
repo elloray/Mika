@@ -15,6 +15,7 @@
     <string name="tool_check_dialog">Проверить наличие диалогов</string>
     <string name="tool_gesture">Мультитач-жест</string>
     <string name="tool_shell">Системная команда</string>
+    <string name="tool_root">Команда root</string>
     <string name="tool_find_element">Найти на экране</string>
     <string name="tool_collect">Собрать данные с нескольких экранов</string>
     <string name="tool_phone_run">Несколько действий на телефоне</string>

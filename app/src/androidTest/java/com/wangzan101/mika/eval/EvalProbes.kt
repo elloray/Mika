@@ -89,7 +89,7 @@ class EvalProbes(private val sh: (String) -> String, private val loggedIn: File)
             InstrumentationRegistry.getInstrumentation().targetContext.getSystemService(DisplayManager::class.java)
                 .getDisplay(Display.DEFAULT_DISPLAY).getRealMetrics(it)
         }
-        val display = AgentDisplay(shell, metrics.widthPixels, metrics.heightPixels, metrics.densityDpi)
+        val display = AgentDisplay(shell, metrics.widthPixels, metrics.heightPixels, metrics.densityDpi, InstrumentationRegistry.getInstrumentation().targetContext.getSystemService(android.hardware.display.DisplayManager::class.java))
         try {
             val screen = AndroidScreen(DeviceSupport.service(), shell, DeviceSupport.ready(display))
             if (deepLink == null) {

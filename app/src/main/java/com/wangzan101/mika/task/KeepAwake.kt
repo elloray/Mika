@@ -18,7 +18,7 @@ interface WakeLockPort {
  * 熄屏后系统会丢弃注入的触摸并随后上锁,所以 Agent 干活期间不能让屏幕自动熄灭;
  * 但用户没在操作时屏幕不必全亮,到了系统的超时照常变暗(见 [ScreenWakeLock])。
  *
- * 只在 Running 时持有。等待接管/回答/继续/解锁时屏幕不需要为 Agent 亮着,
+ * 只在 Running(含等另一个任务用完某个 App)和排在别的任务后面等虚拟屏时持有。等待接管/回答/继续/解锁时屏幕不需要为 Agent 亮着,
  * 再保持 [GRACE_MS](用户多半正要处理,别让屏幕在他眼前熄掉)后释放,任务继续跑时重新持有。
  * 结束、失败、取消立即释放。锁随进程走:Mika 异常退出时系统自动收回,不需要持久化恢复。
  * 用户按电源键照样能熄屏(没带 ACQUIRE_CAUSES_WAKEUP),这时 gate 会让任务等待解锁。
@@ -32,22 +32,31 @@ class KeepAwake(private val lock: WakeLockPort, private val scope: CoroutineScop
     fun onState(state: TaskState) {
         if (closed) return
         when (state) {
-            is TaskState.Running -> {
-                pendingRelease?.cancel()
-                pendingRelease = null
-                if (!held) {
-                    lock.acquire()
-                    held = true
-                }
-            }
+            is TaskState.Running -> hold()
+            // 排在别的任务后面等虚拟屏:还在干活、不用你处理,照样持有;
+            // 宽限后放开的话,那个任务一结束、放开它那份,屏幕就可能当场熄掉,接着建屏开干时只能等解锁
+            is TaskState.Held -> if (state.reason.queued) hold() else releaseLater()
             TaskState.Idle, is TaskState.Succeeded, is TaskState.Failed, TaskState.Cancelled -> release()
-            else -> if (held && pendingRelease == null) {
-                pendingRelease = scope.launch {
-                    delay(GRACE_MS)
-                    synchronized(this@KeepAwake) {
-                        pendingRelease = null
-                        release()
-                    }
+            else -> releaseLater()
+        }
+    }
+
+    private fun hold() {
+        pendingRelease?.cancel()
+        pendingRelease = null
+        if (!held) {
+            lock.acquire()
+            held = true
+        }
+    }
+
+    private fun releaseLater() {
+        if (held && pendingRelease == null) {
+            pendingRelease = scope.launch {
+                delay(GRACE_MS)
+                synchronized(this@KeepAwake) {
+                    pendingRelease = null
+                    release()
                 }
             }
         }

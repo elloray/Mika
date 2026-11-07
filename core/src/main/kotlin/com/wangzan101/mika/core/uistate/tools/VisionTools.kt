@@ -2,6 +2,7 @@ package com.wangzan101.mika.core.uistate.tools
 
 import com.wangzan101.mika.core.uistate.ScreenFamily
 import com.wangzan101.mika.core.uistate.Located
+import com.wangzan101.mika.core.uistate.ScreenDiagnosis
 import com.wangzan101.mika.core.prompt.Feedback
 import com.wangzan101.mika.core.tool.Args
 import com.wangzan101.mika.core.tool.HINT_PROTECTED
@@ -51,6 +52,8 @@ internal class Describe(f: ScreenFamily) : ScreenTool(f, "describe") {
                     put("ok", false); put("error", "protected_content"); put("protected", true)
                     put("message", HINT_PROTECTED); put("recoverable", true)
                 })
+                ScreenDiagnosis.DISPLAY_CAPTURE_UNAVAILABLE ->
+                    fail(e.reason, e.message ?: Feedback["display_capture_unavailable"], recoverable = false)
                 "no_app_open" -> failCode("no_app_open")
                 else -> fail(e.reason, e.message ?: Feedback["screen_unavailable"])
             }

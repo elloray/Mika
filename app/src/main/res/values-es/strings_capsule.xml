@@ -50,4 +50,6 @@
         <item quantity="other">%1$d pasos de una vez</item>
     </plurals>
     <string name="and_more">" y más"</string>
+    <string name="capsule_hide">Desactivar cápsula</string>
+    <string name="capsule_hidden_hint">Cápsula flotante desactivada. Puedes volver a activarla en %1$s › %2$s.</string>
 </resources>

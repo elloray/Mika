@@ -2,6 +2,8 @@ package com.wangzan101.mika.core.trace
 
 import java.io.File
 import java.io.IOException
+import java.nio.file.Files
+import java.nio.file.StandardCopyOption
 
 internal class TraceDiskFull(val block: String) : IOException("Trace storage limit")
 
@@ -65,7 +67,7 @@ internal class TraceDisk(private val directory: File, private var limit: Long) {
         val tmp = File(file.parentFile, file.name + ".tmp")
         try {
             tmp.writeBytes(data)
-            if (!tmp.renameTo(file)) throw IOException("Trace write failed")
+            Files.move(tmp.toPath(), file.toPath(), StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE)
             free -= delta
         } finally {
             tmp.delete()

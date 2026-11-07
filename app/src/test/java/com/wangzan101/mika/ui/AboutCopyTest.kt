@@ -2,13 +2,10 @@ package com.wangzan101.mika.ui
 
 import org.junit.Rule
 import com.wangzan101.mika.i18n.ChineseTexts
-import com.wangzan101.mika.i18n.ResFileTexts
-import com.wangzan101.mika.i18n.UiText
 import com.wangzan101.mika.about.CheckStatus
 import com.wangzan101.mika.about.ReleaseInfo
 import com.wangzan101.mika.about.UpdateState
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -24,15 +21,5 @@ class AboutCopyTest {
         assertTrue(AboutCopy.checkValue(UpdateState(status = CheckStatus.Checking)).spinner)
         // 连不上但早先查到过新版:照样提示有新版
         assertTrue(AboutCopy.checkValue(UpdateState(latest = r020, update = r020, status = CheckStatus.Failed)).dot)
-    }
-
-    /** 联系作者面板:中文界面微信码在前;英文界面 X 群聊在前。 */
-    @Test
-    fun xGroupFirstOnlyInEnglish() {
-        assertFalse(AboutCopy.X_GROUP_FIRST)
-        UiText.source = ResFileTexts.traditional
-        assertFalse(AboutCopy.X_GROUP_FIRST)
-        UiText.source = ResFileTexts.english
-        assertTrue(AboutCopy.X_GROUP_FIRST)
     }
 }

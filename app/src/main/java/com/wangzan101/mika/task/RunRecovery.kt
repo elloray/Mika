@@ -38,7 +38,7 @@ interface TriggerOutcomes {
 class RunRecovery(
     private val store: RunStore,
     private val outbox: Outbox,
-    private val channel: Channel,
+    private val channels: (String) -> Channel?,
     private val triggers: TriggerOutcomes,
     private val conversations: ConversationStore,
     private val scope: CoroutineScope,
@@ -75,7 +75,8 @@ class RunRecovery(
 
     private suspend fun settle(run: StoredRun) {
         run.triggerWindowKey?.let { triggers.interrupted(it, "run interrupted before the result was confirmed") }
-        val peer = ChannelPeer(LocalChannel.ID, "phone-owner", run.threadId)
+        val peer = run.channelPeer ?: ChannelPeer(LocalChannel.ID, "phone-owner", run.threadId)
+        val channel = channels(peer.channelId) ?: return
         val deliveryId = run.deliveryId
         val reply = run.reply
         if (reply != null && deliveryId != null) {
@@ -94,12 +95,13 @@ class RunRecovery(
                     tr(R.string.recover_maybe_delivered)))
             }
         } else {
+            val said = run.userText ?: run.goal
             val turnId = "interrupted:${run.id.value}"
             if (conversations.turns(run.threadId).none { it.runId == turnId }) {
-                conversations.append(run.threadId, Turn(run.goal, tr(R.string.recover_interrupted_turn), "failed", runId = turnId))
+                conversations.append(run.threadId, Turn(said, tr(R.string.recover_interrupted_turn), "failed", runId = turnId))
             }
             outbox.deliver(channel, peer, Delivery.Notice(turnId, run.threadId,
-                tr(R.string.recover_interrupted, run.goal.take(40))))
+                tr(R.string.recover_interrupted, said.take(40))))
         }
     }
 

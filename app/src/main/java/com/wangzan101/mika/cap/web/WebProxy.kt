@@ -94,3 +94,17 @@ object WebProxy {
         return p.user to p.password
     }
 }
+
+/** 每个标签的主文档最多替代理答三次;下一次导航重新计数,改对设置后不必关掉标签。只在主线程使用。 */
+internal class WebProxyAuth {
+    private var answers = 0
+
+    fun onPageStarted() { answers = 0 }
+
+    fun credentialsFor(host: String?): Pair<String, String>? {
+        val credentials = WebProxy.credentialsFor(host) ?: return null
+        if (answers >= 3) return null
+        answers++
+        return credentials
+    }
+}

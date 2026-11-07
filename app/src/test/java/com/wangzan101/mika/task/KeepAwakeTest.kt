@@ -1,6 +1,7 @@
 package com.wangzan101.mika.task
 
 import com.wangzan101.mika.core.agent.FailKind
+import com.wangzan101.mika.core.agent.GateReason
 import com.wangzan101.mika.core.agent.TaskState
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.advanceTimeBy
@@ -62,6 +63,23 @@ class KeepAwakeTest {
         assertFalse(lock.held)
     }
 
+    // 排在别的任务后面等虚拟屏:还在干活,不按等你处理宽限后放开
+    @Test
+    fun queuedForDisplayKeepsHolding() = runTest {
+        val lock = FakeLock()
+        val awake = KeepAwake(lock, backgroundScope)
+        awake.onState(TaskState.Held(GateReason.queued("等屏")))
+        assertTrue(lock.held)
+        awake.onState(TaskState.Running(1, ""))
+        awake.onState(TaskState.Held(GateReason.queued("等屏")))
+        advanceTimeBy(KeepAwake.GRACE_MS * 2)
+        runCurrent()
+        assertTrue(lock.held)
+        awake.onState(TaskState.Running(2, ""))
+        awake.onState(TaskState.Succeeded("ok"))
+        assertFalse(lock.held)
+    }
+
     @Test
     fun failureAndCancelRelease() = runTest {
         for (end in listOf(TaskState.Failed("x", FailKind.GaveUp), TaskState.Cancelled)) {
@@ -102,6 +120,27 @@ class KeepAwakeTest {
         b.onState(TaskState.Cancelled)
         assertFalse(lock.held)
         b.onState(TaskState.Running(2, ""))
+        assertTrue(lock.held)
+        b.close()
+        assertFalse(lock.held)
+    }
+
+    // 排队的任务接班:前一个收尾时先替它拿一份再放开自己的,接班的拿上自己那份后放开,中间屏幕锁不断
+    @Test
+    fun handoffBridgesToQueuedRun() = runTest {
+        val lock = FakeLock()
+        val shared = SharedWakeLock(lock)
+        val a = KeepAwake(shared.lease(), backgroundScope)
+        a.onState(TaskState.Running(1, ""))
+        val handoff = shared.lease().also { it.acquire() }
+        a.close()
+        assertTrue(lock.held)
+        val b = KeepAwake(shared.lease(), backgroundScope)
+        b.onState(TaskState.Running(0, ""))
+        handoff.release()
+        assertTrue(lock.held)
+        // 重复放开(开跑时放过、协程结束时又放一次)不多算
+        handoff.release()
         assertTrue(lock.held)
         b.close()
         assertFalse(lock.held)

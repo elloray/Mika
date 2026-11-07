@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="web_search_title">웹 검색</string>
+    <string name="web_search_row_sub">검색 서비스는 선택 사항이며 브라우저 검색은 언제나 사용할 수 있습니다</string>
+    <string name="web_search_hint">기본적으로 꺼져 있습니다. 검색 주소와 선택적 API 키를 설정하세요. 키는 암호화되어 저장되며 검색 결과는 신뢰할 수 없는 콘텐츠로 처리됩니다.</string>
+    <string name="web_search_enabled">웹 검색 사용</string>
+    <string name="web_search_endpoint">검색 엔드포인트 URL</string>
+    <string name="web_search_api_key">API 키(선택 사항)</string>
+    <string name="web_search_invalid_endpoint">쿼리 매개변수가 없는 HTTP 또는 HTTPS URL을 입력하세요.</string>
+    <string name="web_search_action">웹 검색하기</string>
+</resources>

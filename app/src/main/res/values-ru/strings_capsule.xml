@@ -52,4 +52,6 @@
         <item quantity="other">%1$d шага сразу</item>
     </plurals>
     <string name="and_more">" и ещё"</string>
+    <string name="capsule_hide">Выключить капсулу</string>
+    <string name="capsule_hidden_hint">Плавающая капсула выключена. Включить её снова можно в разделе «%1$s › %2$s».</string>
 </resources>

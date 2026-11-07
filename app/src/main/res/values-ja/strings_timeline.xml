@@ -88,4 +88,6 @@
     <string name="timeline_exported">使用量の記録を保存しました</string>
     <string name="timeline_export_failed">使用量の記録をエクスポートできませんでした。記録が利用できることと、保存先に書き込めることを確認してください。</string>
     <string name="timeline_running">実行中</string>
+    <string name="timeline_step_limit">ステップ</string>
+    <string name="timeline_step_limit_value">%1$d / %2$d</string>
 </resources>

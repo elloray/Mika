@@ -3,6 +3,7 @@ package com.wangzan101.mika.core.cap.web
 import com.wangzan101.mika.core.uistate.CdpKeys
 import com.wangzan101.mika.core.uistate.KeyModifier
 import com.wangzan101.mika.core.risk.GateTarget
+import com.wangzan101.mika.core.prompt.Feedback
 import com.wangzan101.mika.core.prompt.Prompts
 import com.wangzan101.mika.core.uistate.ActionResult
 import com.wangzan101.mika.core.uistate.Resolved
@@ -17,6 +18,7 @@ import com.wangzan101.mika.core.tool.Verb
 import com.wangzan101.mika.core.tool.argStr
 import com.wangzan101.mika.core.tool.failCode
 import com.wangzan101.mika.core.tool.int
+import com.wangzan101.mika.core.tool.refExpired
 import com.wangzan101.mika.core.tool.str
 import com.wangzan101.mika.core.uistate.toPx
 import kotlinx.serialization.json.JsonObject
@@ -96,14 +98,15 @@ internal object Interact : WebTool {
             }
             "hover" -> {
                 val at = point(a, ctx, "ref", "x", "y") ?: throw ArgError("ref", "give ref+snapshotId or x+y")
-                when (val p = portPoint(at, ctx)) { null -> ctx.action(ActionResult.Failed("ref_expired")); else -> ctx.action(w.hover(p)) }
+                withPortPoint(at, ctx) { p -> ctx.action(w.hover(p)) }
             }
             else -> {
                 val from = point(a, ctx, "ref", "x", "y") ?: throw ArgError("ref", "give ref+snapshotId or x+y for where the drag starts")
                 val to = point(a, ctx, "toRef", "toX", "toY") ?: throw ArgError("toRef", "give toRef (with snapshotId) or toX+toY for where the drag ends")
                 val steps = a.int("steps", 1, DRAG_STEPS_MAX) ?: DRAG_STEPS_DEFAULT
-                val pf = portPoint(from, ctx); val pt = portPoint(to, ctx)
-                if (pf == null || pt == null) ctx.action(ActionResult.Failed("ref_expired")) else ctx.action(w.drag(pf, pt, steps))
+                withPortPoint(from, ctx) { pf ->
+                    withPortPoint(to, ctx) { pt -> ctx.action(w.drag(pf, pt, steps)) }
+                }
             }
         }
     }
@@ -124,12 +127,14 @@ internal object Interact : WebTool {
         return WebPoint.Xy(toPx(x, s.width), toPx(y!!, s.height))
     }
 
-    /** 稳定编号开着时把模型编号翻译成端口编号;已退役为 null(ref_expired)。 */
-    private fun portPoint(p: WebPoint, ctx: ToolContext): WebPoint? {
+    /** 稳定编号开着时先翻译模型编号;失效原因原样交给统一的 ref_expired 结果,不执行动作。 */
+    private suspend fun withPortPoint(p: WebPoint, ctx: ToolContext, act: suspend (WebPoint) -> ToolExecution): ToolExecution {
         val st = ctx.session.stabilizer
-        if (p !is WebPoint.Ref || st == null) return p
-        val r = st.resolve(p.ref, p.snapshotId) as? Resolved.Current ?: return null
-        return WebPoint.Ref(r.portRef, r.portSnapshotId)
+        if (p !is WebPoint.Ref || st == null) return act(p)
+        return when (val r = st.resolve(p.ref, p.snapshotId)) {
+            is Resolved.Current -> act(WebPoint.Ref(r.portRef, r.portSnapshotId))
+            is Resolved.Stale -> refExpired(Feedback["ref_expired"], r.cause.wire)
+        }
     }
 
     override fun logTarget(o: JsonObject, r: ToolExecution, ctx: ToolContext) =

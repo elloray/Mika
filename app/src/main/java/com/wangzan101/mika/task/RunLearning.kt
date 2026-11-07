@@ -44,7 +44,7 @@ data class RunAftermath(
     val end: TaskState,
     /** 用户本次说的话;记忆关着时为空。 */
     val utterances: List<String>,
-    /** 任务中 memory_save 存下的。 */
+    /** 任务中 memory_save / memory_edit 写下的变更。 */
     val saved: List<Change>,
     val usedMemory: List<String>,
     val toolNames: Set<String>,

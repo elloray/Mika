@@ -18,6 +18,7 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 import com.wangzan101.mika.sandbox.SandboxService
+import com.wangzan101.mika.settings.FeatureFlags
 
 /**
  * 运行环境准备期间的前台服务(类型 dataSync,安卓要求长时间后台工作有前台服务)。
@@ -38,6 +39,11 @@ open class SandboxForeground : Service() {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         // startForegroundService 之后必须尽快进入前台
         startForeground(ID, notification(null), ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC)
+        if (FeatureFlags.get(this).quitRequested()) {
+            stopForeground(STOP_FOREGROUND_REMOVE)
+            stopSelf()
+            return START_NOT_STICKY
+        }
         if (watcher?.isActive == true) return START_NOT_STICKY
         watcher = scope.launch {
             val nm = getSystemService(NotificationManager::class.java)

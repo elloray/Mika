@@ -65,6 +65,68 @@ class ChildRunsTest {
         assertEquals(ChildPhase.Unknown, store.get("c")?.phase)
     }
 
+    private fun spawnWithRunner(text: String, args: String, ownerAlive: Boolean = true): Pair<MemoryChildRunStore, kotlinx.serialization.json.JsonObject> = runBlocking {
+        val store = MemoryChildRunStore()
+        val runner = ChildAgentRunner({ spec ->
+            AgentLoop(FakeModel(answerReply(text)),
+                toolDispatcher(FakeScreen(), web = FakeWebPort(), runSpec = spec), "BASE", confirmations = null)
+        }, store, ownerAlive = { ownerAlive })
+        val tools = toolDispatcher(FakeScreen(), runSpec = RunSpec(RunId("parent"), "goal", "thread"), childHost = runner)
+        store to tools.execute(Part.ToolCall("s", "spawn_agent", args), ActionPass()).content
+    }
+
+    @Test fun realRunnerReturnsResultsBeyondTheStoredPreview() {
+        val text = "x".repeat(6000)
+        val (store, content) = spawnWithRunner(text, """{"goal":"research","maxResultChars":8000}""")
+        assertEquals(6000, resultLength(content))
+        assertEquals(null, content["truncated"])
+        assertEquals(null, content["fullLength"])
+        assertEquals(text.take(ChildAgentRunner.MAX_RESULT_CHARS), store.all().single().result)
+    }
+
+    @Test fun realRunnerReportsOriginalLengthForDefaultAndMaximumLimits() {
+        val text = "x".repeat(12_000)
+        for (limit in listOf(null, 8000)) {
+            val args = if (limit == null) """{"goal":"research"}"""
+                else """{"goal":"research","maxResultChars":$limit}"""
+            val (store, content) = spawnWithRunner(text, args)
+            assertEquals(limit ?: 4000, resultLength(content))
+            assertEquals("true", content["truncated"].toString())
+            assertEquals("12000", content["fullLength"].toString())
+            assertEquals(4000, store.all().single().result!!.length)
+        }
+    }
+
+    @Test fun realRunnerValidatesJsonBeforeTruncatingTheStoredPreview() {
+        val text = """{"data":"${"x".repeat(5000)}"}"""
+        val (store, content) = spawnWithRunner(text, """{"goal":"research","format":"json","maxResultChars":8000}""")
+        assertEquals(text.length, resultLength(content))
+        assertEquals(text, (content["result"] as kotlinx.serialization.json.JsonPrimitive).content
+            .removePrefix("<untrusted>\n").removeSuffix("\n</untrusted>"))
+        assertEquals(null, content["truncated"])
+        assertEquals(text.take(4000), store.all().single().result)
+    }
+
+    @Test fun realRunnerKeepsInvalidJsonWarningAndBoundsItsStoredPreview() {
+        val text = "{\"data\":\"" + "x".repeat(5000)
+        val (store, content) = spawnWithRunner(text, """{"goal":"research","format":"json","maxResultChars":8000}""")
+        val result = (content["result"] as kotlinx.serialization.json.JsonPrimitive).content
+        assertTrue(result.contains(text))
+        assertTrue(result.contains("JSON did not pass validation"))
+        assertEquals(null, content["truncated"])
+        assertEquals(text.take(4000), store.all().single().result)
+    }
+
+    @Test fun absentOwnerAlsoKeepsOnlyABoundedPreview() {
+        val (store, content) = spawnWithRunner("x".repeat(6000),
+            """{"goal":"research","maxResultChars":8000}""", ownerAlive = false)
+        assertEquals("false", content["ok"].toString())
+        assertEquals("unknown", (content["status"] as kotlinx.serialization.json.JsonPrimitive).content)
+        assertEquals(6000, resultLength(content))
+        assertEquals(ChildPhase.Unknown, store.all().single().phase)
+        assertEquals(4000, store.all().single().result!!.length)
+    }
+
     private fun spawnWith(args: String, text: String = "x".repeat(20_000)): Pair<RunSpec, kotlinx.serialization.json.JsonObject> = runBlocking {
         var seen: RunSpec? = null
         val host = ChildRunHost { spec, _ -> seen = spec; ChildResult(spec.id, ChildPhase.Completed, text) }

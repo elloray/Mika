@@ -56,6 +56,7 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.MotionDurationScale
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.graphics.BlendMode
@@ -92,6 +93,7 @@ import androidx.compose.ui.unit.sp
 import com.wangzan101.mika.confirm.ConfirmationCopy
 import com.wangzan101.mika.core.userscreen.CapturedScreen
 import com.wangzan101.mika.ui.MarkdownText
+import com.wangzan101.mika.ui.FollowUpMode
 import com.wangzan101.mika.ui.ScreenCopy
 import com.wangzan101.mika.ui.ScreenThumb
 import com.wangzan101.mika.ui.UserMessage
@@ -107,7 +109,9 @@ import com.wangzan101.mika.ui.theme.MikaMotion
 import com.wangzan101.mika.ui.theme.MikaShapes
 import com.wangzan101.mika.ui.theme.MikaTheme
 import com.wangzan101.mika.voice.HoldToTalk
+import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.withTimeoutOrNull
 
 private val CardShape = RoundedCornerShape(22.dp)
 private val ScreenShape = RoundedCornerShape(14.dp)
@@ -138,6 +142,10 @@ object CardCopy {
     val SCREEN_LABEL: String get() = tr(R.string.card_screen_label)
     val ZOOMED: String get() = tr(R.string.card_zoomed)
     val ZOOM_HINT: String get() = tr(R.string.card_zoom_hint)
+    val HIDE_CAPSULE: String get() = tr(R.string.capsule_hide)
+
+    /** 关掉胶囊后的提示:到哪里重新打开(「设置 › 悬浮胶囊」,名字和设置里的一致)。 */
+    fun hiddenHint(): String = tr(R.string.capsule_hidden_hint, tr(R.string.settings_title), tr(R.string.capsule_settings_title))
 }
 
 /** 卡片上的按钮;都转成任务服务现有的动作(见 [CapsuleController])。[runKey] 是按下时那件事的编号。 */
@@ -166,6 +174,16 @@ interface CardActions {
     fun dropScreen()
     /** 留在后台运行的那一页的卡片上的「关闭网页」。 */
     fun closeKeptPage() {}
+    /** 卡片最底下的「关闭悬浮胶囊」:设置里的开关改成关闭,胶囊和卡片当场收掉(任务照常跑、照常发通知)。 */
+    fun hideCapsule() {}
+    /** 胶囊卡片里切换「引导 / 排队」。 */
+    fun setFollowUpMode(mode: FollowUpMode) {}
+    /** 标题栏的电源按钮:在卡片里换成「完全退出」的确认,不马上退。 */
+    fun askQuit() {}
+    /** 退出确认里的「取消」:回到刚才那张卡片。 */
+    fun cancelQuit() {}
+    /** 退出确认里的「退出」:真正完全退出 Mika。 */
+    fun quit() {}
 }
 
 /** 截下来、挂在输入框上面等着发的一屏:[thumb] 是缩略图(不让截图的页面没有)。 */
@@ -175,7 +193,9 @@ data class PendingScreen(val shot: CapturedScreen, val thumb: ImageBitmap?)
  * 卡片底部输入框此刻的样子:[open] 时是能打字的框(浮层能接收键盘),否则是一行提示,点了才打开;
  * [screen] 是截下来挂在上面的那一屏(随下一句发出,只发它也行)。
  */
-data class CardInputUi(val open: Boolean = false, val draft: String = "", val screen: PendingScreen? = null) {
+data class CardInputUi(val open: Boolean = false, val draft: String = "", val screen: PendingScreen? = null,
+    /** 任务进行中这句话交给谁;卡片收起或发送后回到引导。 */
+    val followUpMode: FollowUpMode = FollowUpMode.Steer) {
     /** 写了字或挂着一屏:可以发。 */
     val canSend: Boolean get() = draft.isNotBlank() || screen != null
 
@@ -210,6 +230,9 @@ fun CapsuleCard(
     thread: ChatThread? = null,
     height: Dp = Dp.Unspecified,
     onHandle: (Rect) -> Unit = {},
+    /** 这个对话明确排队、还没开始的件数;卡片上显示一行,点它到对话页管理。 */
+    queuedCount: Int = 0,
+    onQueued: (() -> Unit)? = null,
 ) {
     val field = CapsuleCards.input(card)
     // 任务还在进行(干活中、Mika 问你、等条件)时,停止和对话页一样放在输入框右边,不另占一个按钮
@@ -226,8 +249,8 @@ fun CapsuleCard(
     Box(modifier.padding(CapsuleShadowRoom)) {
         when {
             zoomed && preview != null -> Zoomed(preview, actions)
-            card is CardView.Detail -> Detail(card, preview, actions, elapsed, h, handle, inputRow)
-            card is CardView.Chat -> ChatCard(card, thread, actions, elapsed, h, handle, inputRow)
+            card is CardView.Detail -> Detail(card, preview, actions, elapsed, h, handle, inputRow, queuedCount, onQueued)
+            card is CardView.Chat -> ChatCard(card, thread, actions, elapsed, h, handle, inputRow, queuedCount, onQueued)
             card is CardView.Kept -> KeptCard(card, preview, actions, h, handle)
         }
     }
@@ -260,11 +283,13 @@ fun OverlayMotion(
                 shown.animateTo(1f, tween(CARD_IN_MS, easing = MikaMotion.Decelerate))
             }
         } else {
-            if (!still) {
+            runOverlayClose(still) {
                 shown.animateTo(0f, tween(CARD_OUT_MS, easing = FastOutLinearInEasing))
                 // 让完全看不见的那一帧先画出来,再换内容、挪窗口,不留一帧半透明的卡片
                 withFrameNanos { }
             }
+            // 动画帧停了也不能把中间帧永远留在屏上;收尾回调负责换内容、收回窗口状态。
+            if (!still) shown.snapTo(0f)
             closed()
         }
     }
@@ -281,8 +306,20 @@ fun OverlayMotion(
     ) { content() }
 }
 
+/**
+ * 等收起动画和最后一帧,但浮层拿不到后续帧时也必须收尾。等待时长跟随系统的动画速度;
+ * 极大的慢动作倍率最多按十倍算,避免窗口状态无限期停在 closing。
+ */
+internal suspend fun runOverlayClose(reduceMotion: Boolean, animate: suspend () -> Unit) {
+    if (reduceMotion) return
+    val scale = currentCoroutineContext()[MotionDurationScale]?.scaleFactor
+        ?.takeIf { it.isFinite() && it > 0f }?.coerceAtMost(10f) ?: 1f
+    withTimeoutOrNull((CARD_OUT_MS * scale).toLong() + CLOSE_GRACE_MS) { animate() }
+}
+
 private const val CARD_IN_MS = 240
 private const val CARD_OUT_MS = 180
+private const val CLOSE_GRACE_MS = 500L
 private const val CARD_FROM_SCALE = 0.6f
 private const val SETTLE_FRAMES = 2
 
@@ -293,9 +330,16 @@ private const val SETTLE_FRAMES = 2
 @Composable
 private fun InputRow(field: CardInput, ui: CardInputUi, actions: CardActions, stop: (() -> Unit)? = null) {
     ui.screen?.let { ScreenChip(it, actions::dropScreen) }
-    Row(Modifier.padding(top = 10.dp).fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-        CameraKey(actions::captureScreen)
-        Box(Modifier.weight(1f)) { InputField(field, ui, actions, stop) }
+    // 选了「排队」时输入框的灰字换成「下一件事」,别还写着补充当前任务
+    val shown = if (field.kind == CardInputKind.Steer && ui.followUpMode == FollowUpMode.Queue)
+        field.copy(hint = tr(R.string.chat_placeholder_queue)) else field
+    Column(Modifier.padding(top = 10.dp).fillMaxWidth()) {
+        // 只有「补充/改要求」才需要选交给当前任务还是排下一件;回答、接着说、开始新任务不显示
+        if (field.kind == CardInputKind.Steer) CapsuleFollowUpMode(ui.followUpMode, actions::setFollowUpMode)
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            CameraKey(actions::captureScreen)
+            Box(Modifier.weight(1f)) { InputField(shown, ui, actions, stop) }
+        }
     }
 }
 
@@ -407,6 +451,51 @@ private fun InputField(field: CardInput, ui: CardInputUi, actions: CardActions, 
     }
 }
 
+/** 胶囊卡片里的紧凑二选一:引导当前任务 / 排队下一件。 */
+@Composable
+private fun CapsuleFollowUpMode(mode: FollowUpMode, onMode: (FollowUpMode) -> Unit) {
+    val c = MikaTheme.colors
+    Row(Modifier.fillMaxWidth().padding(bottom = 4.dp).testTag("capsule-follow-up-mode"), horizontalArrangement = Arrangement.spacedBy(5.dp)) {
+        CapsuleModePill(FollowUpMode.Steer, mode, onMode, tr(R.string.follow_up_steer), "capsule-follow-up-steer")
+        CapsuleModePill(FollowUpMode.Queue, mode, onMode, tr(R.string.follow_up_queue), "capsule-follow-up-queue")
+    }
+}
+
+@Composable
+private fun CapsuleModePill(value: FollowUpMode, selected: FollowUpMode, onMode: (FollowUpMode) -> Unit, label: String, tag: String) {
+    val c = MikaTheme.colors
+    val on = value == selected
+    Box(
+        Modifier.testTag(tag).heightIn(min = 26.dp).clip(MikaShapes.Pill)
+            .background(if (on) c.accent else c.fill)
+            .clickable(role = Role.Tab, onClickLabel = label) { onMode(value) }
+            .padding(horizontal = 10.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(label, style = Sub, color = if (on) c.onAccent else c.ink2, maxLines = 1)
+    }
+}
+
+/** 胶囊卡片底部的一行「排队中 N 件」;点它到对话页管理。 */
+@Composable
+private fun QueuedLine(count: Int, onClick: (() -> Unit)?) {
+    if (count <= 0) return
+    val c = MikaTheme.colors
+    Row(
+        Modifier.fillMaxWidth().padding(top = 6.dp).clip(MikaShapes.Pill).background(c.fill)
+            .then(if (onClick != null) Modifier.clickable(role = Role.Button, onClick = onClick) else Modifier)
+            .padding(horizontal = 10.dp, vertical = 5.dp).testTag("capsule-queued"),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
+        Icon(MikaIcons.Clock, null, Modifier.size(14.dp), tint = c.ink3)
+        Text(
+            tr(R.string.follow_up_count, count) + " · " + tr(R.string.follow_up_queue_hint),
+            Modifier.weight(1f), style = Sub, color = c.ink2, maxLines = 1, overflow = TextOverflow.Ellipsis,
+        )
+    }
+}
+
 /** 输入框右边的停止键:黑底圆钮里一个方块,同对话页输入栏。 */
 @Composable
 internal fun StopKey(onStop: () -> Unit) {
@@ -449,6 +538,7 @@ private fun Header(title: String, sub: String, actions: CardActions, handle: Mod
             Text(title, style = Title, color = c.ink, maxLines = 1, overflow = TextOverflow.Ellipsis)
             Text(sub, style = Sub, color = c.ink3, maxLines = 1, overflow = TextOverflow.Ellipsis)
         }
+        IconButton(MikaIcons.Power, tr(R.string.quit_title), actions::askQuit)
         IconButton(MikaIcons.Close, CardCopy.COLLAPSE, actions::collapse)
     }
 }
@@ -470,6 +560,7 @@ private fun IdleHeader(card: CardView.Chat, actions: CardActions, handle: Modifi
                 TextLink(if (continuing) CardCopy.NEW_CHAT else CardCopy.CONTINUE_LAST) { actions.freshChat(continuing) }
             }
         }
+        IconButton(MikaIcons.Power, tr(R.string.quit_title), actions::askQuit)
         IconButton(MikaIcons.Close, CardCopy.COLLAPSE, actions::collapse)
     }
 }
@@ -485,11 +576,43 @@ private fun IconButton(icon: ImageVector, label: String, onClick: () -> Unit) {
     }
 }
 
+/**
+ * 「完全退出」的确认:标题栏的电源按钮点过后替掉卡片内容。说清楚会发生什么:后台任务停下、胶囊和通知收起,
+ * 下次打开 Mika 就回来。「取消」回到刚才那张卡片,「退出」交给 [CardActions.quit]。
+ * 卡片按内容高,最矮和任务卡片一样,最高不超过 [height]。
+ */
+@Composable
+internal fun QuitCard(actions: CardActions, height: Dp = Dp.Unspecified) {
+    val c = MikaTheme.colors
+    val quitLabel = tr(R.string.quit_title)
+    CardFrame(height, fixed = false) {
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            MikaLogo(28.dp, corner = 14.dp)
+            Text(tr(R.string.quit_title), Modifier.weight(1f), style = Title, color = c.ink, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            IconButton(MikaIcons.Close, CardCopy.COLLAPSE, actions::collapse)
+        }
+        Text(tr(R.string.quit_confirm_body), Modifier.padding(top = 10.dp), style = Body, color = c.ink2)
+        Row(Modifier.padding(top = 12.dp).fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Box(
+                Modifier.weight(1f).height(40.dp).testTag("capsule-quit-cancel").clip(MikaShapes.Pill).background(c.fill)
+                    .clickable(role = Role.Button, onClickLabel = tr(R.string.cancel)) { actions.cancelQuit() },
+                contentAlignment = Alignment.Center,
+            ) { Text(tr(R.string.cancel), style = Strong, color = c.ink) }
+            // 和「关闭网页」一样:淡红底、红字,和别的操作分开
+            Box(
+                Modifier.weight(1f).height(40.dp).testTag("capsule-quit").clip(MikaShapes.Pill).background(c.badSoft)
+                    .clickable(role = Role.Button, onClickLabel = quitLabel) { actions.quit() },
+                contentAlignment = Alignment.Center,
+            ) { Text(tr(R.string.quit_confirm_action), style = Strong, color = c.bad) }
+        }
+    }
+}
+
 /** 任务卡片:此刻在操作 App 或网页的那件事;按内容高,中间那段取左边小画面和右边文字里高的那个(步骤最多和小画面一样高)。 */
 @Composable
 private fun Detail(
     card: CardView.Detail, preview: Bitmap?, actions: CardActions, elapsed: @Composable (Long?) -> String?,
-    height: Dp, handle: Modifier, input: @Composable () -> Unit,
+    height: Dp, handle: Modifier, input: @Composable () -> Unit, queuedCount: Int = 0, onQueued: (() -> Unit)? = null,
 ) {
     val c = MikaTheme.colors
     val r = card.run
@@ -534,10 +657,9 @@ private fun Detail(
                 }
             }
         }
+        QueuedLine(queuedCount, onQueued)
         input()
-        Box(Modifier.fillMaxWidth().padding(top = 6.dp), contentAlignment = Alignment.Center) {
-            TextLink(CardCopy.SEE_PROCESS) { actions.openMika(r.run.conversationId) }
-        }
+        FooterLinks(actions, CardCopy.SEE_PROCESS to { actions.openMika(r.run.conversationId) })
     }
 }
 
@@ -625,7 +747,7 @@ internal fun Pinned(content: CardContent?, key: String, actions: CardActions) {
 @Composable
 private fun ChatCard(
     card: CardView.Chat, thread: ChatThread?, actions: CardActions, elapsed: @Composable (Long?) -> String?,
-    height: Dp, handle: Modifier, input: @Composable () -> Unit,
+    height: Dp, handle: Modifier, input: @Composable () -> Unit, queuedCount: Int = 0, onQueued: (() -> Unit)? = null,
 ) {
     val r = card.run
     CardFrame(height) {
@@ -640,12 +762,27 @@ private fun ChatCard(
             if (thread != null) key(card.target) { ThreadList(thread, card.conversationId, actions) }
         }
         if (r != null) Pinned(card.content, r.run.key, actions)
+        QueuedLine(queuedCount, onQueued)
         input()
-        card.target?.let { id ->
-            Box(Modifier.fillMaxWidth().padding(top = 6.dp), contentAlignment = Alignment.Center) {
-                TextLink(CardCopy.BACK_TO_MIKA) { actions.openMika(id) }
-            }
+        FooterLinks(actions, card.target?.let { id -> CardCopy.BACK_TO_MIKA to { actions.openMika(id) } })
+    }
+}
+
+/**
+ * 卡片最底下一行:[primary](「查看过程」「回到 Mika」;空闲卡片还没有对话时没有)和灰色的「关闭悬浮胶囊」。
+ * 右上角的 × 只是收起;想让胶囊不再出现的人在这里关,不用去找设置。
+ */
+@Composable
+private fun FooterLinks(actions: CardActions, primary: Pair<String, () -> Unit>?) {
+    Row(
+        Modifier.fillMaxWidth().padding(top = 6.dp),
+        horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically,
+    ) {
+        primary?.let { (text, onClick) ->
+            TextLink(text, onClick = onClick)
+            Text("·", style = Sub, color = MikaTheme.colors.ink3)
         }
+        TextLink(CardCopy.HIDE_CAPSULE, MikaTheme.colors.ink3, actions::hideCapsule)
     }
 }
 
@@ -795,10 +932,10 @@ private fun Action(text: String, kind: ButtonKind, onClick: () -> Unit) {
 }
 
 @Composable
-private fun TextLink(text: String, onClick: () -> Unit) {
+private fun TextLink(text: String, color: Color = MikaTheme.colors.accent, onClick: () -> Unit) {
     Text(
         text, Modifier.clip(MikaShapes.Pill).clickable(role = Role.Button, onClick = onClick).padding(horizontal = 6.dp, vertical = 8.dp),
-        style = Sub.copy(fontSize = 13.sp), color = MikaTheme.colors.accent,
+        style = Sub.copy(fontSize = 13.sp), color = color,
     )
 }
 
@@ -813,7 +950,7 @@ private fun MiniScreen(frame: Bitmap, onZoom: () -> Unit) {
             .clickable(role = Role.Image, onClickLabel = CardCopy.SCREEN, onClick = onZoom)
             .semantics { contentDescription = CardCopy.SCREEN },
     ) {
-        Image(image, null, Modifier.fillMaxWidth(), contentScale = ContentScale.FillWidth)
+        Image(image, null, Modifier.matchParentSize(), contentScale = ContentScale.Fit)
         Text(
             CardCopy.SCREEN_LABEL, Modifier.align(Alignment.BottomStart).padding(6.dp)
                 .background(Color.Black.copy(alpha = 0.55f), RoundedCornerShape(6.dp)).padding(horizontal = 6.dp, vertical = 1.dp),
@@ -832,7 +969,7 @@ private fun Zoomed(frame: Bitmap, actions: CardActions) {
             .clickable(role = Role.Image, onClickLabel = CardCopy.ZOOMED) { actions.zoom(false) }
             .semantics { contentDescription = CardCopy.ZOOMED },
     ) {
-        Image(image, null, Modifier.fillMaxWidth(), contentScale = ContentScale.FillWidth)
+        Image(image, null, Modifier.matchParentSize(), contentScale = ContentScale.Fit)
         Text(
             CardCopy.ZOOM_HINT, Modifier.align(Alignment.BottomCenter).padding(10.dp)
                 .background(Color.Black.copy(alpha = 0.6f), RoundedCornerShape(10.dp)).padding(horizontal = 10.dp, vertical = 4.dp),

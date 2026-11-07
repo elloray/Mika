@@ -28,17 +28,31 @@ class ScreenDiagnosisTest {
         assertEquals(ScreenDiagnosis.UNREADABLE_WINDOW, ScreenDiagnosis.classify(none.copy(anyWindow = true)).cause)
     }
 
-    @Test fun blackFrameWithWindowIsProtected() {
-        val c = ScreenDiagnosis.classify(facts(black = listOf(true, true)))
-        assertEquals(ScreenState.PROTECTED, c.state); assertTrue(c.needsHuman); assertEquals("other", c.takeoverReason)
+    @Test fun persistentBlackFramesAreUnavailableWithoutClaimingSecureWindow() {
+        val readable = ScreenDiagnosis.classify(facts(black = listOf(true, true)))
+        assertEquals(ScreenState.CAPTURE_UNAVAILABLE, readable.state)
+        assertFalse("readable controls remain a usable fallback", readable.needsHuman)
+        assertTrue(readable.cause.orEmpty().contains("cannot be distinguished"))
+
+        val empty = ScreenDiagnosis.classify(facts(readable = 0, black = listOf(true, true), texts = emptyList()))
+        assertEquals(ScreenState.CAPTURE_UNAVAILABLE, empty.state)
+        assertTrue(empty.needsHuman)
+        assertEquals(ScreenDiagnosis.DISPLAY_CAPTURE, empty.takeoverReason)
         assertEquals("payment", ScreenDiagnosis.classify(facts(black = listOf(true, true), texts = listOf("确认支付"))).takeoverReason)
         assertEquals("captcha", ScreenDiagnosis.classify(facts(black = listOf(true, true), texts = listOf("安全验证"))).takeoverReason)
         assertEquals("login", ScreenDiagnosis.classify(facts(black = listOf(true, true), password = true)).takeoverReason)
         // 没有窗口时的黑屏只是空白
         assertEquals(ScreenState.BLANK, ScreenDiagnosis.classify(facts(hasWindow = false, readable = 0, black = listOf(true, true))).state)
+        // 根节点不可读但系统仍有 App 窗口/前台任务时,同样不能退回「没有 App」或不断重试。
+        val unreadable = ScreenFacts(null, false, 0, false, listOf(true, true), emptyList(), false,
+            anyWindow = true, foregroundApp = "com.x")
+        val unavailable = ScreenDiagnosis.classify(unreadable)
+        assertEquals(ScreenState.CAPTURE_UNAVAILABLE, unavailable.state)
+        assertEquals("com.x", unavailable.currentApp)
+        assertTrue(unavailable.needsHuman)
     }
 
-    @Test fun oneBlackFrameIsNotProtected() {
+    @Test fun oneBlackFrameIsNotPersistentCaptureFailure() {
         assertEquals(ScreenState.NORMAL, ScreenDiagnosis.classify(facts(black = listOf(true))).state)
         assertEquals(ScreenState.NORMAL, ScreenDiagnosis.classify(facts(black = listOf(false, true))).state)
     }

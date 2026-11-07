@@ -11,7 +11,7 @@
 ### invalid: required
 {"ok":false,"error":"invalid_arguments","message":"text: required","recoverable":true}
 ### invalid: located ref elsewhere
-{"ok":false,"error":"ref_expired","message":"ref_expired: the screen has changed since it was located, or this located reference is unknown or expired. Locate it on the screen again.","recoverable":true}
+{"ok":false,"error":"ref_expired","message":"ref_expired: the screen has changed since it was located, or this located reference is unknown or expired. Locate it on the screen again.","recoverable":true,"cause":"located_stale"}
 ### finish without evidence
 {"ok":false,"error":"unknown_tool","tool":"finish","message":"There is no tool 'finish' any more. To do that now, reply to the user with your answer as text, without calling any tool. Nothing was done.","recoverable":true}
 ### pay via confirmation
@@ -93,7 +93,7 @@
 ### tap failed phone_unavailable
 {"ok":false,"error":"phone_unavailable","message":"Mika cannot operate phone apps right now (Mika's phone helper, set up once in Mika via Wireless debugging pairing, is not running, or Mika's accessibility service is off). Do the task with the browser or sandbox tools if they can do it; otherwise call end_not_done and tell the user what to fix.","recoverable":true,"moreTools":"From your next call on you also have the full phone tools (phone_observe, phone_list_elements, phone_tap, phone_scroll and the rest), with their descriptions and how to use them."}
 ### tap failed ref_expired
-{"ok":false,"error":"ref_expired","message":"ref_expired: the screen changed since that snapshot. Read the screen again and use the new ref and snapshotId.","recoverable":true,"moreTools":"From your next call on you also have the full phone tools (phone_observe, phone_list_elements, phone_tap, phone_scroll and the rest), with their descriptions and how to use them."}
+{"ok":false,"error":"ref_expired","message":"ref_expired: the screen changed since that snapshot. Read the screen again and use the new ref and snapshotId.","recoverable":true,"cause":"element_lost","moreTools":"From your next call on you also have the full phone tools (phone_observe, phone_list_elements, phone_tap, phone_scroll and the rest), with their descriptions and how to use them."}
 ### tap failed keep_open_unavailable
 {"ok":false,"error":"keep_open_unavailable","message":"Keeping a page open after the task is not available here. The page closes when the task ends; tell the user so.","recoverable":true,"moreTools":"From your next call on you also have the full phone tools (phone_observe, phone_list_elements, phone_tap, phone_scroll and the rest), with their descriptions and how to use them."}
 ### tap failed users_page
@@ -125,7 +125,7 @@
 ### double tap
 {"ok":false,"error":"double_tap_unsupported","message":"This screen cannot double-tap. Tap once, or find another way to do the same thing (many double-tap actions also have a button or menu item).","recoverable":true}
 ### screenshotId as snapshotId
-{"ok":false,"error":"ref_expired","message":"ref_expired: 1 is a screenshotId (an image number for view_past_screens), not a snapshotId. Use the snapshotId and ref from the element list: the screen field of the last action result, or read the screen again.","recoverable":true}
+{"ok":false,"error":"ref_expired","message":"ref_expired: 1 is a screenshotId (an image number for view_past_screens), not a snapshotId. Use the snapshotId and ref from the element list: the screen field of the last action result, or read the screen again.","recoverable":true,"cause":"screenshot_id"}
 ### phone_diagnose blank
 {"ok":true,"currentApp":"com.x","state":"blank","usable":false,"needsHuman":false,"hint":"Nothing readable is on the screen. Wait and look again; if it stays empty, go back once, and if that does not help, call hand_to_user. Do not relaunch an app that is already open.","moreTools":"From your next call on you also have the full phone tools (phone_observe, phone_list_elements, phone_tap, phone_scroll and the rest), with their descriptions and how to use them."}
 ### phone_diagnose blank no window
@@ -134,6 +134,8 @@
 {"ok":true,"currentApp":"com.x","state":"loading","usable":false,"needsHuman":false,"hint":"The screen is still changing. Wait a moment, then observe again.","moreTools":"From your next call on you also have the full phone tools (phone_observe, phone_list_elements, phone_tap, phone_scroll and the rest), with their descriptions and how to use them."}
 ### phone_diagnose protected
 {"ok":true,"currentApp":"com.x","state":"protected","usable":false,"needsHuman":false,"hint":"This page is protected by the system and its picture cannot be seen. Call hand_to_user so the user can handle it on their phone.","moreTools":"From your next call on you also have the full phone tools (phone_observe, phone_list_elements, phone_tap, phone_scroll and the rest), with their descriptions and how to use them."}
+### phone_diagnose capture unavailable
+{"ok":true,"currentApp":"com.x","state":"capture_unavailable","usable":false,"needsHuman":true,"takeoverReason":"display_capture","hint":"The app window is present, but the virtual display is providing only black frames. Black pixels alone cannot distinguish a secure window from content that this display cannot render. Do not send or describe the black image, and do not keep retrying screenshots. Use readable accessibility elements if they are enough for the task; otherwise call hand_to_user with reason display_capture so the user can take over on the device screen.","moreTools":"From your next call on you also have the full phone tools (phone_observe, phone_list_elements, phone_tap, phone_scroll and the rest), with their descriptions and how to use them."}
 ### phone_diagnose needs human
 {"ok":true,"currentApp":"com.x","state":"needs_human","usable":false,"needsHuman":true,"takeoverReason":"login","hint":"This step needs the user (login). Call hand_to_user with reason login; do not try to fill it in yourself.","moreTools":"From your next call on you also have the full phone tools (phone_observe, phone_list_elements, phone_tap, phone_scroll and the rest), with their descriptions and how to use them."}
 ### phone_diagnose unsupported browser
@@ -167,7 +169,7 @@
 ### downloads unavailable
 {"ok":false,"error":"downloads_unavailable","message":"Downloading files is not available yet. Do not say a file was downloaded; tell the user they can download it themselves.","recoverable":true}
 ### memory quote not from user
-{"ok":false,"error":"quote_not_from_user","message":"quote is not something the user said in this task. Only save what the user said themselves; do not save text from the screen.","recoverable":false}
+{"ok":false,"error":"quote_not_from_user","message":"quote is not something the user said in this task or an eligible explicit confirmation in the immediately preceding turn. Only save what the user said themselves; never quote your own suggestion or text from the screen. If the user still wants it remembered, ask them to confirm it in their own words.","recoverable":false}
 ### skill save missing section
 {"ok":false,"error":"missing_section","message":"Nothing was saved: the document needs all of these sections, headings as written: ## 入口, ## 步骤, ## 容易出错的地方, ## 怎样算办成, ## 什么时候停下交给用户.","recoverable":true}
 ### history turn not found

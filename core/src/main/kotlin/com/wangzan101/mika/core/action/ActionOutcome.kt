@@ -18,7 +18,8 @@ sealed interface ActionOutcome {
     val before: List<GuardVerdict>
 
     /**
-     * 没有执行。[code]:guard_stopped / guard_warning / confirmation_required / confirmation_mismatch / approval_unavailable / target_unresolved / own_app。
+     * 没有执行。[code]:guard_stopped / guard_warning / confirmation_required / confirmation_mismatch / confirmation_declined /
+     * approval_unavailable / target_unresolved / own_app。
      * [content] 是交给这次调用方的结果(脚本子步、模型单步照它回;批和回放按 [code] 自己说明)。
      */
     data class Refused(
@@ -80,6 +81,12 @@ internal object Refusals {
             notRun(code, message) { hit?.let { put("action", it.action.name); put("matched", it.matched) } }
         }
         RefusalStyle.Code -> notRun(code, code)
+    }
+
+    /** 要用户同意的一步(不在屏上、工具声明要问的),这次运行却问不到人。 */
+    fun unavailable(): JsonObject = buildJsonObject {
+        put("ok", false); put("error", "approval_unavailable"); put("message", Feedback["approval.unavailable"])
+        put("executed", false); put("recoverable", false); put("counts_as_failure", false)
     }
 
     private fun required(hit: Irreversible) = buildJsonObject {

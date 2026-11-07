@@ -14,6 +14,15 @@ object AttachmentLines {
     /** 拆开的一句话:[files] 是每个附件的路径和写在消息里的大小(「2 KB」),按出现先后;[words] 是附件行以外的话(去掉首尾空白)。 */
     data class Parsed(val files: List<Pair<String, String>>, val words: String)
 
+    fun sizeLabel(bytes: Long): String = when {
+        bytes < 1024 -> "$bytes B"
+        bytes < 1024 * 1024 -> "${(bytes + 512) / 1024} KB"
+        else -> String.format(java.util.Locale.ROOT, "%.1f MB", bytes / (1024.0 * 1024.0))
+    }
+
+    fun composeBytes(text: String, files: List<Pair<String, Long>>): String =
+        compose(text, files.map { (path, bytes) -> path to sizeLabel(bytes) })
+
     fun line(path: String, size: String): String = "$PREFIX$path($size)"
 
     /** 话在前,每个附件一行在后;话为空时只有附件行。 */

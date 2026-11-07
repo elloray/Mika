@@ -54,6 +54,20 @@ private val checkoutPage = listOf(
     el("@e4", "button", "立即支付", listOf(0, 900, 590, 990)),
 )
 
+/** 普通提交页:待遇是区间金额,不是这次操作要付的钱。 */
+private val applicationPage = listOf(
+    el("@e1", "text", "示例对象", listOf(0, 0, 999, 80)),
+    el("@e2", "text", "150-200元/天", listOf(0, 200, 999, 260)),
+    el("@e3", "button", "立即沟通", listOf(600, 900, 990, 990)),
+)
+
+/** 捐赠按钮是明确的金额动作,页面是否有合计都要拦。 */
+private val donationPage = listOf(
+    el("@e1", "text", "公益项目", listOf(0, 0, 999, 80)),
+    el("@e2", "text", "150-200元", listOf(0, 200, 999, 260)),
+    el("@e3", "button", "确认捐赠", listOf(600, 900, 990, 990)),
+)
+
 private class Chat(var app: String = "com.chat", var web: WebInfo? = null, var page: List<UiElement> = chatPage()) : ScreenPort {
     val taps = mutableListOf<String>()
     val typed = mutableListOf<String>()
@@ -138,6 +152,24 @@ class PaymentOnlyAskTest {
         assertTrue(r.s("message"), "request_confirmation" in r.s("message"))
         val audit = sink.all.filterIsInstance<RunEvent.Approval>().single()
         assertEquals(listOf("true", "required"), listOf(audit.payment.toString(), audit.decision))
+    }
+
+    @Test fun salaryRangeDoesNotCauseAConfirmationLoop() = runTest {
+        val s = Chat(page = applicationPage); val sink = Events()
+        val m = FakeModel(OBSERVE, tap("@e3"), FINISH)
+        loop(m, s, sink = sink).run("t")
+        assertEquals(listOf("@e3"), s.taps)
+        assertEquals("true", m.result(2).s("ok"))
+        assertTrue(sink.all.none { it is RunEvent.Confirmation })
+    }
+
+    @Test fun donationStillRequiresUserTakeover() = runTest {
+        val s = Chat(page = donationPage)
+        val m = FakeModel(OBSERVE, tap("@e3"), GIVE_UP)
+        loop(m, s).run("t")
+        assertTrue(s.taps.isEmpty())
+        assertEquals("confirmation_required", m.result(2).s("error"))
+        assertTrue(m.result(2).s("message"), "hand_to_user" in m.result(2).s("message"))
     }
 
     @Test fun payingIsHandedToTheUser() = runTest {

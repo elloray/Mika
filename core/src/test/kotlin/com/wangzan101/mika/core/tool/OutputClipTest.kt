@@ -1,4 +1,4 @@
-package com.wangzan101.mika.core.cap.sandbox
+package com.wangzan101.mika.core.tool
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse

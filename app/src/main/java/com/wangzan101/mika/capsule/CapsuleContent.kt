@@ -124,7 +124,8 @@ object CapsuleCopy {
  * 胶囊只一行字,最宽到屏幕的 60%,超出截断;同一个 [CapsuleView.Shown.widthEpoch] 里只变宽不变窄。
  * 点一颗或胶囊交给 [onTap](展开卡片),读屏时这一下的说法是 [tapLabel];那一条上的两个按钮交给 [onStop]、[onHandBack]。
  * [onSwapSide] 给了时读屏软件多一个「移到屏幕另一边」,代替拖动。[alpha] 只淡底和图标,外圈和角标保持实色。
- * 双击由调用方从两次 [onTap] 认出来;读屏软件的双击就是点按,所以 [onSendScreen] 给了时另有一个「把此刻的屏幕发给 Mika」。
+ * 双击由调用方从两次 [onTap] 认出来;读屏软件的双击就是点按,所以 [onSendScreen] 给了时另有一个截屏操作。
+ * 两种截屏入口都只把屏幕放进卡片预览,明确按发送后才进对话。
  * [flash] 每加一,一颗上闪一下(截到了屏幕)。
  * [holding] 时是长按说话中:胶囊稍微放大、外面一圈蓝边。[onTalk] 给了时读屏软件多一个说话的操作([talkLabel]),代替长按:
  * 点一下开始、再点一下发出。
@@ -397,11 +398,12 @@ private fun Modifier.morphGlass(m: Morph, end: Boolean, c: MikaColors, need: Boo
             if (need) c.warnSolid.copy(alpha = 0.5f) else c.glassEdge, style = Stroke(stroke))
     }
 
-/** 宽 [width](0 或超出时按整块)、贴着一边([end] 时右边)的胶囊形;[inset] 往里收(画描边用)。 */
+/** 宽 [width](0 或超出时按整块)、贴着一边([end] 时逻辑末端)的胶囊形;[inset] 往里收(画描边用)。 */
 private class EdgePill(private val width: Float, private val end: Boolean, private val inset: Float = 0f) : Shape {
     override fun createOutline(size: Size, layoutDirection: LayoutDirection, density: Density): Outline {
         val w = if (width > 0f) width.coerceAtMost(size.width) else size.width
-        val left = if (end) size.width - w else 0f
+        val atRight = end != (layoutDirection == LayoutDirection.Rtl)
+        val left = if (atRight) size.width - w else 0f
         val r = size.height / 2 - inset
         return Outline.Rounded(RoundRect(left + inset, inset, left + w - inset, size.height - inset, CornerRadius(r, r)))
     }

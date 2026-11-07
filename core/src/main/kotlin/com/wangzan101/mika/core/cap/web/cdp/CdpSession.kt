@@ -170,6 +170,8 @@ class CdpSession(
         synchronized(this) {
             if (closeError != null) return
             closeError = error
+            // 先让调用方能看见已关闭,再唤醒在途调用;调用方捕获异常后可立即按关闭状态恢复。
+            _closed.value = true
         }
         for (id in pending.keys.toList()) {
             pending.remove(id)?.result?.completeExceptionally(

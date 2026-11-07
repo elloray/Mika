@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Chat composer: hold to talk -->
+    <string name="voice_placeholder_idle">اضغط مطولًا للتحدث، أو انقر للكتابة</string>
+    <string name="voice_placeholder_busy">اضغط مطولًا للتحدث إلى المهمة، أو انقر للكتابة</string>
+    <string name="voice_placeholder_answer">اضغط مطولًا للإجابة، أو انقر للكتابة</string>
+    <string name="voice_listening">جارٍ الاستماع</string>
+    <string name="voice_steer_to">جارٍ إخبار «%1$s»</string>
+    <string name="voice_engine_phone">الهاتف</string>
+    <string name="voice_engine_phone_offline">الهاتف · غير متصل</string>
+    <string name="voice_say_now">تفضل، أنا أستمع…</string>
+    <string name="voice_recording">جارٍ التسجيل. ارفع إصبعك لتحويل كلامك إلى نص…</string>
+    <string name="voice_foot_live">ارفع إصبعك · سيُدرج الكلام في المربع لتعديله</string>
+    <string name="voice_foot_convert">ارفع إصبعك · سيُحوّل إلى نص ثم يُدرج في المربع</string>
+    <string name="voice_left">تبقّى %1$d ث</string>
+    <string name="voice_slide_cancel">اسحب لأعلى للإلغاء</string>
+    <string name="voice_release_cancel">ارفع إصبعك للإلغاء</string>
+    <string name="voice_release_fill">ارفع إصبعك للإدراج</string>
+    <string name="voice_release_convert">ارفع إصبعك للتحويل</string>
+    <string name="voice_converting">جارٍ التحويل…</string>
+    <string name="voice_no_match">لم أتمكن من فهم كلامك. اضغط مطولًا وقل ذلك مجددًا</string>
+    <string name="voice_busy">التعرّف على الكلام مشغول. حاول مجددًا بعد قليل</string>
+    <string name="voice_network">لا يوجد اتصال بالشبكة، وتعذّر تحويل الكلام إلى نص</string>
+    <string name="voice_mic_unavailable">الميكروفون غير متاح. قد يكون تطبيق آخر يستخدمه</string>
+    <string name="voice_hold_to_talk">اضغط مطولًا للتحدث</string>
+    <string name="voice_mic_blocked_title">ما زال الميكروفون غير متاح</string>
+    <string name="voice_mic_blocked_body">تم السماح بالتسجيل بالفعل، لكن Mika ما زالت غير قادرة على التسجيل. تحقّق من تفعيل مفتاح الوصول إلى الميكروفون في الإعدادات السريعة (Android 12 والإصدارات الأحدث)، ومن عدم إيقاف ميكروفون Mika في مدير الأذونات بالنظام. قد يكون تطبيق آخر يستخدم الميكروفون أيضًا.</string>
+    <string name="voice_provider_failed">تعذّر تحويل الكلام إلى نص: %1$s</string>
+    <string name="voice_unavailable_title">الإدخال الصوتي غير جاهز</string>
+    <string name="voice_unavailable_no_engine">لا يتضمن هذا الهاتف ميزة مدمجة للتعرّف على الكلام، ولم يتم اختيار نموذج لتحويل الكلام إلى نص. اختر نموذجًا صوتيًا من أحد المزوّدين ضمن الإعدادات › النماذج › تحويل الكلام إلى نص لتفعيل الميزة.</string>
+    <string name="voice_unavailable_system_gone">تم ضبط تحويل الكلام إلى نص لاستخدام ميزة التعرّف المدمجة في الهاتف، لكنها غير متوفرة الآن. اختر خيارًا آخر ضمن الإعدادات › النماذج › تحويل الكلام إلى نص.</string>
+    <string name="voice_unavailable_system_silent">لم تستجب ميزة التعرّف على الكلام المدمجة في الهاتف، لذا لم يصل أي كلام. اختر نموذجًا صوتيًا من أحد المزوّدين ضمن الإعدادات › النماذج › تحويل الكلام إلى نص لتفعيل الميزة.</string>
+    <string name="voice_unavailable_provider_gone">أُزيل المزوّد الخاص بنموذج الكلام المحدد. اختر مزوّدًا آخر ضمن الإعدادات › النماذج › تحويل الكلام إلى نص.</string>
+    <string name="voice_unavailable_off">ميزة تحويل الكلام إلى نص متوقفة. اختر واحدة ضمن الإعدادات › النماذج › تحويل الكلام إلى نص.</string>
+    <string name="voice_go_pick">اختيار</string>
+    <string name="voice_permission_title">تحتاج Mika إلى الميكروفون</string>
+    <string name="voice_permission_body">لكي تسمعك Mika عند الضغط مطولًا للتحدث، يلزمها تسجيل الصوت. سبق أن رُفض الإذن، لذا لن يطلب الهاتف الإذن مجددًا. فعّل الميكروفون في صفحة أذونات Mika ضمن إعدادات النظام.</string>
+    <string name="voice_permission_open">فتح الإعدادات</string>
+    <!-- Floating capsule: long press to talk -->
+    <string name="capsule_voice_talk">تحدث</string>
+    <string name="capsule_voice_send">إرسال</string>
+    <string name="capsule_voice_answer_title">الإجابة على Mika</string>
+    <string name="capsule_voice_continue_title">متابعة «%1$s»</string>
+    <string name="capsule_voice_cancel">إلغاء</string>
+    <string name="capsule_voice_edit">تعديل</string>
+    <string name="capsule_voice_foot_send_up">ارفع إصبعك للإرسال · اسحب لأعلى للإلغاء أو التعديل</string>
+    <string name="capsule_voice_foot_send_down">ارفع إصبعك للإرسال · اسحب لأسفل للإلغاء أو التعديل</string>
+    <string name="capsule_voice_foot_convert_up">ارفع إصبعك للتحويل والإرسال · اسحب لأعلى للإلغاء أو التعديل</string>
+    <string name="capsule_voice_foot_convert_down">ارفع إصبعك للتحويل والإرسال · اسحب لأسفل للإلغاء أو التعديل</string>
+    <string name="capsule_voice_foot_edit">ارفع إصبعك · ستُفتح البطاقة والكلام في المربع</string>
+    <string name="capsule_voice_foot_cancel">ارفع إصبعك · تجاهل هذا</string>
+    <string name="capsule_voice_foot_a11y">عند الانتهاء، اختر «إرسال» من إجراءات الكبسولة</string>
+    <string name="capsule_voice_steered">تم إبلاغ المهمة: %1$s</string>
+    <string name="capsule_voice_answered">تمت الإجابة: %1$s</string>
+    <string name="capsule_voice_sent">تم الإرسال: %1$s</string>
+    <string name="capsule_voice_need_mic">انقر للسماح للميكروفون في Mika</string>
+    <string name="capsule_voice_not_ready">الإدخال الصوتي غير جاهز · انقر</string>
+    <string name="capsule_voice_open">فتح Mika</string>
+</resources>

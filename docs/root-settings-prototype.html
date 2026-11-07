@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mika · Root 设置原型</title>
+<style>
+  * { box-sizing: border-box; }
+  :root { color-scheme: light; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+  body { margin: 0; min-height: 100vh; display: grid; place-items: center; background: #eef1f5; color: #17191d; }
+  button { font: inherit; }
+  .phone { position: relative; width: 390px; height: 780px; overflow: hidden; border: 1px solid #dce1e8; border-radius: 38px; background: #f8f9fb; box-shadow: 0 24px 70px #25324a26; }
+  .status { height: 40px; display: flex; align-items: center; justify-content: space-between; padding: 0 25px; font-size: 12px; font-weight: 650; }
+  .nav { height: 62px; display: flex; align-items: center; gap: 14px; padding: 0 20px; }
+  .nav h1 { margin: 0; font-size: 25px; letter-spacing: -.5px; }
+  .back { width: 36px; height: 36px; border: 0; border-radius: 50%; background: transparent; color: #30343b; font-size: 27px; cursor: pointer; }
+  .content { padding: 4px 16px 30px; }
+  .label { margin: 21px 10px 8px; color: #7a818d; font-size: 12px; font-weight: 650; }
+  .card { overflow: hidden; border: 1px solid #e7eaf0; border-radius: 20px; background: #ffffffd9; box-shadow: 0 3px 14px #24324a05; }
+  .row { width: 100%; min-height: 72px; display: flex; align-items: center; gap: 13px; padding: 13px 15px; border: 0; border-bottom: 1px solid #edf0f4; background: transparent; color: inherit; text-align: left; }
+  .row:last-child { border-bottom: 0; }
+  button.row { cursor: pointer; }
+  button.row:hover { background: #f5f7fa; }
+  .icon { width: 34px; height: 34px; flex: 0 0 34px; display: grid; place-items: center; border-radius: 11px; background: #eef2f7; color: #3e4856; font-size: 17px; }
+  .copy { min-width: 0; flex: 1; }
+  .title { font-size: 15px; font-weight: 600; }
+  .sub { margin-top: 4px; color: #818894; font-size: 12px; line-height: 1.4; }
+  .chevron { color: #a4abb5; font-size: 22px; }
+  .note { margin: 10px 12px 0; color: #8a919c; font-size: 12px; line-height: 1.55; }
+  .badge { padding: 4px 9px; border-radius: 999px; background: #eaf6ef; color: #328057; font-size: 11px; font-weight: 650; }
+  .root-status { display: flex; align-items: center; gap: 10px; padding: 18px; }
+  .dot { width: 9px; height: 9px; border-radius: 50%; background: #42a66f; box-shadow: 0 0 0 5px #42a66f17; }
+  .switch { position: relative; width: 45px; height: 27px; flex: 0 0 45px; border: 0; border-radius: 99px; background: #d9dee6; cursor: pointer; transition: .18s; }
+  .switch::after { content: ""; position: absolute; top: 3px; left: 3px; width: 21px; height: 21px; border-radius: 50%; background: white; box-shadow: 0 1px 4px #0002; transition: .18s; }
+  .switch.on { background: #1e232b; }
+  .switch.on::after { transform: translateX(18px); }
+  .danger .icon { background: #fff0ed; color: #c45a47; }
+  .hidden { display: none !important; }
+  .scrim { position: absolute; inset: 0; display: grid; place-items: center; padding: 24px; background: #18202c55; backdrop-filter: blur(5px); }
+  .dialog { width: 100%; padding: 23px; border-radius: 24px; background: #fff; box-shadow: 0 18px 60px #1115; }
+  .dialog h2 { margin: 0 0 13px; font-size: 19px; }
+  .dialog p { margin: 0; color: #666e79; font-size: 14px; line-height: 1.65; }
+  .actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 23px; }
+  .actions button { padding: 10px 15px; border: 0; border-radius: 12px; background: transparent; cursor: pointer; font-weight: 600; }
+  .allow { color: #c44c3b; background: #fff1ee !important; }
+  .hint { position: fixed; bottom: 18px; color: #77808d; font-size: 12px; }
+</style>
+</head>
+<body>
+<div class="phone">
+  <div class="status"><span>9:41</span><span>● ● ●</span></div>
+  <section id="advanced">
+    <div class="nav"><h1>高级与其他</h1></div>
+    <div class="content">
+      <div class="label">高级能力</div>
+      <div class="card">
+        <div class="row"><div class="icon">↗</div><div class="copy"><div class="title">网络代理</div><div class="sub">为网络请求设置代理</div></div><span class="chevron">›</span></div>
+        <div class="row"><div class="icon">⌘</div><div class="copy"><div class="title">文件与计算环境</div><div class="sub">沙箱与本地运行环境</div></div><span class="chevron">›</span></div>
+        <button class="row" id="openRoot"><div class="icon">⌾</div><div class="copy"><div class="title">Root</div><div class="sub">助手自动使用 · Root 命令已关闭</div></div><span class="chevron">›</span></button>
+      </div>
+      <div class="note">仅在检测到手机已有 Root 能力时显示 Root 入口。</div>
+    </div>
+  </section>
+  <section id="rootPage" class="hidden">
+    <div class="nav"><button class="back" id="back">‹</button><h1>Root</h1></div>
+    <div class="content">
+      <div class="card root-status"><span class="dot"></span><div class="copy"><div class="title">Root 可用</div><div class="sub">已授权 Mika 使用超级管理员权限</div></div></div>
+      <div class="label">手机操作</div>
+      <div class="card">
+        <div class="row"><div class="icon">▣</div><div class="copy"><div class="title">自动启动手机助手</div><div class="sub">无需配对或电脑，重启后自动恢复</div></div><span class="badge">自动</span></div>
+      </div>
+      <div class="note">Root 可用时自动优先使用，没有单独开关。授权被撤销或 Root 不可用时，回退到现有启动方式。</div>
+      <div class="label">高级权限</div>
+      <div class="card">
+        <div class="row danger"><div class="icon">›_</div><div class="copy"><div class="title">允许执行 Root 命令</div><div class="sub" id="commandState">已关闭 · Agent 不能执行 Root 命令</div></div><button class="switch" id="commandSwitch" aria-label="允许执行 Root 命令"></button></div>
+      </div>
+      <div class="note">默认关闭。开启后，高权限命令仍按现有确认规则询问用户；错误命令可能损坏应用数据或系统。</div>
+    </div>
+  </section>
+  <div class="scrim hidden" id="warning">
+    <div class="dialog">
+      <h2>允许 Mika 执行 Root 命令？</h2>
+      <p>Root 命令可以读取或修改其他应用和系统数据。错误命令可能导致数据丢失、应用异常，甚至系统无法启动。只在你理解风险并信任任务内容时开启。</p>
+      <div class="actions"><button id="cancel">取消</button><button class="allow" id="allow">我理解风险，允许</button></div>
+    </div>
+  </div>
+</div>
+<div class="hint">点击 Root 进入页面；点击 Root 命令开关查看确认流程</div>
+<script>
+  const advanced = document.getElementById('advanced');
+  const rootPage = document.getElementById('rootPage');
+  const warning = document.getElementById('warning');
+  const commandSwitch = document.getElementById('commandSwitch');
+  const commandState = document.getElementById('commandState');
+  document.getElementById('openRoot').onclick = () => { advanced.classList.add('hidden'); rootPage.classList.remove('hidden'); };
+  document.getElementById('back').onclick = () => { rootPage.classList.add('hidden'); advanced.classList.remove('hidden'); };
+  commandSwitch.onclick = () => {
+    if (commandSwitch.classList.contains('on')) {
+      commandSwitch.classList.remove('on');
+      commandState.textContent = '已关闭 · Agent 不能执行 Root 命令';
+    } else warning.classList.remove('hidden');
+  };
+  document.getElementById('cancel').onclick = () => warning.classList.add('hidden');
+  document.getElementById('allow').onclick = () => {
+    warning.classList.add('hidden');
+    commandSwitch.classList.add('on');
+    commandState.textContent = '已开启 · 高权限命令仍会按规则确认';
+  };
+</script>
+</body>
+</html>

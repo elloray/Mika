@@ -46,4 +46,6 @@
         <item quantity="other">%1$d ステップを一度に</item>
     </plurals>
     <string name="and_more">" など"</string>
+    <string name="capsule_hide">カプセルをオフ</string>
+    <string name="capsule_hidden_hint">フローティングカプセルをオフにしました。「%1$s › %2$s」でもう一度オンにできます</string>
 </resources>

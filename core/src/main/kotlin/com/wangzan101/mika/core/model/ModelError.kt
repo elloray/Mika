@@ -41,6 +41,8 @@ sealed class ModelError(message: String, cause: Throwable? = null) : Exception(m
     class StreamCut : ModelError("回复还没传完,连接就被断开了")
     class Server(val status: Int) : ModelError("模型服务出错(HTTP $status)")
     class ContentRefused : ModelError("模型拒绝处理该内容")
+    /** 服务端明确拒绝思考强度参数:保留服务端原话,引导改档位,不能误报成地址或接口错误。 */
+    class ReasoningEffortRejected(val detail: String) : ModelError("模型不接受所选的思考强度")
     /** ChatGPT 套餐给其他 App 用的额度到了上限:不重试,等额度恢复或换模型。 */
     class ChatGptLimitReached : ModelError("ChatGPT 额度用完了")
     /** 这个 ChatGPT 账号不能在其他 App 里用套餐额度(套餐不符、地区或账号策略不允许):不重试。 */

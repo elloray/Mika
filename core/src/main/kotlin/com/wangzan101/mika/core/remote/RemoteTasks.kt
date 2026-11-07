@@ -6,6 +6,7 @@ import kotlinx.serialization.json.add
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 import kotlinx.serialization.json.putJsonArray
+import java.security.MessageDigest
 
 /** 电脑交来的一个任务:[state] 为空表示已经交给任务服务、还没登记上(马上就会有)。 */
 data class RemoteTask(
@@ -15,7 +16,13 @@ data class RemoteTask(
     val createdAtMs: Long,
     val state: TaskState?,
     val steers: List<RemoteSteer> = emptyList(),
+    val runId: String? = null,
+    val files: List<TaskFile> = emptyList(),
+    /** 访问令牌的不可逆摘要;只用于归属判断,从不出现在响应里。旧数据首次读取时归属给首个已授权客户端。 */
+    val owner: String? = null,
 )
+
+data class RemoteTaskPage(val tasks: List<RemoteTask>, val nextBefore: String? = null)
 
 /** 只报告电脑追加的消息;joined 表示进入当前任务上下文,不是执行成功。 */
 data class RemoteSteer(val messageId: String, val state: String)
@@ -25,15 +32,26 @@ sealed interface StartOutcome {
     data class Refused(val message: String) : StartOutcome
 }
 
+/** 访问令牌只以 SHA-256 摘要进入任务层;接口、日志和导出都不保存或暴露原令牌。 */
+object RemoteOwnership {
+    const val UNSCOPED = "unscoped"
+    fun of(token: String): String = MessageDigest.getInstance("SHA-256").digest(token.toByteArray(Charsets.UTF_8))
+        .joinToString("") { "%02x".format(it.toInt() and 0xff) }
+}
+
 /**
- * App 一侧给电脑连接的任务出入口:任务照旧经任务服务开始、在对话里留记录,状态读任务自己的,这里不另存一份。
- * 只认电脑交来的任务(按 [RemoteTask.id]),手机上发起的任务看不到也动不了。
+ * App 一侧给电脑连接的任务出入口。[scope] 是每次已认证请求的唯一归属入口;HTTP 与 MCP 都必须使用它,
+ * 使同一个 computer-access token 才能读、改、上传、下载或导出自己创建的任务。
  */
 interface RemoteTasks {
-    fun start(goal: String, conversation: String?): StartOutcome
+    val fileAccess: RemoteTaskFiles? get() = null
+    fun scope(owner: String): RemoteTasks = this
+    fun start(goal: String, conversation: String?, requestId: String? = null, attachments: List<String> = emptyList()): StartOutcome
     fun get(id: String): RemoteTask?
-    /** 新的在前。 */
+    /** 新的在前。保留给原有 MCP 与直接服务调用。 */
     fun list(limit: Int): List<RemoteTask>
+    /** 稳定的游标页;不支持游标的旧实现仍可按原有列表工作。 */
+    fun page(limit: Int, before: String? = null): RemoteTaskPage = RemoteTaskPage(list(limit))
     /** 只在任务正等着回答追问时调用;交给任务时返回 true。 */
     fun answer(id: String, text: String): Boolean
     /** 原子确认消息进入当前任务的收件箱;不能转成新任务。返回消息编号,拒绝为 null。 */
@@ -82,6 +100,7 @@ object RemoteStatus {
         put("conversation", t.conversation)
         put("goal", t.goal)
         put("started_at_ms", t.createdAtMs)
+        t.runId?.let { put("run_id", it) }
         when (s) {
             is TaskState.Running -> {
                 put("step", s.step)
@@ -119,6 +138,12 @@ object RemoteStatus {
                 put("failure_kind", s.kind.name.lowercase())
             }
             null, TaskState.Idle, TaskState.Cancelled -> Unit
+        }
+        if (t.files.isNotEmpty()) putJsonArray("files") {
+            t.files.forEach { file -> add(buildJsonObject {
+                put("id", file.id); put("name", file.name); put("size", file.size)
+                file.sha256?.let { put("sha256", it) }
+            }) }
         }
         put("answerable", s is TaskState.WaitingInput)
         if (t.steers.isNotEmpty()) putJsonArray("steers") {

@@ -2,6 +2,7 @@ package com.wangzan101.mika.core.general
 
 import com.wangzan101.mika.core.action.ActionRisk
 import com.wangzan101.mika.core.action.Risk as ApprovalRisk
+import com.wangzan101.mika.core.observation.Untrusted
 import com.wangzan101.mika.core.prompt.Prompts
 import com.wangzan101.mika.core.tool.AgentTool
 import com.wangzan101.mika.core.tool.Args
@@ -15,6 +16,7 @@ import com.wangzan101.mika.core.tool.bool
 import com.wangzan101.mika.core.tool.okObj
 import com.wangzan101.mika.core.tool.str
 import com.wangzan101.mika.core.tool.strArray
+import com.wangzan101.mika.core.trigger.ConditionNotify
 import com.wangzan101.mika.core.trigger.TriggerDefinition
 import com.wangzan101.mika.core.trigger.nextCalendarAt
 import java.time.Instant
@@ -42,6 +44,9 @@ internal object ScheduleTask : AgentTool {
         "repeatZone" to str("IANA time zone for repeatAt, e.g. Asia/Shanghai; defaults to this device's zone."),
         "weekdays" to strArray("Optional days for repeatAt: MON,TUE,WED,THU,FRI,SAT,SUN. Omit for every day.", 7),
         "condition" to str("Optional read only condition to check using web or sandbox before running the goal."),
+        "notifyWhen" to str("With condition: becomes_met (default) runs the goal only when the condition changes from not met to met; each_time_met runs it on every check that finds it met.",
+            listOf("becomes_met", "each_time_met")),
+        "cooldownMinutes" to int("With condition: minimum minutes between two runs of the goal; a met check inside the cooldown is skipped, and the next check after it ends can run the goal.", 1, 525600),
         "reminder" to str("Optional fixed reminder text. If provided, deliver it directly at the scheduled time without running the model."),
         "whenIdle" to bool("If true, run only while no foreground task is active; the watchdog retries while busy."),
     ), emptyList())
@@ -62,7 +67,10 @@ internal object ScheduleTask : AgentTool {
                         plan.intervalMs?.let { put("intervalMinutes", it / 60_000) }
                         plan.calendarTime?.let { put("repeatAt", it) }
                         plan.calendarZone?.let { put("repeatZone", it) }
-                        plan.conditionGoal?.let { put("condition", it) }
+                        plan.conditionGoal?.let { put("condition", it); put("notifyWhen", plan.notifyWhen.wire) }
+                        plan.cooldownMs?.let { put("cooldownMinutes", it / 60_000) }
+                        plan.lastValue?.let { put("lastValue", Untrusted.wrap(it)) }
+                        plan.baselineValue?.let { put("baselineValue", Untrusted.wrap(it)) }
                     })
                 } })
             })
@@ -80,7 +88,11 @@ internal object ScheduleTask : AgentTool {
                 }
                 else -> return ToolExecution(okObj { put("changed", false); put("reason", "invalid_op") })
             }
-            return ToolExecution(okObj { put("changed", changed); if (!changed) put("reason", "plan_not_found") })
+            return ToolExecution(okObj {
+                put("changed", changed)
+                // 计划在、却没改成:只有恢复认领过(跑过或正在跑)的一次性计划会这样
+                if (!changed) put("reason", if (op == "resume" && admin.list(thread).any { it.id == id }) "already_ran" else "plan_not_found")
+            })
         }
         val goal = a.str("goal", max = 4000) ?: return ToolExecution(okObj { put("scheduled", false); put("reason", "missing_goal") })
         val first = a.str("at")
@@ -110,9 +122,17 @@ internal object ScheduleTask : AgentTool {
         if (reminder != null && condition != null) return ToolExecution(okObj {
             put("scheduled", false); put("reason", "reminder_and_condition_conflict")
         })
+        val notifyRaw = a.str("notifyWhen")
+        val cooldown = a.int("cooldownMinutes", 1, 525600)?.toLong()?.times(60_000)
+        if ((notifyRaw != null || cooldown != null) && condition == null) return ToolExecution(okObj {
+            put("scheduled", false); put("reason", "condition_option_without_condition")
+        })
+        val notifyWhen = if (notifyRaw == null) ConditionNotify.BecomesMet else ConditionNotify.ofWire(notifyRaw)
+            ?: return ToolExecution(okObj { put("scheduled", false); put("reason", "invalid_notify_when") })
         val trigger = TriggerDefinition(UUID.randomUUID().toString(), thread, goal, at, interval, condition,
             idleOnly = a.bool("whenIdle", false), reminderText = reminder,
-            calendarTime = repeatAt, calendarZone = if (repeatAt != null) zone else null, calendarDays = days)
+            calendarTime = repeatAt, calendarZone = if (repeatAt != null) zone else null, calendarDays = days,
+            notifyWhen = notifyWhen, cooldownMs = cooldown)
         val create = ctx.config.scheduleTrigger ?: return ToolExecution(okObj {
             put("scheduled", false); put("reason", "unavailable")
         })

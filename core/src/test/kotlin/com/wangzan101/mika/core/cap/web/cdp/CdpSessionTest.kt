@@ -115,7 +115,9 @@ class CdpSessionTest {
         val s = session(server, maxMessageBytes = 50_000)
         val e = assertFails<CdpConnectionClosedException> { s.send("Big.call") }
         assertTrue(e.message, e.message!!.contains("larger than"))
+        // 异常交还调用方的那一刻状态就必须已经关闭,立即恢复也不能看到旧的连接状态。
         assertTrue(s.closed.value)
+        assertFails<CdpConnectionClosedException> { s.send("Page.reload") }
     }
 
     @Test

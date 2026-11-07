@@ -6,6 +6,8 @@
     <string name="confirm_order">Buat pesanan</string>
     <string name="confirm_submit">Kirim</string>
     <string name="confirm_other">Tindakan lain</string>
+    <string name="confirm_root">Perintah root</string>
+    <string name="confirm_root_where">seluruh ponsel (root)</string>
     <string name="confirm_title">Perlu persetujuan Anda: %1$s</string>
     <string name="confirm_in_app">Di %1$s</string>
     <string name="confirm_target">Kepada: %1$s</string>

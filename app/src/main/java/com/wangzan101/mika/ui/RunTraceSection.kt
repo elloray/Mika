@@ -25,6 +25,7 @@ import com.wangzan101.mika.core.trace.TraceRow
 import com.wangzan101.mika.ui.components.GroupCard
 import com.wangzan101.mika.ui.components.ListRow
 import com.wangzan101.mika.ui.components.MikaSwitch
+import com.wangzan101.mika.ui.components.MikaDialog
 import com.wangzan101.mika.ui.components.RowChevron
 import com.wangzan101.mika.ui.components.RowValue
 import com.wangzan101.mika.ui.theme.MikaIcons
@@ -174,7 +175,7 @@ internal fun TraceSettingsRows() {
     if (editingLimit) {
         var text by rememberSaveable { mutableStateOf(traceLimitMiB.toString()) }
         val limit = text.toIntOrNull()?.takeIf { it > 0 }
-        AlertDialog(
+        MikaDialog(
             onDismissRequest = { editingLimit = false },
             title = { Text(stringResource(R.string.trace_storage_limit)) },
             text = {
