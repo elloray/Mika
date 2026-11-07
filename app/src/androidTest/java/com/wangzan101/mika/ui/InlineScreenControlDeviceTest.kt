@@ -66,15 +66,19 @@ class InlineScreenControlDeviceTest {
     @get:Rule(order = 1) val compose = createAndroidComposeRule<MainActivity>()
 
     private fun fit(run: com.wangzan101.mika.task.TaskRun) {
-        compose.waitUntil(15_000) {
+        var lastState = ""
+        try { compose.waitUntil(15_000) {
             val area = compose.onNodeWithTag("operation-screen-viewport").fetchSemanticsNode().boundsInRoot
             val display = ctx.getSystemService(android.hardware.display.DisplayManager::class.java).getDisplay(run.displayId.value)
             val size = android.graphics.Point().also { display?.getRealSize(it) }
             val frame = run.frames.value
+            lastState = "viewport=${area.width}x${area.height} display=${size.x}x${size.y} rotation=${display?.rotation} frame=${frame?.width}x${frame?.height} control=${run.manualControl.state.value}"
             frame != null && size.x > 0 && size.y > 0 &&
                 kotlin.math.abs(size.x.toFloat() / size.y - area.width / area.height) < .015f &&
                 kotlin.math.abs(frame.width.toFloat() / frame.height - area.width / area.height) < .015f &&
                 compose.onAllNodes(hasTestTag("screen-control-toggle") and isEnabled()).fetchSemanticsNodes().isNotEmpty()
+        } } catch (e: androidx.compose.ui.test.ComposeTimeoutException) {
+            throw AssertionError("Virtual display did not fit: $lastState", e)
         }
     }
 
