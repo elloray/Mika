@@ -108,6 +108,10 @@
     <string name="calls_bypass_note">Panggilan dari nomor ini berdering normal agar Anda menjawab, meski semua penelepon dapat dijawab otomatis.</string>
     <string name="calls_bypass_title">Selalu jawab sendiri</string>
     <string name="calls_history_all">Semua</string>
+    <string name="calls_history_clear">Hapus semua</string>
+    <string name="calls_history_clear_confirm">Hapus semua catatan panggilan dan transkripnya yang tersimpan di ponsel ini? Tindakan ini tidak dapat dibatalkan.</string>
+    <string name="calls_history_cleared">Riwayat panggilan telah dihapus</string>
+    <string name="calls_history_clear_failed">Riwayat panggilan tidak dapat dihapus. Silakan coba lagi.</string>
     <string name="calls_history_delete">Hapus catatan</string>
     <string name="calls_history_delete_confirm">Hapus catatan dan transkripnya dari ponsel ini? Tindakan ini tidak dapat dibatalkan.</string>
     <string name="calls_history_deleted">Catatan dihapus</string>
@@ -125,4 +129,18 @@
     <string name="calls_notification_settings">Buka pengaturan notifikasi</string>
     <string name="calls_speaker_edit_note">Pilih suara hasil kloning di Kloning suara. Kosongkan kolom untuk memulihkan suara default.</string>
     <string name="calls_greeting_hint">Teks dibacakan apa adanya. Kosongkan agar lawan bicara berbicara terlebih dahulu.</string>
+    <string name="calls_notification_handoff">AI telah keluar dari panggilan. Lanjutkan di aplikasi Telepon sistem.</string>
+    <string name="calls_standby_checking">Memeriksa kondisi siaga panggilan di latar belakang</string>
+    <string name="calls_standby_locked_dial_preparing">Menyiapkan panggilan dari layar kunci · %1$d dtk tersisa</string>
+    <string name="calls_standby_unavailable">Siaga latar belakang tidak tersedia. Buka untuk meninjau.</string>
+    <string name="calls_standby_ai_active">Siaga latar belakang aktif. AI sedang menangani panggilan.</string>
+    <string name="calls_standby_running">Siaga latar belakang aktif. Anda dapat mematikannya di pengaturan panggilan.</string>
+    <string name="calls_standby_start_blocked">Android tidak mengizinkan siaga panggilan dimulai. Coba lagi di aplikasi.</string>
+    <string name="calls_standby_not_ready">Siaga latar belakang belum aktif, atau ponsel belum dibuka kuncinya setelah mulai ulang.</string>
+    <string name="calls_standby_notifications_required">Izinkan notifikasi siaga panggilan.</string>
+    <string name="calls_notification_preparing">Menyiapkan panggilan AI</string>
+    <string name="calls_notification_answer_preparing">Menyiapkan jawaban AI</string>
+    <string name="calls_notification_connecting_audio">Menghubungkan audio panggilan</string>
+    <string name="calls_notification_connected_waiting">AI terhubung. Menunggu lawan bicara berbicara. Anda dapat mengambil alih kapan saja.</string>
+    <string name="calls_notification_connected">AI terhubung. Anda dapat berbicara sendiri kapan saja.</string>
 </resources>

@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="settings_personal_start">시작할 때 개인 비서 열기</string>
+    <string name="settings_personal_start_sub">개인 비서를 Mika의 첫 화면으로 설정</string>
     <string name="language_title">언어</string>
     <string name="language_system">시스템 설정 따르기</string>
     <string name="language_system_detail">Mika가 지원하는 시스템 언어면 그 언어를, 아니면 영어를 사용해요</string>

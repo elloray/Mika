@@ -32,7 +32,10 @@ sealed interface Delivery {
 
 sealed interface ChannelInput {
     val peer: ChannelPeer
-    data class Text(override val peer: ChannelPeer, val messageId: String, val text: String, val replyToAskId: String? = null) : ChannelInput
+    data class Text(
+        override val peer: ChannelPeer, val messageId: String, val text: String, val replyToAskId: String? = null,
+        val requireMatchingAsk: Boolean = false,
+    ) : ChannelInput
     data class Confirm(override val peer: ChannelPeer, val askId: String, val choice: ConfirmChoice) : ChannelInput
     data class Stop(override val peer: ChannelPeer, val runId: RunId) : ChannelInput
 }

@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_self_operate">السماح لـ Mika بتشغيل شاشاته</string>
+    <string name="settings_self_operate_sub">فتح صفحات Mika وملفاته؛ يسأل قبل فتح رابط في متصفحك</string>
+    <string name="self_notify_channel">إجراءات Mika</string>
+    <string name="self_notify_channel_desc">ما يفتحه Mika أو يطلب منك رؤيته</string>
+    <string name="self_notify_open">عرض</string>
+    <string name="self_screen_notice">يريد Mika أن يعرض لك %1$s</string>
+    <string name="self_file_notice">لدى Mika ملف ليعرضه لك</string>
+    <string name="self_file_failed">تعذّر فتح هذا الملف</string>
+    <string name="self_consent_open">يريد Mika فتح هذه الصفحة في متصفحك. هل تسمح؟\n%1$s</string>
+    <string name="self_consent_search">يريد Mika البحث عن «%1$s» في متصفحك. هل تسمح؟</string>
+    <string name="self_consent_login">يريد Mika فتح %1$s لتسجيل الدخول. هل تسمح؟</string>
+    <string name="self_consent_replace">سيستبدل هذا الصفحة المفتوحة لديك.</string>
+    <string name="self_consent_allow">فتح</string>
+    <string name="self_consent_deny">عدم الفتح</string>
+    <string name="self_browser_notice">اضغط لفتح %1$s في متصفحك</string>
+    <string name="self_browser_failed">تعذّر فتح هذه الصفحة</string>
+</resources>

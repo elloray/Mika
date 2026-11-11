@@ -8,10 +8,13 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.rememberTransformableState
 import androidx.compose.foundation.gestures.transformable
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -185,26 +188,31 @@ private fun LiveFrame(source: StateFlow<Bitmap?>) {
 /** 放大的那块屏:整屏、捏合缩放(1–6 倍)、拖动看边角;点外面或按返回关掉。 */
 @Composable
 private fun FrameZoom(frame: Bitmap, onDismiss: () -> Unit) {
-    var scale by remember { mutableFloatStateOf(1f) }
-    var offset by remember { mutableStateOf(Offset.Zero) }
-    val state = rememberTransformableState { zoomChange, panChange, _ ->
-        scale = (scale * zoomChange).coerceIn(1f, 6f)
-        offset = if (scale <= 1f) Offset.Zero else offset + panChange
-    }
     Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false)) {
         Box(
             Modifier.fillMaxSize().background(MikaTheme.colors.bg.copy(alpha = 0.96f)).clickable { onDismiss() }
                 .testTag("screens-zoom-dialog"),
             contentAlignment = Alignment.Center,
         ) {
-            Image(
-                frame.asImageBitmap(), null,
-                Modifier.fillMaxWidth().transformable(state)
-                    .graphicsLayer(scaleX = scale, scaleY = scale, translationX = offset.x, translationY = offset.y),
-                contentScale = ContentScale.Fit,
-            )
+            ZoomableFrame(frame, null, Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.safeDrawing).padding(8.dp))
         }
     }
+}
+
+@Composable
+internal fun ZoomableFrame(frame: Bitmap, description: String?, modifier: Modifier = Modifier) {
+    var scale by remember { mutableFloatStateOf(1f) }
+    var offset by remember { mutableStateOf(Offset.Zero) }
+    val state = rememberTransformableState { zoomChange, panChange, _ ->
+        scale = (scale * zoomChange).coerceIn(1f, 6f)
+        offset = if (scale <= 1f) Offset.Zero else offset + panChange
+    }
+    Image(
+        remember(frame) { frame.asImageBitmap() }, description,
+        modifier.transformable(state)
+            .graphicsLayer(scaleX = scale, scaleY = scale, translationX = offset.x, translationY = offset.y),
+        contentScale = ContentScale.Fit,
+    )
 }
 
 /** 问内置助手每块屏最上面是哪个 App,再换成显示名。助手没连着就都不查(这只影响前景那一行)。 */

@@ -11,13 +11,19 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.wangzan101.mika.ui.theme.MikaTheme
 import com.wangzan101.mika.ui.theme.MikaType
 
-/** 操作面板里的一项;[destructive] 为真时文字用出错红。 */
-class SheetAction(val label: String, val destructive: Boolean = false, val onClick: () -> Unit)
+/** 操作面板里的一项;[icon] 放在文字左边;[destructive] 为真时文字用出错红。 */
+class SheetAction(
+    val label: String,
+    val icon: ImageVector? = null,
+    val destructive: Boolean = false,
+    val onClick: () -> Unit,
+)
 
 /**
  * 点一行后从底部升起的操作面板:顶上一行说明是在对什么操作,下面每项一行。
@@ -42,7 +48,7 @@ fun ActionSheet(title: String?, actions: List<SheetAction>, onDismiss: () -> Uni
             }
             actions.forEachIndexed { i, a ->
                 ListRow(
-                    null, a.label, first = i == 0,
+                    a.icon, a.label, first = i == 0,
                     titleColor = if (a.destructive) c.bad else c.ink,
                     onClick = { a.onClick(); onDismiss() },
                 )

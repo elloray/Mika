@@ -85,6 +85,10 @@ class RouteShareTest {
         val extra = share.copy(route = share.route.copy(steps = listOf(
             tap, type.copy(before = Anchors("com.other", listOf("首页"))))))
         assertEquals(setOf("com.jingdong", "com.other"), RouteShareLint.touchedPackages(extra))
+        // 最后一步点完跳进别的 App(比如点了分享):这一步之前在原 App,之后在别的 App,后面没有步骤了,别的 App 也算碰到
+        val jumps = share.copy(route = share.route.copy(steps = listOf(
+            type, tap.copy(target = tap.target!!.copy(name = "分享"), after = Anchors("com.other", listOf("分享到"))))))
+        assertEquals(setOf("com.jingdong", "com.other"), RouteShareLint.touchedPackages(jumps))
     }
 
     @Test fun lintRejectsOversizedShares() {

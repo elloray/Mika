@@ -22,6 +22,8 @@ data class PendingWechatMessage(
     val replyToAskId: String? = null,
     /** Rejected media is a durable notice, never a task with silently missing pictures. */
     val imageFailure: Boolean = false,
+    /** Null identifies journal records written before image replies were marked explicitly. */
+    val requireMatchingAsk: Boolean? = null,
 )
 
 @Serializable
@@ -179,10 +181,11 @@ class WechatStore(
 
     /** 同一消息只入站一次；未确认的会在下次启动由 [pending] 补交。 */
     @Synchronized fun journal(messageId: String, peer: ChannelPeer, text: String, replyToAskId: String? = null,
-        imageFailure: Boolean = false, expectedAccount: WechatAccount? = null): Boolean {
+        imageFailure: Boolean = false, expectedAccount: WechatAccount? = null, requireMatchingAsk: Boolean? = null): Boolean {
         if (expectedAccount != null && !accepts(peer, expectedAccount)) return false
         if (hasMessage(messageId)) return false
-        val next = state.copy(pending = state.pending + PendingWechatMessage(messageId, peer, text, replyToAskId, imageFailure))
+        val next = state.copy(pending = state.pending +
+            PendingWechatMessage(messageId, peer, text, replyToAskId, imageFailure, requireMatchingAsk))
         saveState(next)
         state = next
         return true

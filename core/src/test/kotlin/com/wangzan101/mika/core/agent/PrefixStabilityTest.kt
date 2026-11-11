@@ -153,7 +153,7 @@ class PrefixStabilityTest {
     /** 收着时也给的入口工具:展开时第一个变的工具只能是它们之一(或排在最后的新工具)。 */
     private val entries = setOf("phone_launch_app", "phone_list_apps", "phone_set_alarm", "phone_set_timer", "phone_add_calendar_event", "phone_calendar_bulk_insert", "web_navigate", "web_read_page", "run_command")
 
-    private val markers = listOf(HistoryPruner.OMITTED, HistoryPruner.OMITTED_READ, "(更早的画面已省略", HistoryPruner.OMITTED_IMAGE, ContextCompressor.HEADER)
+    private val markers = listOf(HistoryPruner.OMITTED, HistoryPruner.OMITTED_READ, HistoryPruner.olderImage(0).substringBefore(";"), HistoryPruner.OMITTED_IMAGE, ContextCompressor.HEADER)
 
     /**
      * 线上字节里相邻两次请求的公共前缀:Σ 公共前缀长 ÷ Σ 请求长(按字符)。展开一组的那几次([skip],前缀按设计失效一次)不计,

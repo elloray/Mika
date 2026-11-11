@@ -46,6 +46,19 @@ object CapsuleDocking {
     /** 高为 [h] 的窗口按 [fraction] 摆时的上边。 */
     fun y(fraction: Float, area: DockArea, h: Int): Int = area.top + (fraction.coerceIn(0f, 1f) * range(area, h)).roundToInt()
 
+    /**
+     * 这一轮输入法弹出期间摆卡片用的上边:上边越小,键盘越高(拼音候选行、工具栏多出来一行)。
+     * 变高时马上跟,卡片下沿不会被输入法盖住;变矮时只有一下矮过 [jump](换了表情面板这类)才跟,
+     * 候选行多一行少一行不跟,卡片就不跟着反复变高矮。输入法收起([top] 为 null)时清掉,下次重新记。
+     */
+    fun tallestImeTop(seen: Int?, top: Int?, jump: Int): Int? = when {
+        top == null -> null
+        seen == null -> top
+        top <= seen -> top
+        top - seen > jump -> top
+        else -> seen
+    }
+
     /** 上边在 [y] 时的高度比例。 */
     fun fraction(y: Int, area: DockArea, h: Int): Float {
         val r = range(area, h)

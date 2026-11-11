@@ -57,6 +57,7 @@
     <string name="chat_missing">不足: %1$s</string>
     <string name="chat_go_settings">設定を開く</string>
     <string name="chat_menu">メニュー</string>
+    <string name="drawer_personal">パーソナルアシスタント</string>
     <string name="chat_new">新しいチャット</string>
     <string name="chat_expand_steps">ステップを表示</string>
     <string name="chat_collapse_steps">ステップを非表示</string>

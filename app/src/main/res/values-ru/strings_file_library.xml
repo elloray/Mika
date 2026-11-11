@@ -21,4 +21,22 @@
     <string name="file_library_unknown_time">Время неизвестно</string>
     <string name="file_library_draft_saved">Добавлено в черновик выбранной беседы. Перейдите к ней, когда это станет возможно.</string>
     <string name="file_library_load_failed">Не удалось загрузить файлы.</string>
+    <string name="file_library_select">Выбрать</string>
+    <string name="file_library_selected_count">Выбрано: %1$d</string>
+    <string name="file_library_select_all">Выбрать все</string>
+    <string name="file_library_select_none">Снять выбор</string>
+    <string name="file_library_add_selected">Добавить в черновик (%1$d)</string>
+    <string name="file_library_adding">Добавление %1$d из %2$d…</string>
+    <string name="file_library_batch_title">Добавить в черновик</string>
+    <string name="file_library_batch_summary">Добавлено %1$d · Уже в черновике %2$d · Не добавлено %3$d</string>
+    <string name="file_library_batch_failed_names">Не удалось добавить: %1$s</string>
+    <string name="file_library_view_draft">Открыть черновик</string>
+    <string name="file_library_keep_selecting">Продолжить выбор</string>
+    <string name="file_library_target_unavailable">Эта беседа сейчас не может принимать файлы.</string>
+    <string name="file_library_sharing">Подготовка к отправке %1$d из %2$d…</string>
+    <string name="file_library_share_summary">Отправлено %1$d · Не удалось отправить %2$d</string>
+    <string name="file_library_share_failed_names">Не удалось отправить: %1$s</string>
+    <string name="file_library_file_count">Файлов: %1$d</string>
+    <string name="file_library_select_title">Выбрать файлы</string>
+    <string name="file_library_preview">Просмотр</string>
 </resources>

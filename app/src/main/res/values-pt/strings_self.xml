@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_self_operate">Permitir que o Mika use as próprias telas</string>
+    <string name="settings_self_operate_sub">Abrir as páginas e arquivos do Mika; pergunta antes de abrir um link no seu navegador</string>
+    <string name="self_notify_channel">Ações do Mika</string>
+    <string name="self_notify_channel_desc">O que o Mika abre ou pede para você ver</string>
+    <string name="self_notify_open">Ver</string>
+    <string name="self_screen_notice">O Mika quer mostrar %1$s</string>
+    <string name="self_file_notice">O Mika tem um arquivo para mostrar</string>
+    <string name="self_file_failed">Não foi possível abrir esse arquivo</string>
+    <string name="self_consent_open">O Mika quer abrir esta página no seu navegador. Permitir?\n%1$s</string>
+    <string name="self_consent_search">O Mika quer pesquisar “%1$s” no seu navegador. Permitir?</string>
+    <string name="self_consent_login">O Mika quer abrir %1$s para você entrar. Permitir?</string>
+    <string name="self_consent_replace">Isso substituirá a página que você tem aberta.</string>
+    <string name="self_consent_allow">Abrir</string>
+    <string name="self_consent_deny">Não abrir</string>
+    <string name="self_browser_notice">Toque para abrir %1$s no seu navegador</string>
+    <string name="self_browser_failed">Não foi possível abrir essa página</string>
+</resources>

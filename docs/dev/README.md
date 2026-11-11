@@ -27,6 +27,7 @@
 | [account-signin.md](account-signin.md) | 用账号登录模型服务商（不填 Key）的设计，以及明确不做的部分 |
 | [chatgpt-signin-check.md](chatgpt-signin-check.md) | 上手机之前，在电脑上用 App 同一套代码走一遍「用 ChatGPT 登录」 |
 | [remote-device-access-check.md](remote-device-access-check.md) | 远程亮屏与解锁的验证记录 |
+| [personal-agent.md](personal-agent.md) | 长期个人主会话、独立任务委派与结果回流 |
 | [remote-mcp.md](remote-mcp.md) | 自托管远程 CLI / MCP 的部署、手机鉴权和断线语义 |
 | [teach-mika.md](teach-mika.md) | 人工示范怎样收成待确认的知识型技能 |
 

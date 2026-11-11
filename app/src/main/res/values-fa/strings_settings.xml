@@ -16,6 +16,8 @@
 
     <string name="settings_basic">عمومی</string>
     <string name="settings_language_appearance">زبان و ظاهر</string>
+    <string name="settings_personal_start">باز کردن دستیار شخصی هنگام راه‌اندازی</string>
+    <string name="settings_personal_start_sub">استفاده از دستیار شخصی به عنوان نخستین صفحه میکا</string>
     <string name="settings_model">مدل</string>
     <string name="settings_model_sub">مدل‌ها، ارائه‌دهندگان و مصرف توکن</string>
     <string name="settings_not_set">تنظیم نشده</string>

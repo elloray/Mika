@@ -108,6 +108,10 @@
     <string name="calls_bypass_note">Calls from these numbers ring normally for you to answer, even when all callers are eligible for auto-answer.</string>
     <string name="calls_bypass_title">Always answer personally</string>
     <string name="calls_history_all">All</string>
+    <string name="calls_history_clear">Clear all</string>
+    <string name="calls_history_clear_confirm">Delete all call records and their transcripts saved on this phone? This cannot be undone.</string>
+    <string name="calls_history_cleared">Call history cleared</string>
+    <string name="calls_history_clear_failed">Could not clear call history. Please try again.</string>
     <string name="calls_history_delete">Delete record</string>
     <string name="calls_history_delete_confirm">Delete this record and its saved transcript from this phone? This cannot be undone.</string>
     <string name="calls_history_deleted">Record deleted</string>
@@ -125,4 +129,18 @@
     <string name="calls_notification_settings">Open notification settings</string>
     <string name="calls_speaker_edit_note">Choose cloned voices in Voice cloning. Leave blank to restore the default voice.</string>
     <string name="calls_greeting_hint">Read as written. Leave blank to let the other person speak first.</string>
+    <string name="calls_notification_handoff">AI has left the call. Take over in the system Phone app.</string>
+    <string name="calls_standby_checking">Checking phone standby conditions</string>
+    <string name="calls_standby_locked_dial_preparing">Preparing locked-screen dial · %1$d s left</string>
+    <string name="calls_standby_unavailable">Standby is unavailable. Open to review.</string>
+    <string name="calls_standby_ai_active">Standby is on. AI is handling the call.</string>
+    <string name="calls_standby_running">Standby is on. Turn it off in call settings.</string>
+    <string name="calls_standby_start_blocked">Android did not allow phone standby to start. Try again in the app.</string>
+    <string name="calls_standby_not_ready">Standby is not enabled, or the phone has not been unlocked since restart.</string>
+    <string name="calls_standby_notifications_required">Allow phone standby notifications.</string>
+    <string name="calls_notification_preparing">Preparing AI call</string>
+    <string name="calls_notification_answer_preparing">Preparing AI answer</string>
+    <string name="calls_notification_connecting_audio">Connecting call audio</string>
+    <string name="calls_notification_connected_waiting">AI connected. Waiting for the other party to speak. You can take over anytime.</string>
+    <string name="calls_notification_connected">AI connected. You can take over anytime.</string>
 </resources>

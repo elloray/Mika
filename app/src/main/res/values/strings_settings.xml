@@ -16,6 +16,8 @@
     <string name="language_persian" translatable="false">فارسی</string>
     <string name="settings_basic">Common</string>
     <string name="settings_language_appearance">Language &amp; appearance</string>
+    <string name="settings_personal_start">Open Personal Assistant on launch</string>
+    <string name="settings_personal_start_sub">Use Personal Assistant as your first screen</string>
     <string name="settings_model">Model</string>
     <string name="settings_model_sub">Models, providers &amp; Token usage</string>
     <string name="settings_not_set">Not set</string>

@@ -262,6 +262,7 @@ fun ChatDrawer(
     aboutDot: Boolean = false,
     /** 长按一条存过的对话:在它原地弹出操作菜单(置顶、改名、删除);带上那一行在窗口里的位置和大小。 */
     onActions: (DrawerConversation, Rect) -> Unit = { _, _ -> },
+    onPersonal: () -> Unit = {},
     /** 多选模式:每行左边出现勾选框,点一行是勾选;底部换成「已选 N 条 / 全选 / 删除」。 */
     selecting: Boolean = false,
     selected: Set<String> = emptySet(),
@@ -316,6 +317,7 @@ fun ChatDrawer(
         // 搜索、多选时把几个入口收起来，把高度让给列表;退出后原样回来
         if (!searchActive && !selecting) Column(Modifier.padding(horizontal = 12.dp, vertical = 6.dp)) {
             onShowScreen?.let { NavEntry(MikaIcons.Screens, stringResource(R.string.screens_preview), onClick = it) }
+            NavEntry(MikaIcons.Message, stringResource(R.string.drawer_personal), onClick = onPersonal)
             NavEntry(MikaIcons.New, stringResource(R.string.chat_new), enabled = canSwitch, onClick = onNew)
             NavEntry(MikaIcons.Clock, stringResource(R.string.drawer_plans), onClick = onPlans)
             NavEntry(MikaIcons.Heart, stringResource(R.string.memory_and_skills), onClick = onMemory)
@@ -742,9 +744,11 @@ fun ChatWithDrawer(
     /** 当前对话正在操作的实时画面；宽屏可固定在侧栏区域。 */
     frames: StateFlow<Bitmap?>? = null,
     operationRun: (String) -> com.wangzan101.mika.task.TaskRun? = { null },
-    /** 侧栏功能页复用此容器，只有聊天页启用画面停靠和聊天返回行为。 */
+    /** 聊天和个人助手页启用抽屉返回；画面停靠还需要传入 frames，侧栏功能页只复用布局。 */
     chatActive: Boolean = true,
     onConversationSelected: () -> Unit = {},
+    onPersonal: () -> Unit = {},
+    onRegularChat: () -> Unit = {},
     /** 外部跳回对话页时变化:若之前因返回键留在展开的侧栏,当场收起侧栏。 */
     resetKey: Int = 0,
     content: @Composable (openDrawer: () -> Unit) -> Unit,
@@ -934,7 +938,8 @@ fun ChatWithDrawer(
             onQueryChange = { query = it },
             search = searchView,
             canSearch = candidates.isNotEmpty(),
-            onNew = { close { vm.newConversation(); onConversationSelected() } },
+            onNew = { close { vm.newConversation(); onRegularChat(); onConversationSelected() } },
+            onPersonal = { leave(onPersonal) },
             onPlans = { leave(onPlans) },
             onMemory = { leave(onMemory) },
             onSettings = { leave(onSettings) },
@@ -949,6 +954,7 @@ fun ChatWithDrawer(
             onActions = { item, bounds -> if (item.id != null) acting = item to bounds },
             onOpen = { item ->
                 close {
+                    onRegularChat()
                     val id = item.id
                     when {
                         id == null || id == ui.conversationId -> Unit

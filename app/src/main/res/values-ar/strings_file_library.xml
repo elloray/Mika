@@ -21,4 +21,22 @@
     <string name="file_library_unknown_time">الوقت غير معروف</string>
     <string name="file_library_draft_saved">أُضيف إلى مسودة المحادثة المحددة. انتقل إليها عندما يصبح ذلك متاحًا.</string>
     <string name="file_library_load_failed">تعذّر تحميل الملفات.</string>
+    <string name="file_library_select">تحديد</string>
+    <string name="file_library_selected_count">تم تحديد %1$d</string>
+    <string name="file_library_select_all">تحديد الكل</string>
+    <string name="file_library_select_none">إلغاء التحديد</string>
+    <string name="file_library_add_selected">إضافة إلى المسودة (%1$d)</string>
+    <string name="file_library_adding">جارٍ إضافة %1$d من %2$d…</string>
+    <string name="file_library_batch_title">إضافة إلى المسودة</string>
+    <string name="file_library_batch_summary">تمت إضافة %1$d · موجودة في المسودة %2$d · لم تُضف %3$d</string>
+    <string name="file_library_batch_failed_names">تعذرت الإضافة: %1$s</string>
+    <string name="file_library_view_draft">عرض المسودة</string>
+    <string name="file_library_keep_selecting">متابعة التحديد</string>
+    <string name="file_library_target_unavailable">لا يمكن لهذه المحادثة استلام الملفات الآن.</string>
+    <string name="file_library_sharing">جارٍ التحضير للمشاركة %1$d من %2$d…</string>
+    <string name="file_library_share_summary">تمت مشاركة %1$d · تعذّرت مشاركة %2$d</string>
+    <string name="file_library_share_failed_names">تعذّرت مشاركة: %1$s</string>
+    <string name="file_library_file_count">%1$d ملفات</string>
+    <string name="file_library_select_title">تحديد الملفات</string>
+    <string name="file_library_preview">معاينة</string>
 </resources>

@@ -25,7 +25,8 @@ def package_state(text, user, disabled):
     result = {key: {"true": True, "false": False}.get(fields.get(key))
               for key in ("installed", "stopped", "suspended", "hidden")}
     result["enabled_override"] = int(fields["enabled"]) if fields.get("enabled", "").isdigit() else None
-    app_id = re.search(r"\buserId=(\d+)", active)
+    # Android 13 and earlier print the app id as userId=, Android 14 and later as appId=.
+    app_id = re.search(r"\b(?:userId|appId)=(\d+)", active)
     result["uid"] = user * 100000 + int(app_id[1]) % 100000 if app_id else None
     result["effective_enabled"] = None
     if result["installed"] is False or result["enabled_override"] in (2, 3, 4):

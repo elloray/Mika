@@ -22,4 +22,22 @@
     <string name="file_library_unknown_time">زمان نامشخص</string>
     <string name="file_library_draft_saved">به پیش‌نویس گفتگوی انتخاب‌شده افزوده شد. وقتی در دسترس بود به آن گفتگو بروید.</string>
     <string name="file_library_load_failed">بارگذاری فایل‌ها ممکن نشد.</string>
+    <string name="file_library_select">انتخاب</string>
+    <string name="file_library_selected_count">%1$d مورد انتخاب شد</string>
+    <string name="file_library_select_all">انتخاب همه</string>
+    <string name="file_library_select_none">پاک کردن انتخاب</string>
+    <string name="file_library_add_selected">افزودن به پیش‌نویس (%1$d)</string>
+    <string name="file_library_adding">در حال افزودن %1$d از %2$d…</string>
+    <string name="file_library_batch_title">افزودن به پیش‌نویس</string>
+    <string name="file_library_batch_summary">افزوده شد %1$d · از قبل در پیش‌نویس %2$d · افزوده نشد %3$d</string>
+    <string name="file_library_batch_failed_names">افزودن ممکن نشد: %1$s</string>
+    <string name="file_library_view_draft">مشاهده پیش‌نویس</string>
+    <string name="file_library_keep_selecting">ادامه انتخاب</string>
+    <string name="file_library_target_unavailable">این گفتگو اکنون نمی‌تواند فایل دریافت کند.</string>
+    <string name="file_library_sharing">در حال آماده‌سازی برای اشتراک‌گذاری %1$d از %2$d…</string>
+    <string name="file_library_share_summary">اشتراک‌گذاری شد %1$d · اشتراک‌گذاری نشد %2$d</string>
+    <string name="file_library_share_failed_names">اشتراک‌گذاری نشد: %1$s</string>
+    <string name="file_library_file_count">%1$d فایل</string>
+    <string name="file_library_select_title">انتخاب فایل‌ها</string>
+    <string name="file_library_preview">پیش‌نمایش</string>
 </resources>

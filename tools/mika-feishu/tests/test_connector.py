@@ -221,6 +221,18 @@ class BridgeTests(unittest.TestCase):
         self.assertFalse(bridge.receive(event("om_other", "/pair " + code, user="ou_other")))
         self.assertEqual(Bridge(self.api, self.store, lambda *a: None).owners(), {"ou_owner"})
 
+    def test_non_ascii_pair_code_is_rejected_like_any_other_wrong_code(self):
+        bridge = Bridge(self.api, self.store, lambda *a: None)
+        code = bridge.enable_pairing()
+        # A wrong code typed with non-ASCII characters must be ignored exactly like an ASCII
+        # wrong code. Raising here escapes receive() and runtime.incoming() re-raises on purpose,
+        # so the SDK would never acknowledge the event and the connector would crash on it.
+        self.assertFalse(bridge.receive(event("om_bad", "/pair 密码")))
+        self.assertEqual(bridge.owners(), set())
+        # The pairing window is still open, and the real code still pairs.
+        self.assertTrue(bridge.receive(event("om_ok", "/pair " + code)))
+        self.assertEqual(bridge.owners(), {"ou_owner"})
+
     def test_unknown_status_does_not_start_another_task(self):
         self.deliver()
         self.api.status["status"] = "future_status"

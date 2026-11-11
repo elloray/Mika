@@ -56,6 +56,7 @@ import com.wangzan101.mika.core.usage.RunUsageTally
 import com.wangzan101.mika.core.tool.HandBack
 import com.wangzan101.mika.core.tool.HandBackOutcome
 import com.wangzan101.mika.core.tool.Outcome
+import com.wangzan101.mika.core.tool.AskPort
 import com.wangzan101.mika.core.tool.ToolDispatcher
 import com.wangzan101.mika.core.tool.ToolExecution
 import com.wangzan101.mika.core.tool.Verb
@@ -219,6 +220,11 @@ class AgentLoop(
     private val utterances get() = tools.utterances
 
     private val user = UserExchange(tools, confirmations, confirmTimeoutMs, inputTimeoutMs, { utterances }, { _state.value = it }, ::emit, ::now)
+    /** 自身工具的当次同意:复用等用户回答的那条路,同一次工具调用里等,不分成两步。 */
+    private val askPort = object : AskPort {
+        override suspend fun awaitAnswer(prompt: String, options: List<String>?) = user.awaitAnswer(prompt, options)
+    }
+    init { tools.ctx.ask = askPort }
     private val replay = routes?.let { RouteReplay(it, tools, ::awaitGate, { r -> gateState = r; _state.value = r }, ::emit, clock) }
 
     @Volatile private var job: Job? = null

@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_self_operate">Let Mika operate its own screens</string>
+    <string name="settings_self_operate_sub">Open Mika’s pages and files; ask before opening a link in your browser</string>
+    <string name="self_notify_channel">Mika actions</string>
+    <string name="self_notify_channel_desc">What Mika opens or asks you to see</string>
+    <string name="self_notify_open">View</string>
+    <string name="self_screen_notice">Mika wants to show you %1$s</string>
+    <string name="self_file_notice">Mika has a file to show you</string>
+    <string name="self_file_failed">Could not open that file</string>
+    <string name="self_consent_open">Mika wants to open this page in your browser. Allow?\n%1$s</string>
+    <string name="self_consent_search">Mika wants to search “%1$s” in your browser. Allow?</string>
+    <string name="self_consent_login">Mika wants to open %1$s so you can sign in. Allow?</string>
+    <string name="self_consent_replace">This will replace the page you have open.</string>
+    <string name="self_consent_allow">Open</string>
+    <string name="self_consent_deny">Don’t open</string>
+    <string name="self_browser_notice">Tap to open %1$s in your browser</string>
+    <string name="self_browser_failed">Could not open that page</string>
+</resources>

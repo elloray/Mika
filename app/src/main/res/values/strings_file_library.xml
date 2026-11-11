@@ -21,4 +21,22 @@
     <string name="file_library_unknown_time">Time unknown</string>
     <string name="file_library_draft_saved">Added to the selected conversation’s draft. Switch to that conversation when it is available.</string>
     <string name="file_library_load_failed">Could not load files.</string>
+    <string name="file_library_select">Select</string>
+    <string name="file_library_selected_count">%1$d selected</string>
+    <string name="file_library_select_all">Select all</string>
+    <string name="file_library_select_none">Clear selection</string>
+    <string name="file_library_add_selected">Add to draft (%1$d)</string>
+    <string name="file_library_adding">Adding %1$d of %2$d…</string>
+    <string name="file_library_batch_title">Add to draft</string>
+    <string name="file_library_batch_summary">Added %1$d · Already in draft %2$d · Not added %3$d</string>
+    <string name="file_library_batch_failed_names">Could not add: %1$s</string>
+    <string name="file_library_view_draft">View draft</string>
+    <string name="file_library_keep_selecting">Keep selecting</string>
+    <string name="file_library_target_unavailable">This conversation cannot take files right now.</string>
+    <string name="file_library_sharing">Preparing %1$d of %2$d…</string>
+    <string name="file_library_share_summary">Shared %1$d · Could not share %2$d</string>
+    <string name="file_library_share_failed_names">Could not share: %1$s</string>
+    <string name="file_library_file_count">%1$d files</string>
+    <string name="file_library_select_title">Select files</string>
+    <string name="file_library_preview">Preview</string>
 </resources>

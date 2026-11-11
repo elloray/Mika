@@ -88,7 +88,9 @@ class Bridge:
         # Pairing is only available for ten minutes, only via private messages.
         pairing = (self.pair_code and time.monotonic() < self.pair_deadline and
                    event["text"].startswith("/pair ") and
-                   hmac.compare_digest(event["text"][6:].strip(), self.pair_code))
+                   # Compare bytes: compare_digest rejects non-ASCII str, and a wrong code typed in
+                   # another script must be ignored like any other wrong code, not raise.
+                   hmac.compare_digest(event["text"][6:].strip().encode(), self.pair_code.encode()))
         if pairing:
             with self.store.lock:
                 if not self.owners():

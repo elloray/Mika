@@ -46,7 +46,7 @@ class CallStandbyService : Service() {
         // crash the process if we stop before acknowledging a startForegroundService delivery.
         val notificationAllowed = notificationsAvailable(this, create = true)
         if (!promoted) promoted = runCatching {
-            val notification = notification(Notice("正在检查后台电话条件", null))
+            val notification = notification(Notice(getString(R.string.calls_standby_checking), null))
             if (Build.VERSION.SDK_INT >= 34) {
                 startForeground(NOTIFICATION_ID, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE)
             } else {
@@ -54,7 +54,7 @@ class CallStandbyService : Service() {
             }
         }.isSuccess
         if (!promoted) {
-            if (explicit || intent == null) calls?.onStandbyStartFailed("Android 未允许启动后台待命，请在应用中重试")
+            if (explicit || intent == null) calls?.onStandbyStartFailed(getString(R.string.calls_standby_start_blocked))
             stopSelf(startId)
             return START_NOT_STICKY
         }
@@ -65,7 +65,9 @@ class CallStandbyService : Service() {
         }
         val incoming = calls.hasAuthorizedIncomingStandby() && (intent == null || calls.isIncomingStandbyStartRequested() || stickyAutoAnswer)
         if (!notificationAllowed || (!incoming && (intent == null || !calls.hasLockedDialForegroundWork()))) {
-            calls.onStandbyStartFailed(if (notificationAllowed) "后台待命尚未开启，或手机重启后尚未解锁" else "请允许后台待命通知")
+            calls.onStandbyStartFailed(getString(
+                if (notificationAllowed) R.string.calls_standby_not_ready else R.string.calls_standby_notifications_required,
+            ))
             stopSelf(startId)
             return START_NOT_STICKY
         }
@@ -78,13 +80,15 @@ class CallStandbyService : Service() {
                 val receive = stickyAutoAnswer && calls.hasAuthorizedIncomingStandby()
                 if ((!receive && !lockedDial) || !notificationsAvailable(this@CallStandbyService)) return@map null
                 Notice(when {
-                    state.lockedDialPreparing -> "正在准备锁屏拨出 · 剩余 ${state.lockedDialRemainingSeconds ?: 0} 秒"
-                    state.lockedDialRequestId != null -> "等待锁屏拨出 · 剩余 ${state.lockedDialRemainingSeconds ?: 0} 秒"
-                    lockedDial -> "正在处理锁屏拨出"
-                    state.autoAnswerStage == CallAutoAnswerStage.PAUSED -> "自动接听已暂停"
-                    state.backgroundStandbyBlockedReason != null -> "后台待命暂不可用，打开查看"
-                    state.aiActive -> "后台待命已开启，AI 正在通话"
-                    else -> "后台待命已开启，可在电话设置中关闭"
+                    state.lockedDialPreparing ->
+                        getString(R.string.calls_standby_locked_dial_preparing, state.lockedDialRemainingSeconds ?: 0)
+                    state.lockedDialRequestId != null ->
+                        getString(R.string.calls_device_locked_dial_remaining, state.lockedDialRemainingSeconds ?: 0)
+                    lockedDial -> getString(R.string.calls_device_locked_dial_preparing)
+                    state.autoAnswerStage == CallAutoAnswerStage.PAUSED -> getString(R.string.calls_auto_paused)
+                    state.backgroundStandbyBlockedReason != null -> getString(R.string.calls_standby_unavailable)
+                    state.aiActive -> getString(R.string.calls_standby_ai_active)
+                    else -> getString(R.string.calls_standby_running)
                 }, state.lockedDialRequestId)
             }.distinctUntilChanged().collect { notice ->
                 if (notice == null) stopSelf()
@@ -128,7 +132,7 @@ class CallStandbyService : Service() {
                         Intent(this@CallStandbyService, CallNotificationAction::class.java)
                             .setAction(CallNotifications.ACTION_CANCEL_LOCKED_DIAL)
                             .setData(Uri.fromParts(CallNotifications.LOCKED_DIAL_SCHEME, id, null)), PendingIntent.FLAG_IMMUTABLE)
-                    addAction(Notification.Action.Builder(null, "取消锁屏拨出", cancel).build())
+                    addAction(Notification.Action.Builder(null, getString(R.string.calls_device_locked_dial_cancel), cancel).build())
                 }
             }
             .build()
@@ -145,7 +149,7 @@ class CallStandbyService : Service() {
 
         internal fun notificationsAvailable(context: Context, create: Boolean = false): Boolean = runCatching {
             val manager = context.getSystemService(NotificationManager::class.java) ?: return false
-            if (create) manager.createNotificationChannel(NotificationChannel(CHANNEL, "电话后台待命", NotificationManager.IMPORTANCE_LOW).apply {
+            if (create) manager.createNotificationChannel(NotificationChannel(CHANNEL, context.getString(R.string.calls_background_service), NotificationManager.IMPORTANCE_LOW).apply {
                 setSound(null, null)
                 enableVibration(false)
                 setShowBadge(false)

@@ -57,6 +57,7 @@
     <string name="chat_missing">부족한 것: %1$s</string>
     <string name="chat_go_settings">설정 열기</string>
     <string name="chat_menu">메뉴</string>
+    <string name="drawer_personal">개인 비서</string>
     <string name="chat_new">새 채팅</string>
     <string name="chat_expand_steps">단계 보기</string>
     <string name="chat_collapse_steps">단계 숨기기</string>

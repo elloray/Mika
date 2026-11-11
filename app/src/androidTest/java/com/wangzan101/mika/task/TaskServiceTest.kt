@@ -6,6 +6,7 @@ import com.wangzan101.mika.DeviceTaskState
 import android.app.Notification
 import android.app.NotificationManager
 import android.content.Context
+import android.graphics.BitmapFactory
 import android.os.PowerManager
 import android.view.Display
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -24,6 +25,7 @@ import com.wangzan101.mika.core.model.ModelReply
 import com.wangzan101.mika.core.model.Part
 import com.wangzan101.mika.core.model.StopReason
 import com.wangzan101.mika.core.model.ToolSpec
+import com.wangzan101.mika.core.personal.PersonalTask
 import com.wangzan101.mika.core.verify.Verifier
 import com.wangzan101.mika.shell.IMikaShell
 import org.junit.After
@@ -36,6 +38,8 @@ import org.junit.Ignore
 import org.junit.Test
 import org.junit.runner.RunWith
 import java.util.concurrent.atomic.AtomicInteger
+import java.util.UUID
+import kotlinx.coroutines.runBlocking
 
 /**
  * 真机测试:用脚本模型驱动 TaskService,在虚拟屏上打开系统设置,检验常亮、静音、被挪走暂停与锁屏等待。
@@ -166,6 +170,7 @@ class TaskServiceTest {
         assertTrue(third.messages.last().toString(), "no_app_open" in third.messages.last().toString())
         assertEquals(-1, testTasks.agentDisplayId.value)
         assertEquals(null, DeviceTaskState.frames.value)
+        assertEquals(null, DeviceTaskState.runs.value.single().phoneFrames.value)
         finishAndAwait(appOpened = false)
         assertEquals(-1, testTasks.agentDisplayId.value)
 
@@ -182,8 +187,35 @@ class TaskServiceTest {
         assertEquals(3, model.awaitCall().number)
         assertEquals(first, testTasks.agentDisplayId.value)
         assertNotNull(pollUntil(5_000) { DeviceTaskState.frames.value })
+        val run = DeviceTaskState.runs.value.single()
+        assertNotNull(pollUntil(5_000) { run.phoneFrames.value })
         finishAndAwait()
         assertEquals(-1, testTasks.agentDisplayId.value)
+        assertEquals(null, run.phoneFrames.value)
+    }
+
+    @Test
+    fun personalReplayKeepsAFrameFromTheTaskDisplay() {
+        val personal = (context.applicationContext as MikaApp).personal
+        val id = UUID.randomUUID().toString()
+        val task = PersonalTask(id, id, "打开设置", "打开设置", "test", System.currentTimeMillis())
+        personal.store.update { it.copy(tasks = it.tasks + task) }
+        try {
+            started++
+            TaskService.start(context, task.goal, task.conversationId)
+            assertEquals(1, model.awaitCall().number)
+            model.feed("phone_launch_app", """{"package":"$SETTINGS"}""")
+            assertEquals(2, model.awaitCall().number)
+            val replay = pollUntil(8_000) { runBlocking { personal.replayFrames(id).firstOrNull() } }
+            assertNotNull(replay)
+            requireNotNull(BitmapFactory.decodeFile(replay!!.file.path)).recycle()
+            finishAndAwait()
+            assertTrue(replay.file.isFile)
+        } finally {
+            personal.store.update {
+                it.copy(tasks = it.tasks.filterNot { t -> t.id == id }, messages = it.messages.filterNot { m -> m.taskId == id })
+            }
+        }
     }
 
     @Test

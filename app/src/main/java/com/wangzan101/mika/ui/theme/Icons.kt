@@ -40,6 +40,10 @@ object MikaIcons {
     val Up = stroke("up", "M12 19 V5 M6 11 l6 -6 l6 6", width = 2.2f)
     val Check = stroke("check", "M5 12.5 l4.5 4.5 L19 7.5", width = 2.2f)
     val Close = stroke("close", "M6 6 l12 12 M18 6 L6 18", width = 2f)
+    /** 多选:勾选清单。 */
+    val ListChecks = stroke("list-checks", "M3 17 l2 2 l4 -4", "M3 7 l2 2 l4 -4", "M13 6 h8 M13 12 h8 M13 18 h8")
+    /** 加入清单:清单右边一个加号。 */
+    val ListPlus = stroke("list-plus", "M11 12 H3 M16 6 H3 M16 18 H3", "M18 9 v6 M21 12 h-6")
     /** 完全退出:电源键。 */
     val Power = stroke("power", "M12 3 v8", "M18.36 6.64 a8 8 0 1 1 -12.73 0")
     val Search = stroke("search", "M4 11 a7 7 0 1 0 14 0 a7 7 0 1 0 -14 0", "M20 20 l-4 -4")

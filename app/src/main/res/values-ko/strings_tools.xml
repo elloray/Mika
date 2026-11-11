@@ -62,4 +62,16 @@
     <string name="tool_tap">탭</string>
     <string name="tool_type">텍스트 입력</string>
     <string name="tool_clear">입력란 지우기</string>
+    <string name="tool_mika_status">Mika 상태 확인</string>
+    <string name="tool_mika_open_screen">Mika 페이지 열기</string>
+    <string name="tool_mika_open_file">파일 열기</string>
+    <string name="tool_mika_notify">알림 보내기</string>
+    <string name="tool_mika_copy">텍스트 복사</string>
+    <string name="tool_mika_open_in_browser">브라우저에서 열기</string>
+    <string name="tool_mika_search_in_browser">브라우저에서 검색</string>
+    <string name="tool_mika_sites">사이트 로그인 확인</string>
+    <string name="tool_mika_user_page">보고 있는 페이지 확인</string>
+    <string name="tool_mika_login_site">사이트 로그인</string>
+    <string name="tool_mika_confirm_login">로그인 확인</string>
+    <string name="tool_mika_favorites">자주 쓰는 사이트</string>
 </resources>

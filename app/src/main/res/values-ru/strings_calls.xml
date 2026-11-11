@@ -108,6 +108,10 @@
     <string name="calls_bypass_note">Вызовы с этих номеров звонят как обычно, чтобы вы ответили лично, даже если автоответ включён для всех.</string>
     <string name="calls_bypass_title">Всегда отвечать лично</string>
     <string name="calls_history_all">Все</string>
+    <string name="calls_history_clear">Очистить всё</string>
+    <string name="calls_history_clear_confirm">Удалить все сохранённые на этом телефоне записи вызовов и их расшифровки? Отменить это нельзя.</string>
+    <string name="calls_history_cleared">История вызовов очищена</string>
+    <string name="calls_history_clear_failed">Не удалось очистить историю вызовов. Попробуйте ещё раз.</string>
     <string name="calls_history_delete">Удалить запись</string>
     <string name="calls_history_delete_confirm">Удалить с телефона запись вызова и расшифровку? Отменить это нельзя.</string>
     <string name="calls_history_deleted">Запись удалена</string>
@@ -125,4 +129,18 @@
     <string name="calls_notification_settings">Открыть настройки уведомлений</string>
     <string name="calls_speaker_edit_note">Выбирайте клонированные голоса в разделе «Клонирование голоса». Оставьте поле пустым, чтобы вернуть голос по умолчанию.</string>
     <string name="calls_greeting_hint">Текст будет прочитан дословно. Оставьте поле пустым, чтобы собеседник заговорил первым.</string>
+    <string name="calls_notification_handoff">ИИ вышел из звонка. Продолжите в системном приложении «Телефон».</string>
+    <string name="calls_standby_checking">Проверка условий фонового ожидания звонков</string>
+    <string name="calls_standby_locked_dial_preparing">Подготовка звонка с экрана блокировки · осталось %1$d с</string>
+    <string name="calls_standby_unavailable">Фоновое ожидание недоступно. Откройте приложение для проверки.</string>
+    <string name="calls_standby_ai_active">Фоновое ожидание включено. ИИ ведёт разговор.</string>
+    <string name="calls_standby_running">Фоновое ожидание включено. Его можно отключить в настройках звонков.</string>
+    <string name="calls_standby_start_blocked">Android не разрешил запустить фоновое ожидание. Повторите попытку в приложении.</string>
+    <string name="calls_standby_not_ready">Фоновое ожидание не включено или телефон не разблокирован после перезапуска.</string>
+    <string name="calls_standby_notifications_required">Разрешите уведомления фонового ожидания.</string>
+    <string name="calls_notification_preparing">Подготовка звонка с ИИ</string>
+    <string name="calls_notification_answer_preparing">Подготовка ответа ИИ</string>
+    <string name="calls_notification_connecting_audio">Подключение звука звонка</string>
+    <string name="calls_notification_connected_waiting">ИИ подключён. Ожидание речи собеседника. Вы можете перехватить звонок в любой момент.</string>
+    <string name="calls_notification_connected">ИИ подключён. Вы можете перехватить звонок в любой момент.</string>
 </resources>

@@ -18,8 +18,8 @@ DEPENDENCY = "com.example.push"
 LISTENER = "com.example.agent/.Listener"
 
 
-def package_dump(name, enabled=0, stopped=False, user=0, installed=True):
-    return (f"Packages:\n  Package [{name}]:\n    userId=10123\n"
+def package_dump(name, enabled=0, stopped=False, user=0, installed=True, app_id_field="userId"):
+    return (f"Packages:\n  Package [{name}]:\n    {app_id_field}=10123\n"
             f"    User {user}: installed={str(installed).lower()} hidden=false suspended=false "
             f"stopped={str(stopped).lower()} enabled={enabled}\n")
 
@@ -77,6 +77,14 @@ class NotificationDiagnosticsTest(unittest.TestCase):
         adb = FakeAdb(source=package_dump(SOURCE, user=128), dump=NOTIFICATIONS.replace("(user 0)", "(user 128)"))
         report = diagnostics.inspect_notifications(adb, SOURCE, listener=LISTENER, user=128)
         self.assertTrue(report["listener"]["bound"])
+
+    def test_app_id_line_of_newer_android_gives_the_uid(self):
+        state = diagnostics.package_state(package_dump(SOURCE, app_id_field="appId"), 0, False)
+        self.assertEqual(state["uid"], 10123)
+        blocked = NOTIFICATIONS.replace("(10123)", "(10123) importance=NONE")
+        report = diagnostics.inspect_notifications(FakeAdb(source=package_dump(SOURCE, app_id_field="appId"), dump=blocked), SOURCE)
+        self.assertTrue(report["notifications"]["found"])
+        self.assertIn("notifications_blocked", {item["code"] for item in report["findings"]})
 
     def test_effective_disabled_list_is_honored(self):
         self.assertFalse(diagnostics.package_state(package_dump(SOURCE), 0, True)["effective_enabled"])

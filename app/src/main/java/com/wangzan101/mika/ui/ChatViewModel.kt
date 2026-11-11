@@ -845,15 +845,90 @@ class ChatViewModel(
     /** 为当前新会话分配草稿编号；调用方在主线程调用。 */
     fun libraryTargetConversation(): String = draftConversation()
 
+    /** 目标草稿此刻能不能收文件库的文件；不能时返回 null。调用方在主线程调用。 */
+    private fun libraryDraft(conversationId: String): ComposerDraft? {
+        if (conversationId.isBlank() || conversationId in _deleted.value || conversationId in deleting || !sandboxReady.value)
+            return null
+        val current = _ui.value.takeIf { it.conversationId == conversationId }
+        if (current != null && !canAttach(current)) return null
+        val draft = current?.draft() ?: drafts.value[conversationId] ?: ComposerDraft()
+        if (draft.importing || (current == null && conversationId in activeConversations.value)) return null
+        return draft
+    }
+
+    /**
+     * 批量加入前的规划:按传入顺序去掉目标草稿里已有的来源,再截到剩余槽位。
+     * 不复制文件；合并时会按当时的目标状态再校验一次。调用方在主线程调用。
+     */
+    fun planLibraryAttachments(conversationId: String, sources: List<LibraryFileHandle>): LibraryAddPlan? {
+        val draft = libraryDraft(conversationId) ?: return null
+        var slots = (AttachTray.LIMIT - draft.attachments.size).coerceAtLeast(0)
+        var duplicates = 0
+        var overLimit = 0
+        val accepted = mutableListOf<LibraryFileHandle>()
+        val seen = mutableSetOf<LibraryFileHandle>()
+        for (source in sources) {
+            val duplicate = !seen.add(source) || draft.attachments.any { librarySources[it.uri] == source }
+            when {
+                duplicate -> duplicates++
+                slots <= 0 -> overLimit++
+                else -> {
+                    accepted += source
+                    slots--
+                }
+            }
+        }
+        return LibraryAddPlan(accepted, duplicates, overLimit)
+    }
+
+    /**
+     * 把已经复制好的一批文件合并到目标草稿；只更新一次草稿。
+     * 收下的副本登记在 [libraryCopies] 里，没收下的当场释放。调用方在主线程调用。
+     */
+    fun addLibraryAttachments(conversationId: String, items: List<LibraryStaged>, overLimit: Int = 0): LibraryMergeResult {
+        val draft = libraryDraft(conversationId)
+        if (draft == null) {
+            items.forEach { runCatching { it.release() } }
+            return LibraryMergeResult(0, 0, 0, unavailable = true)
+        }
+        var attachments = draft.attachments
+        var added = 0
+        var duplicates = 0
+        var full = 0
+        val accepted = mutableListOf<LibraryStaged>()
+        for (item in items) {
+            if (attachments.any { librarySources[it.uri] == item.source }) {
+                duplicates++
+                runCatching { item.release() }
+                continue
+            }
+            val (merged, dropped) = AttachTray.add(attachments, listOf(item.attachment))
+            if (dropped != 0) {
+                full++
+                runCatching { item.release() }
+                continue
+            }
+            attachments = merged
+            added++
+            accepted += item
+        }
+        if (added > 0) {
+            draftStateChanged = true
+            accepted.forEach { item ->
+                libraryCopies.putIfAbsent(item.attachment.uri, item.release)
+                librarySources.putIfAbsent(item.attachment.uri, item.source)
+            }
+            updateDraft(conversationId) {
+                it.copy(attachments = attachments, rejected = emptyList(), overLimit = overLimit + full)
+            }
+        }
+        return LibraryMergeResult(added, duplicates, full, unavailable = false)
+    }
+
     /** 合并文件库副本到指定会话的草稿，不切换会话或覆盖已有内容。调用方在主线程调用。 */
     fun addLibraryAttachment(conversationId: String, item: PendingAttachment, source: LibraryFileHandle? = null,
                              release: () -> Unit = {}): LibraryAttachmentResult {
-        if (conversationId.isBlank() || conversationId in _deleted.value || conversationId in deleting || !sandboxReady.value)
-            return LibraryAttachmentResult.Unavailable
-        val current = _ui.value.takeIf { it.conversationId == conversationId }
-        val draft = current?.draft() ?: drafts.value[conversationId] ?: ComposerDraft()
-        if ((current != null && !canAttach(current)) || draft.importing ||
-            (current == null && conversationId in activeConversations.value)) return LibraryAttachmentResult.Unavailable
+        val draft = libraryDraft(conversationId) ?: return LibraryAttachmentResult.Unavailable
         val duplicate = source != null && draft.attachments.any { librarySources[it.uri] == source }
         if (duplicate) {
             val referenced = item.uri in libraryImports || item.uri in libraryCopies ||
@@ -1266,6 +1341,20 @@ class ChatViewModel(
         _ui.update { restoreDraft(it.rebuildForConversation(conversationId = conversationId, exchanges = past)) }
         markCurrent(CurrentChat.Open(conversationId))
         if (conversationId !in activeConversations.value) { unpark(conversationId); actions.drainFollowUps(conversationId); return }
+        follow(conversationId, unpark(conversationId))
+    }
+
+    /** 个人助手打开其委派任务：只切换展示，不启动另一项工作。 */
+    fun openPersonalTask(conversationId: String) {
+        refreshParallel()
+        lingerJob?.cancel()
+        if (conversationId != _ui.value.conversationId) parkLive()
+        val past = saved(conversationId)
+        liveIndex = -1
+        // 没有任务的对话不带别的任务的接管进度
+        _ui.update { ChatUi(conversationId = conversationId, exchanges = past, takeoverStage = Takeover.Stage.None) }
+        markCurrent(CurrentChat.Open(conversationId))
+        if (conversationId !in activeConversations.value) { unpark(conversationId); return }
         follow(conversationId, unpark(conversationId))
     }
 
@@ -1758,14 +1847,17 @@ class ChatViewModel(
                 try {
                     removeConversation(id)
                 } catch (e: CancellationException) {
+                    val unfinished = targets.drop(done).toSet()
+                    deleting.removeAll(unfinished)
+                    _deleted.update { it - unfinished }
                     throw e
-                } catch (e: Exception) {
+                } catch (_: Exception) {
                     failed++
-                } finally {
-                    deleting -= id
-                    done++
-                    if (report) _deleteBatch.value = DeleteBatch(targets.size, done, failed)
+                    _deleted.update { it - id }
                 }
+                deleting -= id
+                done++
+                if (report) _deleteBatch.value = DeleteBatch(targets.size, done, failed)
             }
         }
     }
@@ -2173,6 +2265,18 @@ class ToolLabels(private val tools: ToolIndex, private val legacy: LegacyNames =
             "保存技能" to R.string.tool_save_skill,
             "查看设置" to R.string.tool_list_settings,
             "改设置" to R.string.tool_set_setting,
+            "查看自身状态" to R.string.tool_mika_status,
+            "打开 Mika 的页面" to R.string.tool_mika_open_screen,
+            "打开文件" to R.string.tool_mika_open_file,
+            "发通知" to R.string.tool_mika_notify,
+            "复制文字" to R.string.tool_mika_copy,
+            "在浏览器里打开" to R.string.tool_mika_open_in_browser,
+            "在浏览器里搜索" to R.string.tool_mika_search_in_browser,
+            "查看网站登录" to R.string.tool_mika_sites,
+            "查看正在看的网页" to R.string.tool_mika_user_page,
+            "请你登录网站" to R.string.tool_mika_login_site,
+            "核对登录" to R.string.tool_mika_confirm_login,
+            "常用网站" to R.string.tool_mika_favorites,
             "说明没办成的原因" to R.string.tool_explain_failure,
             "问你一个问题" to R.string.tool_ask_user,
             "请你接手" to R.string.tool_takeover,

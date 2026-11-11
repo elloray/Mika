@@ -65,6 +65,15 @@ class DocsConsistencyTest {
     private val toolNames: Set<String> by lazy { knownToolNames() }
     private val toolPrefixes: Set<String> by lazy { toolNames.map { it.substringBefore('_') }.toSet() }
 
+    /**
+     * 电脑/远程 API 的名字,不是发给模型的工具名。`mika_` 现在是自身工具的前缀,文档里这些
+     * 远程调用名不能再靠「前缀不认识」自动放过,逐个列出来。
+     */
+    private val remoteApiNames = setOf(
+        "mika_run_task", "mika_task_status", "mika_wait_task", "mika_answer", "mika_steer_task",
+        "mika_cancel_task", "mika_list_tasks", "mika_device_state", "mika_wake_device", "mika_unlock_device",
+    )
+
     private fun isPath(s: String): Boolean =
         !s.startsWith("/") && !s.startsWith("~") && "://" !in s &&
             ('/' in s || s.substringAfterLast('.', "").let { it in pathExtensions && s.length > it.length + 1 })
@@ -114,7 +123,7 @@ class DocsConsistencyTest {
             if (notIdentifier.containsMatchIn(s)) return@mapNotNull null
             when {
                 isPath(s) -> if (pathExists(s)) null else "$rel: 路径 `$s` 在仓库里找不到"
-                tool.matches(s) -> if (s.substringBefore('_') !in toolPrefixes || s in toolNames) null else "$rel: 工具名 `$s` 不在现有工具里"
+                tool.matches(s) -> if (s in remoteApiNames || s.substringBefore('_') !in toolPrefixes || s in toolNames) null else "$rel: 工具名 `$s` 不在现有工具里"
                 classLike.matches(s) && s.count { it.isUpperCase() } >= 2 && s.any { it.isLowerCase() } ->
                     if (classExists(s) || importedFromOutside(s)) null else "$rel: 类名 `$s` 在 core/app 的源码里找不到"
                 else -> null

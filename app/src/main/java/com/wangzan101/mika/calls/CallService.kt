@@ -22,7 +22,7 @@ internal class CallNotifications(private val context: Context) {
     fun ready(): Boolean = runCatching {
         val notificationManager = manager ?: return false
         notificationManager.createNotificationChannel(
-            NotificationChannel(CHANNEL, "AI 电话", NotificationManager.IMPORTANCE_DEFAULT).apply {
+            NotificationChannel(CHANNEL, context.getString(R.string.calls_title), NotificationManager.IMPORTANCE_DEFAULT).apply {
                 setSound(null, null)
                 enableVibration(false)
                 setShowBadge(false)
@@ -45,7 +45,8 @@ internal class CallNotifications(private val context: Context) {
             .setSmallIcon(android.R.drawable.sym_action_call)
             .setOnlyAlertOnce(true).setOngoing(true).setVisibility(Notification.VISIBILITY_PRIVATE)
             .setContentIntent(openCalls)
-            .addAction(Notification.Action.Builder(null, if (ringing) "取消 AI 接听" else "手动接管", takeOver).build())
+            .addAction(Notification.Action.Builder(null,
+                context.getString(if (ringing) R.string.calls_cancel_ai_answer else R.string.calls_takeover), takeOver).build())
         manager?.notify(ID, builder.build()) ?: return false
         true
     }.getOrDefault(false)
@@ -54,7 +55,7 @@ internal class CallNotifications(private val context: Context) {
         runCatching {
             if (!ready()) return
             manager?.notify(ID, Notification.Builder(context, CHANNEL)
-                .setContentTitle(context.getString(R.string.app_name)).setContentText("AI 已退出通话，请在系统电话界面接管")
+                .setContentTitle(context.getString(R.string.app_name)).setContentText(context.getString(R.string.calls_notification_handoff))
                 .setSmallIcon(android.R.drawable.sym_action_call).setAutoCancel(true)
                 .setVisibility(Notification.VISIBILITY_PRIVATE).setTimeoutAfter(12_000L).build())
         }

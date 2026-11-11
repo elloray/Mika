@@ -1,6 +1,7 @@
 package com.wangzan101.mika.wechat
 
 import android.util.Log
+import com.wangzan101.mika.core.agent.AttachmentLines
 import com.wangzan101.mika.core.run.Channel
 import com.wangzan101.mika.core.run.ChannelInput
 import com.wangzan101.mika.core.run.ChannelInputSink
@@ -113,16 +114,21 @@ class WechatChannel(
             // Check before downloading/importing: replay must reuse the journal's workspace paths.
             if (store.hasMessage(messageId)) return@forEach
             if (store.account() != account || sink !== input || !store.enabled()) return@withLock null
-            val askId = activeAsk(peer.threadId)
-                ?.takeIf { it.kind == Delivery.Ask.Kind.Input }
-                ?.askId
+            val askId = activeInputAskId(peer.threadId)
             if (content.images.isEmpty()) {
-                store.journal(messageId, peer, content.text, askId, expectedAccount = account)
+                store.journal(messageId, peer, content.text, askId, expectedAccount = account, requireMatchingAsk = false)
             } else {
                 try {
                     val files = imageFiles ?: throw IOException("Image storage unavailable")
                     files.receive(peer, messageId, content.text, content.images) { prepared ->
-                        current(account, input) && store.journal(messageId, peer, prepared, askId, expectedAccount = account)
+                        if (!current(account, input)) return@receive false
+                        if (askId != null && activeInputAskId(peer.threadId) != askId) {
+                            // Reject the batch so the importer can remove the unused files.
+                            store.acknowledge(messageId, account)
+                            return@receive false
+                        }
+                        store.journal(messageId, peer, prepared, askId, expectedAccount = account,
+                            requireMatchingAsk = askId != null)
                     }
                 } catch (e: CancellationException) { throw e }
                 catch (_: Exception) {
@@ -141,6 +147,9 @@ class WechatChannel(
     private fun current(account: WechatAccount, input: ChannelInputSink) =
         store.account() == account && sink === input && store.enabled()
 
+    private fun activeInputAskId(threadId: String): String? =
+        activeAsk(threadId)?.takeIf { it.kind == Delivery.Ask.Kind.Input }?.askId
+
     private suspend fun dispatchPending(pending: PendingWechatMessage, account: WechatAccount, input: ChannelInputSink) {
         if (!current(account, input) || !store.accepts(pending.peer, account)) return
         if (pending.imageFailure) {
@@ -148,11 +157,17 @@ class WechatChannel(
                 pending.peer.threadId, pending.text)
             if (reportImageFailure != null) reportImageFailure.invoke(pending.peer, notice) else send(pending.peer, notice)
             if (current(account, input)) store.acknowledge(pending.messageId, account)
-        } else input.receive(ChannelInput.Text(pending.peer, pending.messageId, pending.text, pending.replyToAskId))
+        } else {
+            val requireMatchingAsk = pending.requireMatchingAsk ?: (pending.replyToAskId != null &&
+                AttachmentLines.parse(pending.text).files.any { (path, _) -> LEGACY_IMAGE_PATH.matches(path) })
+            input.receive(ChannelInput.Text(pending.peer, pending.messageId, pending.text,
+                pending.replyToAskId, requireMatchingAsk))
+        }
     }
 
     companion object {
         const val ID = "wechat"
         private const val TAG = "MikaWechat"
+        private val LEGACY_IMAGE_PATH = Regex("""/workspace/inbox/wechat-\d+(?: \(\d+\))?\.(?:png|jpe?g|gif|webp)""")
     }
 }

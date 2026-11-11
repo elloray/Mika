@@ -21,6 +21,7 @@ import android.telephony.TelephonyManager
 import android.util.Log
 import com.wangzan101.mika.BuildConfig
 import com.wangzan101.mika.MikaApp
+import com.wangzan101.mika.R
 import com.wangzan101.mika.calls.instructions.CallInstructionStore
 import com.wangzan101.mika.shell.IMikaShell
 import kotlinx.coroutines.CancellationException
@@ -683,7 +684,7 @@ class CallRuntime(private val app: MikaApp) {
                     it.manualAnswerRequested = true
                     it.autoDelayEndsAt = null
                     it.skipAutoDelay.complete(Unit)
-                    detail = "正在准备 AI 接听"
+                    detail = app.getString(R.string.calls_notification_answer_preparing)
                     publish()
                 }
                 return@onMain awaitResult(it)
@@ -820,7 +821,9 @@ class CallRuntime(private val app: MikaApp) {
     private fun startWork(attempt: Work) {
         check(work == null)
         work = attempt
-        detail = if (attempt.automatic) "等待自动接听，可随时取消" else "正在准备 AI 电话"
+        detail = app.getString(
+            if (attempt.automatic) R.string.calls_answer_pending else R.string.calls_notification_preparing,
+        )
         if (attempt.automatic) {
             attempt.autoDelayEndsAt = SystemClock.elapsedRealtime() + attempt.config.autoAnswerDelaySeconds * 1_000L
         }
@@ -837,7 +840,7 @@ class CallRuntime(private val app: MikaApp) {
             publish()
         }
         w.autoDelayEndsAt = null
-        detail = "正在准备 AI 接听"
+        detail = app.getString(R.string.calls_notification_answer_preparing)
         publish()
     }
 
@@ -1036,8 +1039,10 @@ class CallRuntime(private val app: MikaApp) {
 
     private suspend fun runAudio(w: Work, helper: IMikaShell, session: VolcRealtimeSession) {
         val greeting = CallPolicy.spokenGreeting(w.config.greeting, hasTask = w.task != null)
-        val notification = if (greeting.isBlank()) "AI 已接通，正在等待对方说话，可随时接管" else "AI 已接通，可随时手动接管"
-        if (!notifications.show(w.id, "正在连接通话音频", ringing = false)) {
+        val notification = app.getString(
+            if (greeting.isBlank()) R.string.calls_notification_connected_waiting else R.string.calls_notification_connected,
+        )
+        if (!notifications.show(w.id, app.getString(R.string.calls_notification_connecting_audio), ringing = false)) {
             throw CallProblem("电话通知不可用，已交还系统")
         }
         // Capture is never started while ringing, dialing, held, or in a different call.

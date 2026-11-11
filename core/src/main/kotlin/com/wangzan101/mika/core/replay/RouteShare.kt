@@ -94,10 +94,11 @@ object RouteShareLint {
 
     /**
      * 路线实际会碰到的 App(锚点里记下的包名):审核「是否就是这个声明的任务」时,
-     * 声明里写的 App 必须盖住它,步骤走到了声明之外的 App 就该拦下。
+     * 声明里写的 App 必须盖住它,步骤走到了声明之外的 App 就该拦下。每步动作前、后两屏的包名都算(和录路线时
+     * [Route.packages] 里取锚点包名的那部分一样):一步点完跳进别的 App 时,那个 App 只出现在这一步的 after 里(最后一步之后没有下一步的 before)。
      */
     fun touchedPackages(share: RouteShare): Set<String> =
-        share.route.steps.mapNotNull { it.before.packageName ?: it.after.packageName }.toSet()
+        share.route.steps.flatMap { listOfNotNull(it.before.packageName, it.after.packageName) }.toSet()
 
     private val json = Json { ignoreUnknownKeys = true }
 

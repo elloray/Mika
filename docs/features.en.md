@@ -25,6 +25,12 @@ Any app installed on your phone works, with no per-app integration: Mika looks a
 - Logins persist. You can browse yourself from "Browser" (浏览器) in the side drawer, and sites you log into there are available to Mika too.
 - Paces itself: consecutive page loads on the same site are spaced out, longer on sites that limit browsing speed. It recognizes anti-bot block pages and hands them to you instead of forcing through.
 
+## Mika's own pages
+
+- With Settings › During work › "Let Mika operate its own screens" turned on (off by default), Mika can open its Settings, Browser, Memory, Scheduled tasks and other pages for you. It can also open a report, image or PDF from the workspace in Mika's built-in viewer, post a notification, or put a piece of text on the clipboard.
+- After you approve it, it can also put a link or search results in your visible browser; for a site that needs a sign-in, it can open the "sign in for Mika" page so you can sign in yourself and then carry on.
+- Mika never taps its own UI and cannot change its permissions, model or budget; it only opens the page, and you still do the operating.
+
 ## The screen you are looking at
 
 - While you are in another app, a floating Mika capsule at the screen edge shows background task progress, things that need you, and results. Tap it to add a message, answer, approve or stop. If you don't want it, open it and tap "Turn off capsule" at the bottom; you can turn it back on in Settings › Floating capsule.

@@ -105,6 +105,23 @@ class SandboxUsageConcurrencyTest {
         verifyWritesWaitForCleanup { dirs.deleteWorkspace("a"); true }
     }
 
+    // 删一个没往工作区写过东西的对话(没有工作区):没东西可删,不拿独占许可,也就不收回别的对话开着的终端、stdio MCP server 拿着的租约
+    @Test(timeout = 10_000) fun deletingAConversationWithoutAWorkspaceKeepsOtherLeases() = runBlocking {
+        workspace("b")
+        var revoked = false
+        val lease = dirs.tree.lease(onRevoke = { revoked = true })
+        try {
+            dirs.deleteWorkspace("a")
+            assertFalse("No workspace to delete, nothing to revoke", revoked)
+            assertTrue(attempts.isEmpty())
+            dirs.deleteWorkspace("b")
+            assertTrue(revoked)
+            assertEquals(listOf(dirs.workspace("b").name), attempts.toList())
+        } finally {
+            lease.close()
+        }
+    }
+
     @Test(timeout = 10_000) fun conversationDeleteWaitsForACommandHoldingASharedPermit() = runBlocking {
         val a = workspace("a")
         val entered = CompletableDeferred<Unit>()

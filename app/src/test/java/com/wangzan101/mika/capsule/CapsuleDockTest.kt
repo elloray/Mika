@@ -2,6 +2,7 @@ package com.wangzan101.mika.capsule
 
 import com.wangzan101.mika.cap.phone.a11y.OverlayArea
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Test
 
 class CapsuleDockTest {
@@ -87,6 +88,22 @@ class CapsuleDockTest {
         val landscapeUp = landscape.above(600, gap = 20, room = 10)
         val rotatedY = CapsuleDocking.y(dock.fraction, landscape, 100)
         assertEquals(rotatedY, CapsuleDocking.fitY(rotatedY, landscapeUp, 100))
+    }
+
+    @Test fun cardKeepsTheTallestImeOfThisRound() {
+        val jump = 300
+        // 输入法弹出:上边 1200,记下来
+        assertEquals(1200, CapsuleDocking.tallestImeTop(null, 1200, jump))
+        // 打拼音多出一行候选(键盘变高,上边到了 1120):马上跟,卡片不留在输入法后面
+        assertEquals(1120, CapsuleDocking.tallestImeTop(1200, 1120, jump))
+        // 候选行收回去(上边回到 1200):只矮了一行,不跟
+        assertEquals(1120, CapsuleDocking.tallestImeTop(1120, 1200, jump))
+        // 换成旁边高一点的输入法(矮不到一个门槛):也不跟
+        assertEquals(1120, CapsuleDocking.tallestImeTop(1120, 1400, jump))
+        // 换成表情面板再换回来这种一下矮很多:跟,卡片还原
+        assertEquals(1500, CapsuleDocking.tallestImeTop(1120, 1500, jump))
+        // 收起:清掉,下次弹出重新记
+        assertNull(CapsuleDocking.tallestImeTop(1500, null, jump))
     }
 
     // ---------- 卡片 ----------

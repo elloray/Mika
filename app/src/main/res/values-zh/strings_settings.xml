@@ -5,6 +5,8 @@
     <string name="language_system_detail">系统语言 Mika 有译文时用它,没有时用英文</string>
     <string name="settings_basic">常用</string>
     <string name="settings_language_appearance">语言与外观</string>
+    <string name="settings_personal_start">启动时打开个人助手</string>
+    <string name="settings_personal_start_sub">把个人助手设为 Mika 首屏</string>
     <string name="settings_model">模型</string>
     <string name="settings_model_sub">模型、服务商与 Token 用量</string>
     <string name="settings_not_set">未设置</string>

@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_self_operate">Mika가 자체 화면을 조작하도록 허용</string>
+    <string name="settings_self_operate_sub">Mika의 페이지와 파일을 엽니다. 브라우저에서 링크를 열기 전에 확인합니다</string>
+    <string name="self_notify_channel">Mika 작업</string>
+    <string name="self_notify_channel_desc">Mika가 열거나 보여 주는 항목</string>
+    <string name="self_notify_open">보기</string>
+    <string name="self_screen_notice">Mika가 %1$s을(를) 보여 주려 합니다</string>
+    <string name="self_file_notice">Mika에 보여 줄 파일이 있습니다</string>
+    <string name="self_file_failed">해당 파일을 열 수 없습니다</string>
+    <string name="self_consent_open">Mika가 이 페이지를 브라우저에서 열려고 합니다. 허용할까요?\n%1$s</string>
+    <string name="self_consent_search">Mika가 브라우저에서 “%1$s”을(를) 검색하려고 합니다. 허용할까요?</string>
+    <string name="self_consent_login">Mika가 로그인을 위해 %1$s을(를) 열려고 합니다. 허용할까요?</string>
+    <string name="self_consent_replace">현재 열려 있는 페이지가 바뀝니다.</string>
+    <string name="self_consent_allow">열기</string>
+    <string name="self_consent_deny">열지 않기</string>
+    <string name="self_browser_notice">탭하여 %1$s을(를) 브라우저에서 열기</string>
+    <string name="self_browser_failed">해당 페이지를 열 수 없습니다</string>
+</resources>

@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="settings_personal_start">Открывать личного помощника при запуске</string>
+    <string name="settings_personal_start_sub">Сделать личного помощника стартовым экраном Mika</string>
     <string name="language_title">Язык</string>
     <string name="language_system">Как в системе</string>
     <string name="language_system_detail">Используется язык системы, если Mika его знает, иначе английский</string>

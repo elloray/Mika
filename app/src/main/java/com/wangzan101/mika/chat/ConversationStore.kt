@@ -21,6 +21,9 @@ import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.put
 import java.io.File
+import java.io.IOException
+import java.nio.file.Files
+import java.nio.file.LinkOption
 import java.util.UUID
 
 /** 每个对话一个小 JSON 文件,放在 App 私有目录;重启后仍在。 */
@@ -144,14 +147,19 @@ class ConversationStore(
      */
     @Synchronized
     fun delete(conversationId: String) {
-        deleted += safe(conversationId)
         val main = file(conversationId).name
-        firstMessages.remove(main)
-        dir.listFiles { f ->
-            f.isFile && (f.name == main || f.name.startsWith("$main.") || f.name == titleFile(conversationId).name || f.name == pinFile(conversationId).name ||
-                f.name == pageFile(conversationId).name || f.name == branchFile(conversationId).name)
+        val metadata = setOf(titleFile(conversationId).name, pinFile(conversationId).name,
+            pageFile(conversationId).name, branchFile(conversationId).name)
+        val files = dir.listFiles { f -> f.name == main || f.name.startsWith("$main.") || f.name in metadata }
+            ?: if (Files.notExists(dir.toPath())) emptyArray() else throw IOException("Cannot list conversation files")
+        // Leave the history in place if any of its companion files cannot be removed.
+        files.sortedBy { it.name == main }.forEach { file ->
+            val path = file.toPath()
+            if (Files.isDirectory(path, LinkOption.NOFOLLOW_LINKS)) throw IOException("Unexpected conversation directory: ${file.name}")
+            Files.deleteIfExists(path)
         }
-            .orEmpty().forEach { it.delete() }
+        deleted += safe(conversationId)
+        firstMessages.remove(main)
         // 删掉的正是用户此刻在的那个:不再指着它,胶囊回落到最近那个
         if (_current.value == CurrentChat.Open(safe(conversationId))) setCurrent(null)
         _changes.tryEmit(conversationId)

@@ -68,6 +68,7 @@ data class UsageSnapshot(val rows: List<UsageRow>, val providerNames: Map<String
 
 /**
  * 本机的 token 用量账本按 UTC 小时累计。若本地午夜落在小时内，午夜后的用量另存一格供每日预算使用。
+ * 本地时区每次用时现取([zone]):进程没退出时手机改了时区,之后的拆格和「今天」就按新时区算。
  *
  * 记账([record])只在内存里加一笔,多个线程同时记也安全;改动后等 [flushDelayMs] 由一个后台线程整份写出
  * (先写临时文件再改名,写到一半断电不会坏掉原文件),进程被杀时最多丢掉最后这几秒。
@@ -78,7 +79,7 @@ class UsageLedger(
     private val now: () -> Long = System::currentTimeMillis,
     private val flushDelayMs: Long = 2_000,
     private val keepDays: Int = KEEP_DAYS,
-    private val zone: ZoneId = ZoneId.systemDefault(),
+    private val zone: () -> ZoneId = ZoneId::systemDefault,
 ) : UsageSink {
     private data class Cell(val hour: Long, val key: UsageKey, val offsetMs: Long = 0) {
         val startMs: Long get() = hour * HOUR_MS + offsetMs
@@ -110,7 +111,8 @@ class UsageLedger(
         if (httpAttempts <= 0 && usage == null) return
         val at = now()
         val hour = Math.floorDiv(at, HOUR_MS)
-        val midnight = Instant.ofEpochMilli(at).atZone(zone).toLocalDate().atStartOfDay(zone).toInstant().toEpochMilli()
+        val z = zone()
+        val midnight = Instant.ofEpochMilli(at).atZone(z).toLocalDate().atStartOfDay(z).toInstant().toEpochMilli()
         val offset = (midnight - hour * HOUR_MS).coerceAtLeast(0)
         val cell = Cell(hour, UsageKey(source.providerId, source.model, source.purpose), offset)
         val counts = UsageCounts.of(usage, httpAttempts)
@@ -132,9 +134,10 @@ class UsageLedger(
 
     /** 这家服务商在当前本地日历日的已报告输入加输出。 */
     fun providerTokensToday(providerId: String): Long {
-        val today = Instant.ofEpochMilli(now()).atZone(zone).toLocalDate()
-        val start = today.atStartOfDay(zone).toInstant().toEpochMilli()
-        val end = today.plusDays(1).atStartOfDay(zone).toInstant().toEpochMilli()
+        val z = zone()
+        val today = Instant.ofEpochMilli(now()).atZone(z).toLocalDate()
+        val start = today.atStartOfDay(z).toInstant().toEpochMilli()
+        val end = today.plusDays(1).atStartOfDay(z).toInstant().toEpochMilli()
         return synchronized(lock) {
             cells.entries.sumOf { (cell, counts) ->
                 if (cell.key.providerId == providerId && cell.startMs in start until end) counts.input + counts.output else 0L

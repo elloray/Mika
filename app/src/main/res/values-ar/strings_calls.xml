@@ -108,6 +108,10 @@
     <string name="calls_bypass_note">ترن المكالمات من هذه الأرقام كالمعتاد لترد بنفسك، حتى إذا شمل الرد التلقائي جميع المتصلين.</string>
     <string name="calls_bypass_title">الرد شخصيًا دائمًا</string>
     <string name="calls_history_all">الكل</string>
+    <string name="calls_history_clear">مسح الكل</string>
+    <string name="calls_history_clear_confirm">هل تريد حذف جميع سجلات المكالمات ونصوصها المحفوظة على هذا الهاتف؟ لا يمكن التراجع عن الحذف.</string>
+    <string name="calls_history_cleared">تم مسح سجل المكالمات</string>
+    <string name="calls_history_clear_failed">تعذر مسح سجل المكالمات. يرجى المحاولة مجددًا.</string>
     <string name="calls_history_delete">حذف السجل</string>
     <string name="calls_history_delete_confirm">هل تريد حذف هذا السجل والنص المحفوظ من هذا الهاتف؟ لا يمكن التراجع.</string>
     <string name="calls_history_deleted">تم حذف السجل</string>
@@ -125,4 +129,18 @@
     <string name="calls_notification_settings">فتح إعدادات الإشعارات</string>
     <string name="calls_speaker_edit_note">اختر الأصوات المستنسخة في قسم استنساخ الصوت. اترك الحقل فارغًا لاستعادة الصوت الافتراضي.</string>
     <string name="calls_greeting_hint">تُقرأ التحية كما كُتبت. اترك الحقل فارغًا ليتكلم الطرف الآخر أولًا.</string>
+    <string name="calls_notification_handoff">خرج الذكاء الاصطناعي من المكالمة. تابع من تطبيق الهاتف في النظام.</string>
+    <string name="calls_standby_checking">جارٍ التحقق من شروط انتظار المكالمات في الخلفية</string>
+    <string name="calls_standby_locked_dial_preparing">جارٍ تحضير الاتصال من شاشة القفل · تبقّى %1$d ثانية</string>
+    <string name="calls_standby_unavailable">انتظار المكالمات في الخلفية غير متاح. افتح التطبيق للمراجعة.</string>
+    <string name="calls_standby_ai_active">انتظار المكالمات في الخلفية مفعّل. الذكاء الاصطناعي يتولى المكالمة.</string>
+    <string name="calls_standby_running">انتظار المكالمات في الخلفية مفعّل. يمكنك إيقافه من إعدادات الهاتف.</string>
+    <string name="calls_standby_start_blocked">لم يسمح Android ببدء انتظار المكالمات في الخلفية. أعد المحاولة من التطبيق.</string>
+    <string name="calls_standby_not_ready">انتظار المكالمات في الخلفية غير مفعّل، أو لم يتم فتح قفل الهاتف بعد إعادة التشغيل.</string>
+    <string name="calls_standby_notifications_required">اسمح بإشعارات انتظار المكالمات في الخلفية.</string>
+    <string name="calls_notification_preparing">جارٍ تحضير مكالمة الذكاء الاصطناعي</string>
+    <string name="calls_notification_answer_preparing">جارٍ تحضير رد الذكاء الاصطناعي</string>
+    <string name="calls_notification_connecting_audio">جارٍ توصيل صوت المكالمة</string>
+    <string name="calls_notification_connected_waiting">تم اتصال الذكاء الاصطناعي. بانتظار حديث الطرف الآخر، ويمكنك تولي المكالمة في أي وقت.</string>
+    <string name="calls_notification_connected">تم اتصال الذكاء الاصطناعي. يمكنك تولي المكالمة بنفسك في أي وقت.</string>
 </resources>

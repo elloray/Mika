@@ -108,6 +108,10 @@
     <string name="calls_bypass_note">Estos números sonarán normalmente para que conteste, incluso si la respuesta automática admite todas las llamadas.</string>
     <string name="calls_bypass_title">Contestar siempre personalmente</string>
     <string name="calls_history_all">Todo</string>
+    <string name="calls_history_clear">Borrar todo</string>
+    <string name="calls_history_clear_confirm">¿Eliminar todos los registros de llamadas y sus transcripciones guardados en este teléfono? No se puede deshacer.</string>
+    <string name="calls_history_cleared">Historial de llamadas borrado</string>
+    <string name="calls_history_clear_failed">No se pudo borrar el historial de llamadas. Inténtelo de nuevo.</string>
     <string name="calls_history_delete">Eliminar registro</string>
     <string name="calls_history_delete_confirm">¿Eliminar de este teléfono el registro y su transcripción? No se puede deshacer.</string>
     <string name="calls_history_deleted">Registro eliminado</string>
@@ -125,4 +129,18 @@
     <string name="calls_notification_settings">Abrir ajustes de notificaciones</string>
     <string name="calls_speaker_edit_note">Elija las voces clonadas en Clonación de voz. Deje el campo vacío para restaurar la voz predeterminada.</string>
     <string name="calls_greeting_hint">Se leerá tal como está escrito. Déjalo en blanco para que la otra persona hable primero.</string>
+    <string name="calls_notification_handoff">La IA ha salido de la llamada. Continúa en la app Teléfono del sistema.</string>
+    <string name="calls_standby_checking">Comprobando las condiciones de espera en segundo plano</string>
+    <string name="calls_standby_locked_dial_preparing">Preparando la llamada desde la pantalla bloqueada · quedan %1$d s</string>
+    <string name="calls_standby_unavailable">La espera en segundo plano no está disponible. Abre para revisarla.</string>
+    <string name="calls_standby_ai_active">La espera en segundo plano está activa. La IA está atendiendo la llamada.</string>
+    <string name="calls_standby_running">La espera en segundo plano está activa. Puedes desactivarla en los ajustes de llamadas.</string>
+    <string name="calls_standby_start_blocked">Android no permitió iniciar la espera en segundo plano. Inténtalo de nuevo en la app.</string>
+    <string name="calls_standby_not_ready">La espera en segundo plano no está activada o el teléfono no se ha desbloqueado desde el reinicio.</string>
+    <string name="calls_standby_notifications_required">Permite las notificaciones de espera en segundo plano.</string>
+    <string name="calls_notification_preparing">Preparando la llamada con IA</string>
+    <string name="calls_notification_answer_preparing">Preparando la respuesta con IA</string>
+    <string name="calls_notification_connecting_audio">Conectando el audio de la llamada</string>
+    <string name="calls_notification_connected_waiting">IA conectada. Esperando a que hable la otra persona. Puedes intervenir en cualquier momento.</string>
+    <string name="calls_notification_connected">IA conectada. Puedes hablar personalmente en cualquier momento.</string>
 </resources>

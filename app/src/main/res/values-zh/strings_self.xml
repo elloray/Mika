@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_self_operate">允许 Mika 操作自己的界面</string>
+    <string name="settings_self_operate_sub">打开 Mika 的页面和文件；在你的浏览器里打开链接前会先问你</string>
+    <string name="self_notify_channel">Mika 的操作</string>
+    <string name="self_notify_channel_desc">Mika 打开或让你看的内容</string>
+    <string name="self_notify_open">查看</string>
+    <string name="self_screen_notice">Mika 想让你看 %1$s</string>
+    <string name="self_file_notice">Mika 有个文件给你看</string>
+    <string name="self_file_failed">打不开这个文件</string>
+    <string name="self_consent_open">Mika 想在你的浏览器里打开这个链接。允许吗？\n%1$s</string>
+    <string name="self_consent_search">Mika 想在你的浏览器里搜索「%1$s」。允许吗？</string>
+    <string name="self_consent_login">Mika 想打开 %1$s，让你登录。允许吗？</string>
+    <string name="self_consent_replace">这会替换你当前打开的页面。</string>
+    <string name="self_consent_allow">打开</string>
+    <string name="self_consent_deny">不打开</string>
+    <string name="self_browser_notice">点一下在浏览器中打开 %1$s</string>
+    <string name="self_browser_failed">打不开这个网页</string>
+</resources>

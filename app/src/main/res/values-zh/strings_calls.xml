@@ -108,6 +108,10 @@
     <string name="calls_bypass_note">这些号码仍会正常响铃，由您本人接听。即使启用「接听所有来电」，AI 也不会自动接听这些号码。</string>
     <string name="calls_bypass_title">始终由本人接听</string>
     <string name="calls_history_all">全部</string>
+    <string name="calls_history_clear">清空全部</string>
+    <string name="calls_history_clear_confirm">删除本机保存的全部通话记录及其文字原文？删除后无法恢复。</string>
+    <string name="calls_history_cleared">通话记录已清空</string>
+    <string name="calls_history_clear_failed">无法清空通话记录，请重试。</string>
     <string name="calls_history_delete">删除记录</string>
     <string name="calls_history_delete_confirm">要从本机删除这条通话记录及其文字原文吗？删除后无法恢复。</string>
     <string name="calls_history_deleted">记录已删除</string>
@@ -125,4 +129,18 @@
     <string name="calls_notification_settings">打开通知设置</string>
     <string name="calls_speaker_edit_note">请在「音色复刻」中选择复刻音色。清空此栏可恢复默认音色。</string>
     <string name="calls_greeting_hint">按填写的内容播报；留空则等对方先开口。</string>
+    <string name="calls_notification_handoff">AI 已退出通话，请在系统电话界面接管</string>
+    <string name="calls_standby_checking">正在检查后台电话条件</string>
+    <string name="calls_standby_locked_dial_preparing">正在准备锁屏拨出 · 剩余 %1$d 秒</string>
+    <string name="calls_standby_unavailable">后台待命暂不可用，打开查看</string>
+    <string name="calls_standby_ai_active">后台待命已开启，AI 正在通话</string>
+    <string name="calls_standby_running">后台待命已开启，可在电话设置中关闭</string>
+    <string name="calls_standby_start_blocked">Android 未允许启动后台待命，请在应用中重试</string>
+    <string name="calls_standby_not_ready">后台待命尚未开启，或手机重启后尚未解锁</string>
+    <string name="calls_standby_notifications_required">请允许后台待命通知</string>
+    <string name="calls_notification_preparing">正在准备 AI 电话</string>
+    <string name="calls_notification_answer_preparing">正在准备 AI 接听</string>
+    <string name="calls_notification_connecting_audio">正在连接通话音频</string>
+    <string name="calls_notification_connected_waiting">AI 已接通，正在等待对方说话，可随时接管</string>
+    <string name="calls_notification_connected">AI 已接通，可随时手动接管</string>
 </resources>

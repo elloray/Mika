@@ -62,4 +62,16 @@
     <string name="tool_tap">لمس</string>
     <string name="tool_type">وارد کردن متن</string>
     <string name="tool_clear">پاک کردن کادر</string>
+    <string name="tool_mika_status">مشاهدهٔ وضعیت میکا</string>
+    <string name="tool_mika_open_screen">باز کردن یک صفحهٔ میکا</string>
+    <string name="tool_mika_open_file">باز کردن یک فایل</string>
+    <string name="tool_mika_notify">ارسال اعلان</string>
+    <string name="tool_mika_copy">کپی کردن متن</string>
+    <string name="tool_mika_open_in_browser">باز کردن در مرورگر شما</string>
+    <string name="tool_mika_search_in_browser">جستجو در مرورگر شما</string>
+    <string name="tool_mika_sites">بررسی ورود به سایت‌ها</string>
+    <string name="tool_mika_user_page">بررسی صفحه‌ای که می‌بینید</string>
+    <string name="tool_mika_login_site">ورود به یک سایت</string>
+    <string name="tool_mika_confirm_login">تأیید ورود</string>
+    <string name="tool_mika_favorites">سایت‌های پرکاربرد</string>
 </resources>

@@ -32,6 +32,7 @@
     <string name="chat_missing">موارد لازم: %1$s</string>
     <string name="chat_go_settings">باز کردن تنظیمات</string>
     <string name="chat_menu">منو</string>
+    <string name="drawer_personal">دستیار شخصی</string>
     <string name="chat_new">گفتگوی جدید</string>
     <string name="chat_expand_steps">نمایش مراحل</string>
     <string name="chat_collapse_steps">پنهان کردن مراحل</string>

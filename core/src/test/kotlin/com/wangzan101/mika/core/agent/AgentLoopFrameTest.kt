@@ -38,7 +38,7 @@ class AgentLoopFrameTest {
         assertEquals((1..6).toList(), images(m.requests[6]).map { it.screenshotId })
         val seventh = m.requests[7]
         assertEquals((1..7).toList(), images(seventh).map { it.screenshotId })
-        assertTrue(seventh.none { msg -> msg.parts.any { it is Part.Text && it.text.startsWith("(更早的画面已省略") } })
+        assertTrue(seventh.none { msg -> msg.parts.any { it is Part.Text && it.text.startsWith(HistoryPruner.olderImage(0).substringBefore(";")) } })
     }
 
     @Test fun textOnlyMainGetsNoFrames() = runTest {

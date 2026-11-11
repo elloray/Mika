@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_self_operate">Mika 自身の画面を操作できるようにする</string>
+    <string name="settings_self_operate_sub">Mika のページやファイルを開きます。ブラウザでリンクを開く前に確認します</string>
+    <string name="self_notify_channel">Mika の操作</string>
+    <string name="self_notify_channel_desc">Mika が開いたもの、見せたいもの</string>
+    <string name="self_notify_open">表示</string>
+    <string name="self_screen_notice">Mika が %1$s を見せたがっています</string>
+    <string name="self_file_notice">Mika に見せたいファイルがあります</string>
+    <string name="self_file_failed">そのファイルを開けませんでした</string>
+    <string name="self_consent_open">Mika がこのページをブラウザで開こうとしています。許可しますか？\n%1$s</string>
+    <string name="self_consent_search">Mika がブラウザで「%1$s」を検索しようとしています。許可しますか？</string>
+    <string name="self_consent_login">Mika が %1$s を開いてログインを求めています。許可しますか？</string>
+    <string name="self_consent_replace">現在開いているページが置き換わります。</string>
+    <string name="self_consent_allow">開く</string>
+    <string name="self_consent_deny">開かない</string>
+    <string name="self_browser_notice">タップして %1$s をブラウザで開く</string>
+    <string name="self_browser_failed">そのページを開けませんでした</string>
+</resources>

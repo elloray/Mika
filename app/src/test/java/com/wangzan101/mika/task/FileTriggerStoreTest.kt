@@ -7,11 +7,56 @@ import com.wangzan101.mika.core.trigger.TriggerSnapshot
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
 import java.io.File
+import java.io.IOException
 import java.nio.file.Files
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertThrows
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class FileTriggerStoreTest {
+    @Test fun failedSidecarWriteKeepsPreviousScheduleInMemoryAndOnDisk() {
+        assertInterruptedEditKeepsPreviousSchedule("triggers.json.conditions.tmp")
+    }
+
+    @Test fun failedPrimaryWriteKeepsPreviousScheduleInMemoryAndOnDisk() {
+        assertInterruptedEditKeepsPreviousSchedule("triggers.json.tmp")
+    }
+
+    private fun assertInterruptedEditKeepsPreviousSchedule(blockedWrite: String) {
+        val dir = Files.createTempDirectory("trigger-interrupted-edit").toFile()
+        val file = File(dir, "triggers.json")
+        val original = TriggerDefinition("multi", "thread", "remind", 1_000,
+            calendarTime = "08:00", calendarZone = "UTC", calendarTimes = listOf("08:00", "12:30"))
+        val edited = original.copy(nextAtMs = 2_000, calendarTimes = listOf("08:00", "20:00"))
+        val store = FileTriggerStore(file)
+        store.upsert(original)
+        val blocker = File(dir, blockedWrite)
+        assertTrue(blocker.mkdir())
+
+        assertThrows(IOException::class.java) { store.edit(edited) }
+        assertEquals(original, FileTriggerStore(file).get(original.id))
+        assertEquals(original, store.get(original.id))
+
+        assertTrue(blocker.delete())
+        assertTrue(store.edit(edited))
+        assertEquals(edited, FileTriggerStore(file).get(original.id))
+    }
+
+    @Test fun changingOnlyAnAdditionalClockCommitsWithIdenticalPrimaryContents() {
+        val file = Files.createTempDirectory("trigger-times").resolve("triggers.json").toFile()
+        val store = FileTriggerStore(file)
+        val original = TriggerDefinition("multi", "thread", "remind", 1_000,
+            calendarTime = "08:00", calendarZone = "UTC", calendarTimes = listOf("08:00", "12:30"))
+        store.upsert(original)
+        val primary = file.readText()
+        val edited = original.copy(calendarTimes = listOf("08:00", "20:00"))
+
+        assertTrue(store.edit(edited))
+        assertEquals(primary, file.readText())
+        assertEquals(edited, FileTriggerStore(file).get(original.id))
+    }
+
     @Test fun multipleClocksSurviveClaimsAndReopenWithoutChangingLegacySchema() {
         val file = Files.createTempDirectory("trigger-times").resolve("triggers.json").toFile()
         val now = java.time.Instant.parse("2026-11-10T00:00:00Z").toEpochMilli()
@@ -33,6 +78,8 @@ class FileTriggerStoreTest {
         FileTriggerStore(file).upsert(TriggerDefinition("multi", "thread", "check", 1000,
             calendarTime = "08:00", calendarZone = "UTC", calendarTimes = listOf("08:00", "20:00")))
         val sidecar = File(file.parentFile, file.name + ".conditions")
+        sidecar.writeText("""{"states":{"multi":{"calendarTimes":["08:00","20:00"]}}}""")
+        assertEquals(listOf("08:00", "20:00"), FileTriggerStore(file).get("multi")!!.calendarClocks())
         sidecar.writeText("""{"states":{"multi":{"calendarTimes":["08:00","bad"]}}}""")
         assertEquals(listOf("08:00"), FileTriggerStore(file).get("multi")!!.calendarClocks())
         assertEquals(false, File(file.parentFile, file.name + ".corrupt").exists())

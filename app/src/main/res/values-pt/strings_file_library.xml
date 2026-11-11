@@ -21,4 +21,22 @@
     <string name="file_library_unknown_time">Data desconhecida</string>
     <string name="file_library_draft_saved">Adicionado ao rascunho da conversa escolhida. Abra essa conversa quando for possível.</string>
     <string name="file_library_load_failed">Não foi possível carregar os arquivos.</string>
+    <string name="file_library_select">Selecionar</string>
+    <string name="file_library_selected_count">%1$d selecionados</string>
+    <string name="file_library_select_all">Selecionar tudo</string>
+    <string name="file_library_select_none">Limpar seleção</string>
+    <string name="file_library_add_selected">Adicionar ao rascunho (%1$d)</string>
+    <string name="file_library_adding">Adicionando %1$d de %2$d…</string>
+    <string name="file_library_batch_title">Adicionar ao rascunho</string>
+    <string name="file_library_batch_summary">Adicionados %1$d · Já no rascunho %2$d · Não adicionados %3$d</string>
+    <string name="file_library_batch_failed_names">Não foi possível adicionar: %1$s</string>
+    <string name="file_library_view_draft">Ver rascunho</string>
+    <string name="file_library_keep_selecting">Continuar selecionando</string>
+    <string name="file_library_target_unavailable">Esta conversa não pode receber arquivos agora.</string>
+    <string name="file_library_sharing">Preparando para compartilhar %1$d de %2$d…</string>
+    <string name="file_library_share_summary">Compartilhados %1$d · Não foi possível compartilhar %2$d</string>
+    <string name="file_library_share_failed_names">Não foi possível compartilhar: %1$s</string>
+    <string name="file_library_file_count">%1$d arquivos</string>
+    <string name="file_library_select_title">Selecionar arquivos</string>
+    <string name="file_library_preview">Visualizar</string>
 </resources>

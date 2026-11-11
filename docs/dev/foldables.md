@@ -15,7 +15,7 @@
 
 **回归验证。** JVM 用例覆盖尺寸断点、铰链、坐标转换和控制权互斥。展开真机上的 `SidebarDestinationsDeviceTest` 覆盖侧栏切页和窄宽窗口切换，`InlineScreenControlDeviceTest` 在真实虚拟屏上验证拖动分栏、保持 displayId、点击输入及交回。后一用例需要已连接的手机助手与无障碍服务，输入验证使用测试包自带的原生页面。
 
-**物理姿态验收。** `PhysicalFoldDeviceTest` 默认跳过，只有显式传入 `physicalFold=true` 才执行。适用于 `dumpsys device_state` 将物理姿态命名为 `OPENED`、`CLOSED`、`HALF_OPENED` 的设备。先横屏展开，再按 `PhysicalFoldCheck` 日志中的提示依次合屏并解锁外屏、保持约 90° 半折、重新横屏展开；每个姿态最多等待三分钟。用例保留一段未发送草稿，检查外屏单栏、半折时标题和输入框不跨铰链、展开后恢复双栏。它读取物理状态并拒绝状态覆盖，不调用模拟折叠命令。截图写入应用外部文件目录的 `fold-verification/`。
+**物理姿态验收。** `PhysicalFoldDeviceTest` 默认跳过，只有显式传入 `physicalFold=true` 才执行。适用于 `dumpsys device_state` 将物理姿态命名为 `OPENED`、`CLOSED`、`HALF_OPENED` 的设备。先横屏展开，再按 `adb logcat -s PhysicalFoldCheck` 日志中的提示依次合屏并解锁外屏、保持约 90° 半折、重新横屏展开；每个姿态最多等待三分钟。用例保留一段未发送草稿，检查外屏单栏、半折时标题和输入框不跨铰链、展开后恢复双栏。它读取物理状态并拒绝状态覆盖，不调用模拟折叠命令。截图写入应用外部文件目录的 `fold-verification/`。
 
 ```sh
 adb shell am instrument -w -r --no-window-animation \

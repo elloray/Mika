@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="settings_personal_start">啟動時開啟個人助理</string>
+    <string name="settings_personal_start_sub">將個人助理設為 Mika 的起始畫面</string>
     <string name="language_title">語言</string>
     <string name="language_system">跟隨系統</string>
     <string name="language_system_detail">系統語言 Mika 有譯文時用它,沒有時用英文</string>

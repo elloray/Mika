@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_self_operate">Разрешить Mika управлять своими экранами</string>
+    <string name="settings_self_operate_sub">Открывать страницы и файлы Mika; спрашивает перед открытием ссылки в браузере</string>
+    <string name="self_notify_channel">Действия Mika</string>
+    <string name="self_notify_channel_desc">Что Mika открывает или просит посмотреть</string>
+    <string name="self_notify_open">Открыть</string>
+    <string name="self_screen_notice">Mika хочет показать %1$s</string>
+    <string name="self_file_notice">У Mika есть файл для вас</string>
+    <string name="self_file_failed">Не удалось открыть этот файл</string>
+    <string name="self_consent_open">Mika хочет открыть эту страницу в вашем браузере. Разрешить?\n%1$s</string>
+    <string name="self_consent_search">Mika хочет найти «%1$s» в вашем браузере. Разрешить?</string>
+    <string name="self_consent_login">Mika хочет открыть %1$s для входа. Разрешить?</string>
+    <string name="self_consent_replace">Текущая открытая страница будет заменена.</string>
+    <string name="self_consent_allow">Открыть</string>
+    <string name="self_consent_deny">Не открывать</string>
+    <string name="self_browser_notice">Нажмите, чтобы открыть %1$s в браузере</string>
+    <string name="self_browser_failed">Не удалось открыть эту страницу</string>
+</resources>

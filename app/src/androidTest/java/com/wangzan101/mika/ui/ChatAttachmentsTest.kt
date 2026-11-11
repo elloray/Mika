@@ -44,14 +44,24 @@ class ChatAttachmentsTest {
     /** 假的图:每张都是一块 40×30 的空图,不读手机。 */
     private val images = AttachImages { _, _ -> ImageBitmap(40, 30) }
 
-    private fun composer(attachments: List<PendingAttachment> = emptyList(), text: String = "", onSend: () -> Unit = {}) = compose.setContent {
+    private fun composer(
+        attachments: List<PendingAttachment> = emptyList(),
+        text: String = "",
+        mode: ComposerMode = ComposerMode.Idle,
+        onSend: () -> Unit = {},
+    ) = compose.setContent {
         MikaTheme {
             CompositionLocalProvider(LocalAttachImages provides images) {
                 var t by remember { mutableStateOf(text) }
+                var followUpMode by remember { mutableStateOf(FollowUpMode.Steer) }
+                val canAttach = mode == ComposerMode.Idle || followUpMode == FollowUpMode.Queue
                 Box(Modifier.fillMaxSize()) {
                     Composer(
-                        Modifier, t, { t = it }, ComposerMode.Idle, hasHistory = false, onSend = onSend, onStop = {},
-                        attachPanel = { Box(Modifier.fillMaxSize().testTag("panel-body")) },
+                        Modifier, t, { t = it }, mode, hasHistory = false, onSend = onSend, onStop = {},
+                        followUpMode = followUpMode,
+                        onFollowUpMode = { followUpMode = it },
+                        attachPanel = if (canAttach) ({ Box(Modifier.fillMaxSize().testTag("panel-body")) }) else null,
+                        attachBlocked = !canAttach,
                         attachments = attachments,
                     )
                 }
@@ -70,6 +80,15 @@ class ChatAttachmentsTest {
         compose.onNodeWithContentDescription(AttachCopy.CLOSE).performClick()
         waitGone("panel-body")
         compose.onNodeWithContentDescription(AttachCopy.ADD).assertIsDisplayed()
+    }
+
+    @Test fun waitingForAnAnswerCanSwitchToQueueAndAddTheFirstAttachment() {
+        composer(mode = ComposerMode.Answer)
+        compose.onNodeWithContentDescription(AttachCopy.ADD).assertIsDisplayed()
+        compose.onNodeWithTag("follow-up-mode-queue").assertIsDisplayed().performClick()
+        compose.onNode(hasTestTag("follow-up-mode-queue") and isSelected()).assertIsDisplayed()
+        compose.onNodeWithContentDescription(AttachCopy.ADD).performClick()
+        compose.onNodeWithTag("panel-body").assertIsDisplayed()
     }
 
     @Test fun tappingTheFieldClosesThePanel() {

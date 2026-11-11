@@ -2181,7 +2181,7 @@ class AndroidScreen(
             rect.intersect(0, 0, screenWidth, screenHeight) && rect.contains(x, y)
         }
         if (hitEntries.isEmpty()) return false
-        if (hitEntries.any { ClickFallback.mayBeOutward(it.element.name, it.locator.resourceId) }) return false
+        if (hitEntries.any { ClickFallback.mayBeOutward(it.element.name, it.locator.resourceId, clickable = it.element.clickable) }) return false
         val seen = HashSet<AccessibilityNodeInfo>()
         val candidates = mutableListOf<ClickFallback.Candidate<AccessibilityNodeInfo>>()
         for (entry in hitEntries) {

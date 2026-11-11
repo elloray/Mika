@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="settings_personal_start">فتح المساعد الشخصي عند التشغيل</string>
+    <string name="settings_personal_start_sub">استخدام المساعد الشخصي كشاشة Mika الأولى</string>
     <string name="language_title">اللغة</string>
     <string name="language_system">اتباع لغة النظام</string>
     <string name="language_system_detail">يستخدم لغة النظام إذا كانت Mika تدعمها، وإلا يستخدم الإنجليزية</string>

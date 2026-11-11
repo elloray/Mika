@@ -62,4 +62,16 @@
     <string name="tool_tap">نقر</string>
     <string name="tool_type">كتابة نص</string>
     <string name="tool_clear">مسح الحقل</string>
+    <string name="tool_mika_status">عرض حالة Mika</string>
+    <string name="tool_mika_open_screen">فتح صفحة Mika</string>
+    <string name="tool_mika_open_file">فتح ملف</string>
+    <string name="tool_mika_notify">إرسال إشعار</string>
+    <string name="tool_mika_copy">نسخ النص</string>
+    <string name="tool_mika_open_in_browser">فتح في متصفحك</string>
+    <string name="tool_mika_search_in_browser">البحث في متصفحك</string>
+    <string name="tool_mika_sites">التحقق من تسجيل الدخول</string>
+    <string name="tool_mika_user_page">التحقق من الصفحة المعروضة</string>
+    <string name="tool_mika_login_site">تسجيل الدخول إلى موقع</string>
+    <string name="tool_mika_confirm_login">تأكيد تسجيل الدخول</string>
+    <string name="tool_mika_favorites">المواقع المتكررة</string>
 </resources>

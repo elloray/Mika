@@ -13,6 +13,8 @@ import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
+import java.io.File
+import java.io.IOException
 import kotlin.coroutines.EmptyCoroutineContext
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -105,5 +107,16 @@ class ConversationDeleterTest {
         val store = store()
         ConversationDeleter(store, active, {}, { emptyList() }, { error("no sandbox") }, io = EmptyCoroutineContext).delete("a")
         assertEquals(listOf("b"), store.list().map { it.id })
+    }
+
+    @Test fun failedHistoryDeletionLeavesTheWorkspaceForRetry() = runTest {
+        val dir = tmp.newFolder()
+        val store = ConversationStore(dir)
+        store.append("a", Turn("查天气", "晴", "succeeded"))
+        assertTrue(File(dir, "a.json.tmp").mkdir())
+
+        assertTrue(runCatching { deleter(store).delete("a") }.exceptionOrNull() is IOException)
+        assertTrue("a" in workspaces)
+        assertTrue(calls.isEmpty())
     }
 }

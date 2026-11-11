@@ -36,6 +36,8 @@ enum class Verb {
     KnowledgeSearch, KnowledgeRead, SkillSearch, SkillRead, SkillSave, MemorySearch, MemorySave, MemoryEdit, ProfileEdit, HistoryRead, WebSearch,
     ScheduleTask,
     SpawnAgent, SettingsList, SettingsSet,
+    SelfStatus, SelfOpenScreen, SelfOpenFile, SelfNotify, SelfCopy,
+    SelfOpenBrowser, SelfSearch, SelfSites, SelfLogin, SelfConfirmLogin, SelfFavorites, SelfUserPage,
 }
 
 /** 按名字查得到的工具声明。 */

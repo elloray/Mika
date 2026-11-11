@@ -1,0 +1,1 @@
+After the user says they finished signing in, check the current sign-in page once and record the site as signed in. Do not call it before the user says they are done. If no sign-in page is open it returns not_in_login.

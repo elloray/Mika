@@ -21,4 +21,22 @@
     <string name="file_library_unknown_time">时间未知</string>
     <string name="file_library_draft_saved">已加入所选会话的草稿。可以切换时，请切到该会话查看。</string>
     <string name="file_library_load_failed">无法加载文件。</string>
+    <string name="file_library_select">多选</string>
+    <string name="file_library_selected_count">已选 %1$d 个</string>
+    <string name="file_library_select_all">全选</string>
+    <string name="file_library_select_none">取消全选</string>
+    <string name="file_library_add_selected">加入待发栏（%1$d）</string>
+    <string name="file_library_adding">正在加入 %1$d/%2$d…</string>
+    <string name="file_library_batch_title">加入待发栏</string>
+    <string name="file_library_batch_summary">已加入 %1$d 个 · 已在待发栏 %2$d 个 · 未加入 %3$d 个</string>
+    <string name="file_library_batch_failed_names">未能加入：%1$s</string>
+    <string name="file_library_view_draft">去待发栏</string>
+    <string name="file_library_keep_selecting">继续选择</string>
+    <string name="file_library_target_unavailable">这个会话现在无法接收文件。</string>
+    <string name="file_library_sharing">正在准备分享 %1$d/%2$d…</string>
+    <string name="file_library_share_summary">已分享 %1$d 个 · 未能分享 %2$d 个</string>
+    <string name="file_library_share_failed_names">未能分享：%1$s</string>
+    <string name="file_library_file_count">%1$d 个文件</string>
+    <string name="file_library_select_title">选择文件</string>
+    <string name="file_library_preview">预览</string>
 </resources>

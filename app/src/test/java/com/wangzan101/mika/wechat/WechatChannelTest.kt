@@ -11,6 +11,7 @@ import com.wangzan101.mika.core.run.RunId
 import com.wangzan101.mika.core.run.SendOutcome
 import com.wangzan101.mika.core.wechat.WechatAccount
 import com.wangzan101.mika.core.wechat.WechatApi
+import com.wangzan101.mika.core.wechat.WechatImage
 import com.wangzan101.mika.settings.KeyCipher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancelAndJoin
@@ -40,6 +41,72 @@ class WechatChannelTest {
     }
 
     private fun response(body: String) = MockResponse().setHeader("Content-Type", "application/json").setBody(body)
+
+    @Test fun imageReplyWhoseQuestionChangesDuringImportIsDiscarded() = runBlocking {
+        MockWebServer().use { server ->
+            server.start(InetAddress.getByName("127.0.0.1"), 0)
+            val store = WechatStore(tmp.newFolder(), cipher)
+            store.saveAccount(WechatAccount("token", server.url("/").toString(), "bot", "owner"))
+            store.setEnabled(true)
+            val peer = store.peer("owner")
+            val original = Delivery.Ask("first", peer.threadId, "first", Delivery.Ask.Kind.Input, "Which photo?")
+            var active = original
+            var imported: Boolean? = null
+            val images = object : WechatImageFiles {
+                override suspend fun receive(peer: ChannelPeer, messageId: String, text: String,
+                    images: List<WechatImage>, accept: (String) -> Boolean): Boolean {
+                    active = original.copy(id = "replacement", askId = "replacement")
+                    return accept(text).also { imported = it }
+                }
+
+                override suspend fun read(image: Delivery.Image): ByteArray = error("Unexpected image export")
+            }
+            val channel = WechatChannel(store, WechatApi(OkHttpClient(), "test"), { active }, {}, images)
+            rejectUnexpectedRouting(peer) { active }.start(channel).use {
+                server.enqueue(response("""{"get_updates_buf":"next","msgs":[{
+                    "message_id":"image-reply","from_user_id":"owner","message_type":1,"context_token":"ctx",
+                    "item_list":[{"type":1,"text_item":{"text":"this one"}},{"type":2,"image_item":{}}]}]}"""))
+                channel.pollOnce()
+            }
+
+            assertEquals(false, imported)
+            assertTrue(store.hasMessage("image-reply"))
+            assertTrue(store.pending().isEmpty())
+            assertEquals("next", store.cursor())
+        }
+    }
+
+    @Test fun journaledImageReplyFromBeforeUpgradeDoesNotStartAnotherTaskOnReplay() = runBlocking {
+        MockWebServer().use { server ->
+            server.start(InetAddress.getByName("127.0.0.1"), 0)
+            val dir = tmp.newFolder()
+            val original = WechatStore(dir, cipher)
+            original.saveAccount(WechatAccount("token", server.url("/").toString(), "bot", "owner"))
+            original.setEnabled(true)
+            val peer = original.peer("owner")
+            assertTrue(original.journal("image-reply", peer, "附件:/workspace/inbox/wechat-1 (2).jpg(25 B)", "old"))
+            val store = WechatStore(dir, cipher)
+            val active = Delivery.Ask("current", peer.threadId, "current", Delivery.Ask.Kind.Input, "Which photo?")
+            val channel = WechatChannel(store, WechatApi(OkHttpClient(), "test"), { active }, {})
+
+            rejectUnexpectedRouting(peer) { active }.start(channel).use {
+                server.enqueue(response("""{"get_updates_buf":"next"}"""))
+                channel.pollOnce()
+            }
+
+            assertTrue(store.hasMessage("image-reply"))
+            assertTrue(store.pending().isEmpty())
+        }
+    }
+
+    private fun rejectUnexpectedRouting(peer: ChannelPeer, activeAsk: () -> Delivery.Ask) =
+        ChannelGateway(MemoryOwnerIdentity().also { it.bind(peer) }, { activeAsk() }, object : ChannelGateway.Route {
+            override suspend fun newTask(peer: ChannelPeer, messageId: String, text: String): Unit = error("Unexpected task")
+            override suspend fun answer(threadId: String, askId: String, text: String): Boolean = error("Unexpected answer")
+            override suspend fun confirm(threadId: String, askId: String, choice: ConfirmChoice) = false
+            override suspend fun stop(runId: RunId) = Unit
+            override suspend fun cancelAsk(threadId: String): Unit = error("Unexpected question cancellation")
+        })
 
     @Test fun pollingJournalsOnlyOwnerTextAndAcknowledgesAfterTaskRegistration() = runTest {
         MockWebServer().use { server ->

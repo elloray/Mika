@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_self_operate">Izinkan Mika mengoperasikan layarnya sendiri</string>
+    <string name="settings_self_operate_sub">Buka halaman dan file Mika; bertanya sebelum membuka tautan di browser Anda</string>
+    <string name="self_notify_channel">Tindakan Mika</string>
+    <string name="self_notify_channel_desc">Apa yang dibuka Mika atau diminta Anda lihat</string>
+    <string name="self_notify_open">Lihat</string>
+    <string name="self_screen_notice">Mika ingin menunjukkan %1$s</string>
+    <string name="self_file_notice">Mika punya file untuk Anda lihat</string>
+    <string name="self_file_failed">Tidak dapat membuka file itu</string>
+    <string name="self_consent_open">Mika ingin membuka halaman ini di browser Anda. Izinkan?\n%1$s</string>
+    <string name="self_consent_search">Mika ingin mencari “%1$s” di browser Anda. Izinkan?</string>
+    <string name="self_consent_login">Mika ingin membuka %1$s agar Anda dapat masuk. Izinkan?</string>
+    <string name="self_consent_replace">Ini akan menggantikan halaman yang sedang Anda buka.</string>
+    <string name="self_consent_allow">Buka</string>
+    <string name="self_consent_deny">Jangan buka</string>
+    <string name="self_browser_notice">Ketuk untuk membuka %1$s di browser</string>
+    <string name="self_browser_failed">Tidak dapat membuka halaman itu</string>
+</resources>

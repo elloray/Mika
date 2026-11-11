@@ -1,6 +1,11 @@
 package com.wangzan101.mika.chat
 
+import com.wangzan101.mika.core.agent.AttachmentLines
+import com.wangzan101.mika.core.agent.QuoteMessage
 import com.wangzan101.mika.core.agent.Turn
+import com.wangzan101.mika.core.cap.web.AttachedPage
+import com.wangzan101.mika.core.userscreen.UserScreenMessage
+import com.wangzan101.mika.ui.ChatCopy
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -46,6 +51,48 @@ class ConversationSearchTest {
         store.append("a", Turn("杭州 西湖", "很好", "succeeded"))
         assertEquals(listOf("a"), ids(store, "杭州\u3000西湖"))
         assertEquals(listOf("a"), ids(store, "杭州\u00A0西湖"))
+    }
+
+    /** 用户的话只搜气泡上显示的部分,和侧栏标题一样:附件行、网页说明、引用的头、屏幕那一行不显示;判出的结局代码也不搜。 */
+    @Test fun searchesOnlyWhatTheChatPageShows() {
+        val store = ConversationStore(tmp.newFolder())
+        val withFile = AttachmentLines.compose("看看这份合同", listOf("/workspace/inbox/合同.pdf" to "2 KB"))
+        val onPage = AttachedPage.compose(AttachedPage.Page("https://example.com/a", "某页", "选中的那段"), "这页说的是什么")
+        val quoting = QuoteMessage.compose(QuoteMessage.Quote(QuoteMessage.From.Mika, "明天下午有雨"), "那后天呢")
+        store.append("a", Turn(withFile, "好的", "succeeded", result = "done"))
+        store.append("b", Turn(onPage, "讲的是天气", "succeeded"))
+        store.append("c", Turn("查天气", "晴", "succeeded", steers = listOf(quoting)))
+        store.append("d", Turn(UserScreenMessage.compose("s1", "屏幕上这个按钮是干嘛的"), "是设置", "succeeded"))
+        store.append("e", Turn(AttachmentLines.compose("", listOf("/workspace/inbox/IMG_0001.jpg" to "2 MB")), "收到", "succeeded"))
+        store.setTitle("e", "照片")
+        // 候选的标题和侧栏一样先去掉附件行、网页说明(ChatDrawer)
+        val shown = store.list().map { it.copy(title = ChatCopy.plainTitle(it.title)) }
+        fun found(q: String) = hits(store, q, shown).hits.map { it.id }
+        for (q in listOf("workspace", "inbox", "KB", "附件", "done", "browser", "Title", "End of page", "Quoting", "https", "screen", "IMG", "jpg")) {
+            assertEquals(q, emptyList<String>(), found(q))
+        }
+        // 显示出来的照样搜得到:话、文件名、网站、选中的字、引的那段
+        assertEquals(listOf("a"), found("合同.pdf"))
+        assertEquals(listOf("b"), found("example.com"))
+        assertEquals(listOf("b"), found("选中的那段"))
+        assertEquals(listOf("c"), found("明天下午有雨"))
+        assertEquals(listOf("c"), found("后天"))
+    }
+
+    /** 第一句只发了附件时,标题是起的或附件的称呼,后面一轮的话命中时照样给片段。 */
+    @Test fun aFirstMessageWithoutWordsDoesNotHideLaterSnippets() {
+        val store = ConversationStore(tmp.newFolder())
+        store.append("a", Turn(AttachmentLines.compose("", listOf("/workspace/inbox/a.jpg" to "2 MB")), "收到", "succeeded"))
+        store.append("a", Turn("照片里这是什么花", "是月季", "succeeded"))
+        store.setTitle("a", "照片")
+        val hit = hits(store, "照片").hits.single()
+        assertTrue(hit.inTitle)
+        assertEquals("照片里这是什么花", hit.snippet)
+
+        // 只发了一个文件、标题就是文件名时,不再把文件名当片段重复一遍
+        store.append("b", Turn(AttachmentLines.compose("", listOf("/workspace/inbox/合同.pdf" to "20 KB")), "收到", "succeeded"))
+        store.setTitle("b", "合同.pdf")
+        assertEquals(null, hits(store, "合同").hits.single().snippet)
     }
 
     @Test fun findsChineseBodyTextAcrossTurns() {

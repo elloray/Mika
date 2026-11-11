@@ -12,6 +12,7 @@ import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 import java.time.Instant
 import java.time.ZoneId
+import java.util.TimeZone
 
 class UsageLedgerTest {
     @get:Rule val tmp = TemporaryFolder()
@@ -66,7 +67,7 @@ class UsageLedgerTest {
     @Test fun providerBudgetTotalsAllModelsAndPurposesOnTheLocalCalendarDay() {
         val utc = ZoneId.of("UTC")
         clock = Instant.parse("2026-11-09T12:00:00Z").toEpochMilli()
-        val l = UsageLedger(file, now = { clock }, zone = utc)
+        val l = UsageLedger(file, now = { clock }, zone = { utc })
         l.record(main, Usage(100, 20, cachedInputTokens = 60))
         l.record(light.copy(model = "m2"), Usage(50, 5))
         l.record(other, Usage(999, 999))
@@ -93,7 +94,7 @@ class UsageLedgerTest {
     @Test fun localMidnightSplitsAnHourForTheBudgetButNotForTheChart() {
         val zone = ZoneId.of("Asia/Kolkata")
         clock = Instant.parse("2026-11-10T18:25:00Z").toEpochMilli()
-        val l = UsageLedger(file, now = { clock }, zone = zone, flushDelayMs = 60_000)
+        val l = UsageLedger(file, now = { clock }, zone = { zone }, flushDelayMs = 60_000)
         l.record(main, Usage(100, 10))
         clock = Instant.parse("2026-11-10T18:40:00Z").toEpochMilli()
         assertEquals(0L, l.providerTokensToday("p1"))
@@ -101,9 +102,31 @@ class UsageLedgerTest {
         assertEquals(10_010L, l.providerTokensToday("p1"))
         assertEquals(10_120L, l.snapshot().rows.single().counts.let { it.input + it.output })
         l.flush()
-        val reopened = UsageLedger(file, now = { clock }, zone = zone)
+        val reopened = UsageLedger(file, now = { clock }, zone = { zone })
         assertEquals(10_010L, reopened.providerTokensToday("p1"))
         assertEquals(l.snapshot().rows, reopened.snapshot().rows)
+    }
+
+    @Test fun dailyBudgetFollowsTheTimeZoneChangedWhileRunning() {
+        // 进程没退出时手机改了时区(系统会改进程的默认时区):「今天」和拆格都按改过之后的时区算,不按建账本时的
+        val before = TimeZone.getDefault()
+        try {
+            TimeZone.setDefault(TimeZone.getTimeZone("Asia/Shanghai"))
+            clock = Instant.parse("2026-11-10T15:30:00Z").toEpochMilli()
+            val l = ledger()
+            l.record(main, Usage(100, 10))
+            clock = Instant.parse("2026-11-10T17:00:00Z").toEpochMilli()
+            assertEquals("上海已过午夜", 0L, l.providerTokensToday("p1"))
+            TimeZone.setDefault(TimeZone.getTimeZone("Asia/Kolkata"))
+            assertEquals("加尔各答还是 11 月 10 日,15:30Z 那笔算今天", 110L, l.providerTokensToday("p1"))
+            clock = Instant.parse("2026-11-10T18:25:00Z").toEpochMilli()
+            l.record(main, Usage(1_000, 0))
+            clock = Instant.parse("2026-11-10T18:40:00Z").toEpochMilli()
+            l.record(main, Usage(5, 5))
+            assertEquals("这个整点按加尔各答的午夜 18:30Z 拆开", 10L, l.providerTokensToday("p1"))
+        } finally {
+            TimeZone.setDefault(before)
+        }
     }
 
     @Test fun persistsAcrossInstances() {

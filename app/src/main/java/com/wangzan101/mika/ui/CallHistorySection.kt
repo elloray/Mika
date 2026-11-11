@@ -43,6 +43,7 @@ internal fun CallHistorySection(
     historyWriteFailed: Boolean,
     onMark: suspend (String, Boolean) -> CallActionResult,
     onDelete: suspend (String) -> CallActionResult,
+    onClear: suspend () -> CallActionResult,
     onReuseTask: ((String, CallTaskBrief) -> Unit)? = null,
 ) {
     var filter by rememberSaveable { mutableStateOf(HistoryFilter.ALL) }
@@ -50,10 +51,13 @@ internal fun CallHistorySection(
     var showAll by rememberSaveable { mutableStateOf(false) }
     var expanded by rememberSaveable { mutableStateOf<String?>(null) }
     var pendingDelete by rememberSaveable { mutableStateOf<String?>(null) }
+    var pendingClear by rememberSaveable { mutableStateOf(false) }
     var busy by remember { mutableStateOf(false) }
     var feedback by remember { mutableStateOf<CallActionResult?>(null) }
     val scope = rememberCoroutineScope()
     val failure = stringResource(R.string.calls_action_failed)
+    val clearFailure = stringResource(R.string.calls_history_clear_failed)
+    val cleared = stringResource(R.string.calls_history_cleared)
     val deleted = stringResource(R.string.calls_history_deleted)
     val handled = stringResource(R.string.calls_history_done)
     val unhandled = stringResource(R.string.calls_history_open)
@@ -83,18 +87,19 @@ internal fun CallHistorySection(
         }
     }
 
-    fun change(success: String, action: suspend () -> CallActionResult) {
+    fun change(success: String, errorMessage: String? = null, action: suspend () -> CallActionResult) {
         if (busy) return
         busy = true
         feedback = null
         scope.launch {
             try {
                 val result = action()
-                feedback = if (result.ok) CallActionResult(true, success) else result
+                feedback = if (result.ok) CallActionResult(true, success)
+                    else if (errorMessage != null) CallActionResult(false, errorMessage) else result
             } catch (e: CancellationException) {
                 throw e
             } catch (_: Exception) {
-                feedback = CallActionResult(false, failure)
+                feedback = CallActionResult(false, errorMessage ?: failure)
             } finally { busy = false }
         }
     }
@@ -107,6 +112,15 @@ internal fun CallHistorySection(
     feedback?.let { result ->
         FooterNote(result.message, Modifier.semantics { liveRegion = LiveRegionMode.Polite },
             color = if (result.ok) MikaTheme.colors.ink3 else MaterialTheme.colorScheme.error)
+    }
+    if (history.isNotEmpty() || historyWriteFailed) {
+        TextButton(
+            onClick = { pendingClear = true },
+            enabled = !busy,
+            modifier = Modifier.fillMaxWidth().testTag("call-history-clear"),
+        ) {
+            Text(stringResource(R.string.calls_history_clear), color = MaterialTheme.colorScheme.error)
+        }
     }
     if (history.isEmpty()) {
         GroupCard { ListRow(MikaIcons.Clock, stringResource(R.string.calls_history_empty), first = true) }
@@ -157,6 +171,23 @@ internal fun CallHistorySection(
             }
         }
     }
+
+    if (pendingClear) AlertDialog(
+        onDismissRequest = { pendingClear = false },
+        title = { Text(stringResource(R.string.calls_history_clear)) },
+        text = { Text(stringResource(R.string.calls_history_clear_confirm)) },
+        confirmButton = {
+            TextButton(onClick = {
+                pendingClear = false
+                change(cleared, clearFailure) { onClear() }
+            }, enabled = !busy, modifier = Modifier.testTag("call-history-clear-confirm")) {
+                Text(stringResource(R.string.calls_history_clear), color = MaterialTheme.colorScheme.error)
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = { pendingClear = false }) { Text(stringResource(R.string.calls_cancel)) }
+        },
+    )
 
     val toDelete = history.firstOrNull { it.id == pendingDelete }
     if (toDelete != null) AlertDialog(

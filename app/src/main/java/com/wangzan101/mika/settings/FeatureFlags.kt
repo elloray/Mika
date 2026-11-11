@@ -18,6 +18,12 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 
 /** 功能开关。提速开关存成 [SpeedFlags.describe] 的格式,评测跑器可用参数覆盖。 */
 class FeatureFlags(private val prefs: SharedPreferences) {
+    fun personalStart(): Boolean = prefs.getBoolean(PERSONAL_START, false)
+
+    fun setPersonalStart(on: Boolean) {
+        prefs.edit().putBoolean(PERSONAL_START, on).apply()
+    }
+
     /** 还没做过的默认值升级(见 [SPEED_UPGRADES])各做一次;升级之后用户手动关掉就保持关闭。 */
     fun speedFlags(): SpeedFlags {
         val flags = prefs.getString(SPEED_FLAGS, null)?.let { runCatching { SpeedFlags.parse(it) }.getOrNull() } ?: SpeedFlags.OFF
@@ -101,6 +107,16 @@ class FeatureFlags(private val prefs: SharedPreferences) {
 
     fun setSelfConfig(on: Boolean) {
         prefs.edit().putBoolean(SELF_CONFIG, on).commit()
+    }
+
+    /**
+     * 允许 Mika 操作自己的界面(见 core 的 SelfPort):打开 Mika 的页、把工作区文件用 App 内查看器打开、
+     * 发通知、写剪贴板。默认关;模型改不了这个开关。
+     */
+    fun selfOperate(): Boolean = prefs.getBoolean(SELF_OPERATE, false)
+
+    fun setSelfOperate(on: Boolean) {
+        prefs.edit().putBoolean(SELF_OPERATE, on).commit()
     }
 
     /** 悬浮胶囊:关闭、有任务时显示(默认)、一直显示。 */
@@ -197,7 +213,9 @@ class FeatureFlags(private val prefs: SharedPreferences) {
         private const val MUTE_TARGET = "mute_target"
         private const val OPERATING_PACE = "operating_pace"
         private const val SELF_CONFIG = "self_config"
+        private const val SELF_OPERATE = "self_operate"
         private const val THEME_MODE = "theme_mode"
+        private const val PERSONAL_START = "personal_start"
         private const val CAPSULE_MODE = "capsule_mode"
         private const val CAPSULE_IDLE_OPACITY = "capsule_idle_opacity"
         private const val QUIT_REQUESTED = "quit_requested"

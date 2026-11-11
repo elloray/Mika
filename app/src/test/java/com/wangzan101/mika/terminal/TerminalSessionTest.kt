@@ -8,11 +8,16 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.onSubscription
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
+import kotlinx.coroutines.withTimeoutOrNull
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import java.io.ByteArrayOutputStream
 import java.io.InputStream
 import java.io.OutputStream
 import java.io.PipedInputStream
@@ -71,6 +76,62 @@ class TerminalSessionTest {
             scope.cancel()
         }
         assertTrue(shell.closed)
+    }
+
+    /** 界面一时跟不上(主线程卡一下)时不丢块:丢掉的块会让屏上缺一段,还可能切断转义序列或半个字。 */
+    @Test fun aViewerThatFallsBehindStillGetsEveryChunk() = runBlocking {
+        val shell = FakeShell()
+        val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+        val session = TerminalSession("c3", null, network = false, shell = shell, scope = scope)
+        val seen = ByteArrayOutputStream()
+        val subscribed = CompletableDeferred<Unit>()
+        val holding = CompletableDeferred<Unit>()
+        val resume = CompletableDeferred<Unit>()
+        try {
+            val viewer = scope.launch {
+                session.output.onSubscription { subscribed.complete(Unit) }.collect { chunk ->
+                    holding.complete(Unit)
+                    resume.await()
+                    synchronized(seen) { seen.write(chunk) }
+                }
+            }
+            withTimeout(2_000) { subscribed.await() }
+            // 前 66 行一行一块地写:界面手里 1 块、缓冲 64 块,第 66 块要么挤掉最旧的,要么让读输出的一侧等着。
+            // 每块都是先进环形缓冲再交给界面,所以两种写法下这 66 行都等得到;后面的一次写完
+            for (i in 1..66) {
+                val line = "line-$i\n"
+                shell.writer.write(line.toByteArray()); shell.writer.flush()
+                withTimeout(2_000) { while (!String(session.snapshot()).endsWith(line)) delay(2) }
+                // 界面先拿到第 1 块再写后面的,缓冲才是从第 2 块开始装
+                if (i == 1) withTimeout(2_000) { holding.await() }
+            }
+            shell.writer.write((67..100).joinToString("") { "line-$it\n" }.toByteArray()); shell.writer.flush()
+            resume.complete(Unit)
+            val all = (1..100).joinToString("") { "line-$it\n" }
+            withTimeout(5_000) { while (String(session.snapshot()) != all) delay(10) }
+            withTimeoutOrNull(2_000) { while (synchronized(seen) { seen.size() } < all.length) delay(10) }
+            assertEquals(all, synchronized(seen) { seen.toString() })
+            viewer.cancel()
+        } finally {
+            session.close()
+            scope.cancel()
+        }
+    }
+
+    /** 输入没人读(沙箱那头在等界面)时,写输入也不能卡住调用方:按键行是在主线程上写的。 */
+    @Test fun writingDoesNotBlockTheCallerWhenInputIsNotRead() = runBlocking {
+        val shell = FakeShell()
+        val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+        val session = TerminalSession("c4", null, network = false, shell = shell, scope = scope)
+        try {
+            val caller = Thread { session.writeBytes(ByteArray(200_000)); session.writeBytes("\u001b[A".toByteArray()) }
+            caller.start()
+            caller.join(2_000)
+            assertFalse("writeBytes waited for the shell to read its input", caller.isAlive)
+        } finally {
+            session.close()
+            scope.cancel()
+        }
     }
 
     @Test fun revocationWinsOverExit() = runBlocking {

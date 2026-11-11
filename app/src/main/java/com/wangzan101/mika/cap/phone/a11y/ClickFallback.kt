@@ -58,11 +58,17 @@ internal object ClickFallback {
     /**
      * 名字或资源 ID 像发送、提交、支付、删除、确认按钮,或是开关类按钮时返回 true,
      * 不自动补点第二条通道:宁可这次点不动,也不能把刚打开的状态点回去或重复发起。
+     * [clickable] 为 true(默认)时,[label] 和点之前的不可逆判定(IrreversibleDetector 的 elementHit)查的是同一类名字:
+     * 点的节点、它的可点祖先、候选,没名字的可点容器是子节点的字连起来的。这时不可逆词和那边一样不看总长:
+     * 英文按钮常带对象(「Send message to …」),容器的名字常带金额(「立即支付 ¥1,299.00 (含运费…)」)。
+     * 传 false 的是点下那片里不可点的正文,只查 [MAX_BUTTON_LABEL_LEN] 字以内的。
      */
-    fun mayBeOutward(label: String?, resourceId: String?): Boolean {
+    fun mayBeOutward(label: String?, resourceId: String?, clickable: Boolean = true): Boolean {
         val trimmed = label?.trim().orEmpty()
-        if (trimmed.isNotEmpty() && trimmed.length <= MAX_BUTTON_LABEL_LEN) {
-            if (IrreversibleDetector.matchName(trimmed) != null) return true
+        val short = trimmed.isNotEmpty() && trimmed.length <= MAX_BUTTON_LABEL_LEN
+        if ((short || (clickable && trimmed.isNotEmpty())) && IrreversibleDetector.matchName(trimmed) != null) return true
+        // 确认词、英文开关词整串比,中文开关词按包含比(「点赞(12)」),长段正文里容易出现,都只查短的
+        if (short) {
             val norm = Hant.fold(trimmed).filterNot(Char::isWhitespace).lowercase().trimEnd { !it.isLetterOrDigit() }
             if (norm in CONFIRM_WORDS) return true
             if (STATEFUL_CJK.any { it in norm } || norm in STATEFUL_EN) return true

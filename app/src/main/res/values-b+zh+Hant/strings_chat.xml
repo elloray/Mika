@@ -57,6 +57,7 @@
     <string name="chat_missing">還缺:%1$s</string>
     <string name="chat_go_settings">去設定</string>
     <string name="chat_menu">選單</string>
+    <string name="drawer_personal">個人助理</string>
     <string name="chat_new">新對話</string>
     <string name="chat_expand_steps">展開步驟</string>
     <string name="chat_collapse_steps">收起步驟</string>

@@ -62,4 +62,16 @@
     <string name="tool_tap">タップ</string>
     <string name="tool_type">テキストを入力</string>
     <string name="tool_clear">入力欄をクリア</string>
+    <string name="tool_mika_status">Mika の状態</string>
+    <string name="tool_mika_open_screen">Mika のページを開く</string>
+    <string name="tool_mika_open_file">ファイルを開く</string>
+    <string name="tool_mika_notify">通知を送る</string>
+    <string name="tool_mika_copy">テキストをコピー</string>
+    <string name="tool_mika_open_in_browser">ブラウザで開く</string>
+    <string name="tool_mika_search_in_browser">ブラウザで検索</string>
+    <string name="tool_mika_sites">サイトのログインを確認</string>
+    <string name="tool_mika_user_page">表示中のページを確認</string>
+    <string name="tool_mika_login_site">サイトにログイン</string>
+    <string name="tool_mika_confirm_login">ログインを確認</string>
+    <string name="tool_mika_favorites">よく使うサイト</string>
 </resources>

@@ -108,6 +108,10 @@
     <string name="calls_bypass_note">すべての着信が自動応答の対象でも、これらの番号は通常どおり鳴り、ご自身で応答できます。</string>
     <string name="calls_bypass_title">常に自分で応答</string>
     <string name="calls_history_all">すべて</string>
+    <string name="calls_history_clear">すべて消去</string>
+    <string name="calls_history_clear_confirm">この端末に保存されたすべての通話履歴と文字起こしを削除しますか？元には戻せません。</string>
+    <string name="calls_history_cleared">通話履歴を消去しました</string>
+    <string name="calls_history_clear_failed">通話履歴を消去できませんでした。もう一度お試しください。</string>
     <string name="calls_history_delete">履歴を削除</string>
     <string name="calls_history_delete_confirm">この端末から履歴と文字起こしを削除しますか？元には戻せません。</string>
     <string name="calls_history_deleted">履歴を削除しました</string>
@@ -125,4 +129,18 @@
     <string name="calls_notification_settings">通知設定を開く</string>
     <string name="calls_speaker_edit_note">クローン音声は「音声クローン」で選択してください。空欄にすると既定の声に戻ります。</string>
     <string name="calls_greeting_hint">入力したとおりに読み上げます。空欄の場合は相手が話し始めるまで待ちます。</string>
+    <string name="calls_notification_handoff">AI が通話から退出しました。システムの電話アプリで引き継いでください。</string>
+    <string name="calls_standby_checking">電話のバックグラウンド待機の条件を確認中</string>
+    <string name="calls_standby_locked_dial_preparing">ロック画面からの発信を準備中 · 残り %1$d 秒</string>
+    <string name="calls_standby_unavailable">バックグラウンド待機を利用できません。開いて確認してください。</string>
+    <string name="calls_standby_ai_active">バックグラウンド待機はオンです。AI が通話に対応中です。</string>
+    <string name="calls_standby_running">バックグラウンド待機はオンです。電話設定でオフにできます。</string>
+    <string name="calls_standby_start_blocked">Android がバックグラウンド待機の開始を許可しませんでした。アプリで再試行してください。</string>
+    <string name="calls_standby_not_ready">バックグラウンド待機が有効になっていないか、再起動後に端末のロックを解除していません。</string>
+    <string name="calls_standby_notifications_required">バックグラウンド待機の通知を許可してください。</string>
+    <string name="calls_notification_preparing">AI 電話を準備中</string>
+    <string name="calls_notification_answer_preparing">AI の応答を準備中</string>
+    <string name="calls_notification_connecting_audio">通話音声を接続中</string>
+    <string name="calls_notification_connected_waiting">AI が接続しました。相手の発話を待っています。いつでも引き継げます。</string>
+    <string name="calls_notification_connected">AI が接続しました。いつでも自分で引き継げます。</string>
 </resources>

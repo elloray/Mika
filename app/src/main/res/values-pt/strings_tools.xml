@@ -62,4 +62,16 @@
     <string name="tool_tap">Tocar</string>
     <string name="tool_type">Digitar texto</string>
     <string name="tool_clear">Limpar campo</string>
+    <string name="tool_mika_status">Ver o estado do Mika</string>
+    <string name="tool_mika_open_screen">Abrir uma página do Mika</string>
+    <string name="tool_mika_open_file">Abrir um arquivo</string>
+    <string name="tool_mika_notify">Enviar uma notificação</string>
+    <string name="tool_mika_copy">Copiar texto</string>
+    <string name="tool_mika_open_in_browser">Abrir no seu navegador</string>
+    <string name="tool_mika_search_in_browser">Pesquisar no seu navegador</string>
+    <string name="tool_mika_sites">Ver logins de sites</string>
+    <string name="tool_mika_user_page">Ver a página que você está vendo</string>
+    <string name="tool_mika_login_site">Entrar em um site</string>
+    <string name="tool_mika_confirm_login">Confirmar login</string>
+    <string name="tool_mika_favorites">Sites frequentes</string>
 </resources>

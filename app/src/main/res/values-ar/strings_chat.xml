@@ -62,6 +62,7 @@
     <string name="chat_missing">مفقود: %1$s</string>
     <string name="chat_go_settings">افتح الإعدادات</string>
     <string name="chat_menu">القائمة</string>
+    <string name="drawer_personal">المساعد الشخصي</string>
     <string name="chat_new">محادثة جديدة</string>
     <string name="chat_expand_steps">عرض الخطوات</string>
     <string name="chat_collapse_steps">إخفاء الخطوات</string>

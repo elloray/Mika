@@ -189,6 +189,12 @@ class CapsuleController(
     private var cardHandle: Rect? = null
     /** 用户屏幕上输入法的上边;没弹出为 null。胶囊和卡片都让开它。 */
     private var imeTop: Int? = null
+    /**
+     * 这一轮输入法弹出期间摆卡片用的上边:键盘变高时马上跟,变矮时忽略候选行、工具栏那种一行的高度
+     * (见 [CapsuleDocking.tallestImeTop])。中文输入法打拼音时输入法多一行少一行,卡片不跟着反复变高矮、上下挪。
+     * 输入法收起时清掉,下次弹出重新记。
+     */
+    private var cardImeTop: Int? = null
     private var imeJob: Job? = null
 
     /** 胶囊此刻的透明度(不碰它几秒后淡下去);[lastActive] 是上次碰到或状态变了的时刻。 */
@@ -276,6 +282,8 @@ class CapsuleController(
         context.registerComponentCallbacks(object : ComponentCallbacks {
             override fun onConfigurationChanged(newConfig: Configuration) {
                 resetTaps()
+                // 屏幕尺寸换了,上一轮记的输入法位置不再作数;等输入法窗口的下一次变化重新记
+                cardImeTop = null
                 place()
                 scope.launch {
                     delay(ROTATE_SETTLE_MS)
@@ -452,6 +460,7 @@ class CapsuleController(
         imeJob?.cancel()
         imeJob = null
         imeTop = null
+        cardImeTop = null
         dragging = false
         talk.abort()
         talkIdle = null
@@ -783,12 +792,13 @@ class CapsuleController(
         loadPast(id)
     }
 
-    /** 跟着用户屏幕上的输入法:弹出、收起、变高时重新摆。 */
+    /** 跟着用户屏幕上的输入法:弹出、收起、变高时重新摆。卡片只按这一轮最高的样子摆,打字时不跟着候选行反复变(见 [cardImeTop])。 */
     private fun watchIme(service: ScreenAccessibility) {
         imeJob?.cancel()
         imeJob = scope.launch {
             service.overlays().imeTop().collect {
                 imeTop = it
+                cardImeTop = CapsuleDocking.tallestImeTop(cardImeTop, it, dp(IME_SHRINK_JUMP_DP))
                 place()
             }
         }
@@ -858,12 +868,15 @@ class CapsuleController(
 
     // ---------- 位置与拖动 ----------
 
-    /** 能摆的范围;[ime] 为 true 时让开输入法。 */
-    private fun area(ime: Boolean = true): DockArea? = windowOn?.overlays()?.area()?.let {
+    /** 能摆的范围;[ime] 为 true 时让开输入法([at],默认是此刻的输入法上边)。 */
+    private fun area(ime: Boolean = true, at: Int? = imeTop): DockArea? = windowOn?.overlays()?.area()?.let {
         val room = room()
         DockArea.of(it, margin = dp(EDGE_MARGIN_DP), gap = dp(TOP_GAP_DP), room = room)
-            .let { a -> if (ime) a.above(imeTop, dp(TOP_GAP_DP), room) else a }
+            .let { a -> if (ime) a.above(at, dp(TOP_GAP_DP), room) else a }
     }
+
+    /** 卡片用的范围:让开这一轮输入法最高的样子;拼音候选行出来、收回去时卡片不跟着变高矮、上下挪。 */
+    private fun cardArea(): DockArea? = area(at = cardImeTop)
 
     private fun room() = dp(CapsuleShadowRoom.value.toInt())
 
@@ -877,7 +890,7 @@ class CapsuleController(
         val w = window ?: return
         if (dragging || snap?.isRunning == true) return
         val a = area() ?: return
-        placeCard(a)
+        placeCard()
         val h = w.height.coerceAtLeast(dp(PILL_DP))
         if (isBar()) {
             placedY = CapsuleDocking.fitY(CapsuleDocking.y(barFraction, a, dp(BAR_DP)), a, h)
@@ -896,11 +909,13 @@ class CapsuleController(
 
     /**
      * 摆卡片窗口:左右居中、上边按记下的比例。卡片最高高度按屏幕和输入法定,变了内容跟着重排,窗口变了尺寸再摆一次。
+     * 输入法按这一轮最高的样子算([cardArea]):打字时拼音候选行多出来一行、收回去,卡片不跟着变高矮也不上下挪。
      * 刚展开、窗口还空着时按卡片会有的高度先摆好(对话卡片固定高;任务卡片按内容高,先按最矮的算),内容出来时不用再挪。
      */
-    private fun placeCard(a: DockArea) {
+    private fun placeCard() {
         val w = cardWindow ?: return
         val c = card ?: return
+        val a = cardArea() ?: return
         windowOn?.overlays()?.area()?.let { cardHeight = CardDocking.maxHeight(it.height, a, room()) }
         val base = area(ime = false) ?: a
         val expected = if (c is CardView.Chat) cardHeight + 2 * room() else dp(PILL_DP)
@@ -942,7 +957,7 @@ class CapsuleController(
 
         override fun move(dx: Float, dy: Float) {
             val w = cardWindow ?: return
-            val a = area() ?: return
+            val a = cardArea() ?: return
             if (!dragging) return
             val base = area(ime = false) ?: a
             w.place(OverlayPlacement(Gravity.TOP or Gravity.CENTER_HORIZONTAL, 0, CardDocking.dragY(dragStartY, dy, base, a, cardFull(base), w.height)))
@@ -950,7 +965,7 @@ class CapsuleController(
 
         override fun end(dx: Float, dy: Float) {
             val w = cardWindow
-            val a = area()
+            val a = cardArea()
             val was = dragging
             dragging = false
             if (!was || w == null || a == null) return
@@ -1444,6 +1459,11 @@ class CapsuleController(
         const val SNAP_MS = 220L
 
         const val ROTATE_SETTLE_MS = 300L
+        /**
+         * 输入法一下矮了这么多(dp)才当作换了面板(表情、手写这类),卡片跟着还原;拼音候选行、工具栏
+         * 多一行少一行远不到这个高度,不跟,免得打字时卡片一直变大小(见 [CapsuleDocking.tallestImeTop])。
+         */
+        const val IME_SHRINK_JUMP_DP = 120
         /** 说话时两个落点各自外扩多少算拖到了。 */
         const val TARGET_SLOP_DP = 14
         /** 胶囊上闪的那句停多久:发出了、没听清、出错或用不了。 */

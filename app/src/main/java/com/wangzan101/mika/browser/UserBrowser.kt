@@ -205,6 +205,21 @@ class UserBrowser private constructor(private val app: Context) {
     /** 平常浏览打开网址;打不开时返回原因。 */
     fun open(url: String): String? = load(url, null)
 
+    /** 在新标签打开一页;[select] 为 false 时留在后台,不切过去。打不开时返回原因。 */
+    fun openInNewTab(url: String, select: Boolean): String? {
+        refusal(url)?.let { return it }
+        val prev = tab
+        newTab()
+        val error = open(url)
+        if (error != null) {
+            tab?.let { closeTab(it.id) }
+            prev?.let { selectTab(it.id) }
+            return error
+        }
+        if (!select && prev != null) selectTab(prev.id)
+        return null
+    }
+
     /** 打开常用网站:还没登录的走「给 Mika 登录」,照 Mika 办事时的那一版打开。 */
     fun openFavorite(site: FavoriteSite): String? =
         load("https://${site.host}/", site.host.takeIf { BrowserIdentity.loginFlow(site) })
@@ -221,6 +236,9 @@ class UserBrowser private constructor(private val app: Context) {
         loginFor[t] = null
         navigate(t, url)
     }
+
+    /** 「给 Mika 登录」此刻要登录的网站;平常浏览为 null。只在主线程调用。 */
+    fun loginHost(): String? = tab?.let { loginFor[it] }
 
     /**
      * 「给 Mika 登录」里点了「登录好了」:看一眼页面。看出还没登录时提示一句;看出已登录、或看不出来(信用户的话)时

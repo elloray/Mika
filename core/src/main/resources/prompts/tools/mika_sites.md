@@ -1,0 +1,1 @@
+List the sites Mika has visited, which of them the user is signed in to, and which recently showed a CAPTCHA or access block. Read-only. Use it before asking the user to sign in again or when a site keeps blocking the task. Do not infer account details from it.

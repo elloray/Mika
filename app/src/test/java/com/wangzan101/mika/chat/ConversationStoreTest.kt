@@ -5,6 +5,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertThrows
 import org.junit.Assert.assertTrue
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.decodeFromString
@@ -15,9 +16,34 @@ import kotlinx.coroutines.launch
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
+import java.io.File
+import java.io.IOException
 
 class ConversationStoreTest {
     @get:Rule val tmp = TemporaryFolder()
+
+    @Test fun failedFileDeletionKeepsHistoryAndAllowsRetry() {
+        val dir = tmp.newFolder()
+        val store = ConversationStore(dir)
+        store.append("a", Turn("问题", "结果", "succeeded"))
+        store.setCurrent(CurrentChat.Open("a"))
+        val blocker = File(dir, "a.json.tmp")
+        assertTrue(blocker.mkdir())
+        val child = File(blocker, "keep")
+        child.writeText("data")
+
+        assertThrows(IOException::class.java) { store.delete("a") }
+        assertEquals(CurrentChat.Open("a"), store.currentChat())
+        assertEquals(listOf("a"), ConversationStore(dir).list().map { it.id })
+        assertTrue(store.rename("a", "保留的对话"))
+        assertTrue(child.isFile)
+
+        assertTrue(child.delete())
+        assertTrue(blocker.delete())
+        store.delete("a")
+        assertTrue(ConversationStore(dir).list().isEmpty())
+        assertNull(store.currentChat())
+    }
 
     @Test fun persistsAcrossInstances() {
         val dir = tmp.newFolder("c")

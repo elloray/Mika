@@ -62,4 +62,16 @@
     <string name="tool_tap">點選</string>
     <string name="tool_type">輸入文字</string>
     <string name="tool_clear">清空輸入框</string>
+    <string name="tool_mika_status">查看自身狀態</string>
+    <string name="tool_mika_open_screen">開啟 Mika 的頁面</string>
+    <string name="tool_mika_open_file">開啟檔案</string>
+    <string name="tool_mika_notify">傳送通知</string>
+    <string name="tool_mika_copy">複製文字</string>
+    <string name="tool_mika_open_in_browser">在瀏覽器裡開啟</string>
+    <string name="tool_mika_search_in_browser">在瀏覽器裡搜尋</string>
+    <string name="tool_mika_sites">查看網站登入</string>
+    <string name="tool_mika_user_page">查看正在看的網頁</string>
+    <string name="tool_mika_login_site">請你登入網站</string>
+    <string name="tool_mika_confirm_login">核對登入</string>
+    <string name="tool_mika_favorites">常用網站</string>
 </resources>

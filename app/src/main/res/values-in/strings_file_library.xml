@@ -21,4 +21,22 @@
     <string name="file_library_unknown_time">Waktu tidak diketahui</string>
     <string name="file_library_draft_saved">Ditambahkan ke draf percakapan yang dipilih. Buka percakapan itu saat tersedia.</string>
     <string name="file_library_load_failed">Berkas tidak dapat dimuat.</string>
+    <string name="file_library_select">Pilih</string>
+    <string name="file_library_selected_count">%1$d dipilih</string>
+    <string name="file_library_select_all">Pilih semua</string>
+    <string name="file_library_select_none">Hapus pilihan</string>
+    <string name="file_library_add_selected">Tambahkan ke draf (%1$d)</string>
+    <string name="file_library_adding">Menambahkan %1$d dari %2$d…</string>
+    <string name="file_library_batch_title">Tambahkan ke draf</string>
+    <string name="file_library_batch_summary">Ditambahkan %1$d · Sudah ada di draf %2$d · Tidak ditambahkan %3$d</string>
+    <string name="file_library_batch_failed_names">Tidak dapat menambahkan: %1$s</string>
+    <string name="file_library_view_draft">Lihat draf</string>
+    <string name="file_library_keep_selecting">Lanjut memilih</string>
+    <string name="file_library_target_unavailable">Percakapan ini tidak dapat menerima berkas sekarang.</string>
+    <string name="file_library_sharing">Menyiapkan untuk dibagikan %1$d dari %2$d…</string>
+    <string name="file_library_share_summary">Dibagikan %1$d · Gagal dibagikan %2$d</string>
+    <string name="file_library_share_failed_names">Gagal dibagikan: %1$s</string>
+    <string name="file_library_file_count">%1$d file</string>
+    <string name="file_library_select_title">Pilih file</string>
+    <string name="file_library_preview">Pratinjau</string>
 </resources>

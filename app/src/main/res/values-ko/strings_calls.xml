@@ -108,6 +108,10 @@
     <string name="calls_bypass_note">모든 번호가 자동 받기 대상이어도 이 번호의 전화는 평소처럼 울리며 직접 받을 수 있습니다.</string>
     <string name="calls_bypass_title">항상 직접 받기</string>
     <string name="calls_history_all">전체</string>
+    <string name="calls_history_clear">모두 지우기</string>
+    <string name="calls_history_clear_confirm">이 휴대전화에 저장된 모든 통화 기록과 대화 내용을 삭제할까요? 삭제한 내용은 복구할 수 없습니다.</string>
+    <string name="calls_history_cleared">통화 기록을 모두 지웠습니다</string>
+    <string name="calls_history_clear_failed">통화 기록을 지울 수 없습니다. 다시 시도해 주세요.</string>
     <string name="calls_history_delete">기록 삭제</string>
     <string name="calls_history_delete_confirm">이 전화에서 통화 기록과 저장된 대화를 삭제할까요? 되돌릴 수 없습니다.</string>
     <string name="calls_history_deleted">기록 삭제됨</string>
@@ -125,4 +129,18 @@
     <string name="calls_notification_settings">알림 설정 열기</string>
     <string name="calls_speaker_edit_note">복제 음색은 음성 복제에서 선택하세요. 기본 음색으로 되돌리려면 이 칸을 비우세요.</string>
     <string name="calls_greeting_hint">입력한 그대로 읽습니다. 비워 두면 상대방이 먼저 말할 때까지 기다립니다.</string>
+    <string name="calls_notification_handoff">AI가 통화에서 나왔습니다. 시스템 전화 앱에서 직접 이어받으세요.</string>
+    <string name="calls_standby_checking">전화 백그라운드 대기 조건 확인 중</string>
+    <string name="calls_standby_locked_dial_preparing">잠금 화면 발신 준비 중 · %1$d초 남음</string>
+    <string name="calls_standby_unavailable">백그라운드 대기를 사용할 수 없습니다. 열어서 확인하세요.</string>
+    <string name="calls_standby_ai_active">백그라운드 대기가 켜져 있습니다. AI가 통화 중입니다.</string>
+    <string name="calls_standby_running">백그라운드 대기가 켜져 있습니다. 전화 설정에서 끌 수 있습니다.</string>
+    <string name="calls_standby_start_blocked">Android가 백그라운드 대기 시작을 허용하지 않았습니다. 앱에서 다시 시도하세요.</string>
+    <string name="calls_standby_not_ready">백그라운드 대기가 켜져 있지 않거나, 재시작 후 휴대전화 잠금을 해제하지 않았습니다.</string>
+    <string name="calls_standby_notifications_required">백그라운드 대기 알림을 허용하세요.</string>
+    <string name="calls_notification_preparing">AI 전화 준비 중</string>
+    <string name="calls_notification_answer_preparing">AI 받기 준비 중</string>
+    <string name="calls_notification_connecting_audio">통화 오디오 연결 중</string>
+    <string name="calls_notification_connected_waiting">AI가 연결되었습니다. 상대방의 말을 기다리는 중이며 언제든 이어받을 수 있습니다.</string>
+    <string name="calls_notification_connected">AI가 연결되었습니다. 언제든 직접 이어받을 수 있습니다.</string>
 </resources>

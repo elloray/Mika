@@ -62,4 +62,16 @@
     <string name="tool_tap">Ketuk</string>
     <string name="tool_type">Ketik teks</string>
     <string name="tool_clear">Kosongkan kolom</string>
+    <string name="tool_mika_status">Lihat status Mika</string>
+    <string name="tool_mika_open_screen">Buka halaman Mika</string>
+    <string name="tool_mika_open_file">Buka file</string>
+    <string name="tool_mika_notify">Kirim notifikasi</string>
+    <string name="tool_mika_copy">Salin teks</string>
+    <string name="tool_mika_open_in_browser">Buka di browser Anda</string>
+    <string name="tool_mika_search_in_browser">Cari di browser Anda</string>
+    <string name="tool_mika_sites">Periksa login situs</string>
+    <string name="tool_mika_user_page">Periksa halaman yang dilihat</string>
+    <string name="tool_mika_login_site">Masuk ke situs</string>
+    <string name="tool_mika_confirm_login">Konfirmasi login</string>
+    <string name="tool_mika_favorites">Situs sering dipakai</string>
 </resources>

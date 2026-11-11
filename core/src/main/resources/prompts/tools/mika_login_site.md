@@ -1,0 +1,1 @@
+Open a site in Mika's browser in "sign in for Mika" mode so the user can sign in themselves. Use it when a site needs a login the user has not done. The user must approve opening the page in the same call. Tell them plainly what to do and that they should say when they are done; then call mika_confirm_login.

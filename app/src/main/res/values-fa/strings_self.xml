@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_self_operate">اجازه دادن به میکا برای کار با صفحه‌های خودش</string>
+    <string name="settings_self_operate_sub">باز کردن صفحه‌ها و فایل‌های میکا؛ پیش از باز کردن پیوند در مرورگر شما می‌پرسد</string>
+    <string name="self_notify_channel">اقدام‌های میکا</string>
+    <string name="self_notify_channel_desc">آنچه میکا باز می‌کند یا از شما می‌خواهد ببینید</string>
+    <string name="self_notify_open">مشاهده</string>
+    <string name="self_screen_notice">میکا می‌خواهد %1$s را به شما نشان دهد</string>
+    <string name="self_file_notice">میکا فایلی برای نشان دادن به شما دارد</string>
+    <string name="self_file_failed">باز کردن آن فایل ممکن نشد</string>
+    <string name="self_consent_open">میکا می‌خواهد این صفحه را در مرورگر شما باز کند. اجازه می‌دهید؟\n%1$s</string>
+    <string name="self_consent_search">میکا می‌خواهد «%1$s» را در مرورگر شما جستجو کند. اجازه می‌دهید؟</string>
+    <string name="self_consent_login">میکا می‌خواهد %1$s را باز کند تا وارد شوید. اجازه می‌دهید؟</string>
+    <string name="self_consent_replace">این کار صفحهٔ باز شما را جایگزین می‌کند.</string>
+    <string name="self_consent_allow">باز کردن</string>
+    <string name="self_consent_deny">باز نکردن</string>
+    <string name="self_browser_notice">برای باز کردن %1$s در مرورگر خود ضربه بزنید</string>
+    <string name="self_browser_failed">باز کردن آن صفحه ممکن نشد</string>
+</resources>

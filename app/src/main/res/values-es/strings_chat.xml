@@ -59,6 +59,7 @@
     <string name="chat_missing">Falta: %1$s</string>
     <string name="chat_go_settings">Abrir Ajustes</string>
     <string name="chat_menu">Menú</string>
+    <string name="drawer_personal">Asistente personal</string>
     <string name="chat_new">Chat nuevo</string>
     <string name="chat_expand_steps">Mostrar pasos</string>
     <string name="chat_collapse_steps">Ocultar pasos</string>

@@ -3,6 +3,8 @@ package com.wangzan101.mika.cap.sandbox
 import android.content.Context
 import com.wangzan101.mika.core.workspace.WorkspaceFileGate
 import java.io.File
+import java.nio.file.Files
+import java.nio.file.LinkOption
 import java.security.MessageDigest
 import com.wangzan101.mika.core.workspace.SandboxTree
 import kotlinx.coroutines.Dispatchers
@@ -45,8 +47,16 @@ class SandboxDirs internal constructor(
     /** 删掉对话 [conversationId] 的整个工作区(按句柄删、不跟进链接,见 [exclusiveWrite])。 */
     suspend fun deleteWorkspace(conversationId: String) = deleteWorkDir(workspace(conversationId).name)
 
-    /** 删掉 `work/` 下名为 [dirName] 的工作区。 */
-    suspend fun deleteWorkDir(dirName: String) = exclusiveWrite { gate.deleteTree(work, dirName) }
+    /**
+     * 删掉 `work/` 下名为 [dirName] 的工作区。本来就没有(没往里写过东西)时直接返回,不拿独占许可:
+     * 拿独占许可要收回所有租约([SandboxTree.lease]),别的对话开着的终端、在跑的 stdio MCP server 都会被停掉,而这里什么也不用删。
+     * 这一查在许可之外:已经拿到共享许可、还没建出目录的写入(命令、导入附件、存屏幕)不再等它做完,
+     * 它建出的工作区会留下来,在设置的「已用空间」里列成「已删除的对话」,可以清掉。
+     */
+    suspend fun deleteWorkDir(dirName: String) {
+        if (withContext(Dispatchers.IO) { !Files.exists(File(work, dirName).toPath(), LinkOption.NOFOLLOW_LINKS) }) return
+        exclusiveWrite { gate.deleteTree(work, dirName) }
+    }
 
     /**
      * 绑定前把要绑的目录都建好:源目录不存在时 PRoot 会往标准错误写一句警告,

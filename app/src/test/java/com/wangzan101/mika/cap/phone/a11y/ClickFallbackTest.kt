@@ -37,6 +37,13 @@ class ClickFallbackTest {
         assertFalse(ClickFallback.mayBeOutward("Repositories", null))
         assertFalse(ClickFallback.mayBeOutward("设置", "com.app:id/settings_tab"))
 
+        // 可点控件的名字长也照样认:点之前的不可逆判定不看总长,没名字的容器拿的是子节点的字连起来的
+        assertTrue(ClickFallback.mayBeOutward("Send message to Alice Johnson", null))
+        assertTrue(ClickFallback.mayBeOutward("立即支付 ¥1,299.00 (含运费¥12.00)", null))
+        // 不可点的长正文不拦;开关词按包含比,长的不查
+        assertFalse(ClickFallback.mayBeOutward("Post-processing runs on every frame before it is shown", null, clickable = false))
+        assertFalse(ClickFallback.mayBeOutward("关注我们的公众号,每周推送最新的开源项目和工具教程", null))
+
         val sendBtn = ClickFallback.Candidate("send", 800, 2100, 1040, 2220, label = "发送")
         assertNull(ClickFallback.pickTarget(900, 2160, w, h, listOf(sendBtn)))
     }
