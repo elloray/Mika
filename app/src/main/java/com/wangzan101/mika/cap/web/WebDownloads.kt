@@ -17,6 +17,7 @@ import okhttp3.Dns
 import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 import okhttp3.OkHttpClient
 import okhttp3.Request
+import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.IOException
 import java.net.URI
@@ -226,7 +227,7 @@ class WebDownloads(
         if (payloadLength > limit) return failed(fileName(contentDisposition, "", mime, suggested), mime, TOO_LARGE)
         val payload = if (comma < 0) "" else url.substring(comma + 1)
         val bytes = runCatching {
-            if (base64) Base64.getDecoder().decode(payload) else URLDecoder.decode(payload, "UTF-8").toByteArray()
+            if (base64) Base64.getDecoder().decode(payload) else decodeDataPayload(payload)
         }.getOrNull() ?: return failed(fileName(contentDisposition, "", mime, suggested), mime, "bad_data_url")
         return save(url, contentDisposition, mime, bytes, suggested)
     }
@@ -411,6 +412,33 @@ class WebDownloads(
             "application/vnd.openxmlformats-officedocument.wordprocessingml.document" to "docx",
             "application/vnd.ms-excel" to "xls", "application/msword" to "doc", "text/html" to "html",
         )
+
+        /** 非 Base64 data: 内容:+ 和空格原样保留,%HH 直接给出一个字节,未转义 Unicode 按 UTF-8 编码。 */
+        private fun decodeDataPayload(payload: String): ByteArray {
+            fun hex(c: Char) = when (c) {
+                in '0'..'9' -> c - '0'
+                in 'a'..'f' -> c - 'a' + 10
+                in 'A'..'F' -> c - 'A' + 10
+                else -> -1
+            }
+            val out = ByteArrayOutputStream(payload.length)
+            var start = 0
+            while (start < payload.length) {
+                if (payload[start] != '%') {
+                    val end = payload.indexOf('%', start).let { if (it < 0) payload.length else it }
+                    out.write(payload.substring(start, end).toByteArray(Charsets.UTF_8))
+                    start = end
+                } else {
+                    require(start + 2 < payload.length) { "incomplete percent escape" }
+                    val high = hex(payload[start + 1])
+                    val low = hex(payload[start + 2])
+                    require(high >= 0 && low >= 0) { "invalid percent escape" }
+                    out.write((high shl 4) or low)
+                    start += 3
+                }
+            }
+            return out.toByteArray()
+        }
 
         /** 下载的文件名:见类说明。[suggested] 是页面给的名字(`<a download>`),排在响应头之后、网址之前。 */
         fun fileName(contentDisposition: String?, url: String, mime: String?, suggested: String? = null): String {

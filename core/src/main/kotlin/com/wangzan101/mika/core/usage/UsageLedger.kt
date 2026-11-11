@@ -16,10 +16,13 @@ import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.long
+import kotlinx.serialization.json.longOrNull
 import kotlinx.serialization.json.put
 import kotlinx.serialization.json.putJsonArray
 import kotlinx.serialization.json.putJsonObject
 import java.io.File
+import java.time.Instant
+import java.time.ZoneId
 import java.util.concurrent.Executors
 import java.util.concurrent.ScheduledExecutorService
 import java.util.concurrent.TimeUnit
@@ -64,7 +67,7 @@ data class UsageSnapshot(val rows: List<UsageRow>, val providerNames: Map<String
 }
 
 /**
- * 本机的 token 用量账本:按 UTC 整点 × 服务商 × 模型 × 用途累计,只存在这台手机上([file],JSON)。
+ * 本机的 token 用量账本按 UTC 小时累计。若本地午夜落在小时内，午夜后的用量另存一格供每日预算使用。
  *
  * 记账([record])只在内存里加一笔,多个线程同时记也安全;改动后等 [flushDelayMs] 由一个后台线程整份写出
  * (先写临时文件再改名,写到一半断电不会坏掉原文件),进程被杀时最多丢掉最后这几秒。
@@ -75,8 +78,11 @@ class UsageLedger(
     private val now: () -> Long = System::currentTimeMillis,
     private val flushDelayMs: Long = 2_000,
     private val keepDays: Int = KEEP_DAYS,
+    private val zone: ZoneId = ZoneId.systemDefault(),
 ) : UsageSink {
-    private data class Cell(val hour: Long, val key: UsageKey)
+    private data class Cell(val hour: Long, val key: UsageKey, val offsetMs: Long = 0) {
+        val startMs: Long get() = hour * HOUR_MS + offsetMs
+    }
 
     private val lock = Any()
     private val writeLock = Any()
@@ -102,7 +108,11 @@ class UsageLedger(
     override fun record(source: UsageSource, usage: Usage?, httpAttempts: Int) {
         // 本地组包就失败、从未发请求时,运行记录仍算逻辑调用,但用量账本没有可计的次数或 token。
         if (httpAttempts <= 0 && usage == null) return
-        val cell = Cell(Math.floorDiv(now(), HOUR_MS), UsageKey(source.providerId, source.model, source.purpose))
+        val at = now()
+        val hour = Math.floorDiv(at, HOUR_MS)
+        val midnight = Instant.ofEpochMilli(at).atZone(zone).toLocalDate().atStartOfDay(zone).toInstant().toEpochMilli()
+        val offset = (midnight - hour * HOUR_MS).coerceAtLeast(0)
+        val cell = Cell(hour, UsageKey(source.providerId, source.model, source.purpose), offset)
         val counts = UsageCounts.of(usage, httpAttempts)
         val queue = synchronized(lock) {
             cells[cell] = (cells[cell] ?: UsageCounts()) + counts
@@ -115,7 +125,21 @@ class UsageLedger(
     }
 
     fun snapshot(): UsageSnapshot = synchronized(lock) {
-        UsageSnapshot(cells.map { (c, n) -> UsageRow(c.hour, c.key, n) }, HashMap(names))
+        val hours = cells.entries.groupingBy { it.key.copy(offsetMs = 0) }
+            .fold(UsageCounts()) { total, entry -> total + entry.value }
+        UsageSnapshot(hours.map { (c, n) -> UsageRow(c.hour, c.key, n) }, HashMap(names))
+    }
+
+    /** 这家服务商在当前本地日历日的已报告输入加输出。 */
+    fun providerTokensToday(providerId: String): Long {
+        val today = Instant.ofEpochMilli(now()).atZone(zone).toLocalDate()
+        val start = today.atStartOfDay(zone).toInstant().toEpochMilli()
+        val end = today.plusDays(1).atStartOfDay(zone).toInstant().toEpochMilli()
+        return synchronized(lock) {
+            cells.entries.sumOf { (cell, counts) ->
+                if (cell.key.providerId == providerId && cell.startMs in start until end) counts.input + counts.output else 0L
+            }
+        }
     }
 
     /** 有没写出的改动就当场写出(后台线程定时调;测试和退出前也可直接调)。写失败时留着改动,下次再写。 */
@@ -159,6 +183,7 @@ class UsageLedger(
                         add(JsonPrimitive(c.hour)); add(JsonPrimitive(index.getValue(c.key)))
                         add(JsonPrimitive(n.input)); add(JsonPrimitive(n.output)); add(JsonPrimitive(n.cached))
                         add(JsonPrimitive(n.calls)); add(JsonPrimitive(n.callsWithoutUsage))
+                        if (c.offsetMs != 0L) add(JsonPrimitive(c.offsetMs))
                     }
                 }
             }
@@ -182,7 +207,9 @@ class UsageLedger(
                 val r = (e as JsonArray).map { it.jsonPrimitive }
                 val hour = r[0].long
                 if (hour < cutoff) return@forEach
-                val cell = Cell(hour, keys[r[1].int])
+                // Older rows have no midnight split; keep their original hour-start timestamp.
+                val offset = r.getOrNull(7)?.longOrNull?.takeIf { it in 0 until HOUR_MS } ?: 0L
+                val cell = Cell(hour, keys[r[1].int], offset)
                 val n = UsageCounts(r[2].long, r[3].long, r[4].long, r[5].long, r[6].long)
                 cells[cell] = (cells[cell] ?: UsageCounts()) + n
             }

@@ -1,0 +1,24 @@
+<resources>
+    <string name="file_library_title">Files</string>
+    <string name="file_library_search">Search file names</string>
+    <string name="file_library_all">All conversations</string>
+    <string name="file_library_current">Current conversation</string>
+    <string name="file_library_sources">All sources</string>
+    <string name="file_library_input">Attachments</string>
+    <string name="file_library_output">Created files</string>
+    <string name="file_library_loading">Loading files…</string>
+    <string name="file_library_empty">No files found</string>
+    <string name="file_library_missing">Unavailable</string>
+    <string name="file_library_available">Available</string>
+    <string name="file_library_open">Open</string>
+    <string name="file_library_share">Share</string>
+    <string name="file_library_add">Add to draft</string>
+    <string name="file_library_choose">Choose a conversation</string>
+    <string name="file_library_new">New conversation</string>
+    <string name="file_library_error">Could not access this file</string>
+    <string name="file_library_retry">Retry</string>
+    <string name="file_library_partial">Some conversations could not be read.</string>
+    <string name="file_library_unknown_time">Time unknown</string>
+    <string name="file_library_draft_saved">Added to the selected conversation’s draft. Switch to that conversation when it is available.</string>
+    <string name="file_library_load_failed">Could not load files.</string>
+</resources>

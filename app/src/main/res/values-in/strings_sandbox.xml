@@ -16,8 +16,8 @@
     <string name="sandbox_incomplete">Berkas lingkungan tidak lengkap; Anda bisa meresetnya di Pengaturan → Lanjutan</string>
     <string name="sandbox_not_finished">Penyiapan belum selesai; Anda bisa mencoba lagi</string>
     <string name="sandbox_network">Izinkan skrip online</string>
-    <string name="sandbox_network_sub">Nonaktif secara default</string>
-    <string name="sandbox_network_explain">Secara default Mika mengolah berkas dan menjalankan skrip secara offline. Dengan ini aktif, skrip bisa memakai jaringan (misalnya untuk mencari makalah atau peta) dan juga bisa mengirim keluar berkas dari obrolan.</string>
+    <string name="sandbox_network_sub">Aktif secara default</string>
+    <string name="sandbox_network_explain">Secara default Mika mengolah berkas dan menjalankan skrip secara online. Dengan ini aktif, skrip bisa memakai jaringan (misalnya untuk mencari makalah atau peta) dan juga bisa mengirim keluar berkas dari obrolan.</string>
     <string name="sandbox_isolation_unavailable">Perangkat ini tidak bisa menjaga skrip tetap offline: Mika hanya bisa mengolah berkas dan menjalankan skrip jika “Izinkan skrip online” aktif</string>
     <string name="sandbox_reset_title">Reset lingkungan?</string>
     <string name="sandbox_reset_body">Menghapus lingkungan yang dipakai Mika untuk berkas dan skrip, beserta berkas yang dibuat di setiap obrolan (termasuk yang Anda lampirkan), lalu menyiapkannya kembali secara otomatis. Obrolan dan pengaturan tidak terpengaruh.</string>

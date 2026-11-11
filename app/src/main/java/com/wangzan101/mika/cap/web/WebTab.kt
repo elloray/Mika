@@ -6,6 +6,7 @@ import android.graphics.Bitmap
 import android.net.http.SslError
 import android.os.Message
 import android.util.Log
+import android.view.View
 import android.view.ViewGroup
 import android.webkit.CookieManager
 import android.net.Uri
@@ -44,7 +45,8 @@ import kotlinx.coroutines.withTimeoutOrNull
  * 一个网页标签:一个 WebView 加它的加载状态。默认打开桌面版网页,按站点可换回手机版(见 [WebDevtools])。
  * 必须在主线程创建;[assetLoaders] 只给本地夹具这类 App 自带的网页用(每个域名一个)。
  * 系统支持多配置时用名为 mika 的独立网页配置(Cookie、存储与系统里别的 WebView 分开)。
- * 页面的权限申请(定位、相机、麦克风、MIDI、受保护媒体)一律静默拒绝;跳 App 的链接不跳;下载暂不接收。
+ * 页面的权限申请(定位、相机、麦克风、MIDI、受保护媒体)默认静默拒绝;用户自己看的标签由界面问用户。
+ * 跳 App 的链接不跳;下载暂不接收。
  * 页面弹框(alert/confirm/prompt、离开页面确认)不弹系统对话框,记进 [dialogs] 等 Agent(或用户自己用的浏览器页)回话。
  */
 @SuppressLint("SetJavaScriptEnabled")
@@ -75,6 +77,18 @@ class WebTab(
         fun onDialog(tab: WebTab) {}
         /** 收到了当前页面的网站图标。 */
         fun onIcon(tab: WebTab, icon: Bitmap) {}
+        /** 用户自己看的标签要选文件:由界面弹系统选择器,[callback] 收到选好的文件(取消为 null)。返回 true 表示接下。 */
+        fun onFileChooser(tab: WebTab, callback: ValueCallback<Array<Uri>>, params: WebChromeClient.FileChooserParams): Boolean = false
+        /** 用户自己看的标签要摄像头、麦克风等:由界面问用户,[request] 由界面同意或拒绝。返回 true 表示接下。 */
+        fun onPermissionRequest(tab: WebTab, request: PermissionRequest): Boolean = false
+        fun onPermissionRequestCanceled(tab: WebTab, request: PermissionRequest) {}
+        /** 用户自己看的标签要定位:由界面问用户,[callback] 由界面回话。返回 true 表示接下。 */
+        fun onGeolocationRequest(tab: WebTab, origin: String?, callback: GeolocationPermissions.Callback): Boolean = false
+        fun onGeolocationPermissionsHidePrompt(tab: WebTab) {}
+        /** 网页要全屏播放视频:由界面把 [view] 盖到整屏上,并把回调留着,退出时交给调用方。返回 true 表示接下。 */
+        fun onFullscreen(tab: WebTab, view: View, callback: WebChromeClient.CustomViewCallback): Boolean = false
+        /** 网页要退出全屏。 */
+        fun onExitFullscreen(tab: WebTab) {}
     }
 
     /**
@@ -312,26 +326,48 @@ class WebTab(
             override fun onJsBeforeUnload(v: WebView, url: String?, message: String?, result: JsResult): Boolean =
                 held(PageDialog.BEFORE_UNLOAD, message, null, result)
 
-            // 用户看不见这个标签,弹框授权等于替用户点同意:一律拒绝
+            // 用户可能看不见这个标签,不替用户点同意;用户自己看的标签由界面问
             override fun onPermissionRequest(request: PermissionRequest) {
+                if (listener?.onPermissionRequest(this@WebTab, request) == true) return
                 request.deny()
             }
 
+            override fun onPermissionRequestCanceled(request: PermissionRequest) {
+                listener?.onPermissionRequestCanceled(this@WebTab, request)
+            }
+
             override fun onGeolocationPermissionsShowPrompt(origin: String?, callback: GeolocationPermissions.Callback?) {
+                if (callback != null && listener?.onGeolocationRequest(this@WebTab, origin, callback) == true) return
                 callback?.invoke(origin, false, false)
+            }
+
+            override fun onGeolocationPermissionsHidePrompt() {
+                listener?.onGeolocationPermissionsHidePrompt(this@WebTab)
+            }
+
+            // 文件选择框:agent 先用 web_upload 事先放好的工作区文件(取走即清);用户自己看的标签交界面弹系统选择器
+            // 全屏视频:交给看得见的标签那一侧盖到整屏;没人接就立刻退出
+            override fun onShowCustomView(view: View, callback: CustomViewCallback) {
+                if (listener?.onFullscreen(this@WebTab, view, callback) == true) return
+                callback.onCustomViewHidden()
+            }
+
+            override fun onHideCustomView() {
+                listener?.onExitFullscreen(this@WebTab)
             }
 
             // 文件选择框:只交 web_upload 事先放好的工作区文件,取走即清;没有就取消,不弹系统选择器
             override fun onShowFileChooser(v: WebView, callback: ValueCallback<Array<Uri>>, params: FileChooserParams): Boolean {
                 val files = pendingUpload
                 pendingUpload = null
-                if (files.isNullOrEmpty()) {
-                    choosersRefused++
-                    callback.onReceiveValue(null)
+                if (!files.isNullOrEmpty()) {
+                    val picked = if (params.mode == FileChooserParams.MODE_OPEN_MULTIPLE) files else files.take(1)
+                    callback.onReceiveValue(picked.toTypedArray())
                     return true
                 }
-                val picked = if (params.mode == FileChooserParams.MODE_OPEN_MULTIPLE) files else files.take(1)
-                callback.onReceiveValue(picked.toTypedArray())
+                if (listener?.onFileChooser(this@WebTab, callback, params) == true) return true
+                choosersRefused++
+                callback.onReceiveValue(null)
                 return true
             }
         }

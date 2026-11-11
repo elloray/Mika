@@ -1,5 +1,5 @@
 {
- "version": "3.22.7-744047570fd8",
+ "version": "3.22.7-e1ec81b7b2de",
  "alpine": "3.22.7",
  "packages": [
   {
@@ -111,6 +111,42 @@
    "commit": "ce7bff87478cd936f5b7031ce822b02d4fdd313a"
   },
   {
+   "name": "cairo",
+   "version": "1.18.4-r0",
+   "license": "LGPL-2.1-or-later OR MPL-1.1",
+   "origin": "cairo",
+   "url": "https://cairographics.org/",
+   "repo": "main",
+   "commit": "7fe77742880d49da1db854abd16e78073d538983"
+  },
+  {
+   "name": "curl",
+   "version": "8.14.1-r4",
+   "license": "curl",
+   "origin": "curl",
+   "url": "https://curl.se/",
+   "repo": "main",
+   "commit": "d1a2a43ff0517fffb947e767cdaeee61e7376cf2"
+  },
+  {
+   "name": "font-wqy-zenhei",
+   "version": "0.9.45-r4",
+   "license": "GPL-2.0",
+   "origin": "font-wqy-zenhei",
+   "url": "http://wenq.org/wqy2/index.cgi?ZenHei",
+   "repo": "community",
+   "commit": "59420f440b2e664f7be1a6e135a3175aab56cd51"
+  },
+  {
+   "name": "fontconfig",
+   "version": "2.15.0-r3",
+   "license": "MIT",
+   "origin": "fontconfig",
+   "url": "https://www.freedesktop.org/wiki/Software/fontconfig",
+   "repo": "main",
+   "commit": "51e91d4ddc3af0a24206dad5e43d71a6863f90ba"
+  },
+  {
    "name": "freetype",
    "version": "2.13.3-r0",
    "license": "FTL OR GPL-2.0-or-later",
@@ -129,6 +165,24 @@
    "commit": "cf76e1b436494c60e0c188400007dbf78bbff5f0"
   },
   {
+   "name": "git",
+   "version": "2.49.1-r0",
+   "license": "GPL-2.0-only",
+   "origin": "git",
+   "url": "https://www.git-scm.com/",
+   "repo": "main",
+   "commit": "d896b70b77339c50bea678a19895df6331872d82"
+  },
+  {
+   "name": "git-init-template",
+   "version": "2.49.1-r0",
+   "license": "GPL-2.0-only",
+   "origin": "git",
+   "url": "https://www.git-scm.com/",
+   "repo": "main",
+   "commit": "d896b70b77339c50bea678a19895df6331872d82"
+  },
+  {
    "name": "icu-data-en",
    "version": "76.1-r1",
    "license": "ICU",
@@ -145,6 +199,15 @@
    "url": "https://icu.unicode.org/",
    "repo": "main",
    "commit": "e62b56b09ba0bed460d61072fffd977992d936bc"
+  },
+  {
+   "name": "jq",
+   "version": "1.8.2-r0",
+   "license": "MIT",
+   "origin": "jq",
+   "url": "https://jqlang.github.io/jq/",
+   "repo": "main",
+   "commit": "cda909a29acb0a49ec6666ddb546b3e04b89effa"
   },
   {
    "name": "lcms2",
@@ -192,13 +255,22 @@
    "commit": "b6d0d5c5639c0034e9073c39e9ff139e28e71818"
   },
   {
+   "name": "libcurl",
+   "version": "8.14.1-r4",
+   "license": "curl",
+   "origin": "curl",
+   "url": "https://curl.se/",
+   "repo": "main",
+   "commit": "d1a2a43ff0517fffb947e767cdaeee61e7376cf2"
+  },
+  {
    "name": "libexpat",
-   "version": "2.9.0-r0",
+   "version": "2.10.0-r0",
    "license": "MIT",
    "origin": "expat",
    "url": "https://libexpat.github.io/",
    "repo": "main",
-   "commit": "f71ec7147f3df6e984064717d4200875fc8834c4"
+   "commit": "e7473064be733caf6876525ecc41181e5137f399"
   },
   {
    "name": "libffi",
@@ -210,6 +282,15 @@
    "commit": "be5e49159a2ccca93a3290af3d8ab25443523363"
   },
   {
+   "name": "libfontenc",
+   "version": "1.1.8-r0",
+   "license": "MIT",
+   "origin": "libfontenc",
+   "url": "https://xorg.freedesktop.org/",
+   "repo": "main",
+   "commit": "e96b6cee19bcd4ef22fc6fd58e5b84386639ca0b"
+  },
+  {
    "name": "libgcc",
    "version": "14.2.0-r6",
    "license": "GPL-2.0-or-later AND LGPL-2.1-or-later",
@@ -219,6 +300,15 @@
    "commit": "fbf60319be3bbaf6dd32ef55cc6fb7189e05c266"
   },
   {
+   "name": "libidn2",
+   "version": "2.3.7-r0",
+   "license": "GPL-2.0-or-later OR LGPL-3.0-or-later",
+   "origin": "libidn2",
+   "url": "https://www.gnu.org/software/libidn#libidn2",
+   "repo": "main",
+   "commit": "1cdcdd0eccbee1f60078417a7aaf83f92f6e6754"
+  },
+  {
    "name": "libimagequant",
    "version": "4.2.2-r0",
    "license": "GPL-3.0-or-later",
@@ -226,6 +316,15 @@
    "url": "https://pngquant.org/lib/",
    "repo": "community",
    "commit": "064cfcfe13de2d00d9425e472a8ac9a78aed9766"
+  },
+  {
+   "name": "libintl",
+   "version": "0.24.1-r0",
+   "license": "LGPL-2.1-or-later",
+   "origin": "gettext",
+   "url": "https://www.gnu.org/software/gettext/gettext.html",
+   "repo": "main",
+   "commit": "215a26431d1b09c56cb2a9ffe10175feb9518fd8"
   },
   {
    "name": "libjpeg-turbo",
@@ -273,6 +372,15 @@
    "commit": "e95748873fa2f7e0e54cf27557fe0deff27b6c80"
   },
   {
+   "name": "libpsl",
+   "version": "0.21.5-r3",
+   "license": "MIT",
+   "origin": "libpsl",
+   "url": "https://rockdaboot.github.io/libpsl",
+   "repo": "main",
+   "commit": "4cf07ce428e77d8bca8e45258ba1937db8b18661"
+  },
+  {
    "name": "libsharpyuv",
    "version": "1.5.0-r0",
    "license": "BSD-3-Clause",
@@ -298,6 +406,15 @@
    "url": "https://gcc.gnu.org",
    "repo": "main",
    "commit": "fbf60319be3bbaf6dd32ef55cc6fb7189e05c266"
+  },
+  {
+   "name": "libunistring",
+   "version": "1.3-r0",
+   "license": "GPL-2.0-or-later OR LGPL-3.0-or-later",
+   "origin": "libunistring",
+   "url": "https://www.gnu.org/software/libunistring/",
+   "repo": "main",
+   "commit": "22200a467cea998010743cc288889dbde0496d4a"
   },
   {
    "name": "libwebp",
@@ -327,6 +444,15 @@
    "commit": "5494fdecea7831c01f277cf8ca80719d02f47771"
   },
   {
+   "name": "libx11",
+   "version": "1.8.11-r0",
+   "license": "X11",
+   "origin": "libx11",
+   "url": "https://xorg.freedesktop.org/",
+   "repo": "main",
+   "commit": "857ef3b9553dcb3927c61119359520902fd2f710"
+  },
+  {
    "name": "libxau",
    "version": "1.0.12-r0",
    "license": "MIT",
@@ -352,6 +478,33 @@
    "url": "https://xorg.freedesktop.org/",
    "repo": "main",
    "commit": "614e9166706cec427fc3d907b8d981390a42e088"
+  },
+  {
+   "name": "libxext",
+   "version": "1.3.6-r2",
+   "license": "MIT",
+   "origin": "libxext",
+   "url": "https://xorg.freedesktop.org/",
+   "repo": "main",
+   "commit": "614e9166706cec427fc3d907b8d981390a42e088"
+  },
+  {
+   "name": "libxrender",
+   "version": "0.9.12-r0",
+   "license": "MIT",
+   "origin": "libxrender",
+   "url": "https://xorg.freedesktop.org/",
+   "repo": "main",
+   "commit": "74030d4140b68e8d4d36a357751f156ab31840c2"
+  },
+  {
+   "name": "mkfontscale",
+   "version": "1.2.3-r1",
+   "license": "MIT",
+   "origin": "mkfontscale",
+   "url": "https://xorg.freedesktop.org/",
+   "repo": "main",
+   "commit": "d3b558e1b8572decb53ac74fe4f3a5393fdb2eb9"
   },
   {
    "name": "mpdecimal",
@@ -408,6 +561,33 @@
    "commit": "90f35cc6d20e6cb4410bf575de91bada52191009"
   },
   {
+   "name": "nspr",
+   "version": "4.36-r0",
+   "license": "MPL-2.0",
+   "origin": "nspr",
+   "url": "https://www.mozilla.org/projects/nspr/",
+   "repo": "main",
+   "commit": "391778dff632ee3dd46af147f3d6c3f60672375e"
+  },
+  {
+   "name": "nss",
+   "version": "3.114-r0",
+   "license": "MPL-2.0",
+   "origin": "nss",
+   "url": "https://developer.mozilla.org/docs/Mozilla/Projects/NSS",
+   "repo": "main",
+   "commit": "5b1a79380a4a5e98f259ad98bff2c7e8563b19c4"
+  },
+  {
+   "name": "oniguruma",
+   "version": "6.9.10-r0",
+   "license": "BSD-2-Clause",
+   "origin": "oniguruma",
+   "url": "https://github.com/kkos/oniguruma",
+   "repo": "main",
+   "commit": "31082e89063dfb6b02af0b38c46af803a118137a"
+  },
+  {
    "name": "openjpeg",
    "version": "2.5.4-r1",
    "license": "BSD-2-Clause",
@@ -415,6 +595,78 @@
    "url": "https://www.openjpeg.org/",
    "repo": "main",
    "commit": "0b2a1af84c14676f5b4551eabf8f843d267255e6"
+  },
+  {
+   "name": "pcre2",
+   "version": "10.46-r1",
+   "license": "BSD-3-Clause",
+   "origin": "pcre2",
+   "url": "https://pcre.org/",
+   "repo": "main",
+   "commit": "f5ca111ded52f3c1f4298b09e118af54fba80aa1"
+  },
+  {
+   "name": "pixman",
+   "version": "0.46.4-r0",
+   "license": "MIT",
+   "origin": "pixman",
+   "url": "https://gitlab.freedesktop.org/pixman",
+   "repo": "main",
+   "commit": "43db2f639237fba90ef09320e83f847561d9b0fc"
+  },
+  {
+   "name": "poppler",
+   "version": "25.04.0-r0",
+   "license": "GPL-2.0-or-later",
+   "origin": "poppler",
+   "url": "https://poppler.freedesktop.org/",
+   "repo": "main",
+   "commit": "7f2647c94270f874bfe0571d8ce967367c876c1f"
+  },
+  {
+   "name": "poppler-utils",
+   "version": "25.04.0-r0",
+   "license": "GPL-2.0-or-later",
+   "origin": "poppler",
+   "url": "https://poppler.freedesktop.org/",
+   "repo": "main",
+   "commit": "7f2647c94270f874bfe0571d8ce967367c876c1f"
+  },
+  {
+   "name": "py3-packaging",
+   "version": "25.0-r0",
+   "license": "Apache-2.0 AND BSD-2-Clause",
+   "origin": "py3-packaging",
+   "url": "https://pypi.org/project/packaging",
+   "repo": "main",
+   "commit": "f3e57d51d0c40088cf27a4fbb880277dd3eef3b9"
+  },
+  {
+   "name": "py3-packaging-pyc",
+   "version": "25.0-r0",
+   "license": "Apache-2.0 AND BSD-2-Clause",
+   "origin": "py3-packaging",
+   "url": "https://pypi.org/project/packaging",
+   "repo": "main",
+   "commit": "f3e57d51d0c40088cf27a4fbb880277dd3eef3b9"
+  },
+  {
+   "name": "py3-parsing",
+   "version": "3.2.5-r0",
+   "license": "MIT",
+   "origin": "py3-parsing",
+   "url": "https://github.com/pyparsing/pyparsing",
+   "repo": "main",
+   "commit": "dbfc8e6956a05763f768733b21ae898e43e36145"
+  },
+  {
+   "name": "py3-parsing-pyc",
+   "version": "3.2.5-r0",
+   "license": "MIT",
+   "origin": "py3-parsing",
+   "url": "https://github.com/pyparsing/pyparsing",
+   "repo": "main",
+   "commit": "dbfc8e6956a05763f768733b21ae898e43e36145"
   },
   {
    "name": "py3-pillow",
@@ -435,6 +687,24 @@
    "commit": "3bcc2aa819fe987f15a068a58c044159df647cb5"
   },
   {
+   "name": "py3-pip",
+   "version": "25.1.1-r0",
+   "license": "MIT",
+   "origin": "py3-pip",
+   "url": "https://pip.pypa.io",
+   "repo": "community",
+   "commit": "a95a1940cd7d65cb929a4e76ee58ac7a1a2a5e8d"
+  },
+  {
+   "name": "py3-pip-pyc",
+   "version": "25.1.1-r0",
+   "license": "MIT",
+   "origin": "py3-pip",
+   "url": "https://pip.pypa.io",
+   "repo": "community",
+   "commit": "a95a1940cd7d65cb929a4e76ee58ac7a1a2a5e8d"
+  },
+  {
    "name": "py3-pypdf",
    "version": "5.3.1-r0",
    "license": "BSD-3-Clause",
@@ -453,40 +723,76 @@
    "commit": "f75f036ac9e025237ff7c99a153e7bf2cf275575"
   },
   {
+   "name": "py3-setuptools",
+   "version": "80.9.0-r0",
+   "license": "MIT",
+   "origin": "py3-setuptools",
+   "url": "https://pypi.org/project/setuptools",
+   "repo": "main",
+   "commit": "4e9a4a7ecb4455f78f46259d109736c96f9a8d81"
+  },
+  {
+   "name": "py3-setuptools-pyc",
+   "version": "80.9.0-r0",
+   "license": "MIT",
+   "origin": "py3-setuptools",
+   "url": "https://pypi.org/project/setuptools",
+   "repo": "main",
+   "commit": "4e9a4a7ecb4455f78f46259d109736c96f9a8d81"
+  },
+  {
+   "name": "py3-wheel",
+   "version": "0.46.3-r0",
+   "license": "MIT",
+   "origin": "py3-wheel",
+   "url": "https://github.com/pypa/wheel",
+   "repo": "main",
+   "commit": "7c8ac8eaa70767981bc26f95b891ccfdf0042f0d"
+  },
+  {
+   "name": "py3-wheel-pyc",
+   "version": "0.46.3-r0",
+   "license": "MIT",
+   "origin": "py3-wheel",
+   "url": "https://github.com/pypa/wheel",
+   "repo": "main",
+   "commit": "7c8ac8eaa70767981bc26f95b891ccfdf0042f0d"
+  },
+  {
    "name": "pyc",
-   "version": "3.12.15-r0",
+   "version": "3.12.16-r0",
    "license": "PSF-2.0",
    "origin": "python3",
    "url": "https://www.python.org/",
    "repo": "main",
-   "commit": "18ae07d47fb83eecf3343ba1d41fddb4b70b116d"
+   "commit": "712199df117586aee4a5a8138360636deafcae27"
   },
   {
    "name": "python3",
-   "version": "3.12.15-r0",
+   "version": "3.12.16-r0",
    "license": "PSF-2.0",
    "origin": "python3",
    "url": "https://www.python.org/",
    "repo": "main",
-   "commit": "18ae07d47fb83eecf3343ba1d41fddb4b70b116d"
+   "commit": "712199df117586aee4a5a8138360636deafcae27"
   },
   {
    "name": "python3-pyc",
-   "version": "3.12.15-r0",
+   "version": "3.12.16-r0",
    "license": "PSF-2.0",
    "origin": "python3",
    "url": "https://www.python.org/",
    "repo": "main",
-   "commit": "18ae07d47fb83eecf3343ba1d41fddb4b70b116d"
+   "commit": "712199df117586aee4a5a8138360636deafcae27"
   },
   {
    "name": "python3-pycache-pyc0",
-   "version": "3.12.15-r0",
+   "version": "3.12.16-r0",
    "license": "PSF-2.0",
    "origin": "python3",
    "url": "https://www.python.org/",
    "repo": "main",
-   "commit": "18ae07d47fb83eecf3343ba1d41fddb4b70b116d"
+   "commit": "712199df117586aee4a5a8138360636deafcae27"
   },
   {
    "name": "readline",
@@ -553,12 +859,21 @@
   },
   {
    "name": "tzdata",
-   "version": "2026e-r0",
+   "version": "2026f-r0",
    "license": "Public-Domain",
    "origin": "tzdata",
    "url": "https://www.iana.org/time-zones",
    "repo": "main",
-   "commit": "b108a146c5784aebc105d9b871bbcb5b19126c89"
+   "commit": "ab5f4cab3da6422f90c404a16df1415092ef632e"
+  },
+  {
+   "name": "unzip",
+   "version": "6.0-r15",
+   "license": "custom",
+   "origin": "unzip",
+   "url": "http://www.info-zip.org/UnZip.html",
+   "repo": "main",
+   "commit": "7fb0462fc2d9b15d8a2b21d4e81e58ca5fffcd01"
   },
   {
    "name": "xz-libs",
@@ -568,6 +883,15 @@
    "url": "https://tukaani.org/xz/",
    "repo": "main",
    "commit": "4ad8da6dc8e2b7ed46653b9844835babc3a166ae"
+  },
+  {
+   "name": "zip",
+   "version": "3.0-r13",
+   "license": "Info-ZIP",
+   "origin": "zip",
+   "url": "http://www.info-zip.org/pub/infozip/Zip.html",
+   "repo": "main",
+   "commit": "14226268fa7d58f8faa74d8971ce1503959b8345"
   },
   {
    "name": "zlib",

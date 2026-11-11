@@ -79,14 +79,18 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.collapse
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.expand
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -176,6 +180,8 @@ interface CardActions {
     fun closeKeptPage() {}
     /** 卡片最底下的「关闭悬浮胶囊」:设置里的开关改成关闭,胶囊和卡片当场收掉(任务照常跑、照常发通知)。 */
     fun hideCapsule() {}
+    /** 空闲卡片上的「教 Mika」。 */
+    fun teach() {}
     /** 胶囊卡片里切换「引导 / 排队」。 */
     fun setFollowUpMode(mode: FollowUpMode) {}
     /** 标题栏的电源按钮:在卡片里换成「完全退出」的确认,不马上退。 */
@@ -441,7 +447,7 @@ private fun InputField(field: CardInput, ui: CardInputUi, actions: CardActions, 
             BasicTextField(
                 shownValue, { v -> fieldValue = v; if (v.text != ui.draft) actions.draft(v.text) },
                 Modifier.testTag("capsule-field").fillMaxWidth().focusRequester(focus).semantics { contentDescription = field.hint },
-                textStyle = Body.copy(color = c.ink), maxLines = 4, cursorBrush = SolidColor(c.accent),
+                textStyle = Body.copy(color = c.ink, textDirection = TextDirection.Content), maxLines = 4, cursorBrush = SolidColor(c.accent),
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Send),
                 keyboardActions = KeyboardActions(onSend = { if (ui.canSend) actions.send() }),
             )
@@ -742,7 +748,7 @@ internal fun Pinned(content: CardContent?, key: String, actions: CardActions) {
 
 /**
  * 对话卡片:那个对话的来回在中间滚;要你回答、同意时按钮固定在来回下面,再下面是输入框和「回到 Mika」。
- * 不带任务时是空闲卡片(标题栏能切新对话)。
+ * 不带任务时是空闲卡片(标题栏能切新对话)。空闲时「教 Mika」收在输入栏上方的箭头里,默认不展开。
  */
 @Composable
 private fun ChatCard(
@@ -763,8 +769,41 @@ private fun ChatCard(
         }
         if (r != null) Pinned(card.content, r.run.key, actions)
         QueuedLine(queuedCount, onQueued)
+        if (r == null) TeachShelf(actions::teach)
         input()
         FooterLinks(actions, card.target?.let { id -> CardCopy.BACK_TO_MIKA to { actions.openMika(id) } })
+    }
+}
+
+/**
+ * 空闲卡片输入栏正上方的「教 Mika」:默认只留一个箭头,点开才出现入口,再点收起。
+ * 收起时箭头朝上,展开时朝下。学习中的浮层不走这里。
+ */
+@Composable
+private fun TeachShelf(onTeach: () -> Unit) {
+    var open by remember { mutableStateOf(false) }
+    val name = tr(R.string.teach_menu)
+    val expandLabel = tr(R.string.teach_shelf_expand)
+    val collapseLabel = tr(R.string.teach_shelf_collapse)
+    val action = if (open) collapseLabel else expandLabel
+    Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
+        if (open) TextLink(name, onClick = onTeach)
+        Box(
+            Modifier.testTag("capsule-teach-shelf").widthIn(min = 48.dp).height(28.dp).clip(MikaShapes.Pill)
+                .clickable(role = Role.Button, onClickLabel = action) { open = !open }
+                .semantics {
+                    contentDescription = name
+                    stateDescription = action
+                    if (open) collapse(collapseLabel) { open = false; true } else expand(expandLabel) { open = true; true }
+                },
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(
+                MikaIcons.Chevron, null,
+                Modifier.size(16.dp).graphicsLayer { rotationZ = if (open) 90f else -90f },
+                tint = MikaTheme.colors.ink3,
+            )
+        }
     }
 }
 

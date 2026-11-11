@@ -16,8 +16,8 @@
     <string name="sandbox_incomplete">运行环境文件不完整,可在设置 → 高级里重置</string>
     <string name="sandbox_not_finished">安装没有完成,可以重试</string>
     <string name="sandbox_network">允许脚本联网</string>
-    <string name="sandbox_network_sub">默认关闭</string>
-    <string name="sandbox_network_explain">Mika 处理文件、运行脚本时默认不联网。打开后脚本可以访问网络(比如查论文、查地图),也可能把对话里的文件发出去。</string>
+    <string name="sandbox_network_sub">默认开启</string>
+    <string name="sandbox_network_explain">Mika 处理文件、运行脚本时默认联网。打开后脚本可以访问网络(比如查论文、查地图),也可能把对话里的文件发出去。</string>
     <string name="sandbox_isolation_unavailable">此设备无法限制脚本联网:只有打开「允许脚本联网」时,Mika 才能处理文件和运行脚本</string>
     <string name="sandbox_reset_title">重置运行环境?</string>
     <string name="sandbox_reset_body">会删除 Mika 处理文件、运行脚本用的运行环境,以及各对话里生成的文件(包括你附加的文件),然后自动重新准备。对话记录和设置不受影响。</string>

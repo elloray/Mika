@@ -3,10 +3,13 @@ package com.wangzan101.mika.ui
 import com.wangzan101.mika.R
 import com.wangzan101.mika.i18n.tr
 import androidx.compose.ui.res.stringResource
+import androidx.core.content.ContextCompat
 import android.app.Activity
+import android.Manifest
 import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.net.Uri
 import android.provider.Settings
 import android.widget.Toast
@@ -48,6 +51,7 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -80,6 +84,7 @@ import com.wangzan101.mika.ui.theme.MikaColors
 import com.wangzan101.mika.ui.theme.MikaIcons
 import com.wangzan101.mika.ui.theme.MikaTheme
 import com.wangzan101.mika.ui.theme.MikaType
+import kotlinx.coroutines.launch
 
 /** 对话页附件的说法。 */
 object AttachCopy {
@@ -148,6 +153,25 @@ internal fun AttachPanelHost(
         cameraUri = null
         if (ok) onPicked(listOf(uri)) else AttachFiles.discardCamera(context, Uri.parse(uri))
     }
+    // 声明了 CAMERA 权限后,系统相机要求应用先拿到授权;没授权时 ACTION_IMAGE_CAPTURE 会抛 SecurityException
+    fun startCamera() {
+        val uri = AttachFiles.newCameraUri(context)
+        cameraUri = uri.toString()
+        try {
+            camera.launch(uri)
+        } catch (e: ActivityNotFoundException) {
+            cameraUri = null
+            AttachFiles.discardCamera(context, uri)
+            Toast.makeText(context, AttachCopy.NO_CAMERA, Toast.LENGTH_SHORT).show()
+        } catch (e: SecurityException) {
+            cameraUri = null
+            AttachFiles.discardCamera(context, uri)
+            Toast.makeText(context, AttachCopy.NO_CAMERA, Toast.LENGTH_SHORT).show()
+        }
+    }
+    val cameraPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+        if (granted) startCamera()
+    }
     val album = rememberLauncherForActivityResult(ActivityResultContracts.PickMultipleVisualMedia(AttachTray.LIMIT)) { uris ->
         onPicked(uris.map { it.toString() })
     }
@@ -160,13 +184,8 @@ internal fun AttachPanelHost(
         recent = recent,
         selected = selected,
         onCamera = {
-            val uri = AttachFiles.newCameraUri(context)
-            cameraUri = uri.toString()
-            try { camera.launch(uri) } catch (e: ActivityNotFoundException) {
-                cameraUri = null
-                AttachFiles.discardCamera(context, uri)
-                Toast.makeText(context, AttachCopy.NO_CAMERA, Toast.LENGTH_SHORT).show()
-            }
+            if (ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) startCamera()
+            else cameraPermission.launch(Manifest.permission.CAMERA)
         },
         onAlbum = openAlbum,
         onFiles = { files.launch(arrayOf("*/*")) },
@@ -295,20 +314,38 @@ private fun RecentCell(photo: PendingAttachment, order: Int?, onClick: () -> Uni
 @Composable
 internal fun PendingTray(items: List<PendingAttachment>, onRemove: (String) -> Unit, modifier: Modifier = Modifier) {
     val c = MikaTheme.colors
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
     Row(
         modifier.fillMaxWidth().testTag("attach-tray").horizontalScroll(rememberScrollState()).padding(start = 4.dp, end = 10.dp, top = 8.dp, bottom = 8.dp),
         horizontalArrangement = Arrangement.spacedBy(10.dp),
     ) {
         for (a in items) {
+            val conversationId = a.workspaceConversationId
+            val path = a.workspacePath
+            val workspaceImage = if (conversationId != null && path != null) AttachImage.Sent(conversationId, path) else null
+            val openModifier = if (workspaceImage != null) {
+                Modifier.clickable(
+                    role = if (a.photo) Role.Image else Role.Button,
+                    onClickLabel = stringResource(if (a.photo) R.string.attach_view_large else R.string.chat_open),
+                ) {
+                    scope.launch {
+                        if (!AttachFiles.openSent(context, workspaceImage.conversationId, workspaceImage.path)) {
+                            Toast.makeText(context, AttachCopy.GONE, Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                }
+            } else Modifier
             Box {
                 if (a.photo) {
-                    val thumb = rememberAttachImage(AttachImage.Picked(a.uri), TRAY_PX)
-                    Box(Modifier.testTag("tray-photo").size(58.dp).clip(ChipShape).background(c.fill)) {
+                    val thumb = rememberAttachImage(workspaceImage ?: AttachImage.Picked(a.uri), TRAY_PX)
+                    Box(Modifier.testTag("tray-photo").size(58.dp).clip(ChipShape).background(c.fill).then(openModifier)) {
                         thumb?.let { Image(it, a.name, Modifier.matchParentSize(), contentScale = ContentScale.Crop) }
                     }
                 } else {
                     Row(
-                        Modifier.testTag("tray-file").height(58.dp).widthIn(max = 200.dp).cardSurface(c, ChipShape).padding(horizontal = 10.dp),
+                        Modifier.testTag("tray-file").height(58.dp).widthIn(max = 200.dp).cardSurface(c, ChipShape)
+                            .clip(ChipShape).then(openModifier).padding(horizontal = 10.dp),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                     ) {

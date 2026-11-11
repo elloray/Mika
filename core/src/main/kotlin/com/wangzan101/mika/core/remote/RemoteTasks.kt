@@ -35,6 +35,8 @@ sealed interface StartOutcome {
 /** 访问令牌只以 SHA-256 摘要进入任务层;接口、日志和导出都不保存或暴露原令牌。 */
 object RemoteOwnership {
     const val UNSCOPED = "unscoped"
+    /** USB 任务随本机连接方式保留，认证仍使用当前开机生成的令牌。 */
+    const val USB = "usb"
     fun of(token: String): String = MessageDigest.getInstance("SHA-256").digest(token.toByteArray(Charsets.UTF_8))
         .joinToString("") { "%02x".format(it.toInt() and 0xff) }
 }

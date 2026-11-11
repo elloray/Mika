@@ -21,6 +21,8 @@ class RemoteTaskRecordTest {
     @Test fun storedFormatIsIndependentOfDomainNames() {
         assertEquals("""{"type":"failed","reason":"x","kind":"step_limit"}""",
             RemoteTaskRecord.encode(TaskState.Failed("x", FailKind.StepLimit)))
+        assertEquals("""{"type":"failed","reason":"x","kind":"token_limit"}""",
+            RemoteTaskRecord.encode(TaskState.Failed("x", FailKind.TokenLimit)))
         assertEquals("""{"type":"cancelled"}""", RemoteTaskRecord.encode(TaskState.Cancelled))
     }
 

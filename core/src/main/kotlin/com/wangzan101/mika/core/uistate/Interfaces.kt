@@ -262,7 +262,9 @@ internal class Interfaces(
             DescribedMatch.None -> {
                 // 打字而这一屏的树缺了一块或不能用:树里对不上不等于屏上没有,改看图找这个框
                 val locator = session.locator
-                if (verb == Verb.TypeText && locator != null && session.treeBlind(snap)) bySight(session, locator, args, shown)
+                val named = DescribedTarget.match(snap.elements, ElementQuery(text, role)) as? DescribedMatch.Found
+                val unexposedField = named?.exact == true && !named.element.role.endsWith("Button", ignoreCase = true)
+                if (verb == Verb.TypeText && locator != null && (session.treeBlind(snap) || unexposedField)) bySight(session, locator, args, shown)
                 else Described.Failed(fail("element_not_found", Feedback.format("described.none",
                     "text" to shown, "role" to (role?.let { " with role $it" } ?: ""), "observe" to observe)))
             }

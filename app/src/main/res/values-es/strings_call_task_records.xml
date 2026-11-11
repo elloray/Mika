@@ -1,0 +1,9 @@
+<resources>
+    <string name="calls_record_brief">Instrucciones de la tarea</string>
+    <string name="calls_record_goal">Resultado deseado</string>
+    <string name="calls_record_questions">Preguntas que hacer</string>
+    <string name="calls_record_context">Contexto</string>
+    <string name="calls_record_constraints">Límites de compromisos y acciones</string>
+    <string name="calls_record_reuse">Crear otra tarea con estas instrucciones</string>
+    <string name="calls_record_result_unconfirmed">La llamada terminó. Revise la conversación para confirmar el resultado; marcarla como atendida no significa que se haya logrado el objetivo.</string>
+</resources>

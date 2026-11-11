@@ -1,18 +1,15 @@
 package com.wangzan101.mika.browser
 
 import com.wangzan101.mika.core.cap.web.WebUrlPolicy
-import java.net.URLEncoder
 
 /**
  * 地址栏和首页搜索框里输入的一句话 → 要打开的网址。
  * - 带 `://` 的原样打开(能不能打开由 [WebUrlPolicy.checkNavigable] 再判);
  * - localhost、IPv4、方括号里的 IPv6(可带端口和路径)补上 http://;
  * - 像域名的(由点隔开的英文字母、数字、连字符,最后一段是至少两个字母或 xn-- 开头,可带端口和路径)补上 https://;
- * - 其余(含空格、中文、只有一个词、邮箱这类)用必应搜索。
+ * - 其余(含空格、中文、只有一个词、邮箱这类)用 [engine] 搜索,默认必应。
  */
 object AddressInput {
-    const val SEARCH_PREFIX = "https://www.bing.com/search?q="
-
     private val SCHEME = Regex("^[A-Za-z][A-Za-z0-9+.-]*://")
     private val LABEL = Regex("^[A-Za-z0-9]([A-Za-z0-9-]{0,61}[A-Za-z0-9])?$")
     private val TLD = Regex("^([A-Za-z]{2,63}|xn--[A-Za-z0-9-]{1,59})$")
@@ -21,28 +18,25 @@ object AddressInput {
     private val PORT = Regex("^\\d{1,5}$")
 
     /** 输入为空(只有空白)时为 null。 */
-    fun resolve(input: String): String? {
+    fun resolve(input: String, engine: SearchEngineSpec = SearchEngine.Bing): String? {
         val s = input.trim()
         if (s.isEmpty()) return null
-        if (s.any { it.isWhitespace() }) return search(s)
+        if (s.any { it.isWhitespace() }) return search(s, engine)
         if (SCHEME.containsMatchIn(s)) return s
-        val (host, port) = authority(s) ?: return search(s)
-        if (port != null && (!PORT.matches(port) || port.toInt() !in 1..65535)) return search(s)
+        val (host, port) = authority(s) ?: return search(s, engine)
+        if (port != null && (!PORT.matches(port) || port.toInt() !in 1..65535)) return search(s, engine)
         return when {
             host.equals("localhost", ignoreCase = true) || IPV4.matches(host) || IPV6.matches(host) -> "http://$s"
             domain(host) -> "https://$s"
-            else -> search(s)
+            else -> search(s, engine)
         }
     }
 
-    fun search(query: String): String = SEARCH_PREFIX + URLEncoder.encode(query.trim(), "UTF-8")
+    fun search(query: String, engine: SearchEngineSpec = SearchEngine.Bing): String = engine.searchUrl(query)
 
-    /** 网址是必应的搜索结果页时为搜的词,否则为 null。 */
-    fun searchQuery(url: String): String? {
-        if (!url.startsWith(SEARCH_PREFIX)) return null
-        val q = url.removePrefix(SEARCH_PREFIX).substringBefore('&').substringBefore('#')
-        return runCatching { java.net.URLDecoder.decode(q, "UTF-8") }.getOrNull()?.trim()?.takeIf { it.isNotEmpty() }
-    }
+    /** 网址是 [engines] 里某个搜索引擎的搜索结果页时为搜的词,否则为 null。 */
+    fun searchQuery(url: String, engines: List<SearchEngineSpec> = SearchEngine.entries): String? =
+        SearchEngineSpec.match(url, engines)?.second
 
     /** 开头到第一个 / ? # 为止的主机名和端口;里面带 @ 等不像主机名的字符时为 null。 */
     private fun authority(s: String): Pair<String, String?>? {

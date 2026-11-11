@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="calls_helper_setup_title">Mika 音声ヘルパー</string>
+    <string name="calls_helper_setup_intro">通常の通話は Android が処理します。Mika は AI 通話で相手の声を聞き、応答するために音声ヘルパーを使います。ワイヤレス デバッグを使うと、パソコンなしでこのスマホからヘルパーを起動・復旧できます。ペア設定には Wi-Fi が、リアルタイムの AI 音声にはインターネット接続も必要です。</string>
+    <string name="calls_helper_unavailable">この端末では音声ヘルパーを設定できません。</string>
+    <string name="calls_helper_unavailable_reason">ヘルパーの起動に必要な設定が Android にありません。通常の通話は電話アプリで引き続き利用できます。</string>
+    <string name="calls_helper_ready">音声ヘルパーに接続済み</string>
+    <string name="calls_helper_usb_running">音声ヘルパーは動作中 · USB で起動</string>
+    <string name="calls_helper_usb_stopped">USB で起動した音声ヘルパーが停止しました。</string>
+    <string name="calls_helper_wireless_recovery">このスマホで一度ペア設定しておくと、ヘルパーが停止してもパソコンなしで再起動できます。設定時は Wi-Fi に接続してください。</string>
+    <string name="calls_helper_wireless_unavailable">このスマホではワイヤレス デバッグを利用できません。</string>
+    <string name="calls_helper_setup_wireless">ワイヤレス復旧を設定</string>
+    <string name="calls_helper_hide_usb">パソコンを使う方法を閉じる</string>
+    <string name="calls_helper_show_usb">パソコンを使う方法</string>
+    <string name="calls_helper_usb_fallback">ワイヤレス設定が使えず、パソコンがある場合は、スマホを USB ケーブルで接続し、このコマンドをパソコンで実行してください。アップデートや再起動の後は再実行が必要な場合があります。</string>
+    <string name="calls_helper_wireless_reconnect">ヘルパーが停止した場合は Wi-Fi に接続し、Android がワイヤレス デバッグをオフにしていればオンにしてください。必要と表示された場合だけペア設定をやり直してください。</string>
+    <string name="calls_helper_wireless_debugging_body">Wi-Fi に接続し、開発者向けオプションで「ワイヤレス デバッグ」をオンにしてください。Android が確認を求めたら「許可」をタップします。その後、Mika に戻ってペア設定コードの手順に進みます。</string>
+    <string name="calls_helper_usb_debugging_body">開発者向けオプションで「USB デバッグ」をオンにして確認してください。ワイヤレス設定ではケーブルを接続する必要はありません。他の設定は変更しないでください。</string>
+    <string name="calls_helper_usb_debugging_brief">ワイヤレス設定にケーブルは不要</string>
+    <string name="calls_helper_connect_body">ペア設定後、Mika はこのスマホの音声ヘルパーに接続します。</string>
+    <string name="calls_helper_wifi_needed">ワイヤレス デバッグで音声ヘルパーを起動・復旧するには、Wi-Fi に接続してください。</string>
+    <string name="calls_helper_repair_needed">ペア設定が利用できません。このスマホでペア設定をやり直してください。</string>
+    <string name="calls_helper_name">音声ヘルパー</string>
+    <string name="calls_helper_disconnected">接続すると AI 通話で聞き取りと応答ができます</string>
+    <string name="calls_helper_manage">管理</string>
+    <string name="calls_helper_set_up">設定</string>
+    <string name="calls_helper_pairing_done">音声ヘルパーに接続しました。Mika に戻れます。</string>
+    <string name="calls_helper_pairing_problem">Mika に戻って再接続方法を確認してください。</string>
+</resources>

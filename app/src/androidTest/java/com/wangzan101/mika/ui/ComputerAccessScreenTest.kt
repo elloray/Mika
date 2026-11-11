@@ -36,13 +36,14 @@ class ComputerAccessScreenTest {
     private val state = mutableStateOf(example)
     private val networkChanges = mutableListOf<Boolean>()
     private val usbChanges = mutableListOf<Boolean>()
+    private val portChanges = mutableListOf<Int>()
     private val copied = mutableListOf<String>()
 
     private fun page(initial: ComputerAccessUi = example) {
         state.value = initial
         compose.setContent {
             MikaTheme {
-                ComputerAccessPage(state.value, {}, usbChanges::add, networkChanges::add, copied::add, {},
+                ComputerAccessPage(state.value, {}, usbChanges::add, networkChanges::add, portChanges::add, copied::add, {},
                     deviceSettings = { Text("Device settings slot") }, relayGuide = { mcp -> Text(if (mcp) "Remote MCP guide" else "Remote CLI guide") })
             }
         }

@@ -39,9 +39,12 @@ internal object StopRules {
     fun toolCallAsText() = TaskState.Failed("模型的工具调用没有被服务端识别,原样作为文字返回了,没能执行。", FailKind.Model)
 
     /** 模型调用失败(重试过仍不行,或重试也没用)。 */
-    fun modelFailed(e: Throwable): TaskState.Failed =
-        if (e is ModelError) TaskState.Failed(userReason(e), FailKind.Model)
-        else TaskState.Failed("模型调用异常:${e.message ?: e::class.simpleName}", FailKind.Model)
+    fun modelFailed(e: Throwable): TaskState.Failed = when (e) {
+        is ModelError.TaskBudgetExceeded -> TaskState.Failed(userReason(e), FailKind.TokenLimit)
+        is ModelError.DailyBudgetExceeded -> TaskState.Failed(userReason(e), FailKind.TokenLimit)
+        is ModelError -> TaskState.Failed(userReason(e), FailKind.Model)
+        else -> TaskState.Failed("模型调用异常:${e.message ?: e::class.simpleName}", FailKind.Model)
+    }
 
     fun guard(v: GuardVerdict): TaskState.Failed {
         val treeBlind = v.evidence["treeBlind"] == JsonPrimitive(true)
@@ -61,6 +64,9 @@ internal object StopRules {
 internal fun userReason(e: ModelError): String = when (e) {
     is ModelError.Auth -> "模型服务拒绝了请求:API Key 无效或没有权限。请在设置里检查 API Key 是否填写正确、是否有权使用该模型。"
     is ModelError.QuotaExceeded -> "模型账户额度已用完,请检查服务商账户的余额或套餐。"
+    is ModelError.TaskBudgetExceeded -> "已达到本任务 ${e.limit} Token 的预算上限,任务没有完成。"
+    is ModelError.DailyBudgetExceeded ->
+        "服务商「${e.providerName}」已达到今天 ${e.limit} Token 的预算上限,任务没有完成。本地日期变更后会自动恢复。"
     is ModelError.ModelNotFound -> {
         // 404 不一定是模型名不对(地址不对,或网关、中转服务说的别的情况):有原话时照原话说,不断定模型不存在
         val check = if (e.model.isEmpty()) "请到设置 › 模型检查模型名和 Base URL 是否正确。"

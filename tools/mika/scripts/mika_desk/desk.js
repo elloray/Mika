@@ -15,6 +15,12 @@ const STRINGS = {
   title: ["Mika · 会话桌面", "Mika · Conversation desk"],
   heading: ["会话桌面", "Conversation desk"],
   displayLanguage: ["界面语言", "Language"],
+  desktopAlerts: ["电脑提醒", "Desktop notifications"],
+  alertScope: ["追问、手机接管、完成或失败时提醒。任务台在后台也有效，关闭所有任务台标签页或退出浏览器后暂停。", "Get alerts for questions, phone takeovers, completions and failures, even in a background tab. Closing all desk tabs or quitting the browser pauses alerts."],
+  alertBlocked: ["通知已被阻止。请在浏览器的网站设置中允许通知，再开启提醒。", "Notifications are blocked. Allow them in your browser’s site settings, then turn alerts on."],
+  alertUnavailable: ["此浏览器无法发送任务台提醒。", "Desk notifications are unavailable in this browser."],
+  alertFailed: ["浏览器未能显示通知。请检查系统是否允许浏览器发送通知。", "The browser could not show a notification. Check its notification settings on your computer."],
+  alertOpen: ["点击查看对应的对话和轮次。", "Click to open this turn in its conversation."],
   browserLanguage: ["跟随浏览器", "Browser default"],
   newChat: ["新对话", "New chat"],
   recentChats: ["最近会话", "Recent conversations"],
@@ -278,6 +284,11 @@ let revision = 0,
   retryDelay = 0,
   writeWarning = "",
   autoDisclosure = false;
+let pendingAlertTurn = null;
+const alerts = deskNotifications(ticket, openAlertTurn, () => {
+  invalidate();
+  schedule(true);
+});
 const attachmentDrafts = new Map();
 const drafts = new Map(),
   observed = new Map(),
@@ -315,6 +326,30 @@ function chooseGroup(key) {
   invalidate();
   render();
   recordView = recordBody = null;
+  schedule(true);
+}
+
+async function openAlertTurn(task) {
+  if (busy) {
+    pendingAlertTurn = task;
+    return;
+  }
+  const id = task.task_id;
+  preferredTask = id;
+  inspectId = null;
+  rememberGroup(threadOf(task), id);
+  setNav(false);
+  invalidate();
+  // A notification can outlive the recent list. Reuse the selected-task lookup.
+  if (!byId(overview?.tasks, id)) await work(() => refresh());
+  if (groupKey !== threadOf(task) || (preferredTask && preferredTask !== id)) return;
+  render();
+  const turn = $(processSlotId(id))?.closest(".turn");
+  if (turn) {
+    turn.tabIndex = -1;
+    turn.focus({ preventScroll: true });
+    turn.scrollIntoView({ block: "start" });
+  } else if (online) message("notice", t("taskGone"));
   schedule(true);
 }
 
@@ -784,6 +819,7 @@ function renderTurns() {
     ft = focus?.dataset.task,
     fa = focus?.dataset.action;
   const focusedInProcess = processContent.contains(focus);
+  const focusedTurn = focus?.matches(".turn") && focus.dataset.id;
   container.replaceChildren();
   if (g) {
     if (!g.turns.length) container.append(el("p", "guidance", t("historyLoading")));
@@ -808,6 +844,12 @@ function renderTurns() {
       ? focus
       : processContent.querySelector(focus.matches("summary") ? "summary" : '.event-choice[aria-pressed="true"]');
     replacement?.focus({ preventScroll: true });
+  } else if (focusedTurn) {
+    const turn = $(processSlotId(focusedTurn))?.closest(".turn");
+    if (turn) {
+      turn.tabIndex = -1;
+      turn.focus({ preventScroll: true });
+    }
   } else if (ft && fa)
     Array.from(container.querySelectorAll("button"))
       .find(b => b.dataset.task === ft && b.dataset.action === fa)
@@ -1278,6 +1320,7 @@ async function refresh({ device, watchId, at = revision } = {}) {
   else if (watchId) next = await call("watch", { task_id: watchId });
   else next = await call("overview");
   if (at !== revision) return false;
+  const recent = next.tasks.slice();
   const keep = inspectId || anchorId;
   // Saved turn identifiers are local to the history view; the task-control API accepts remote UUIDs.
   const savedId = keep && /^(run|turn|live)-/.test(keep);
@@ -1290,6 +1333,7 @@ async function refresh({ device, watchId, at = revision } = {}) {
       if (at !== revision) return false;
       if (![404, 410].includes(e.http_status)) throw e;
       if (keep === inspectId) inspectId = null;
+      if (keep === preferredTask) preferredTask = null;
       if (keep === anchorId) {
         anchorId = null;
         sessionStorage.removeItem("selectedTask");
@@ -1332,6 +1376,7 @@ async function refresh({ device, watchId, at = revision } = {}) {
   online = true;
   retryDelay = 0;
   updateDevice(next);
+  alerts.observe(recent);
   message("error", writeWarning);
   const selected = group();
   if (overview.history_enabled && selected?.conversation) {
@@ -1356,12 +1401,12 @@ function watchedTask() {
 
 function schedule(immediate = false) {
   clearTimeout(updateTimer);
-  if (busy || observing || document.hidden) return;
+  if (busy || observing || (document.hidden && !alerts.watching())) return;
   updateTimer = setTimeout(() => observe(immediate), immediate ? 0 : retryDelay || (watchedTask() ? 750 : recordView?.data?.recording ? 4000 : 8000));
 }
 
 async function observe(immediate) {
-  if (busy || observing || document.hidden) return;
+  if (busy || observing || (document.hidden && !alerts.watching())) return;
   observing = true;
   const at = revision;
   try {
@@ -1397,6 +1442,11 @@ async function work(fn, write = false) {
     busy = false;
     render();
     schedule(refreshConflict);
+    if (pendingAlertTurn) {
+      const task = pendingAlertTurn;
+      pendingAlertTurn = null;
+      openAlertTurn(task);
+    }
   }
 }
 
@@ -1553,6 +1603,7 @@ $("language").addEventListener("change", () => {
   if (value === "auto") localStorage.removeItem("mikaDeskLanguage");
   else localStorage.setItem("mikaDeskLanguage", value);
   applyLanguage();
+  alerts.sync();
   navSignature = transcriptSignature = processSignature = optionsSignature = "";
   if (online) updateDevice(overview);
   else
@@ -1696,6 +1747,7 @@ $("compose").addEventListener("submit", ev => {
   submit();
 });
 document.addEventListener("visibilitychange", () => {
+  alerts.sync();
   invalidate();
   schedule(true);
 });

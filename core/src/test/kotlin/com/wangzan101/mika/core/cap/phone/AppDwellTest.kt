@@ -20,6 +20,7 @@ import com.wangzan101.mika.core.uistate.ScreenSnapshot
 import com.wangzan101.mika.core.uistate.UiElement
 import kotlinx.coroutines.test.currentTime
 import kotlinx.coroutines.test.runTest
+import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.jsonPrimitive
 import org.junit.Assert.assertEquals
@@ -94,6 +95,12 @@ class AppDwellTest {
         val stopped = ex.tap(t)
         assertEquals("page_limit", stopped.error())
         assertTrue(stopped.content["message"].toString(), stopped.content["message"].toString().contains("ask_user"))
+        assertTrue(stopped.content["message"].toString().contains("Mika reached its per-task app screen budget"))
+        val budget = stopped.content["navigationBudget"] as JsonObject
+        assertEquals(JsonPrimitive("app_screens"), budget["scope"])
+        assertEquals(JsonPrimitive("com.slow"), budget["target"])
+        assertEquals(JsonPrimitive(3), budget["used"])
+        assertEquals(JsonPrimitive(3), budget["limit"])
         assertEquals(3, screen.page)
         // 打字照常
         val sid = t.execute(Part.ToolCall("o", "phone_observe", "{}")).content["snapshotId"]!!.jsonPrimitive.content

@@ -44,10 +44,15 @@ fun interface UsageSink {
  * 对调用方透明:名字、能力照旧,异常原样抛出,逐段文字照常回调;原模型支持逐段文字,套上的也支持。
  * 记账本身出错不影响调用。
  */
-fun ChatModel.metered(source: UsageSource, sink: UsageSink): ChatModel =
-    if (this is StreamingChatModel) MeteredStreamingModel(this, source, sink) else MeteredModel(this, source, sink)
+fun ChatModel.metered(source: UsageSource, sink: UsageSink, beforeCall: (UsageSource) -> Unit = {}): ChatModel =
+    if (this is StreamingChatModel) MeteredStreamingModel(this, source, sink, beforeCall) else MeteredModel(this, source, sink, beforeCall)
 
-private open class MeteredModel(private val inner: ChatModel, protected val source: UsageSource, protected val sink: UsageSink) : ChatModel {
+private open class MeteredModel(
+    private val inner: ChatModel,
+    protected val source: UsageSource,
+    protected val sink: UsageSink,
+    private val beforeCall: (UsageSource) -> Unit,
+) : ChatModel {
     override val capabilities get() = inner.capabilities
     override val name: String get() = inner.name
 
@@ -57,6 +62,9 @@ private open class MeteredModel(private val inner: ChatModel, protected val sour
     protected suspend fun counted(call: suspend () -> ModelReply): ModelReply {
         // 在一次运行里调用的,也记到这次运行名下(见 RunUsageTally)
         val tally = currentCoroutineContext()[RunUsageTally]
+        // 拒绝时不建请求计数、不调用适配器，也不记一笔不存在的逻辑调用。
+        tally?.checkBudget()
+        beforeCall(source)
         val attempts = ModelHttpAttempts()
         val reply = try {
             withContext(attempts) { call() }
@@ -74,8 +82,12 @@ private open class MeteredModel(private val inner: ChatModel, protected val sour
     }
 }
 
-private class MeteredStreamingModel(private val inner: StreamingChatModel, source: UsageSource, sink: UsageSink) :
-    MeteredModel(inner, source, sink), StreamingChatModel {
+private class MeteredStreamingModel(
+    private val inner: StreamingChatModel,
+    source: UsageSource,
+    sink: UsageSink,
+    beforeCall: (UsageSource) -> Unit,
+) : MeteredModel(inner, source, sink, beforeCall), StreamingChatModel {
     override suspend fun completeStreaming(
         system: String, messages: List<Message>, tools: List<ToolSpec>, onText: (String) -> Unit,
     ): ModelReply = counted { inner.completeStreaming(system, messages, tools, onText) }

@@ -1,0 +1,1 @@
+Hang up the current cellular call at the user's request. This ends the phone conversation; use phone_call_takeover instead when the user wants to speak personally. First read phone_call_state and pass its current call_id. If that call changed or ended, do not automatically hang up a replacement call.

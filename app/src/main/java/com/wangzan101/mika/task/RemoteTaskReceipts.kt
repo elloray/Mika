@@ -9,6 +9,7 @@ import com.wangzan101.mika.chat.SharedFile
 import com.wangzan101.mika.core.agent.FailKind
 import com.wangzan101.mika.core.agent.TaskState
 import com.wangzan101.mika.core.remote.RemoteSteer
+import com.wangzan101.mika.core.remote.RemoteOwnership
 import com.wangzan101.mika.core.remote.RemoteTask
 import com.wangzan101.mika.core.remote.RemoteTaskError
 import com.wangzan101.mika.core.remote.RemoteTaskPage
@@ -72,6 +73,11 @@ internal class RemoteTaskReceipts(
     private fun claimLegacy(owner: String?) {
         if (owner != null) writableDatabase.update("receipts", ContentValues().apply { put("owner", owner) },
             "owner IS NULL", null)
+    }
+
+    fun migrateUsbOwner(previousOwner: String) {
+        writableDatabase.update("receipts", ContentValues().apply { put("owner", RemoteOwnership.USB) },
+            "owner=?", arrayOf(previousOwner))
     }
 
     fun find(id: String, goal: String? = null, requestedChat: String? = null, fileRequest: String? = null,

@@ -6,15 +6,41 @@
     <string name="chat_greeting_evening">こんばんは</string>
     <string name="chat_greeting_night">夜更かしですね</string>
     <string name="chat_empty_prompt">Mika に何をお願いしますか？</string>
+    <string name="chat_example_github_star">https://github.com/wangzan101/mika を開いて、このプロジェクトにスターを付けて</string>
     <string name="chat_example_follow">X を開いて Wang Zan（@wangzan101）を検索し、アカウントをフォローして</string>
     <string name="chat_example_group_summary">WhatsApp を開いて今日の未読メッセージをまとめ、返信が必要なものを拾って</string>
-    <string name="chat_example_jobs">LinkedIn でリモートの AI プロダクトマネージャーの求人を5件探し、応募条件を比較して</string>
-    <string name="chat_example_multi_step">Amazon で100ドル未満の高評価のワイヤレスイヤホンを3つ探し、メリットとデメリットを比較して</string>
     <string name="chat_example_alarms">明日の朝 9:40、9:50、10:00 にアラームをセットして</string>
-    <string name="chat_example_ai_apps">スマホに入っている AI アプリを探し、それぞれに得意なことを聞いて、回答を比較して</string>
+    <string name="chat_example_replace_title">現在の下書きを置き換えますか？</string>
+    <string name="chat_example_replace_body">おすすめのタスクで、入力済みの内容が置き換えられます。</string>
+    <string name="chat_example_replace_action">下書きを置き換える</string>
+    <string name="recommendations_title">おすすめタスク</string>
+    <string name="recommendations_drag">ドラッグして順序を変更</string>
+    <string name="recommendations_drag_hint">ハンドルをドラッグして表示順を変更できます。</string>
+    <string name="recommendations_move_up">上に移動</string>
+    <string name="recommendations_move_down">下に移動</string>
+    <string name="recommendations_sub">ホームに表示するタスクとプロンプトを管理</string>
+    <string name="recommendations_add">おすすめタスクを追加</string>
+    <string name="recommendations_edit">おすすめタスクを編集</string>
+    <string name="recommendations_empty">おすすめタスクはまだありません</string>
+    <string name="recommendations_empty_sub">追加すると新しいチャットのホームに表示されます</string>
+    <string name="recommendations_title_label">タイトル</string>
+    <string name="recommendations_prompt_label">プロンプト</string>
+    <string name="recommendations_delete">削除</string>
+    <string name="recommendations_delete_title">このおすすめタスクを削除しますか？</string>
+    <string name="recommendations_delete_body">削除するとホームに表示されなくなります。</string>
+    <string name="recommendations_save_failed">保存できませんでした。もう一度お試しください。</string>
+    <string name="recommendations_title_required">タイトルを入力してください</string>
+    <string name="recommendations_prompt_required">プロンプトを入力してください</string>
+    <string name="recommendations_too_long">タイトルまたはプロンプトが長すぎます</string>
+    <string name="recommendations_too_many">おすすめタスクは %1$d 件まで保存できます</string>
+    <string name="recommendations_unreadable">保存したおすすめタスクを読み取れないため、まだ変更できません。</string>
+    <string name="recommendations_reset">消去して最初から始める</string>
+    <string name="recommendations_reset_body">読み取れないファイルは空のリストに置き換えられます。</string>
+    <string name="recommendations_footer">新しいチャットのホームでタスクをタップすると、プロンプトが入力欄に入ります。自動では送信されません。</string>
+    <string name="share_draft_replace_body">共有された内容で現在の下書きが置き換えられます。</string>
     <string name="chat_working_on">%1$s で作業中</string>
     <string name="chat_working">作業中</string>
-    <string name="share_draft_failed">共有された内容を新しい会話に追加できませんでした</string>
+    <string name="share_draft_failed">共有された内容を会話に追加できませんでした</string>
     <string name="chat_wait_previous_task">前のタスクが終わってから始まります</string>
     <string name="chat_wait_unlock">ロック解除を待っています</string>
     <string name="chat_waiting_for_you">あなたの対応を待っています</string>
@@ -42,6 +68,10 @@
     <string name="chat_continue">続ける</string>
     <string name="chat_not_done">未完了</string>
     <string name="chat_stopped">停止しました。</string>
+    <string name="chat_resume_checkpoint">中断箇所から続ける</string>
+    <string name="chat_restart_task">最初からやり直す</string>
+    <string name="chat_resume_request">中断箇所から続ける：%1$s</string>
+    <string name="chat_restart_request">最初からやり直す：%1$s</string>
     <string name="chat_view_source">ソースを見る</string>
     <string name="chat_open">開く</string>
     <string name="chat_attach_rejected">追加できませんでした: %1$s(ファイルは 1 つあたり 200 MB 未満にしてください)</string>
@@ -63,11 +93,41 @@
     <plurals name="drawer_delete_schedules">
         <item quantity="other">このチャットのスケジュールされたタスク %1$d 件は保持されます。</item>
     </plurals>
+    <string name="drawer_select">選択</string>
+    <string name="drawer_selected_count">%1$d 件選択中</string>
+    <string name="drawer_select_all">すべて選択</string>
+    <string name="drawer_select_none">選択を解除</string>
+    <string name="drawer_delete_many_title">選択したチャットを削除しますか？</string>
+    <plurals name="drawer_delete_many_body">
+        <item quantity="other">選択した %1$d 件のチャットと、その中のファイルが削除されます。</item>
+    </plurals>
+    <plurals name="drawer_delete_many_running">
+        <item quantity="other">実行中のタスク %1$d 件が停止します。</item>
+    </plurals>
+    <plurals name="drawer_delete_many_schedules">
+        <item quantity="other">その中のスケジュールされたタスク %1$d 件は保持されます。</item>
+    </plurals>
+    <plurals name="drawer_delete_progress">
+        <item quantity="other">%1$d 件のチャットを削除しています…</item>
+    </plurals>
+    <plurals name="drawer_delete_done">
+        <item quantity="other">%1$d 件のチャットを削除しました。</item>
+    </plurals>
+    <plurals name="drawer_delete_partial">
+        <item quantity="other">%1$d 件のチャットを削除しました。%2$d 件は失敗しました。</item>
+    </plurals>
     <string name="drawer_actions">チャットのオプション</string>
     <string name="drawer_rename">名前を変更</string>
     <string name="drawer_rename_title">チャットの名前を変更</string>
     <string name="drawer_pinned">ピン留め</string>
     <string name="drawer_pinned_mark">ピン留め</string>
+    <string name="drawer_search_hint">チャットを検索</string>
+    <string name="drawer_search_results">検索結果</string>
+    <string name="drawer_search_empty">「%1$s」に一致するチャットはありません</string>
+    <string name="drawer_search_empty_hint">タイトルとチャットの内容だけを検索します</string>
+    <string name="drawer_searching">検索中…</string>
+    <string name="drawer_search_clear">検索をクリア</string>
+    <string name="drawer_search_truncated">最初の %1$d 件だけを表示しています</string>
     <string name="settings_title">設定</string>
     <string name="chat_unconfirmed">確認できませんでした: %1$s</string>
     <string name="chat_unverified">完了しましたが、確認できませんでした</string>
@@ -92,6 +152,7 @@
     </plurals>
     <string name="attach_add">添付を追加</string>
     <string name="attach_close">添付パネルを閉じる</string>
+    <string name="attach_blocked_running">タスク実行中は添付を追加できません。先に待機モードに切り替えてください</string>
     <string name="attach_camera">カメラ</string>
     <string name="attach_album">写真</string>
     <string name="attach_files">ファイル</string>
@@ -142,6 +203,10 @@
     <string name="chat_branch_attachments_skipped">添付ファイルをすべてコピーできませんでした</string>
     <string name="chat_branch_retry">ここから聞き直す</string>
     <string name="chat_branch_attachments_readd">添付ファイルは追加し直してください</string>
+    <string name="chat_attach_unavailable">追加できませんでした: %1$s。ファイルが存在し、サイズ制限内であることを確認してください。</string>
+    <string name="chat_retry_missing">%1$s: ファイルが見つかりません</string>
+    <string name="chat_retry_limit">%1$s: コピーの上限を超えました</string>
+    <string name="chat_retry_failed">%1$s: コピーできませんでした</string>
     <string name="chat_select_hint">テキストを長押しして選択します</string>
     <string name="chat_quote_remove">引用を削除</string>
     <string name="chat_quoting_mika">Mika を引用: %1$s</string>

@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="calls_device_allow_notifications">اجازه دادن به اعلان‌ها</string>
+    <string name="calls_device_allow_phone">اجازه دادن به مجوزهای تلفن</string>
+    <string name="calls_device_helper">دستیار داخلی</string>
+    <string name="calls_device_helper_connected">متصل</string>
+    <string name="calls_device_notifications">اعلان‌های تماس</string>
+    <string name="calls_device_notifications_app_off">اعلان‌های برنامه خاموش است</string>
+    <string name="calls_device_notifications_calls_off">کانال تماس‌های هوش مصنوعی خاموش است</string>
+    <string name="calls_device_notifications_permission_missing">مجوز اعلان اعطا نشده است</string>
+    <string name="calls_device_notifications_standby_off">کانال حالت آماده‌به‌کار خاموش است</string>
+    <string name="calls_device_notifications_unknown">وضعیت اعلان قابل بررسی نبود</string>
+    <string name="calls_device_open_app_settings">باز کردن تنظیمات مجوز برنامه</string>
+    <string name="calls_device_pair_helper">اتصال دستیار</string>
+    <string name="calls_device_permission_granted">مجاز</string>
+    <string name="calls_device_phone_permissions">مجوزهای تلفن</string>
+    <string name="calls_device_phone_permissions_note">اجازه خواندن وضعیت تماس و برقراری تماس</string>
+    <string name="calls_device_ready_to_test">آماده برای آزمایش دستی صدا</string>
+    <string name="calls_device_system_settings_failed">تنظیمات سیستم باز نشد. صفحه اطلاعات برنامه را در تنظیمات اندروید باز کنید.</string>
+    <string name="calls_background_auto_off">پاسخ خودکار خاموش است</string>
+    <string name="calls_background_battery">باتری و فعالیت پس‌زمینه</string>
+    <string name="calls_background_battery_managed">اندروید بهینه‌سازی باتری را اعمال می‌کند</string>
+    <string name="calls_background_battery_restricted">اندروید گزارش می‌دهد فعالیت پس‌زمینه محدود شده است</string>
+    <string name="calls_background_battery_unknown">سیاست باتری قابل بررسی نبود</string>
+    <string name="calls_background_battery_unrestricted">اندروید معافیت از بهینه‌سازی باتری را گزارش می‌دهد</string>
+    <string name="calls_background_lock_screen_note">برای تماس‌های ورودی، اعلان‌های تماس را روی صفحه قفل مجاز کنید. اگر حالت آماده‌به‌کار مدام متوقف می‌شود، تنظیمات باتری و پس‌زمینه را بررسی کنید. اجرا بودن سرویس تأیید نمی‌کند که هنگام قفل بودن می‌توان به تماس‌ها پاسخ داد.</string>
+    <string name="calls_background_not_running">متوقف · پاسخ خودکار فقط وقتی کار می‌کند که برنامه قابل مشاهده و قفل‌نشده باشد</string>
+    <string name="calls_background_open_battery">باز کردن تنظیمات باتری</string>
+    <string name="calls_background_running">در حال اجرا</string>
+    <string name="calls_background_service">آماده‌به‌کار تماس ورودی</string>
+    <string name="calls_background_settings">پس‌زمینه و صفحه قفل</string>
+    <string name="calls_background_start">شروع آماده‌به‌کار پس‌زمینه</string>
+    <string name="calls_background_starting">در حال شروع…</string>
+    <string name="calls_device_locked_dial_pending">شماره‌گیری پس از قفل</string>
+    <string name="calls_device_locked_dial_remaining">گوشی را ظرف %1$d ثانیه قفل کنید</string>
+    <string name="calls_device_locked_dial_preparing">در حال آماده‌سازی تماس صفحه قفل</string>
+    <string name="calls_device_locked_dial_cancel">لغو</string>
+</resources>

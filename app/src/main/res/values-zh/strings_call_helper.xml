@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="calls_helper_setup_title">Mika 音频助手</string>
+    <string name="calls_helper_setup_intro">普通接打电话由系统处理。Mika 的 AI 要在通话中听见对方并说话，需要音频助手。「无线调试」可以在手机上启动或恢复音频助手，不必连电脑。配对时需要连 Wi-Fi；AI 实时语音也需要联网。</string>
+    <string name="calls_helper_unavailable">这台设备无法设置音频助手</string>
+    <string name="calls_helper_unavailable_reason">系统没有提供启动音频助手所需的设置。普通电话仍可通过系统电话使用。</string>
+    <string name="calls_helper_ready">音频助手已连接</string>
+    <string name="calls_helper_usb_running">音频助手运行中 · 由 USB 启动</string>
+    <string name="calls_helper_usb_stopped">之前通过 USB 启动的音频助手已停止</string>
+    <string name="calls_helper_wireless_recovery">连上 Wi-Fi，在这台手机配对一次。以后助手停止时，可从手机恢复，不必找电脑。</string>
+    <string name="calls_helper_wireless_unavailable">这台手机没有可用的无线调试。</string>
+    <string name="calls_helper_setup_wireless">设置无线恢复</string>
+    <string name="calls_helper_hide_usb">收起电脑备用方式</string>
+    <string name="calls_helper_show_usb">电脑备用方式</string>
+    <string name="calls_helper_usb_fallback">如果无线设置不可用且手边有电脑，可以用数据线连接手机，在电脑上运行这条命令。更新或重启后可能需要再运行一次。</string>
+    <string name="calls_helper_wireless_reconnect">如果助手停止，连上 Wi-Fi；若系统已关闭「无线调试」，再打开即可。提示需要重新配对时，再配对一次。</string>
+    <string name="calls_helper_wireless_debugging_body">连上 Wi-Fi，在「开发者选项」里打开「无线调试」。系统询问时点「允许」。打开后，回到 Mika，继续配对码这一步。</string>
+    <string name="calls_helper_usb_debugging_body">在「开发者选项」里打开「USB 调试」，弹出提示时点「确定」。走无线设置不用插线；其他开关请保持原样。</string>
+    <string name="calls_helper_usb_debugging_brief">走无线设置不用插线</string>
+    <string name="calls_helper_connect_body">配对后，Mika 会连接这台手机上的音频助手。</string>
+    <string name="calls_helper_wifi_needed">连上 Wi-Fi，才能通过「无线调试」启动或恢复音频助手。</string>
+    <string name="calls_helper_repair_needed">配对信息不可用，请在这台手机上重新配对。</string>
+    <string name="calls_helper_name">音频助手</string>
+    <string name="calls_helper_disconnected">连接后，AI 才能在电话中听和说</string>
+    <string name="calls_helper_manage">管理</string>
+    <string name="calls_helper_set_up">设置</string>
+    <string name="calls_helper_pairing_done">音频助手已连接，可以回到 Mika。</string>
+    <string name="calls_helper_pairing_problem">回到 Mika 查看如何重新连接。</string>
+</resources>

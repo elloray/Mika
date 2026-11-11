@@ -33,7 +33,7 @@
     <string name="plans_repeat_interval">Interval</string>
     <string name="plans_repeat_weekly">Weekly</string>
     <string name="plans_interval_minutes">Repeat every (minutes)</string>
-    <string name="plans_clock">Local time: HH:mm</string>
+    <string name="plans_clock">Local times (comma-separated)</string>
     <string name="plans_zone">Time zone ID</string>
     <string name="plans_condition_optional">Condition (optional)</string>
     <string name="plans_notify_change">On change</string>
@@ -47,7 +47,7 @@
     <string name="plans_error_reminder_condition">A fixed reminder can’t have a condition</string>
     <string name="plans_error_time">Enter a valid date and time</string>
     <string name="plans_error_interval">Enter an interval from 1 to 525,600 minutes</string>
-    <string name="plans_error_clock">Enter a valid time in HH:mm format</string>
+    <string name="plans_error_clock">Enter valid HH:mm times, separated by commas</string>
     <string name="plans_error_zone">Enter a valid time zone ID</string>
     <string name="plans_error_weekdays">Select at least one day</string>
     <string name="plans_error_cooldown">Enter a cooldown from 1 to 525,600 minutes</string>

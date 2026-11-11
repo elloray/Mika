@@ -33,6 +33,12 @@
     <string name="mcp_advanced_hide">Ocultar configurações avançadas</string>
     <string name="mcp_advanced_sub">Chaves de acesso, tokens e ativação remota</string>
     <string name="mcp_port_detail">Porta %1$d. O acesso por USB é desativado após reiniciar o celular.</string>
+    <string name="mcp_port_title">Porta de escuta</string>
+    <string name="mcp_port_dialog_sub">Troque quando a porta padrão estiver sendo usada por outro serviço neste telefone. Aplica na hora; o computador reconecta pela nova porta.</string>
+    <string name="mcp_port_default">Padrão (%1$d)</string>
+    <string name="mcp_port_custom">Porta</string>
+    <string name="mcp_port_invalid">Insira um número inteiro de 1024 a 65535.</string>
+    <string name="mcp_port_apply">Aplicar</string>
     <string name="mcp_network_scope">Permitir acesso em Wi-Fi e redes privadas. Toda solicitação exige um token.</string>
     <string name="mcp_cli_install">1. Preparar o computador</string>
     <string name="mcp_cli_install_sub">Envie o guia de instalação para a IA do seu computador ou siga-o você mesmo no computador.</string>

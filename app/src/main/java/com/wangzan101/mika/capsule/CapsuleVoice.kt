@@ -46,14 +46,11 @@ import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.wangzan101.mika.R
@@ -210,7 +207,8 @@ internal class CapsuleTalk(
             while (active && !released) {
                 delay(TICK_MS)
                 // 到点按此刻的落点收尾(状态机到点也会自己松开,但它不知道落点)
-                if (SystemClock.elapsedRealtime() - startedAt >= MAX_MS) finish(aim) else hold.tick()
+                val unlimited = (hold.state.value as? HoldToTalk.State.Listening)?.unlimited == true
+                if (!unlimited && SystemClock.elapsedRealtime() - startedAt >= MAX_MS) finish(aim) else hold.tick()
             }
         }
         return Begin.Started
@@ -415,18 +413,10 @@ private fun Panel(talk: CapsuleTalk, state: HoldToTalk.State, below: Boolean) {
             listening?.let { Text(ChatCopy.clock(it.elapsedMs), style = TimeText, color = c.ink3) }
         }
         val heard = listening?.let { it.stable + it.tail }.orEmpty()
-        val words = buildAnnotatedString {
-            if (heard.isEmpty()) {
-                val ghost = when {
-                    converting -> ""
-                    listening?.live == true -> stringResource(R.string.voice_say_now)
-                    else -> stringResource(R.string.voice_recording)
-                }
-                withStyle(SpanStyle(color = c.ink3)) { append(ghost) }
-            } else {
-                withStyle(SpanStyle(color = c.ink)) { append(listening?.stable.orEmpty()) }
-                withStyle(SpanStyle(color = c.ink2)) { append(listening?.tail.orEmpty()) }
-            }
+        val ghost = when {
+            converting -> ""
+            listening?.live == true -> stringResource(R.string.voice_say_now)
+            else -> stringResource(R.string.voice_recording)
         }
         if (converting && heard.isEmpty()) {
             Row(
@@ -437,12 +427,11 @@ private fun Panel(talk: CapsuleTalk, state: HoldToTalk.State, below: Boolean) {
                 Text(stringResource(R.string.voice_converting), style = SaidText, color = c.ink2, maxLines = 1)
             }
         } else {
-            Text(
-                words,
-                Modifier.fillMaxWidth().padding(top = 10.dp).heightIn(min = 52.dp).alpha(if (cancel) 0.4f else 1f),
-                style = if (cancel) SaidText.copy(textDecoration = TextDecoration.LineThrough) else SaidText,
-                maxLines = 5, overflow = TextOverflow.Ellipsis,
-            )
+            val style = if (cancel) SaidText.copy(textDecoration = TextDecoration.LineThrough) else SaidText
+            val modifier = Modifier.fillMaxWidth().padding(top = 10.dp).heightIn(min = 52.dp).alpha(if (cancel) 0.4f else 1f)
+            if (heard.isEmpty()) Text(ghost, modifier, style = style, color = c.ink3, maxLines = 5, overflow = TextOverflow.Ellipsis)
+            // 字太多时去掉前面说完的整句,最新的字一直看得见(和输入框同一套)
+            else com.wangzan101.mika.ui.HeardText(listening?.stable.orEmpty(), listening?.tail.orEmpty(), style, maxLines = 5, modifier)
         }
         if (!converting) {
             Box(Modifier.fillMaxWidth().padding(top = 8.dp), contentAlignment = Alignment.Center) {

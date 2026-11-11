@@ -5,7 +5,7 @@ import org.junit.Assert.assertNull
 import org.junit.Test
 
 class AddressInputTest {
-    private fun bing(q: String) = AddressInput.SEARCH_PREFIX + q
+    private fun bing(q: String) = "https://www.bing.com/search?q=$q"
 
     @Test
     fun blankIsNothing() {
@@ -56,10 +56,57 @@ class AddressInputTest {
     }
 
     @Test
+    fun eachEngineSearchesAndReadsBack() {
+        for (e in SearchEngine.entries) {
+            val url = e.searchUrl("天气 预报")
+            assertEquals("天气 预报", e.queryOf(url))
+            assertEquals(url, AddressInput.search("天气 预报", e))
+            assertEquals(url, AddressInput.resolve("天气 预报", e))
+            assertEquals("天气 预报", AddressInput.searchQuery(url))
+            assertEquals(e, SearchEngineSpec.of(url, SearchEngine.entries))
+        }
+    }
+
+    @Test
+    fun customEngineSearchesAndReadsBack() {
+        val custom = CustomSearchEngine.create("Example", "https://search.example.com/find?q=%s")!!
+        val url = custom.searchUrl("天气 预报")
+        assertEquals("https://search.example.com/find?q=%E5%A4%A9%E6%B0%94+%E9%A2%84%E6%8A%A5", url)
+        assertEquals("天气 预报", custom.queryOf(url))
+        assertEquals(url, AddressInput.resolve("天气 预报", custom))
+        val engines = SearchEngine.entries + custom
+        assertEquals(custom, SearchEngineSpec.of(url, engines))
+        assertEquals("天气 预报", AddressInput.searchQuery(url, engines))
+        assertEquals(null, AddressInput.searchQuery(url))
+    }
+
+    @Test
+    fun customEngineWithSuffixReadsBackWords() {
+        val custom = CustomSearchEngine.create("Example", "https://search.example.com/?q=%s&lang=zh")!!
+        assertEquals("天气", custom.queryOf(custom.searchUrl("天气")))
+        // 网站后面又加了参数也认得
+        assertEquals("天气", custom.queryOf(custom.searchUrl("天气") + "&source=nav"))
+    }
+
+    @Test
+    fun customEngineSuffixInsideTheQueryIsNotMistakenForTheEnd() {
+        val custom = CustomSearchEngine.create("Example", "https://search.example.com/?q=%s_zh-cn")!!
+        assertEquals("weather_zh-cn", custom.queryOf(custom.searchUrl("weather_zh-cn")))
+    }
+
+    @Test
+    fun googleAndBaiduUseTheirOwnUrls() {
+        assertEquals("https://www.google.com/search?q=hello+world", AddressInput.resolve("hello world", SearchEngine.Google))
+        assertEquals("https://www.baidu.com/s?wd=hello+world", AddressInput.resolve("hello world", SearchEngine.Baidu))
+        assertEquals("https://duckduckgo.com/?q=hello+world", AddressInput.resolve("hello world", SearchEngine.DuckDuckGo))
+    }
+
+    @Test
     fun searchQueryReadsBackTheWords() {
         assertEquals("天气 预报", AddressInput.searchQuery(AddressInput.search("天气 预报")))
         assertEquals("a&b", AddressInput.searchQuery(AddressInput.search("a&b") + "&form=x"))
         assertEquals(null, AddressInput.searchQuery("https://www.example.com/a/b"))
-        assertEquals(null, AddressInput.searchQuery(AddressInput.SEARCH_PREFIX))
+        assertEquals(null, AddressInput.searchQuery(SearchEngine.Bing.searchUrl("")))
+        assertEquals(null, AddressInput.searchQuery(SearchEngine.Google.searchUrl("   ")))
     }
 }

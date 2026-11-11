@@ -7,7 +7,11 @@ interface ScheduleAdmin {
     fun remove(threadId: String, id: String): Boolean
     fun reschedule(threadId: String, id: String, atMs: Long): Boolean
     fun runNow(threadId: String, id: String): Boolean
+    /** 保存完整编辑后的同一计划；宿主再次核对当前归属，且保留最新执行账本。 */
+    fun edit(threadId: String, id: String, change: (TriggerDefinition) -> TriggerDefinition): EditedSchedule? = null
 }
+
+data class EditedSchedule(val plan: TriggerDefinition, val scheduled: Scheduled)
 
 /**
  * 存下一个定时任务之后的情况:[onTime] 为 false 表示系统没准许准时闹钟(到点可能不准时或起不来);

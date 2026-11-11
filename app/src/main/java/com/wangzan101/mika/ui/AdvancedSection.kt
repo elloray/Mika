@@ -2,6 +2,7 @@ package com.wangzan101.mika.ui
 
 import com.wangzan101.mika.R
 import com.wangzan101.mika.i18n.tr
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -42,6 +43,7 @@ import com.wangzan101.mika.cap.sandbox.SandboxDirs
 import com.wangzan101.mika.cap.sandbox.SandboxUsage
 import com.wangzan101.mika.cap.sandbox.SandboxUsageReader
 import com.wangzan101.mika.cap.sandbox.WorkspaceUsage
+import com.wangzan101.mika.ui.terminal.TerminalLauncher
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableIntStateOf
 import kotlinx.coroutines.Dispatchers
@@ -125,6 +127,7 @@ fun AdvancedSettings() {
         status = status, networkAllowed = network, isolationIssue = state.isolationIssue != null,
         onNetworkChange = { state.networkAllowed = it; network = it },
         usage = usage,
+        onOpenTerminal = { w -> w.conversationId?.let { TerminalLauncher.open(context, it, w.title) } },
         onClearWorkspace = { w -> clearing { usageReader.clear(w.dirName) } },
         onClearAll = { clearing { usageReader.clearAll() } },
         onReset = {
@@ -147,6 +150,7 @@ fun AdvancedSection(
     onReset: () -> Unit,
     /** 已用空间;还没读出来为 null(这一组先不显示)。 */
     usage: SandboxUsage? = null,
+    onOpenTerminal: (WorkspaceUsage) -> Unit = {},
     onClearWorkspace: (WorkspaceUsage) -> Unit = {},
     onClearAll: () -> Unit = {},
 ) {
@@ -165,7 +169,7 @@ fun AdvancedSection(
             onClick = if (status is SandboxStatus.Installing) null else ({ confirming = true }))
     }
 
-    usage?.let { u -> UsageGroup(u, onClear = { clearing = it }, onClearAll = { clearingAll = true }) }
+    usage?.let { u -> UsageGroup(u, onOpenTerminal, onClear = { clearing = it }, onClearAll = { clearingAll = true }) }
 
     clearing?.let { w ->
         MikaDialog(
@@ -207,7 +211,12 @@ private fun Note(text: String, color: Color) {
  * 有任务在跑的对话写明暂时不能清;最后一行清空所有工作区。
  */
 @Composable
-private fun UsageGroup(u: SandboxUsage, onClear: (WorkspaceUsage) -> Unit, onClearAll: () -> Unit) {
+private fun UsageGroup(
+    u: SandboxUsage,
+    onOpenTerminal: (WorkspaceUsage) -> Unit,
+    onClear: (WorkspaceUsage) -> Unit,
+    onClearAll: () -> Unit,
+) {
     val c = MikaTheme.colors
     GroupLabel(SandboxCopy.USAGE_TITLE)
     GroupCard {
@@ -221,7 +230,20 @@ private fun UsageGroup(u: SandboxUsage, onClear: (WorkspaceUsage) -> Unit, onCle
                 ListRow(
                     null, SandboxCopy.workspaceTitle(w), if (w.busy) tr(R.string.sandbox_usage_busy) else null, first = i == 0,
                     onClick = if (w.busy) null else ({ onClear(w) }),
-                ) { RowValue(SandboxCopy.size(w.bytes)) }
+                ) {
+                    if (w.conversationId != null) {
+                        Text(
+                            tr(R.string.terminal_open_action),
+                            Modifier
+                                .clickable { onOpenTerminal(w) }
+                                .padding(end = 12.dp)
+                                .testTag("sandbox-workspace-terminal"),
+                            style = MikaType.Caption,
+                            color = c.accent,
+                        )
+                    }
+                    RowValue(SandboxCopy.size(w.bytes))
+                }
             }
             if (u.workspaces.any { !it.busy }) {
                 ListRow(null, SandboxCopy.CLEAR_ALL, titleColor = c.bad, onClick = onClearAll)

@@ -1,6 +1,8 @@
 package com.wangzan101.mika.ui
 
 import com.wangzan101.mika.ChineseUi
+import com.wangzan101.mika.R
+import com.wangzan101.mika.i18n.tr
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.test.ExperimentalTestApi
@@ -23,8 +25,13 @@ import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.wangzan101.mika.browser.AddressInput
 import com.wangzan101.mika.browser.BrowserPage
+import com.wangzan101.mika.browser.BrowserTab
 import com.wangzan101.mika.browser.FavoriteSite
+import com.wangzan101.mika.browser.PageBookmark
+import com.wangzan101.mika.browser.FindState
+import com.wangzan101.mika.browser.RecentItem
 import com.wangzan101.mika.browser.RecentPage
+import com.wangzan101.mika.browser.SearchEngine
 import com.wangzan101.mika.browser.SiteLook
 import com.wangzan101.mika.browser.SiteLooks
 import com.wangzan101.mika.browser.StartPageModel
@@ -52,7 +59,8 @@ class BrowserScreenTest {
             RecentPage(AddressInput.search("周末去哪玩"), "", 3_000),
             RecentPage("https://docs.example.net/guide", "使用指南", 2_000),
         ),
-    ) { face(it).name }
+        nameOf = { face(it).name },
+    )
 
     private fun start() {
         compose.setContent {
@@ -65,7 +73,9 @@ class BrowserScreenTest {
                     onOpenSite = { calls += "site ${it.host}" },
                     onRemoveSite = { calls += "remove ${it.host}" },
                     onAddHint = { calls += "add" },
-                    onClearRecent = { calls += "clear" },
+                    tabsCount = 2,
+                    onMenu = { calls += "menu" },
+                    onHistory = { calls += "history" },
                     now = 3_000,
                 )
             }
@@ -92,16 +102,24 @@ class BrowserScreenTest {
     fun startPageShowsSearchSitesAndRecent() {
         start()
         compose.onNodeWithText(BROWSER_SEARCH_HINT).assertIsDisplayed()
-        compose.onNodeWithText(BROWSER_ENGINE_NOTE).assertIsDisplayed()
+        compose.onNodeWithText(tr(R.string.browser_engine_note, SearchEngine.Bing.displayName)).assertIsDisplayed()
         compose.onNodeWithText("常用网站").assertIsDisplayed()
         compose.onNodeWithText(BROWSER_LOGIN_LEGEND).assertIsDisplayed()
         compose.onAllNodesWithTag("browser-site-logged-in", useUnmergedTree = true).fetchSemanticsNodes().let { assertEquals(1, it.size) }
         compose.onNodeWithText("最近打开").assertIsDisplayed()
         compose.onNodeWithText("搜索：周末去哪玩").assertIsDisplayed()
         compose.onNodeWithText("使用指南").performClick()
-        compose.onNodeWithText("清除").performClick()
+        compose.onNodeWithText("全部").performClick()
         compose.onNodeWithText("添加").performClick()
-        assertEquals(listOf("open https://docs.example.net/guide", "clear", "add"), calls)
+        assertEquals(listOf("open https://docs.example.net/guide", "history", "add"), calls)
+    }
+
+    @Test
+    fun engineNoteOpensTheEnginePicker() {
+        start()
+        compose.onNodeWithTag("browser-engine").performClick()
+        compose.onNodeWithTag("browser-engine-picker").assertIsDisplayed()
+        compose.onNodeWithText("谷歌").assertIsDisplayed()
     }
 
     @Test
@@ -183,6 +201,69 @@ class BrowserScreenTest {
         compose.onNodeWithText("这个网站下次也用电脑版").assertIsDisplayed()
         compose.onNodeWithText("换成电脑版").performClick()
         assertEquals(listOf("dismiss", "desktop"), calls)
+    }
+
+    @Test
+    fun bookmarksSheetOpensInEditModeAndRemoves() {
+        val items = listOf(PageBookmark("https://shop.example.com/item/1", "购物页", 1_000))
+        compose.setContent {
+            MikaTheme {
+                BookmarksSheet(
+                    items, face,
+                    onDismiss = {}, onOpen = { calls += "open ${it.url}" },
+                    onRemove = { calls += "remove ${it.url}" }, onRename = { _, _ -> },
+                )
+            }
+        }
+        compose.onNodeWithText("购物页").assertIsDisplayed()
+        compose.onNodeWithText("整理").performClick()
+        compose.onNodeWithContentDescription("移除购物页", useUnmergedTree = true).performClick()
+        assertEquals(listOf("remove https://shop.example.com/item/1"), calls)
+    }
+
+    @Test
+    fun tabsSheetSelectsClosesAndOpensNew() {
+        compose.setContent {
+            MikaTheme {
+                TabsSheet(
+                    listOf(BrowserTab("t1", "A", "https://a.example.com/", "a.example.com", active = true)),
+                    onDismiss = {}, onSelect = { calls += "select $it" }, onClose = { calls += "close $it" }, onNew = { calls += "new" },
+                )
+            }
+        }
+        compose.onNodeWithText("A").performClick()
+        compose.onNodeWithContentDescription("关闭标签页", useUnmergedTree = true).performClick()
+        compose.onNodeWithText("新建标签页").performClick()
+        assertEquals(listOf("select t1", "close t1", "new"), calls)
+    }
+
+    @Test
+    fun historySheetRemovesInEditMode() {
+        val pages = listOf(RecentItem("https://a.example.com/", "A", "a.example.com", null, false, 1_000))
+        compose.setContent {
+            MikaTheme {
+                HistorySheet(
+                    pages, now = 2_000, onDismiss = {}, onOpen = { calls += "open ${it.url}" },
+                    onRemove = { calls += "remove ${it.url}" }, onClear = { calls += "clear" },
+                )
+            }
+        }
+        compose.onNodeWithText("整理").performClick()
+        compose.onNodeWithContentDescription("移除A", useUnmergedTree = true).performClick()
+        assertEquals(listOf("remove https://a.example.com/"), calls)
+    }
+
+    @Test
+    fun clearDataSheetClearsTheSelectedKinds() {
+        compose.setContent { MikaTheme { ClearDataSheet({}) { h, s, c -> calls += "clear $h $s $c" } } }
+        compose.onNodeWithText("清除").performClick()
+        assertEquals(listOf("clear true true true"), calls)
+    }
+
+    @Test
+    fun findBarShowsTheCurrentMatch() {
+        compose.setContent { MikaTheme { BrowserFindBar(FindState(active = true, query = "a", matches = 3, index = 2), {}, {}, {}, {}) } }
+        compose.onNodeWithText("2/3").assertIsDisplayed()
     }
 
     @Test

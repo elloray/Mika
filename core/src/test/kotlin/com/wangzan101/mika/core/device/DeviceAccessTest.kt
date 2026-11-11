@@ -17,10 +17,12 @@ class DeviceAccessTest {
         override var attemptBlocked = false
         var kind: CredentialKind? = CredentialKind.Pin
         var last: DeviceCredential? = null
+        var beginHook: () -> Unit = {}
         override fun credential() = kind?.let { DeviceCredential(it, if (it == CredentialKind.Pin) "123456".toCharArray() else "Test pass!".toCharArray()).also { last = it } }
         override fun beginAttempt(credential: DeviceCredential): Boolean {
             if (attemptBlocked || !enabled) return false
             attemptBlocked = true
+            beginHook()
             return true
         }
         override fun completeAttempt(credential: DeviceCredential) { attemptBlocked = false }
@@ -30,11 +32,13 @@ class DeviceAccessTest {
         var wakes = 0
         var dismisses = 0
         var reveals = 0
+        var fallbacks = 0
         var entries = 0
         var inputWorks = true
         var readyTarget = true
         var suspendInput = false
         var falselyReportsWake = false
+        var wakeHook: () -> Unit = {}
         var targetHook: () -> Unit = {}
         var visibleKind: CredentialKind? = null
         var detect: (() -> CredentialKind?)? = null
@@ -42,13 +46,19 @@ class DeviceAccessTest {
         override suspend fun detectedCredentialKind() = detect?.invoke() ?: visibleKind
         override suspend fun credentialDiagnostics() = diagnostics
         override suspend fun state() = current
-        override suspend fun wake(): Boolean { wakes++; if (!falselyReportsWake) current = current.copy(interactive = true); return true }
+        override suspend fun wake(): Boolean {
+            wakes++
+            if (!falselyReportsWake) current = current.copy(interactive = true)
+            wakeHook()
+            return true
+        }
         override suspend fun dismiss(): Boolean {
             dismisses++
             if (!current.secure) current = current.copy(keyguardShowing = false, deviceLocked = false)
             return true
         }
         override suspend fun revealCredential(): Boolean { reveals++; return true }
+        override suspend fun revealCredentialFallback(): Boolean { fallbacks++; return true }
         override suspend fun credentialReady(kind: CredentialKind): Boolean { targetHook(); return readyTarget && (visibleKind == null || visibleKind == kind) }
         override suspend fun enter(credential: DeviceCredential): Boolean {
             entries++
@@ -68,6 +78,82 @@ class DeviceAccessTest {
         p.current = p.current.copy(helperAvailable = true, userUnlocked = false)
         assertEquals("first_unlock_required", d.unlock().status)
         assertEquals(0, p.wakes + p.dismisses + p.entries)
+    }
+
+    @Test fun sourceAuthorizationCannotGrantOrChangeTheDevicePermission() = runTest {
+        val p = Port(); val s = Store(); val d = DeviceAccess(p, s)
+        assertEquals("disabled", d.unlock { false }.status)
+        assertTrue(s.enabled)
+        s.enabled = false
+        assertEquals("disabled", d.unlock { true }.status)
+        assertEquals(0, p.wakes + p.dismisses + p.reveals + p.entries)
+        assertNull(s.last)
+        // 拒绝某个来源不会影响已有的定时任务/MCP 调用。
+        s.enabled = true
+        assertEquals("unlocked", d.unlock().status)
+        assertEquals(1, p.entries)
+    }
+
+    @Test fun sourceRevokedWhileQueuedIsCheckedAfterAcquiringTheMutex() = runTest {
+        var authorized = true
+        val p = Port().apply { suspendInput = true }
+        val s = Store(); val d = DeviceAccess(p, s)
+        val first = launch { d.unlock() }
+        runCurrent()
+        val queued = async { d.unlock { authorized } }
+        runCurrent()
+        authorized = false
+        first.cancel(); first.join()
+        assertEquals("disabled", queued.await().status)
+        assertEquals(1, p.wakes)
+        assertEquals(1, p.dismisses)
+        assertEquals(1, p.entries)
+        assertTrue(s.attemptBlocked)
+    }
+
+    @Test fun sourceRevokedDuringWakeDoesNotDismissOrLoadTheCredential() = runTest {
+        var authorized = true
+        val p = Port().apply { wakeHook = { authorized = false } }
+        val s = Store()
+        assertEquals("disabled", DeviceAccess(p, s).unlock { authorized }.status)
+        assertEquals(1, p.wakes)
+        assertEquals(0, p.dismisses + p.reveals + p.entries)
+        assertNull(s.last)
+        assertFalse(s.attemptBlocked)
+    }
+
+    @Test fun sourceRevokedDuringTargetPollingDoesNotRevealOrEnter() = runTest {
+        var authorized = true
+        var polls = 0
+        val p = Port().apply {
+            readyTarget = false
+            targetHook = { if (++polls == 2) authorized = false }
+        }
+        val s = Store()
+        assertEquals("disabled", DeviceAccess(p, s, 10, 50).unlock { authorized }.status)
+        assertEquals(0, p.reveals + p.entries)
+        assertFalse(s.attemptBlocked)
+        assertTrue(s.last!!.value.all { it == '\u0000' })
+    }
+
+    @Test fun sourceRevokedWhenTargetBecomesReadyDoesNotStartAnAttempt() = runTest {
+        var authorized = true
+        val p = Port().apply { targetHook = { authorized = false } }
+        val s = Store()
+        assertEquals("disabled", DeviceAccess(p, s).unlock { authorized }.status)
+        assertEquals(0, p.entries)
+        assertFalse(s.attemptBlocked)
+        assertTrue(s.last!!.value.all { it == '\u0000' })
+    }
+
+    @Test fun sourceRevokedAfterAttemptReservationKeepsTheLatchWithoutTyping() = runTest {
+        var authorized = true
+        val p = Port()
+        val s = Store().apply { beginHook = { authorized = false } }
+        assertEquals("disabled", DeviceAccess(p, s).unlock { authorized }.status)
+        assertEquals(0, p.entries)
+        assertTrue(s.attemptBlocked)
+        assertTrue(s.last!!.value.all { it == '\u0000' })
     }
 
     @Test fun wakeIsIdempotentAndDoesNotDismissOrEnter() = runTest {
@@ -218,6 +304,37 @@ class DeviceAccessTest {
         assertEquals(1, p.reveals)
         assertEquals(1, p.entries)
         assertFalse(s.attemptBlocked)
+    }
+
+    @Test fun biometricFirstPageGetsOneSwipeThenOneFallbackTapBeforeUnsupported() = runTest {
+        val p = Port().apply { readyTarget = false }
+        val s = Store()
+        assertEquals("unsupported_keyguard", DeviceAccess(p, s, 10, 30).unlock().status)
+        assertEquals(1, p.reveals)
+        assertEquals(1, p.fallbacks)
+        assertEquals(0, p.entries)
+        assertFalse(s.attemptBlocked)
+    }
+
+    @Test fun fallbackTapCanExposeTheCredentialKind() = runTest {
+        val p = Port().apply {
+            readyTarget = false
+            targetHook = { if (fallbacks > 0) readyTarget = true }
+        }
+        val s = Store()
+        assertEquals("unlocked", DeviceAccess(p, s, 10, 50).unlock().status)
+        assertEquals(1, p.reveals)
+        assertEquals(1, p.fallbacks)
+        assertEquals(1, p.entries)
+        assertFalse(s.attemptBlocked)
+    }
+
+    @Test fun readyKeyguardIsNotSwipedOrTapped() = runTest {
+        val p = Port()
+        assertEquals("unlocked", DeviceAccess(p, Store(), 10, 30).unlock().status)
+        assertEquals(0, p.reveals)
+        assertEquals(0, p.fallbacks)
+        assertEquals(1, p.entries)
     }
 
     @Test fun readyOrManuallyUnlockedKeyguardIsNotNeedlesslySwiped() = runTest {

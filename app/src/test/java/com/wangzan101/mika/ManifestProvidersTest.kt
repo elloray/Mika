@@ -115,6 +115,23 @@ class ManifestProvidersTest {
     }
 
     /**
+     * 定位权限隐含「需要定位硬件」;网页定位不是必需功能,声明成非必需,没有 GPS 的设备也能装。
+     */
+    @Test
+    fun locationIsDeclaredAsAnOptionalFeature() {
+        val doc = DocumentBuilderFactory.newInstance().apply { isNamespaceAware = true }
+            .newDocumentBuilder().parse(File("src/main/AndroidManifest.xml"))
+        val nodes = doc.getElementsByTagName("uses-feature")
+        val features = (0 until nodes.length).map { nodes.item(it) as Element }
+            .associateBy { it.getAttributeNS(androidNs, "name") }
+        for (name in listOf("android.hardware.location", "android.hardware.location.gps")) {
+            val feature = features[name]
+            assertTrue("uses-feature $name is missing", feature != null)
+            assertEquals(name, "false", feature!!.getAttributeNS(androidNs, "required"))
+        }
+    }
+
+    /**
      * 兼容性自检的测试页对外开放只为让内置助手(shell)开它:调用方必须持有 INTERACT_ACROSS_USERS_FULL,普通 App 打不开;
      * 没有 intent-filter,只能按组件名开;单独一个任务、不进最近任务。助手认的类名和清单一致。
      */

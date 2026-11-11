@@ -6,15 +6,41 @@
     <string name="chat_greeting_evening">Selamat malam</string>
     <string name="chat_greeting_night">Belum tidur?</string>
     <string name="chat_empty_prompt">Apa yang harus dikerjakan Mika?</string>
+    <string name="chat_example_github_star">Buka https://github.com/wangzan101/mika dan beri bintang pada proyek ini.</string>
     <string name="chat_example_follow">Buka X, cari Wang Zan (@wangzan101), lalu ikuti akun tersebut.</string>
     <string name="chat_example_group_summary">Buka WhatsApp dan rangkum pesan yang belum dibaca hari ini, dengan menandai semua yang perlu saya balas.</string>
-    <string name="chat_example_jobs">Buka LinkedIn, temukan lima lowongan manajer produk AI jarak jauh, lalu bandingkan persyaratannya.</string>
-    <string name="chat_example_multi_step">Temukan tiga earbud nirkabel dengan rating tinggi di bawah US$100 di Amazon dan bandingkan kelebihan serta kekurangannya.</string>
     <string name="chat_example_alarms">Pasang alarm pukul 9.40, 9.50, dan 10.00 besok pagi.</string>
-    <string name="chat_example_ai_apps">Temukan aplikasi AI yang terpasang di ponsel saya, tanyakan kepada masing-masing apa keunggulannya, lalu bandingkan jawabannya.</string>
+    <string name="chat_example_replace_title">Ganti draf saat ini?</string>
+    <string name="chat_example_replace_body">Tugas yang direkomendasikan akan mengganti teks yang sudah Anda ketik.</string>
+    <string name="chat_example_replace_action">Ganti draf</string>
+    <string name="recommendations_title">Tugas rekomendasi</string>
+    <string name="recommendations_drag">Seret untuk mengubah urutan</string>
+    <string name="recommendations_drag_hint">Seret pegangan untuk mengubah urutan tampilan.</string>
+    <string name="recommendations_move_up">Pindahkan ke atas</string>
+    <string name="recommendations_move_down">Pindahkan ke bawah</string>
+    <string name="recommendations_sub">Kelola tugas dan prompt yang tampil di beranda</string>
+    <string name="recommendations_add">Tambah tugas rekomendasi</string>
+    <string name="recommendations_edit">Edit tugas rekomendasi</string>
+    <string name="recommendations_empty">Belum ada tugas rekomendasi</string>
+    <string name="recommendations_empty_sub">Tugas yang ditambahkan muncul di chat baru</string>
+    <string name="recommendations_title_label">Judul</string>
+    <string name="recommendations_prompt_label">Prompt</string>
+    <string name="recommendations_delete">Hapus</string>
+    <string name="recommendations_delete_title">Hapus tugas rekomendasi ini?</string>
+    <string name="recommendations_delete_body">Tugas ini tidak akan lagi muncul di beranda.</string>
+    <string name="recommendations_save_failed">Tidak dapat menyimpan. Coba lagi.</string>
+    <string name="recommendations_title_required">Isi judul</string>
+    <string name="recommendations_prompt_required">Isi prompt</string>
+    <string name="recommendations_too_long">Judul atau prompt terlalu panjang</string>
+    <string name="recommendations_too_many">Anda dapat menyimpan hingga %1$d tugas rekomendasi</string>
+    <string name="recommendations_unreadable">Tugas yang tersimpan tidak dapat dibaca, jadi belum dapat diubah.</string>
+    <string name="recommendations_reset">Hapus dan mulai lagi</string>
+    <string name="recommendations_reset_body">File yang tidak terbaca akan diganti dengan daftar kosong.</string>
+    <string name="recommendations_footer">Di chat baru, ketuk tugas untuk memasukkan prompt ke kolom input. Prompt tidak terkirim otomatis.</string>
+    <string name="share_draft_replace_body">Konten yang dibagikan akan mengganti draf saat ini.</string>
     <string name="chat_working_on">Bekerja di %1$s</string>
     <string name="chat_working">Bekerja</string>
-    <string name="share_draft_failed">Konten yang dibagikan tidak dapat ditambahkan ke percakapan baru</string>
+    <string name="share_draft_failed">Konten yang dibagikan tidak dapat ditambahkan ke percakapan</string>
     <string name="chat_wait_previous_task">Dimulai setelah tugas sebelumnya selesai</string>
     <string name="chat_wait_unlock">Menunggu Anda membuka kunci</string>
     <string name="chat_waiting_for_you">Menunggu Anda</string>
@@ -42,6 +68,10 @@
     <string name="chat_continue">Lanjutkan</string>
     <string name="chat_not_done">Belum selesai</string>
     <string name="chat_stopped">Dihentikan.</string>
+    <string name="chat_resume_checkpoint">Lanjutkan dari titik terakhir</string>
+    <string name="chat_restart_task">Mulai ulang</string>
+    <string name="chat_resume_request">Lanjutkan dari titik terakhir: %1$s</string>
+    <string name="chat_restart_request">Mulai ulang dari awal: %1$s</string>
     <string name="chat_view_source">Lihat sumber</string>
     <string name="chat_open">Buka</string>
     <string name="chat_attach_rejected">Gagal menambahkan: %1$s (setiap berkas harus di bawah 200 MB)</string>
@@ -63,11 +93,41 @@
     <plurals name="drawer_delete_schedules">
         <item quantity="other">%1$d tugas terjadwal di obrolan ini akan dipertahankan.</item>
     </plurals>
+    <string name="drawer_select">Pilih</string>
+    <string name="drawer_selected_count">%1$d dipilih</string>
+    <string name="drawer_select_all">Pilih semua</string>
+    <string name="drawer_select_none">Hapus pilihan</string>
+    <string name="drawer_delete_many_title">Hapus obrolan yang dipilih?</string>
+    <plurals name="drawer_delete_many_body">
+        <item quantity="other">%1$d obrolan yang dipilih dan berkas di dalamnya akan dihapus.</item>
+    </plurals>
+    <plurals name="drawer_delete_many_running">
+        <item quantity="other">%1$d tugas yang sedang berjalan akan dihentikan.</item>
+    </plurals>
+    <plurals name="drawer_delete_many_schedules">
+        <item quantity="other">%1$d tugas terjadwal di dalamnya akan dipertahankan.</item>
+    </plurals>
+    <plurals name="drawer_delete_progress">
+        <item quantity="other">Menghapus %1$d obrolan…</item>
+    </plurals>
+    <plurals name="drawer_delete_done">
+        <item quantity="other">%1$d obrolan dihapus.</item>
+    </plurals>
+    <plurals name="drawer_delete_partial">
+        <item quantity="other">%1$d obrolan dihapus, %2$d gagal.</item>
+    </plurals>
     <string name="drawer_actions">Opsi obrolan</string>
     <string name="drawer_rename">Ganti nama</string>
     <string name="drawer_rename_title">Ganti nama obrolan</string>
     <string name="drawer_pinned">Disematkan</string>
     <string name="drawer_pinned_mark">Disematkan</string>
+    <string name="drawer_search_hint">Cari chat</string>
+    <string name="drawer_search_results">Hasil pencarian</string>
+    <string name="drawer_search_empty">Tidak ada chat yang cocok dengan “%1$s”</string>
+    <string name="drawer_search_empty_hint">Hanya mencari judul dan isi chat</string>
+    <string name="drawer_searching">Mencari…</string>
+    <string name="drawer_search_clear">Hapus pencarian</string>
+    <string name="drawer_search_truncated">Menampilkan %1$d hasil pertama</string>
     <string name="settings_title">Pengaturan</string>
     <string name="chat_unconfirmed">Tidak bisa dipastikan: %1$s</string>
     <string name="chat_unverified">Selesai, tetapi tidak bisa diverifikasi</string>
@@ -92,6 +152,7 @@
     </plurals>
     <string name="attach_add">Tambah lampiran</string>
     <string name="attach_close">Tutup panel lampiran</string>
+    <string name="attach_blocked_running">Tidak bisa menambah lampiran saat tugas berjalan — pindah ke mode antre dulu</string>
     <string name="attach_camera">Kamera</string>
     <string name="attach_album">Foto</string>
     <string name="attach_files">Berkas</string>
@@ -142,6 +203,10 @@
     <string name="chat_branch_attachments_skipped">Tidak semua lampiran tersalin</string>
     <string name="chat_branch_retry">Tanya ulang dari sini</string>
     <string name="chat_branch_attachments_readd">Tambahkan ulang lampiran yang ingin disertakan</string>
+    <string name="chat_attach_unavailable">Tidak dapat menambahkan: %1$s. Pastikan berkas tersedia dan tidak melebihi batas ukuran.</string>
+    <string name="chat_retry_missing">%1$s: berkas tidak ditemukan</string>
+    <string name="chat_retry_limit">%1$s: batas penyalinan terlampaui</string>
+    <string name="chat_retry_failed">%1$s: tidak dapat disalin</string>
     <string name="chat_select_hint">Tekan lama teks untuk memilihnya</string>
     <string name="chat_quote_remove">Hapus kutipan</string>
     <string name="chat_quoting_mika">Mengutip Mika: %1$s</string>

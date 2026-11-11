@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="call_instructions_title">通話の指示</string>
+    <string name="call_instructions_intro">保存した指示は今後の通話に適用されます。AI 通話の準備時に有効な指示をすべて Volcengine に送信します。電話に出なかった場合も同様です。相手の発言で指示は変わりません。</string>
+    <string name="call_instructions_add">指示を追加</string>
+    <string name="call_instructions_empty">アシスタントが答えてよい内容と確認すべきことを入力してください。変更は次の通話から適用されます。</string>
+    <string name="call_instructions_heading">タイトル</string>
+    <string name="call_instructions_situation">適用する場面</string>
+    <string name="call_instructions_response">応答のしかた</string>
+    <string name="call_instructions_save">指示を保存</string>
+    <string name="call_instructions_cancel">キャンセル</string>
+    <string name="call_instructions_edit">編集</string>
+    <string name="call_instructions_delete">削除</string>
+    <string name="call_instructions_delete_confirm">この指示を削除しますか？今後の通話には適用されなくなります。</string>
+    <string name="call_instructions_expiry">有効期間</string>
+    <string name="call_instructions_forever">変更するまで</string>
+    <string name="call_instructions_today">今日いっぱい</string>
+    <string name="call_instructions_two_hours">2 時間</string>
+    <string name="call_instructions_expired">期限切れ</string>
+    <string name="call_instructions_saved">この端末に保存済み</string>
+    <string name="call_instructions_failed">保存できませんでした。下書きは残っています。</string>
+    <string name="call_instructions_presets">場面から始める</string>
+    <string name="call_instructions_delivery">配達</string>
+    <string name="call_instructions_delivery_when">宅配便や配達員から電話が来たとき</string>
+    <string name="call_instructions_delivery_reply">荷物の場所と折り返しが必要かを確認してください。住所を推測したり、入館を許可したりしないでください。</string>
+    <string name="call_instructions_business">業務の問い合わせ</string>
+    <string name="call_instructions_business_when">お客様が商品、サービス、予約について問い合わせたとき</string>
+    <string name="call_instructions_business_reply">必要なもの、数量や希望日時、連絡先を聞いてください。伝言を預かり、価格や予約は確約しないでください。</string>
+    <string name="call_instructions_review_limit">返信を確認し、指示を 800 文字以内にしてから保存してください。</string>
+</resources>

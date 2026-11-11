@@ -3,6 +3,7 @@ package com.wangzan101.mika.task
 import android.content.Context
 import com.wangzan101.mika.core.trigger.ScheduleAdmin
 import com.wangzan101.mika.core.trigger.TriggerDefinition
+import com.wangzan101.mika.core.trigger.EditedSchedule
 
 class LocalScheduleAdmin internal constructor(
     private val plans: () -> List<TriggerDefinition>,
@@ -10,6 +11,7 @@ class LocalScheduleAdmin internal constructor(
     private val delete: (String) -> Unit,
     private val changeTime: (String, Long) -> Unit,
     private val executeNow: (String) -> Unit,
+    private val editPlan: (String, String, (TriggerDefinition) -> TriggerDefinition) -> EditedSchedule? = { _, _, _ -> null },
 ) : ScheduleAdmin {
     constructor(context: Context) : this(
         { TriggerRuntime.list(context) },
@@ -17,6 +19,7 @@ class LocalScheduleAdmin internal constructor(
         { id -> TriggerRuntime.remove(context, id) },
         { id, atMs -> TriggerRuntime.reschedule(context, id, atMs) },
         { id -> TriggerRuntime.runNow(context, id) },
+        { thread, id, change -> TriggerRuntime.edit(context, thread, id, change) },
     )
 
     override fun list(threadId: String): List<TriggerDefinition> = plans().filter { it.threadId == threadId }
@@ -44,5 +47,10 @@ class LocalScheduleAdmin internal constructor(
         if (!owned(threadId, id)) return false
         executeNow(id)
         return true
+    }
+
+    override fun edit(threadId: String, id: String, change: (TriggerDefinition) -> TriggerDefinition): EditedSchedule? {
+        if (!owned(threadId, id)) return null
+        return editPlan(threadId, id, change)
     }
 }

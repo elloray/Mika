@@ -4,10 +4,12 @@ import com.wangzan101.mika.ChineseUi
 import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertCountEquals
+import androidx.compose.ui.test.assertIsFocused
 import androidx.compose.ui.test.assertIsNotDisplayed
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.onAllNodesWithTag
+import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.performTextReplacement
 import androidx.compose.ui.test.hasAnyAncestor
 import androidx.compose.ui.test.hasTestTag
@@ -29,6 +31,7 @@ import com.wangzan101.mika.core.agent.QuoteMessage
 import com.wangzan101.mika.core.agent.TaskState
 import com.wangzan101.mika.core.agent.Turn
 import com.wangzan101.mika.settings.Prerequisites
+import com.wangzan101.mika.settings.RecommendedTaskStore
 import com.wangzan101.mika.takeover.Takeover
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -55,6 +58,9 @@ class ChatDeleteAndSelectTest {
 
     private val context = InstrumentationRegistry.getInstrumentation().targetContext
     private val store = ConversationStore(File(context.cacheDir, "chat-delete-test-" + UUID.randomUUID()))
+    private val recommendations = RecommendedTaskStore(File(context.cacheDir, "recommendations-" + UUID.randomUUID())).also {
+        it.ensureLoaded { emptyList() }
+    }
     private val removed = mutableListOf<String>()
     private val started = mutableListOf<String>()
 
@@ -71,12 +77,14 @@ class ChatDeleteAndSelectTest {
         override fun decline(key: Int) {}
     }
 
-    private fun vm(impact: DeleteImpact = DeleteImpact(runningTask = false, schedules = 0)) = ChatViewModel(
+    private fun vm(impact: DeleteImpact = DeleteImpact(runningTask = false, schedules = 0), parallel: Boolean = false, attachments: Boolean = false) = ChatViewModel(
         CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate),
         MutableStateFlow(TaskState.Idle), MutableStateFlow(Takeover.Stage.None), actions, store,
         deletionImpact = { impact },
         removeConversation = { removed += it; store.delete(it) },
         branchTitle = { it + " · 分支" },
+        parallelFlag = { parallel }, sandboxReady = MutableStateFlow(attachments),
+        io = Dispatchers.Main.immediate,
     )
 
     private fun show(vm: ChatViewModel, drawerOpen: Boolean) {
@@ -87,10 +95,73 @@ class ChatDeleteAndSelectTest {
                 onPlans = {}, onMemory = {}, onBrowser = {}, onSettings = {}, reopen = drawerOpen,
             ) { open ->
                 ChatScreen(vm, Prerequisites.Check(emptyList()), MutableStateFlow(null), MutableStateFlow(false), reduceMotion = true,
-                    onOpenDrawer = open, openSettings = {})
+                    onOpenDrawer = open, openSettings = {}, recommendations = recommendations)
             }
         }
         compose.waitForIdle()
+    }
+
+    @Test fun typingNewDraftKeepsFocusAndBothDraftsCanBeReopenedFromTheDrawer() {
+        val vm = vm()
+        show(vm, drawerOpen = false)
+        compose.onNodeWithTag("composer-field").performClick().performTextInput("第一份草稿")
+        compose.onNodeWithTag("composer-field").assertIsFocused()
+        compose.onNodeWithContentDescription("新对话").performClick()
+        compose.onNodeWithTag("composer-field").assert(hasText(""))
+        compose.onNodeWithTag("composer-field").performTextReplacement("第二份草稿")
+        compose.onNodeWithContentDescription("菜单").performClick()
+        compose.onNode(hasTestTag("conversation-row") and hasText("第一份草稿")).performClick()
+        compose.onNodeWithTag("composer-field").assertTextContains("第一份草稿")
+        compose.onNodeWithContentDescription("菜单").performClick()
+        compose.onNode(hasTestTag("conversation-row") and hasText("第二份草稿")).performClick()
+        compose.onNodeWithTag("composer-field").assertTextContains("第二份草稿")
+        assertTrue(started.isEmpty())
+    }
+
+    @Test fun parallelConversationSwitchRestoresTextAttachmentAndQuoteTogether() {
+        store.append("a", Turn("天气", "晴", "succeeded"))
+        store.append("b", Turn("订票", "好了", "succeeded"))
+        val vm = vm(parallel = true, attachments = true)
+        compose.runOnUiThread { vm.openConversation("a") }
+        show(vm, drawerOpen = false)
+        compose.onNodeWithTag("composer-field").performTextReplacement("下周的安排")
+        compose.runOnUiThread {
+            vm.quote(QuoteMessage.From.Mika, "晴")
+            vm.attach(listOf("content://test/plan.pdf"))
+        }
+        compose.waitForIdle()
+        compose.onNodeWithText("plan.pdf").assertExists()
+        compose.onNodeWithContentDescription("菜单").performClick()
+        compose.onNode(hasTestTag("conversation-row") and hasText("订票")).performClick()
+        compose.onNodeWithTag("composer-field").assert(hasText(""))
+        compose.onNodeWithText("plan.pdf").assertDoesNotExist()
+        compose.onNodeWithTag("composer-field").performTextReplacement("周末的车票")
+        compose.onNodeWithContentDescription("菜单").performClick()
+        compose.onNode(hasTestTag("conversation-row") and hasText("天气")).performClick()
+        compose.onNodeWithTag("composer-field").assertTextContains("下周的安排")
+        compose.onNodeWithText("plan.pdf").assertExists()
+        compose.onNodeWithContentDescription("去掉引用").assertExists()
+        compose.onNodeWithContentDescription(AttachCopy.ADD).assertExists()
+        assertTrue(started.isEmpty())
+    }
+
+    @Test fun savedStateRestoresConversationTextsIntoARecreatedModel() {
+        val restoration = androidx.compose.ui.test.junit4.StateRestorationTester(compose)
+        var current: ChatViewModel? = null
+        restoration.setContent {
+            val model = androidx.compose.runtime.remember { vm() }
+            current = model
+            ChatScreen(model, Prerequisites.Check(emptyList()), MutableStateFlow(null), MutableStateFlow(false),
+                reduceMotion = true, onOpenDrawer = {}, openSettings = {}, recommendations = recommendations)
+        }
+        compose.runOnIdle { current!!.openConversation("a") }
+        compose.onNodeWithTag("composer-field").performTextReplacement("A preserved")
+        compose.runOnIdle { current!!.openConversation("b") }
+        compose.onNodeWithTag("composer-field").performTextReplacement("B preserved")
+        restoration.emulateSavedInstanceStateRestore()
+        compose.onNodeWithTag("composer-field").assertTextContains("B preserved")
+        compose.runOnIdle { current!!.openConversation("a") }
+        compose.onNodeWithTag("composer-field").assertTextContains("A preserved")
     }
 
     @Test fun longPressARowAsksThenDeletes() {
@@ -120,6 +191,58 @@ class ChatDeleteAndSelectTest {
         assertEquals(listOf("a"), removed)
         assertEquals(0, compose.onAllNodesWithText("天气").fetchSemanticsNodes().size)
         compose.onNodeWithText("订票").assertExists()
+    }
+
+    /** 多选批量删除:顶部「多选」进入,勾选 / 全选,底部写着已选几条;确认弹窗写明删几个、停几个任务;删完列表当场只剩没选的。 */
+    @Test fun selectModeDeletesSeveralChatsAtOnce() {
+        listOf("a" to "天气", "b" to "订票", "c" to "周报").forEach { (id, title) ->
+            store.append(id, Turn("说说 $title", "好", "succeeded"))
+            store.setTitle(id, title)
+        }
+        val vm = vm(DeleteImpact(runningTask = true, schedules = 2))
+        show(vm, drawerOpen = true)
+
+        compose.onNodeWithTag("drawer-select").performClick()
+        compose.waitForIdle()
+        // 每行左边出现勾选框;点一行是勾选,不再是打开对话
+        compose.onAllNodesWithTag("conversation-check", useUnmergedTree = true).assertCountEquals(3)
+        compose.onNodeWithText("已选 0 条").assertExists()
+        compose.onNodeWithTag("drawer-delete-selected").assertIsNotEnabled()
+
+        // 全选 / 取消全选
+        compose.onNodeWithTag("drawer-select-all").performClick()
+        compose.onNodeWithText("已选 3 条").assertExists()
+        compose.onNodeWithTag("drawer-select-all").performClick()
+        compose.onNodeWithText("已选 0 条").assertExists()
+
+        // 勾两条
+        compose.onNode(hasTestTag("conversation-row") and hasText("天气")).performClick()
+        compose.onNode(hasTestTag("conversation-row") and hasText("周报")).performClick()
+        compose.onNodeWithText("已选 2 条").assertExists()
+
+        compose.onNodeWithTag("drawer-delete-selected").performClick()
+        compose.onNodeWithText("删除选中的对话？").assertExists()
+        val body = compose.onNodeWithTag("delete-many-conversation-body").fetchSemanticsNode().config
+            .getOrNull(androidx.compose.ui.semantics.SemanticsProperties.Text)?.joinToString { it.text }.orEmpty()
+        assertTrue(body, "2" in body && "停止" in body && "4" in body && "保留" in body)
+
+        // 取消:什么都不删,还在多选里
+        compose.onNodeWithTag("dismiss-delete-many-conversation").performClick()
+        compose.waitForIdle()
+        assertTrue(removed.isEmpty())
+        compose.onNodeWithText("已选 2 条").assertExists()
+
+        compose.onNodeWithTag("drawer-delete-selected").performClick()
+        compose.onNodeWithTag("confirm-delete-many-conversation").performClick()
+        compose.waitUntil(5_000) { removed.size == 2 }
+        assertEquals(setOf("a", "c"), removed.toSet())
+        compose.waitForIdle()
+        assertEquals(0, compose.onAllNodesWithText("天气").fetchSemanticsNodes().size)
+        assertEquals(0, compose.onAllNodesWithText("周报").fetchSemanticsNodes().size)
+        compose.onNodeWithText("订票").assertExists()
+        // 删完自动退出多选
+        compose.onNodeWithTag("drawer-select-bar").assertDoesNotExist()
+        compose.onNodeWithTag("drawer-select").assertExists()
     }
 
     /** 长按在原地弹出菜单:抬起的那一行(还是那个标题)和三项置顶、改名、删除;只是打开菜单什么都不改。 */

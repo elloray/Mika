@@ -11,6 +11,8 @@ data class DeliveryRecord(val peer: ChannelPeer, val delivery: Delivery, val sta
 interface OutboxStore {
     fun get(id: String): DeliveryRecord?
     fun save(record: DeliveryRecord)
+    /** Commit the entire batch atomically; a failed write must leave the previous records intact. */
+    fun saveAll(records: List<DeliveryRecord>)
     fun all(): List<DeliveryRecord>
 }
 
@@ -18,12 +20,25 @@ class MemoryOutboxStore : OutboxStore {
     private val records = linkedMapOf<String, DeliveryRecord>()
     @Synchronized override fun get(id: String): DeliveryRecord? = records[id]
     @Synchronized override fun save(record: DeliveryRecord) { records[record.delivery.id] = record }
+    @Synchronized override fun saveAll(records: List<DeliveryRecord>) { records.forEach { this.records[it.delivery.id] = it } }
     @Synchronized override fun all(): List<DeliveryRecord> = records.values.toList()
 }
 
 /** 先记账再发送。结果不明的发送不自动重试，以免用户收到两份。 */
 class Outbox(private val store: OutboxStore = MemoryOutboxStore()) {
     private val lock = Mutex()
+
+    /** Record every part before the first network request, so recovery also knows about unsent images. */
+    suspend fun prepare(peer: ChannelPeer, deliveries: List<Delivery>) = lock.withLock {
+        require(deliveries.map { it.id }.distinct().size == deliveries.size)
+        deliveries.forEach { delivery ->
+            require(delivery.threadId == peer.threadId)
+            store.get(delivery.id)?.let { old ->
+                require(old.peer == peer && old.delivery == delivery) { "delivery id used for different content" }
+            }
+        }
+        store.saveAll(deliveries.filter { store.get(it.id) == null }.map { DeliveryRecord(peer, it, DeliveryState.Pending) })
+    }
 
     suspend fun deliver(channel: Channel, peer: ChannelPeer, delivery: Delivery): DeliveryRecord = lock.withLock {
         require(peer.channelId == channel.id)
@@ -52,4 +67,5 @@ class Outbox(private val store: OutboxStore = MemoryOutboxStore()) {
     fun pendingRecovery(): List<DeliveryRecord> = store.all().filter { it.state == DeliveryState.Pending }
     fun uncertain(): List<DeliveryRecord> = store.all().filter { it.state == DeliveryState.Attempting || it.state == DeliveryState.Uncertain }
     fun get(id: String): DeliveryRecord? = store.get(id)
+    fun records(): List<DeliveryRecord> = store.all()
 }

@@ -69,14 +69,20 @@ class UserUtterances {
     /** 不足 2 个字的引文不算数:一两个字在哪句话里都找得到。普通写入只认本轮。 */
     @Synchronized fun contains(quote: String): Boolean = matches(quote, texts)
 
+    /** 改删记忆时用完整原话检查引文的上下文，例如引文前的否定。 */
+    @Synchronized internal fun matchingCurrentMessages(quote: String): List<String> =
+        matchingMessages(quote, texts).toList()
+
     /** memory_save 另认已登记的上一轮明确确认;助手建议本身永远不是可引用的用户原话。 */
     @Synchronized fun containsMemoryQuote(quote: String): Boolean =
         matches(quote, texts + listOfNotNull(previousConfirmation))
 
-    private fun matches(quote: String, sources: List<String>): Boolean {
+    private fun matches(quote: String, sources: List<String>): Boolean = matchingMessages(quote, sources).any()
+
+    private fun matchingMessages(quote: String, sources: List<String>): Sequence<String> {
         val q = norm(quote)
-        if (q.length < MIN_QUOTE) return false
-        return sources.any { norm(it).contains(q) }
+        if (q.length < MIN_QUOTE) return emptySequence()
+        return sources.asSequence().map(::norm).filter { it.contains(q) }
     }
 
     private fun norm(s: String) = Normalizer.normalize(s, Normalizer.Form.NFKC).trim()

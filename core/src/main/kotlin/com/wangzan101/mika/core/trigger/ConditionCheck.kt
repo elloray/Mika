@@ -25,6 +25,20 @@ data class ConditionDecision(val fire: Boolean, val reason: String?, val next: T
 const val CONDITION_NOT_MET = "condition_not_met"
 const val CONDITION_UNCHANGED = "condition_unchanged"
 const val CONDITION_COOLDOWN = "cooldown"
+const val CONDITION_PLAN_EDITED = "plan_edited"
+
+/** 编辑界面可能打开了很久，保留存储中的最新检查状态，除非用户修改了检查规则。 */
+internal fun TriggerDefinition.withConditionHistoryFrom(previous: TriggerDefinition): TriggerDefinition {
+    val sameCondition = conditionGoal == previous.conditionGoal && notifyWhen == previous.notifyWhen &&
+        cooldownMs == previous.cooldownMs && reminderText == previous.reminderText
+    return copy(
+        lastConditionMet = previous.lastConditionMet.takeIf { sameCondition },
+        lastValue = previous.lastValue.takeIf { sameCondition },
+        baselineValue = previous.baselineValue.takeIf { sameCondition },
+        baselineAtMs = previous.baselineAtMs.takeIf { sameCondition },
+        lastFiredAtMs = previous.lastFiredAtMs.takeIf { sameCondition },
+    )
+}
 
 /**
  * 有效检查之后怎么办。想执行:满足,且每次满足都执行或上次不是满足。

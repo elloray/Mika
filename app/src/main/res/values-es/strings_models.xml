@@ -197,4 +197,7 @@
     <string name="speech_footer">Solo se listan los modelos que parecen modelos de voz. Si falta el tuyo, escribe su nombre; al elegirlo se transcribe un clip corto como prueba.</string>
     <string name="speech_pick_failed">Ese modelo no pudo transcribir: %1$s</string>
     <string name="speech_pick_timeout">%1$s no respondió a un clip de prueba en %2$d segundos</string>
+    <string name="models_daily_token_budget">Presupuesto diario de tokens</string>
+    <string name="models_daily_token_budget_sub">Cuenta los tokens de entrada y salida informados para todos los modelos y usos de este proveedor durante el día local. Al llegar al límite se bloquea la siguiente solicitud; las solicitudes en curso pueden superarlo. El uso no informado cuenta como 0 y se restablece al cambiar la fecha local.</string>
+    <string name="models_daily_token_budget_save_failed">No se pudo guardar el presupuesto. La configuración anterior sigue activa.</string>
 </resources>

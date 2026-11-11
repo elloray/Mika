@@ -114,7 +114,7 @@ class PrefixStabilityAdaptersTest {
             AnthropicModel(url, "k", "m", Capabilities(true, vision, contextTokens, true), OkHttpClient(), reasoningEffort = "medium")
         override val keys = setOf("system", "tools", "messages")
         override val replay = "SIG"
-        override val compactions = listOf(12, 22)
+        override val compactions = listOf(12, 21, 30)
         override fun zone0(body: JsonObject) = strip(body["system"]!!).toString() + strip(body["tools"]!!)
         override fun messages(body: JsonObject) = body["messages"]!!.jsonArray.map { strip(it).toString() }
         override fun tools(body: JsonObject) = body["tools"]!!.jsonArray.map { strip(it).toString() to it.jsonObject.str("name")!! }
@@ -135,7 +135,7 @@ class PrefixStabilityAdaptersTest {
         override val replay = "TS"
         // 请求字节比另外三种略少,离触发点只差一点:提示词或工具说明长短一变,越过触发点的那一步就可能和另外三种差一步
         // (曾经是 13、24);现在和另外三种同一步越过
-        override val compactions = listOf(12, 22)
+        override val compactions = listOf(12, 21, 30)
         override fun zone0(body: JsonObject) = body["systemInstruction"].toString() + body["tools"]
         override fun messages(body: JsonObject) = body["contents"]!!.jsonArray.map { it.toString() }
         override fun tools(body: JsonObject) = body["tools"]!!.jsonArray.flatMap { t ->
@@ -157,7 +157,7 @@ class PrefixStabilityAdaptersTest {
         )
         override val keys = setOf("messages", "tools")
         override val replay = null
-        override val compactions = listOf(12, 22)
+        override val compactions = listOf(12, 21, 30)
         override fun zone0(body: JsonObject) = strip(body["messages"]!!.jsonArray.first()).toString() + body["tools"]
         override fun messages(body: JsonObject) = body["messages"]!!.jsonArray.drop(1).map { plain(strip(it).jsonObject).toString() }
         override fun tools(body: JsonObject) =
@@ -229,7 +229,7 @@ class PrefixStabilityAdaptersTest {
     }
 
     private val entries = setOf(
-        "phone_launch_app", "phone_list_apps", "phone_set_alarm", "phone_set_timer", "phone_add_calendar_event", "web_navigate", "web_read_page", "run_command",
+        "phone_launch_app", "phone_list_apps", "phone_set_alarm", "phone_set_timer", "phone_add_calendar_event", "phone_calendar_bulk_insert", "web_navigate", "web_read_page", "run_command",
     )
     private val markers = listOf(
         HistoryPruner.OMITTED, HistoryPruner.OMITTED_READ, HistoryPruner.olderImage(0).substringBefore(";"), HistoryPruner.OMITTED_IMAGE, ContextCompressor.HEADER,

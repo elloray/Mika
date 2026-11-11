@@ -211,7 +211,7 @@ class ToolDispatcher internal constructor(
     /** 只读的调用(读屏、报失败一类):工具声明会改变屏幕、页面或沙箱的一律拒绝,那些只能经执行入口做。 */
     suspend fun executeRead(call: Part.ToolCall, step: Int? = null): ToolExecution {
         val tool = registry.declared(call.name)
-        if (tool != null && !tool.readOnly) {
+        if (tool != null && (!tool.readOnly || !tool.readOnly(parseArgs(call.argsJson)))) {
             return fail("not_a_read", Feedback.format("not_a_read", "tool" to call.name), recoverable = false)
         }
         return dispatch(call, step, null)
@@ -262,8 +262,14 @@ class ToolDispatcher internal constructor(
             else -> group
         }?.takeIf(::expand)
         val result = dispatchTool(tool, call, step, sub)
-        return if (opening == null) result else result.with(content = JsonObject(result.content + (MORE_TOOLS to JsonPrimitive(Feedback.format("group_opened",
-            "group" to opening, "examples" to registry.members(opening).filter { registry[it]?.entry == null }.take(4).joinToString())))))
+        val nextGroups = result.followUpTools.mapNotNull { verb ->
+            ctx.tools.nameOf(verb)?.let { registry[it] }?.let(::groupOf)
+        }.distinct().filter(::expand)
+        val openings = listOfNotNull(opening) + nextGroups
+        return if (openings.isEmpty()) result else result.with(content = JsonObject(result.content + (MORE_TOOLS to JsonPrimitive(openings.joinToString("\n") { opened ->
+            Feedback.format("group_opened", "group" to opened,
+                "examples" to registry.members(opened).filter { registry[it]?.entry == null }.take(4).joinToString())
+        }))))
     }
 
     private suspend fun dispatchTool(tool: AgentTool, call: Part.ToolCall, step: Int?, sub: SubActions?): ToolExecution {

@@ -7,7 +7,7 @@ Mika 只以子进程方式运行它们,不链接它们。
 |---|---|---|---|---|
 | `libproot.so` | PRoot 本体,静态链接 talloc | PRoot:`sources.lock` 里的 `proot` 源码包,加 `patches/proot-*.patch`;talloc:`sources.lock` 里的 `talloc` 源码包,只编 `talloc.c`,未修改 | PRoot 5.4.0、talloc 2.4.3 | GPL-2.0-or-later(PRoot)、LGPL-3.0-or-later(talloc) |
 | `libproot_loader.so` | PRoot 的载入器(静态、`-nostdlib`) | 同一个 PRoot 源码包 | 5.4.0 | GPL-2.0-or-later |
-| `libmikarun.so` | Mika 的沙箱启动器(超时、断网、清场) | `app/src/main/cpp/mikarun/mikarun.c` | 随 Mika | MIT |
+| `libmikarun.so` | Mika 的沙箱启动器(超时、断网、清场、伪终端) | `app/src/main/cpp/mikarun/mikarun.c` | 随 Mika | MIT |
 
 许可证全文和版权声明(`licenses/THIRD_PARTY_NOTICES.md`)都在仓库根目录的 `licenses/`。
 
@@ -62,6 +62,7 @@ tools/sandbox/build-native.sh --check   # 只重编并与仓库里的产物比�
 每次发布 APK,都要把 `sources.lock` 列出的源码包、`patches/`、编译脚本和许可证打包成 `mika-<版本>-gpl-sources.tar.gz`,和 APK 放在同一个发布页。在仓库根目录运行:
 
 ```bash
+set -euo pipefail   # 任何一步失败就停,不产出缺源码的包
 VERSION=$(sed -n 's/.*versionName = "\(.*\)".*/\1/p' app/build.gradle.kts)
 NAME=mika-$VERSION-gpl-sources
 OUT=build/gpl-sources/$NAME

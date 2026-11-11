@@ -17,6 +17,7 @@ import java.io.File
 import org.junit.Assert.assertArrayEquals
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -81,6 +82,73 @@ class SharedImageDeviceTest {
             }
         } finally {
             resolver.delete(uri, null, null)
+        }
+    }
+
+    /** 界面已在后台存活时收到分享:空输入框直接填入当前会话,已有草稿时等待用户确认替换或取消。 */
+    @Test
+    fun shareWhileActivityAliveTargetsCurrentConversationAndPromptsWhenDraftExists() {
+        val instrumentation = InstrumentationRegistry.getInstrumentation()
+        val target = instrumentation.targetContext
+        val app = target.applicationContext as MikaApp
+        val launchIntent = Intent(target, MainActivity::class.java)
+        val scenario = ActivityScenario.launch<MainActivity>(launchIntent)
+        try {
+            val conversationId = app.conversations.newConversation()
+            scenario.onActivity {
+                app.chat.openConversation(conversationId)
+                app.chat.input("")
+            }
+            instrumentation.waitForIdleSync()
+
+            val firstText = "后台分享直接进当前会话"
+            val firstShare = Intent(Intent.ACTION_SEND).apply {
+                setClassName(target.packageName, MainActivity::class.java.name)
+                type = "text/plain"
+                putExtra(Intent.EXTRA_TEXT, firstText)
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+            target.startActivity(firstShare)
+            val deadline1 = SystemClock.uptimeMillis() + 10_000
+            while (SystemClock.uptimeMillis() < deadline1 && app.chat.ui.value.input != firstText) {
+                instrumentation.waitForIdleSync()
+                SystemClock.sleep(50)
+            }
+            assertEquals(conversationId, app.chat.ui.value.conversationId)
+            assertEquals(firstText, app.chat.ui.value.input)
+            assertNull(app.chat.ui.value.pendingSharedDraft)
+
+            val secondText = "后台分享需要确认替换"
+            val secondShare = Intent(Intent.ACTION_SEND).apply {
+                setClassName(target.packageName, MainActivity::class.java.name)
+                type = "text/plain"
+                putExtra(Intent.EXTRA_TEXT, secondText)
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+            target.startActivity(secondShare)
+            val deadline2 = SystemClock.uptimeMillis() + 10_000
+            while (SystemClock.uptimeMillis() < deadline2 && app.chat.ui.value.pendingSharedDraft == null) {
+                instrumentation.waitForIdleSync()
+                SystemClock.sleep(50)
+            }
+            assertEquals(conversationId, app.chat.ui.value.conversationId)
+            assertEquals(firstText, app.chat.ui.value.input)
+            assertEquals(secondText, app.chat.ui.value.pendingSharedDraft?.text)
+
+            val missingImage = Intent(Intent.ACTION_SEND).apply { type = "image/png" }
+            scenario.onActivity { instrumentation.callActivityOnNewIntent(it, missingImage) }
+            assertEquals(secondText, app.chat.ui.value.pendingSharedDraft?.text)
+            assertEquals(secondText, app.sharedDrafts.readPending()?.text)
+
+            scenario.onActivity { app.chat.confirmPendingSharedDraft() }
+            instrumentation.waitForIdleSync()
+            assertEquals(conversationId, app.chat.ui.value.conversationId)
+            assertEquals(secondText, app.chat.ui.value.input)
+            assertNull(app.chat.ui.value.pendingSharedDraft)
+        } finally {
+            app.chat.cancelPendingSharedDraft()
+            app.chat.ui.value.conversationId?.let { app.sharedDrafts.clear(it) }
+            runCatching { scenario.onActivity { it.finish() } }
         }
     }
 }

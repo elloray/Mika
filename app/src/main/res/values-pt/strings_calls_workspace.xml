@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="calls_default_sim_settings">SIM padrão para chamadas</string>
+    <string name="calls_device_and_permissions">Dispositivo e permissões</string>
+    <string name="calls_edit_rule">Editar</string>
+    <string name="calls_nav_receive">Atender</string>
+    <string name="calls_nav_task">Tarefa</string>
+    <string name="calls_pause_enable_first">Ligue o atendimento automático para pausá-lo temporariamente.</string>
+    <string name="calls_rule_delay_summary">Espera para atender: %1$d s</string>
+    <string name="calls_rule_pause">Pausa temporária</string>
+    <string name="calls_rule_scope">Quem a IA atende</string>
+    <string name="calls_sim_ask_each_time">Sem SIM preferido</string>
+    <string name="calls_task_back_to_edit">Voltar à edição</string>
+    <string name="calls_task_confirm_dial">Confirmar e ligar</string>
+    <string name="calls_task_confirm_note">O Mika usa a tarefa nesta chamada. A ligação usa o SIM escolhido e pode gerar tarifas da operadora e de voz em tempo real.</string>
+    <string name="calls_task_constraints">O que não pode ser prometido</string>
+    <string name="calls_task_context">Contexto adicional</string>
+    <string name="calls_task_filled">Preenchido</string>
+    <string name="calls_task_goal">O que esta chamada deve resolver? (obrigatório)</string>
+    <string name="calls_task_goal_example">Por exemplo, confirme se há vaga na sexta e anote o preço.</string>
+    <string name="calls_task_limit">%1$d / %2$d caracteres</string>
+    <string name="calls_task_number_hint">Digite um número de telefone comum com 7–15 dígitos.</string>
+    <string name="calls_task_one_off">A tarefa vale só para esta chamada. Veja a chamada e a tarefa no histórico.</string>
+    <string name="calls_task_optional">Opcional</string>
+    <string name="calls_task_pick_sim">Escolha um SIM para esta chamada</string>
+    <string name="calls_task_questions">Perguntas a fazer</string>
+    <string name="calls_task_questions_hint">Uma pergunta por linha</string>
+    <string name="calls_task_questions_limit">Até %1$d perguntas, %2$d caracteres por pergunta.</string>
+    <string name="calls_task_replace_action">Substituir rascunho</string>
+    <string name="calls_task_replace_note">Substitui o rascunho atual por uma tarefa do histórico. Nenhuma ligação é feita.</string>
+    <string name="calls_task_replace_title">Substituir este rascunho?</string>
+    <string name="calls_task_review">Revisar tarefa</string>
+    <string name="calls_task_review_blocked">Para ligar, o telefone deve estar pronto, sem outra chamada e com um SIM selecionado.</string>
+    <string name="calls_task_sim_override_summary">Nesta chamada: %1$s · Padrão: %2$s</string>
+    <string name="calls_voice_settings">Voz</string>
+</resources>

@@ -24,6 +24,7 @@ import com.wangzan101.mika.core.trigger.ConditionOutcome
 import com.wangzan101.mika.core.trigger.TriggerSnapshot
 import com.wangzan101.mika.core.trigger.TriggerWindowState
 import com.wangzan101.mika.core.trigger.rescheduledTo
+import com.wangzan101.mika.core.trigger.EditedSchedule
 import com.wangzan101.mika.core.trigger.afterCheck
 import com.wangzan101.mika.core.trigger.conditionCheckGoal
 import com.wangzan101.mika.core.trigger.revertFire
@@ -38,9 +39,10 @@ import kotlinx.coroutines.launch
 object TriggerRuntime {
     private var recovered = false
     /** 存下并布置闹钟;系统没准许准时闹钟(到点可能不准时或起不来)时引导用户去开一次,结果里照实说有没有提示到。 */
-    @Synchronized fun schedule(context: Context, definition: TriggerDefinition): Scheduled {
+    @Synchronized fun schedule(context: Context, definition: TriggerDefinition, replaceExisting: Boolean = false): Scheduled {
         val store = store(context)
-        store.upsert(definition)
+        if (replaceExisting) check(store.edit(definition)) { tr(R.string.trigger_deleted) }
+        else store.upsert(definition)
         engine(context, store).rearm(System.currentTimeMillis())
         val granted = canScheduleExactly(context)
         val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
@@ -48,6 +50,15 @@ object TriggerRuntime {
         val notified = ExactAlarmGuide.shouldPrompt(granted, prefs.getBoolean(PROMPTED, false)) && promptExactAlarm(context)
         if (notified) prefs.edit().putBoolean(PROMPTED, true).apply()
         return Scheduled(granted, notified)
+    }
+
+    /** 模型编辑仍限本对话；在同一锁内复核后保存，不能把已删除或换了归属的计划写回来。 */
+    @Synchronized fun edit(context: Context, threadId: String, id: String,
+        change: (TriggerDefinition) -> TriggerDefinition): EditedSchedule? {
+        val current = store(context).get(id)?.takeIf { it.threadId == threadId } ?: return null
+        val plan = change(current)
+        if (plan.id != id || plan.threadId != threadId) return null
+        return EditedSchedule(plan, schedule(context, plan, replaceExisting = true))
     }
 
     /** 系统的「闹钟和提醒」授权页(安卓 12 起)。 */
@@ -112,7 +123,7 @@ object TriggerRuntime {
 
     @Synchronized fun interrupted(context: Context, key: String, reason: String) {
         val store = store(context)
-        store.mark(key, TriggerWindowState.Unknown, reason)
+        if (!store.mark(key, TriggerWindowState.Unknown, reason)) return
         store.windows().firstOrNull { it.key == key }?.let { window ->
             store.get(window.triggerId)?.let { trigger ->
                 if (!hasSavedResult(context, key)) runCatching { reportUncertain(context, trigger, key) }

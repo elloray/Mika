@@ -1,6 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="browser_engine">Bing</string>
+    <string name="browser_engine_bing">Bing</string>
+    <string name="browser_engine_google">Google</string>
+    <string name="browser_engine_duckduckgo">DuckDuckGo</string>
+    <string name="browser_engine_baidu">Baidu</string>
+    <string name="browser_engine_choose">Поисковая система</string>
+    <string name="browser_engine_custom_add">Своя поисковая система</string>
+    <string name="browser_engine_custom_name">Название</string>
+    <string name="browser_engine_custom_url">URL поиска</string>
+    <string name="browser_engine_custom_hint" formatted="false">Вставьте %s туда, где должны быть слова поиска, например: https://example.com/search?q=%s</string>
+    <string name="browser_engine_custom_invalid" formatted="false">Введите название и URL http(s) ровно с одним %s</string>
+    <string name="browser_engine_custom_remove">Удалить %1$s</string>
     <string name="browser_recent_source">Недавно открытые</string>
     <string name="browser_search_colon">Поиск: %1$s</string>
     <string name="browser_search_q">Искать «%1$s»</string>
@@ -17,6 +27,25 @@
     <string name="browser_external_link">Эта ссылка открывается в другом приложении, поэтому браузер её не откроет.</string>
     <string name="browser_bad_scheme">Не удаётся открыть этот адрес: браузер открывает только веб-страницы (http, https).</string>
     <string name="browser_blocked_app_link">Заблокирована ссылка, которая открывает другое приложение.</string>
+    <string name="browser_downloads">Загрузки</string>
+    <string name="browser_download_started">Загрузка %1$s</string>
+    <string name="browser_download_failed_start">Не удалось загрузить этот файл</string>
+    <string name="browser_download_empty">Загрузок пока нет</string>
+    <string name="browser_download_running">Загрузка…</string>
+    <string name="browser_download_done">Загружено</string>
+    <string name="browser_download_failed">Ошибка загрузки</string>
+    <string name="browser_download_open">Открыть</string>
+    <string name="browser_download_cancel">Отменить загрузку</string>
+    <string name="browser_download_delete">Удалить</string>
+    <string name="browser_download_delete_q">Удалить эту загрузку?</string>
+    <string name="browser_download_open_failed">Нет приложения, которое откроет этот файл</string>
+    <string name="browser_permission_ask">Этот сайт запрашивает доступ:</string>
+    <string name="browser_permission_camera">Камера</string>
+    <string name="browser_permission_microphone">Микрофон</string>
+    <string name="browser_permission_camera_mic">Камера и микрофон</string>
+    <string name="browser_permission_location">Геолокация</string>
+    <string name="browser_permission_allow">Разрешить</string>
+    <string name="browser_permission_block">Заблокировать</string>
     <string name="browser_no_download">Браузер пока не умеет скачивать файлы.</string>
     <string name="browser_crashed">На странице возникла проблема, и она была закрыта. Её можно открыть снова.</string>
     <string name="browser_logged_in">Вход выполнен: Mika тоже может пользоваться им в задачах.</string>
@@ -53,8 +82,8 @@
     <string name="browser_leave_body">Внесённые на странице изменения могут не сохраниться.</string>
     <string name="browser_leave">Покинуть</string>
     <string name="browser_search_hint">Введите запрос или URL</string>
-    <string name="browser_engine_note">Поиск через Bing</string>
-    <string name="browser_typing_note">URL открываются сразу; всё остальное ищется через Bing</string>
+    <string name="browser_engine_note">Поиск через %1$s</string>
+    <string name="browser_typing_note">URL открываются сразу; всё остальное ищется через %1$s</string>
     <string name="browser_login_legend">Вход выполнен: Mika может сразу пользоваться им в задачах</string>
     <string name="browser_add_hint">Откройте сайт, затем нажмите «Добавить в избранное» в меню «Ещё»</string>
     <string name="browser_edit_favorites">Изменить избранное</string>
@@ -62,6 +91,32 @@
     <string name="browser_long_press">Изменить сайт можно и долгим нажатием на него</string>
     <string name="browser_favorites">Избранное</string>
     <string name="browser_edit">Изменить</string>
+    <string name="browser_bookmarks">Закладки</string>
+    <string name="browser_all">Все</string>
+    <string name="browser_bookmark_add">Добавить в закладки</string>
+    <string name="browser_bookmark_remove">Убрать из закладок</string>
+    <string name="browser_bookmarked">Добавлено в закладки</string>
+    <string name="browser_unbookmarked">Удалено из закладок</string>
+    <string name="browser_bookmark_empty">Откройте страницу и нажмите «Добавить в закладки» в «Ещё»</string>
+    <string name="browser_bookmark_rename">Переименовать закладку</string>
+    <string name="browser_bookmark_name">Название</string>
+    <string name="browser_tabs">Вкладки</string>
+    <string name="browser_new_tab">Новая вкладка</string>
+    <string name="browser_no_tabs">Нет открытых вкладок</string>
+    <string name="browser_close_tab">Закрыть вкладку</string>
+    <string name="browser_history">История</string>
+    <string name="browser_clear_history">Очистить историю</string>
+    <string name="browser_clear_history_q">Очистить всю историю?</string>
+    <string name="browser_find">Поиск на странице</string>
+    <string name="browser_find_prev">Предыдущее совпадение</string>
+    <string name="browser_find_next">Следующее совпадение</string>
+    <string name="browser_find_close">Закрыть поиск</string>
+    <string name="browser_find_no_matches">Совпадений нет</string>
+    <string name="browser_clear_data">Очистить данные просмотра</string>
+    <string name="browser_clear_site_data">Файлы cookie и данные сайтов</string>
+    <string name="browser_clear_site_data_sub">Выполнит выход со всех сайтов, включая те, что Mika использует для задач</string>
+    <string name="browser_clear_cache">Кэшированные файлы</string>
+    <string name="browser_data_cleared">Данные просмотра очищены</string>
     <string name="browser_clear_input">Очистить</string>
     <string name="browser_open_site">Открыть %1$s</string>
     <string name="browser_remove_site">Удалить %1$s</string>

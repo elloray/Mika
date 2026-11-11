@@ -1,10 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="web_search_title">Поиск в интернете</string>
+    <string name="web_search_provider">Поисковый сервис</string>
+    <string name="web_search_note_you">Без ключа — бесплатный API (100 запросов в день); с ключом — платный API.</string>
+    <string name="web_search_searxng_url">Адрес экземпляра</string>
+    <string name="web_search_note_jina">Нужен ключ API. Используется поиск Jina (s.jina.ai).</string>
+    <string name="web_search_note_exa">Нужен ключ API. Используется поиск Exa (api.exa.ai).</string>
+    <string name="web_search_note_searxng">Ваш собственный экземпляр SearXNG, ключ не нужен. В нём должен быть включён вывод JSON (добавьте json в search.formats в settings.yml).</string>
+    <string name="web_search_api_key_required">Ключ API (обязательно)</string>
+    <string name="web_search_missing_key">Для работы %1$s нужен ключ API.</string>
+    <string name="web_search_get_key">Получить ключ API</string>
+    <string name="web_search_privacy">Ключ хранится на этом телефоне в зашифрованном виде. Результаты поиска считаются ненадёжным содержимым.</string>
     <string name="web_search_row_sub">Необязательная поисковая служба; поиск в браузере доступен всегда</string>
-    <string name="web_search_hint">По умолчанию выключен. Mika отправляет параметры query и count на вашу конечную точку HTTP JSON. Необязательный ключ передаётся как токен Bearer и хранится на этом телефоне в зашифрованном виде. Результаты поиска считаются ненадёжным содержимым.</string>
     <string name="web_search_enabled">Включить поиск в интернете</string>
-    <string name="web_search_endpoint">URL конечной точки поиска</string>
     <string name="web_search_api_key">Ключ API (необязательно)</string>
     <string name="web_search_invalid_endpoint">Введите URL HTTP или HTTPS без параметров запроса.</string>
     <string name="web_search_action">Искать в интернете</string>

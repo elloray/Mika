@@ -64,7 +64,25 @@ internal class DeviceUnlockInput(private val context: Context, private val injec
         }
     }
 
-    fun enter(kind: Int, bytes: ByteArray): Boolean {
+    /** 对 SystemUI 做一次定向点击,用于点「用密码解锁」这类回退按钮;不含凭据。 */
+    fun tap(x: Int, y: Int): Boolean {
+        val target = systemUiUid ?: return false
+        if (!power.isInteractive || !keyguard.isKeyguardLocked || !keyguard.isDeviceLocked) return false
+        val downAt = SystemClock.uptimeMillis()
+        fun send(action: Int, eventTime: Long): Boolean {
+            val event = MotionEvent.obtain(downAt, eventTime, action, x.toFloat(), y.toFloat(), 0)
+            return try {
+                event.source = InputDevice.SOURCE_TOUCHSCREEN
+                injectTo(event, target)
+            } finally {
+                event.recycle()
+            }
+        }
+        if (!send(MotionEvent.ACTION_DOWN, downAt)) return false
+        return send(MotionEvent.ACTION_UP, downAt + TAP_MS)
+    }
+
+    fun enter(kind: Int, bytes: ByteArray, clear: Int = 0): Boolean {
         var chars = CharArray(0)
         var sent = false
         val target = systemUiUid
@@ -78,9 +96,10 @@ internal class DeviceUnlockInput(private val context: Context, private val injec
             if (!DeviceCredential.valid(type, chars)) return false
             val map = KeyCharacterMap.load(KeyCharacterMap.VIRTUAL_KEYBOARD)
             val events = if (type == CredentialKind.Password) map.getEvents(chars) ?: return false else null
-            // 已由调用方确认 SystemUI 的凭据输入框。清掉可能残留的半截输入,只尝试一次完整凭据。
+            // 已由调用方确认 SystemUI 的凭据输入框。只按已有输入的长度回删残留半截,空框不删:
+            // 部分系统在空输入框上收到 DEL 会直接关掉密码页,盲发 16 次 DEL 会让后面的数字全部落空。
             if (type == CredentialKind.Pin) {
-                repeat(16) { if (!key(KeyEvent.KEYCODE_DEL, send = ::toKeyguard)) return false }
+                repeat(clear.coerceIn(0, MAX_CLEAR)) { if (!key(KeyEvent.KEYCODE_DEL, send = ::toKeyguard)) return false }
             } else if (!key(KeyEvent.KEYCODE_A, KeyEvent.META_CTRL_ON or KeyEvent.META_CTRL_LEFT_ON, ::toKeyguard) ||
                 !key(KeyEvent.KEYCODE_DEL, send = ::toKeyguard)) return false
             if (type == CredentialKind.Pin) {
@@ -117,6 +136,8 @@ internal class DeviceUnlockInput(private val context: Context, private val injec
 
     private companion object {
         const val SYSTEM_UI = "com.android.systemui"
+        const val MAX_CLEAR = 16
+        const val TAP_MS = 30L
         val MODIFIERS = intArrayOf(KeyEvent.KEYCODE_SHIFT_LEFT, KeyEvent.KEYCODE_SHIFT_RIGHT, KeyEvent.KEYCODE_ALT_LEFT, KeyEvent.KEYCODE_ALT_RIGHT)
     }
 }

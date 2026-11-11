@@ -167,4 +167,10 @@
     <string name="quit_row_sub">Menghentikan tugas latar belakang dan menyembunyikan kapsul mengambang</string>
     <string name="quit_confirm_body">Tugas yang sedang berjalan akan berhenti, kapsul mengambang dan notifikasi akan hilang. Saat Mika dibuka lagi, semuanya kembali.</string>
     <string name="quit_confirm_action">Keluar</string>
+    <string name="settings_task_token_budget">Anggaran token per tugas</string>
+    <string name="settings_task_token_budget_sub">Hanya token input dan output yang dilaporkan penyedia yang dihitung. Setelah anggaran tercapai, permintaan berikutnya tidak dikirim. Permintaan yang sedang berjalan dapat melampaui anggaran; panggilan tanpa penggunaan yang dilaporkan dihitung 0.</string>
+    <string name="settings_token_budget_unlimited">Tanpa batas</string>
+    <string name="settings_token_budget_custom">Anggaran token kustom</string>
+    <string name="settings_token_budget_apply">Pakai</string>
+    <string name="settings_token_budget_invalid">Masukkan bilangan bulat dari %1$s sampai %2$s.</string>
 </resources>

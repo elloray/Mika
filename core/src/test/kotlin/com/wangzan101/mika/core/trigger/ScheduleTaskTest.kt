@@ -17,6 +17,120 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class ScheduleTaskTest {
+    private class EditingAdmin(var plan: TriggerDefinition) : ScheduleAdmin {
+        var edits = 0
+        var beforeEdit: () -> Unit = {}
+        override fun list(threadId: String) = listOf(plan).filter { it.threadId == threadId }
+        override fun setEnabled(threadId: String, id: String, enabled: Boolean) = false
+        override fun remove(threadId: String, id: String) = false
+        override fun reschedule(threadId: String, id: String, atMs: Long) = false
+        override fun runNow(threadId: String, id: String) = false
+        override fun edit(threadId: String, id: String, change: (TriggerDefinition) -> TriggerDefinition): EditedSchedule? {
+            if (plan.id != id || plan.threadId != threadId) return null
+            beforeEdit()
+            plan = change(plan)
+            edits++
+            return EditedSchedule(plan, Scheduled(false))
+        }
+    }
+
+    @Test fun partialEditUsesTheLatestPlanAndKeepsAnUnchangedCalendarStart() = runBlocking {
+        val first = java.time.Instant.parse("2099-01-01T00:00:00Z").toEpochMilli()
+        val admin = EditingAdmin(TriggerDefinition("plan", "conversation", "old", first,
+            calendarTime = "08:00", calendarZone = "UTC"))
+        admin.beforeEdit = { admin.plan = admin.plan.copy(goal = "latest", idleOnly = true) }
+        val result = toolDispatcher(FakeScreen(), conversationId = "conversation", scheduleAdmin = admin)
+            .execute(Part.ToolCall("e", "schedule_task", """{"op":"edit","triggerId":"plan","enabled":false}"""), ActionPass())
+        assertEquals("true", result.content["changed"].toString())
+        assertEquals(first, admin.plan.nextAtMs)
+        assertEquals("latest", admin.plan.goal)
+        assertTrue(admin.plan.idleOnly)
+        assertFalse(admin.plan.enabled)
+    }
+
+    @Test fun editingAnExpiredDisabledOneShotDoesNotResumeOrRescheduleIt() = runBlocking {
+        val admin = EditingAdmin(TriggerDefinition("plan", "conversation", "old", 1000, enabled = false))
+        val result = toolDispatcher(FakeScreen(), conversationId = "conversation", scheduleAdmin = admin)
+            .execute(Part.ToolCall("e", "schedule_task", """{"op":"edit","triggerId":"plan","goal":"new"}"""), ActionPass())
+        assertEquals("true", result.content["changed"].toString())
+        assertEquals(1000, admin.plan.nextAtMs)
+        assertFalse(admin.plan.enabled)
+        val resumed = toolDispatcher(FakeScreen(), conversationId = "conversation", scheduleAdmin = admin)
+            .execute(Part.ToolCall("resume", "schedule_task", """{"op":"edit","triggerId":"plan","enabled":true}"""), ActionPass())
+        assertEquals("false", resumed.content["changed"].toString())
+        assertEquals("\"TimeNotFuture\"", resumed.content["detail"].toString())
+        assertFalse(admin.plan.enabled)
+    }
+
+    @Test fun editKeepsIdentityAndPausedStateAndCanClearACondition() = runBlocking {
+        val admin = EditingAdmin(TriggerDefinition("plan", "conversation", "old", Long.MAX_VALUE,
+            calendarTime = "09:00", calendarZone = "Asia/Shanghai", enabled = false,
+            conditionGoal = "old condition", cooldownMs = 60_000, baselineValue = "old baseline"))
+        val tools = toolDispatcher(FakeScreen(), conversationId = "conversation", scheduleAdmin = admin)
+        val result = tools.execute(Part.ToolCall("edit", "schedule_task",
+            """{"op":"edit","triggerId":"plan","goal":"new","repeatTimes":["20:00","08:00","20:00"],"condition":""}"""), ActionPass())
+        assertEquals("true", result.content["changed"].toString())
+        assertEquals("false", result.content["exactAlarm"].toString())
+        assertEquals("plan", admin.plan.id)
+        assertEquals("conversation", admin.plan.threadId)
+        assertEquals("new", admin.plan.goal)
+        assertFalse(admin.plan.enabled)
+        assertEquals(listOf("08:00", "20:00"), admin.plan.calendarClocks())
+        assertEquals(null, admin.plan.conditionGoal)
+        assertEquals(null, admin.plan.cooldownMs)
+        assertEquals(null, admin.plan.baselineValue)
+    }
+
+    @Test fun editPreservesExactFirstTimeAndReminderWhenOnlyGoalChanges() = runBlocking {
+        val at = java.time.Instant.parse("2099-01-01T00:00:45Z").toEpochMilli()
+        val admin = EditingAdmin(TriggerDefinition("plan", "conversation", "old description", at,
+            reminderText = "exact reminder", idleOnly = true))
+        val result = toolDispatcher(FakeScreen(), conversationId = "conversation", scheduleAdmin = admin)
+            .execute(Part.ToolCall("e", "schedule_task", """{"op":"edit","triggerId":"plan","goal":"new description"}"""), ActionPass())
+        assertEquals("true", result.content["changed"].toString())
+        assertEquals(at, admin.plan.nextAtMs)
+        assertEquals("new description", admin.plan.goal)
+        assertEquals("exact reminder", admin.plan.reminderText)
+        assertTrue(admin.plan.idleOnly)
+    }
+
+    @Test fun editCanSwitchCalendarToIntervalAndThenOneShot() = runBlocking {
+        val admin = EditingAdmin(TriggerDefinition("plan", "conversation", "do", Long.MAX_VALUE,
+            calendarTime = "08:00", calendarZone = "UTC", calendarTimes = listOf("08:00", "20:00")))
+        val tools = toolDispatcher(FakeScreen(), conversationId = "conversation", scheduleAdmin = admin)
+        tools.execute(Part.ToolCall("i", "schedule_task", """{"op":"edit","triggerId":"plan","intervalMinutes":90,"at":"2099-01-01T00:00:00Z"}"""), ActionPass())
+        assertEquals(5_400_000L, admin.plan.intervalMs)
+        assertTrue(admin.plan.calendarClocks().isEmpty())
+        tools.execute(Part.ToolCall("o", "schedule_task", """{"op":"edit","triggerId":"plan","intervalMinutes":0}"""), ActionPass())
+        assertEquals(null, admin.plan.intervalMs)
+        assertEquals(2, admin.edits)
+    }
+
+    @Test fun invalidEditAndForeignPlanDoNotReachPersistence() = runBlocking {
+        val admin = EditingAdmin(TriggerDefinition("plan", "conversation", "do", Long.MAX_VALUE))
+        val tools = toolDispatcher(FakeScreen(), conversationId = "conversation", scheduleAdmin = admin)
+        val bad = tools.execute(Part.ToolCall("b", "schedule_task", """{"op":"edit","triggerId":"plan","repeatTimes":["25:00"]}"""), ActionPass())
+        assertEquals("false", bad.content["changed"].toString())
+        assertEquals("\"InvalidClock\"", bad.content["detail"].toString())
+        val foreign = toolDispatcher(FakeScreen(), conversationId = "other", scheduleAdmin = admin)
+            .execute(Part.ToolCall("f", "schedule_task", """{"op":"edit","triggerId":"plan","goal":"changed"}"""), ActionPass())
+        assertEquals("\"plan_not_found\"", foreign.content["reason"].toString())
+        assertEquals(0, admin.edits)
+    }
+
+    @Test fun createMultipleClocksAndListEnoughFieldsToEditThem() = runBlocking {
+        var saved: TriggerDefinition? = null
+        toolDispatcher(FakeScreen(), conversationId = "conversation", scheduleTrigger = { saved = it; Scheduled(true) })
+            .execute(Part.ToolCall("c", "schedule_task", """{"goal":"check","repeatTimes":["20:00","08:00"],"weekdays":["MON","FRI"],"whenIdle":true}"""), ActionPass())
+        assertEquals(listOf("08:00", "20:00"), saved!!.calendarClocks())
+        val admin = EditingAdmin(saved!!)
+        val list = toolDispatcher(FakeScreen(), conversationId = "conversation", scheduleAdmin = admin)
+            .execute(Part.ToolCall("l", "schedule_task", """{"op":"list"}"""), ActionPass()).content.toString()
+        assertTrue(list, list.contains("\"repeatTimes\":[\"08:00\",\"20:00\"]"))
+        assertTrue(list, list.contains("\"weekdays\":[\"MON\",\"FRI\"]"))
+        assertTrue(list, list.contains("\"whenIdle\":true"))
+    }
+
     @Test fun userCanListAndPauseOwnPlanFromConversation() = runBlocking {
         var paused = false
         val plan = TriggerDefinition("plan-1", "conversation", "天气提醒", 1000, reminderText = "带伞")

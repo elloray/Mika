@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="calls_device_allow_notifications">Разрешить уведомления</string>
+    <string name="calls_device_allow_phone">Разрешить доступ к телефону</string>
+    <string name="calls_device_helper">Встроенный помощник</string>
+    <string name="calls_device_helper_connected">Подключён</string>
+    <string name="calls_device_notifications">Уведомления о звонках</string>
+    <string name="calls_device_notifications_app_off">Уведомления приложения отключены</string>
+    <string name="calls_device_notifications_calls_off">Канал уведомлений о звонках с ИИ отключён</string>
+    <string name="calls_device_notifications_permission_missing">Разрешение на уведомления не выдано</string>
+    <string name="calls_device_notifications_standby_off">Канал уведомлений о фоновом ожидании отключён</string>
+    <string name="calls_device_notifications_unknown">Не удалось проверить состояние уведомлений</string>
+    <string name="calls_device_open_app_settings">Открыть разрешения приложения</string>
+    <string name="calls_device_pair_helper">Подключить помощника</string>
+    <string name="calls_device_permission_granted">Разрешено</string>
+    <string name="calls_device_phone_permissions">Разрешения телефона</string>
+    <string name="calls_device_phone_permissions_note">Разрешите определять состояние вызовов и совершать звонки</string>
+    <string name="calls_device_ready_to_test">Готово к ручной проверке звука</string>
+    <string name="calls_device_system_settings_failed">Не удалось открыть системные настройки. Откройте сведения о приложении в настройках Android.</string>
+    <string name="calls_background_auto_off">Автоответ отключён</string>
+    <string name="calls_background_battery">Батарея и фоновая активность</string>
+    <string name="calls_background_battery_managed">Android применяет оптимизацию батареи</string>
+    <string name="calls_background_battery_restricted">Android сообщает об ограничении фоновой активности</string>
+    <string name="calls_background_battery_unknown">Не удалось проверить настройки батареи</string>
+    <string name="calls_background_battery_unrestricted">Android сообщает об исключении из оптимизации батареи</string>
+    <string name="calls_background_lock_screen_note">Для входящих звонков разрешите уведомления на экране блокировки. Если ожидание часто прекращается, проверьте настройки батареи и фоновой работы. Работа службы не подтверждает, что автоответ сработает на заблокированном телефоне.</string>
+    <string name="calls_background_not_running">Остановлено · автоответ работает только в открытом приложении на разблокированном телефоне</string>
+    <string name="calls_background_open_battery">Открыть настройки батареи</string>
+    <string name="calls_background_running">Работает</string>
+    <string name="calls_background_service">Ожидание входящих звонков</string>
+    <string name="calls_background_settings">Фоновая работа и экран блокировки</string>
+    <string name="calls_background_start">Запустить фоновое ожидание</string>
+    <string name="calls_background_starting">Запуск…</string>
+    <string name="calls_device_locked_dial_pending">Звонок после блокировки</string>
+    <string name="calls_device_locked_dial_remaining">Заблокируйте телефон в течение %1$d с</string>
+    <string name="calls_device_locked_dial_preparing">Подготовка звонка с заблокированного телефона</string>
+    <string name="calls_device_locked_dial_cancel">Отмена</string>
+</resources>

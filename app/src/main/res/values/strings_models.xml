@@ -193,4 +193,7 @@
     <string name="speech_footer">Only models that look like speech models are listed. If yours is missing, type its name; a short clip is transcribed as a test when you pick it.</string>
     <string name="speech_pick_failed">That model couldn’t transcribe: %1$s</string>
     <string name="speech_pick_timeout">%1$s didn’t answer a test clip within %2$d seconds</string>
+    <string name="models_daily_token_budget">Daily token budget</string>
+    <string name="models_daily_token_budget_sub">Counts all models and purposes for this provider in the local calendar day. Only reported input and output tokens count. At the limit, the next request is blocked; in-flight requests may exceed it. Resets when the local date changes.</string>
+    <string name="models_daily_token_budget_save_failed">The budget could not be saved. The previous setting is still active.</string>
 </resources>

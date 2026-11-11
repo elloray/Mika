@@ -1,0 +1,1 @@
+Stop AI speech and audio capture, restore handset microphone access, and keep the cellular call connected so the user can speak. Check phone_call_state afterward. This does not enable automatic answering or place a call.

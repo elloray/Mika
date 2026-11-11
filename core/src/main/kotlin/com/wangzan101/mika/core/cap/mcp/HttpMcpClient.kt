@@ -1,5 +1,6 @@
 package com.wangzan101.mika.core.cap.mcp
 
+import com.wangzan101.mika.core.net.awaitBody
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.serialization.json.Json
@@ -438,28 +439,6 @@ class HttpMcpEndpoint private constructor(
 }
 
 private val JSON_MEDIA = "application/json".toMediaType()
-
-/** 正文也在 OkHttp 回调线程里读完再交回;读取期间取消仍会取消 call,Response 在所有路径上关闭。 */
-private suspend fun <T> Call.awaitBody(timeoutSec: Int, read: (Response) -> T): T = suspendCancellableCoroutine { continuation ->
-    timeout().timeout(timeoutSec.toLong(), TimeUnit.SECONDS)
-    continuation.invokeOnCancellation { cancel() }
-    enqueue(object : Callback {
-        override fun onFailure(call: Call, e: IOException) {
-            if (continuation.isActive) continuation.resumeWithException(e)
-        }
-
-        override fun onResponse(call: Call, response: Response) {
-            if (!continuation.isActive) { response.close(); return }
-            val result = try {
-                response.use(read)
-            } catch (e: Exception) {
-                if (continuation.isActive) continuation.resumeWithException(e)
-                return
-            }
-            if (continuation.isActive) continuation.resume(result)
-        }
-    })
-}
 
 /** OkHttp 的异步调用包成可取消的 suspend;取消时取消底层 call。 */
 internal suspend fun Call.await(timeoutSec: Int): Response = suspendCancellableCoroutine { continuation ->

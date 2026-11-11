@@ -1,0 +1,24 @@
+<resources>
+    <string name="file_library_title">الملفات</string>
+    <string name="file_library_search">البحث بأسماء الملفات</string>
+    <string name="file_library_all">كل المحادثات</string>
+    <string name="file_library_current">المحادثة الحالية</string>
+    <string name="file_library_sources">كل المصادر</string>
+    <string name="file_library_input">المرفقات</string>
+    <string name="file_library_output">الملفات المنشأة</string>
+    <string name="file_library_loading">جارٍ تحميل الملفات…</string>
+    <string name="file_library_empty">لم يتم العثور على ملفات</string>
+    <string name="file_library_missing">غير متاح</string>
+    <string name="file_library_available">متاح</string>
+    <string name="file_library_open">فتح</string>
+    <string name="file_library_share">مشاركة</string>
+    <string name="file_library_add">إضافة إلى المسودة</string>
+    <string name="file_library_choose">اختر محادثة</string>
+    <string name="file_library_new">محادثة جديدة</string>
+    <string name="file_library_error">تعذّر الوصول إلى هذا الملف</string>
+    <string name="file_library_retry">إعادة المحاولة</string>
+    <string name="file_library_partial">تعذّر قراءة بعض المحادثات.</string>
+    <string name="file_library_unknown_time">الوقت غير معروف</string>
+    <string name="file_library_draft_saved">أُضيف إلى مسودة المحادثة المحددة. انتقل إليها عندما يصبح ذلك متاحًا.</string>
+    <string name="file_library_load_failed">تعذّر تحميل الملفات.</string>
+</resources>

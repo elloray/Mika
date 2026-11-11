@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Chat composer: hold to talk -->
+    <string name="voice_placeholder_idle">برای صحبت نگه دارید؛ برای تایپ بزنید</string>
+    <string name="voice_placeholder_busy">برای صحبت با کار نگه دارید؛ برای تایپ بزنید</string>
+    <string name="voice_placeholder_answer">برای پاسخ نگه دارید؛ برای تایپ بزنید</string>
+    <string name="voice_listening">در حال گوش دادن</string>
+    <string name="voice_steer_to">در حال گفتن به «%1$s»</string>
+    <string name="voice_engine_phone">گوشی</string>
+    <string name="voice_engine_phone_offline">گوشی · آفلاین</string>
+    <string name="voice_say_now">بفرمایید، گوش می‌دهم…</string>
+    <string name="voice_recording">در حال ضبط. رها کنید تا به متن تبدیل شود…</string>
+    <string name="voice_foot_live">رها کنید · کلمات برای ویرایش وارد کادر می‌شوند</string>
+    <string name="voice_foot_convert">رها کنید · به متن تبدیل و وارد کادر می‌شود</string>
+    <string name="voice_left">%1$d ثانیه باقی مانده</string>
+    <string name="voice_slide_send_cancel">برای ارسال یا لغو، به بالا بکشید</string>
+    <string name="voice_release_cancel">برای لغو رها کنید</string>
+    <string name="voice_release_send">برای ارسال رها کنید</string>
+    <string name="voice_release_fill">برای وارد کردن رها کنید</string>
+    <string name="voice_release_convert">برای تبدیل رها کنید</string>
+    <string name="voice_converting">در حال تبدیل…</string>
+    <string name="voice_no_match">متوجه نشدم. نگه دارید و دوباره بگویید</string>
+    <string name="voice_busy">تشخیص گفتار مشغول است. کمی بعد دوباره تلاش کنید</string>
+    <string name="voice_network">شبکه در دسترس نیست؛ تبدیل به متن ممکن نشد</string>
+    <string name="voice_mic_unavailable">میکروفون در دسترس نیست. ممکن است برنامهٔ دیگری از آن استفاده کند</string>
+    <string name="voice_hold_to_talk">برای صحبت نگه دارید</string>
+    <string name="voice_mic_blocked_title">میکروفون همچنان در دسترس نیست</string>
+    <string name="voice_mic_blocked_body">اجازهٔ ضبط داده شده است، اما میکا هنوز نمی‌تواند ضبط کند. بررسی کنید گزینهٔ دسترسی به میکروفون در تنظیمات سریع روشن باشد (اندروید ۱۲ و جدیدتر) و میکروفون میکا در مدیریت مجوزهای سیستم خاموش نشده باشد. ممکن است برنامهٔ دیگری نیز از میکروفون استفاده کند.</string>
+    <string name="voice_provider_failed">تبدیل به متن ممکن نشد: %1$s</string>
+    <string name="voice_unavailable_title">ورودی صوتی آماده نیست</string>
+    <string name="voice_unavailable_no_engine">این گوشی تشخیص گفتار داخلی ندارد و مدل گفتار به متنی نیز انتخاب نشده است. یک مدل گفتار از ارائه‌دهنده را در تنظیمات › مدل‌ها › گفتار به متن انتخاب کنید.</string>
+    <string name="voice_unavailable_system_gone">گفتار به متن روی تشخیص داخلی گوشی تنظیم شده، اما اکنون این قابلیت در گوشی موجود نیست. گزینهٔ دیگری در تنظیمات › مدل‌ها › گفتار به متن انتخاب کنید.</string>
+    <string name="voice_unavailable_system_silent">تشخیص گفتار داخلی گوشی پاسخ نداد و متنی دریافت نشد. یک مدل گفتار از ارائه‌دهنده را در تنظیمات › مدل‌ها › گفتار به متن انتخاب کنید.</string>
+    <string name="voice_unavailable_provider_gone">ارائه‌دهندهٔ مدل گفتاری انتخاب‌شده حذف شده است. گزینهٔ دیگری در تنظیمات › مدل‌ها › گفتار به متن انتخاب کنید.</string>
+    <string name="voice_unavailable_off">گفتار به متن خاموش است. یک گزینه در تنظیمات › مدل‌ها › گفتار به متن انتخاب کنید.</string>
+    <string name="voice_go_pick">انتخاب</string>
+    <string name="voice_permission_title">میکا به میکروفون نیاز دارد</string>
+    <string name="voice_permission_body">برای شنیدن صدای شما هنگام نگه داشتن دکمهٔ صحبت، میکا باید صدا ضبط کند. این مجوز قبلاً رد شده و گوشی دیگر دوباره نمی‌پرسد. میکروفون را در صفحهٔ مجوزهای میکا در تنظیمات سیستم روشن کنید.</string>
+    <string name="voice_permission_open">باز کردن تنظیمات</string>
+    <!-- Floating capsule: long press to talk -->
+    <string name="capsule_voice_talk">صحبت</string>
+    <string name="capsule_voice_send">ارسال</string>
+    <string name="capsule_voice_answer_title">پاسخ به میکا</string>
+    <string name="capsule_voice_continue_title">ادامهٔ «%1$s»</string>
+    <string name="capsule_voice_cancel">انصراف</string>
+    <string name="capsule_voice_edit">ویرایش</string>
+    <string name="capsule_voice_foot_send_up">برای ارسال رها کنید · برای لغو یا ویرایش به بالا بکشید</string>
+    <string name="capsule_voice_foot_send_down">برای ارسال رها کنید · برای لغو یا ویرایش به پایین بکشید</string>
+    <string name="capsule_voice_foot_convert_up">برای تبدیل و ارسال رها کنید · برای لغو یا ویرایش به بالا بکشید</string>
+    <string name="capsule_voice_foot_convert_down">برای تبدیل و ارسال رها کنید · برای لغو یا ویرایش به پایین بکشید</string>
+    <string name="capsule_voice_foot_edit">رها کنید · کارت با متن درون کادر باز می‌شود</string>
+    <string name="capsule_voice_foot_cancel">رها کنید · کنار گذاشته می‌شود</string>
+    <string name="capsule_voice_foot_a11y">پس از پایان، در گزینه‌های کپسول «ارسال» را انتخاب کنید</string>
+    <string name="capsule_voice_steered">به کار گفته شد: %1$s</string>
+    <string name="capsule_voice_answered">پاسخ داده شد: %1$s</string>
+    <string name="capsule_voice_sent">ارسال شد: %1$s</string>
+    <string name="capsule_voice_need_mic">برای اجازه به میکروفون در میکا بزنید</string>
+    <string name="capsule_voice_not_ready">ورودی صوتی آماده نیست · بزنید</string>
+    <string name="capsule_voice_open">باز کردن میکا</string>
+</resources>

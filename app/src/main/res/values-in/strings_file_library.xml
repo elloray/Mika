@@ -1,0 +1,24 @@
+<resources>
+    <string name="file_library_title">Berkas</string>
+    <string name="file_library_search">Cari nama berkas</string>
+    <string name="file_library_all">Semua percakapan</string>
+    <string name="file_library_current">Percakapan saat ini</string>
+    <string name="file_library_sources">Semua sumber</string>
+    <string name="file_library_input">Lampiran</string>
+    <string name="file_library_output">Berkas yang dibuat</string>
+    <string name="file_library_loading">Memuat berkas…</string>
+    <string name="file_library_empty">Tidak ada berkas ditemukan</string>
+    <string name="file_library_missing">Tidak tersedia</string>
+    <string name="file_library_available">Tersedia</string>
+    <string name="file_library_open">Buka</string>
+    <string name="file_library_share">Bagikan</string>
+    <string name="file_library_add">Tambahkan ke draf</string>
+    <string name="file_library_choose">Pilih percakapan</string>
+    <string name="file_library_new">Percakapan baru</string>
+    <string name="file_library_error">Berkas ini tidak dapat diakses</string>
+    <string name="file_library_retry">Coba lagi</string>
+    <string name="file_library_partial">Sebagian percakapan tidak dapat dibaca.</string>
+    <string name="file_library_unknown_time">Waktu tidak diketahui</string>
+    <string name="file_library_draft_saved">Ditambahkan ke draf percakapan yang dipilih. Buka percakapan itu saat tersedia.</string>
+    <string name="file_library_load_failed">Berkas tidak dapat dimuat.</string>
+</resources>

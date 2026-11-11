@@ -33,7 +33,7 @@
     <string name="plans_repeat_interval">间隔</string>
     <string name="plans_repeat_weekly">每周</string>
     <string name="plans_interval_minutes">每隔多少分钟重复</string>
-    <string name="plans_clock">当地时间：HH:mm</string>
+    <string name="plans_clock">当地时刻（逗号分隔）</string>
     <string name="plans_zone">时区 ID</string>
     <string name="plans_condition_optional">执行条件（可选）</string>
     <string name="plans_notify_change">条件刚满足时</string>
@@ -47,7 +47,7 @@
     <string name="plans_error_reminder_condition">固定提醒不能同时设置执行条件</string>
     <string name="plans_error_time">请输入有效的日期和时间</string>
     <string name="plans_error_interval">重复间隔须在 1 到 525,600 分钟之间</string>
-    <string name="plans_error_clock">请按 HH:mm 格式输入有效时间</string>
+    <string name="plans_error_clock">请按 HH:mm 输入时刻，多个时刻用逗号分隔</string>
     <string name="plans_error_zone">请输入有效的时区 ID</string>
     <string name="plans_error_weekdays">请至少选择一个星期几</string>
     <string name="plans_error_cooldown">执行间隔须在 1 到 525,600 分钟之间</string>

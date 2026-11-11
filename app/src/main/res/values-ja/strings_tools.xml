@@ -7,6 +7,7 @@
     <string name="tool_set_timer">タイマーをセット</string>
     <string name="tool_show_alarms">アラームを表示</string>
     <string name="tool_add_calendar_event">カレンダーに予定を追加</string>
+    <string name="tool_calendar_bulk_insert">カレンダーに予定を一括追加</string>
     <string name="tool_set_wheel">ピッカーのホイールを回す</string>
     <string name="tool_scroll_find">スクロールして探す</string>
     <string name="tool_wait_condition">画面の条件を待つ</string>

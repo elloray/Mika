@@ -2,7 +2,13 @@ package com.wangzan101.mika.chat
 
 import android.content.Context
 import com.wangzan101.mika.cap.sandbox.SandboxDirs
+import com.wangzan101.mika.core.workspace.SandboxPaths
+import com.wangzan101.mika.core.workspace.SandboxError
+import com.wangzan101.mika.core.workspace.WorkspaceFileGate
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.IOException
@@ -20,6 +26,11 @@ data class BranchCopyResult(
     val truncated: Boolean = false,
 )
 
+/** 重新问时，每个请求的附件在本次复制中的结果。 */
+enum class RetryAttachmentStatus { COPIED, MISSING, OVER_LIMIT, FAILED }
+
+data class RetryAttachmentResult(val path: String, val status: RetryAttachmentStatus, val sizeBytes: Long? = null)
+
 /** 分支时复制源对话的工作区(只要用户附件 inbox/);阶段 2 由对话视图注入。 */
 interface BranchWorkspace {
     /**
@@ -31,6 +42,18 @@ interface BranchWorkspace {
         targetId: String,
         maxBytes: Long = 200L * 1024 * 1024,
     ): BranchCopyResult?
+
+    /** 复制一次 inbox，按输入顺序返回每个沙箱路径的结果；只有本次实际提交的文件才是 COPIED。 */
+    suspend fun copyInboxForRetry(
+        sourceId: String,
+        targetId: String,
+        paths: List<String>,
+        maxBytes: Long = 200L * 1024 * 1024,
+    ): List<RetryAttachmentResult> = paths.map { RetryAttachmentResult(it, RetryAttachmentStatus.FAILED) }
+
+    /** 发送前检查目标工作区中的文件是否仍可安全读取。COPIED 表示当前可读。 */
+    suspend fun checkInboxAttachments(targetId: String, paths: List<String>): List<RetryAttachmentResult> =
+        paths.map { RetryAttachmentResult(it, RetryAttachmentStatus.FAILED) }
 }
 
 /** 手机上的实现:两个工作区都在 files/sandbox/ 里,复制时拿同一把树锁,和重置、任务共用工作区互斥。 */
@@ -43,9 +66,113 @@ class AndroidBranchWorkspace(private val dirs: SandboxDirs) : BranchWorkspace {
                 copyInboxTree(dirs.workspace(sourceId), dirs.workspace(targetId), maxBytes)
             }
         }
+
+    override suspend fun copyInboxForRetry(
+        sourceId: String, targetId: String, paths: List<String>, maxBytes: Long,
+    ): List<RetryAttachmentResult> = dirs.tree.shared {
+        withContext(Dispatchers.IO) {
+            val context = currentCoroutineContext()
+            copyRetryAttachments(dirs.workspace(sourceId), dirs.workspace(targetId), paths, maxBytes, dirs.gate) { context.ensureActive() }
+        }
+    }
+
+    override suspend fun checkInboxAttachments(targetId: String, paths: List<String>): List<RetryAttachmentResult> =
+        dirs.tree.shared { withContext(Dispatchers.IO) { checkRetryAttachments(dirs.workspace(targetId), paths, dirs.gate) } }
 }
 
 private const val INBOX = "inbox"
+private const val INBOX_PREFIX = "${SandboxPaths.WORKSPACE}/inbox/"
+
+private fun retryRelative(path: String): String? {
+    if (!path.startsWith(INBOX_PREFIX)) return null
+    val parts = path.removePrefix(INBOX_PREFIX).split('/')
+    if (parts.any { it.isEmpty() || it == "." || it == ".." || '\\' in it || '\u0000' in it }) return null
+    return "inbox/" + parts.joinToString("/")
+}
+
+private fun failureStatus(e: Exception): RetryAttachmentStatus =
+    if (e is SandboxError && e.code == WorkspaceFileGate.FILE_NOT_FOUND) RetryAttachmentStatus.MISSING
+    else RetryAttachmentStatus.FAILED
+
+internal fun checkRetryAttachments(workspace: File, paths: List<String>, gate: WorkspaceFileGate): List<RetryAttachmentResult> =
+    paths.map { path ->
+        val rel = retryRelative(path)
+        if (rel == null) RetryAttachmentResult(path, RetryAttachmentStatus.FAILED)
+        else try {
+            gate.openRead(workspace, rel).use { RetryAttachmentResult(path, RetryAttachmentStatus.COPIED, it.currentSize()) }
+        } catch (e: CancellationException) { throw e } catch (e: Exception) {
+            RetryAttachmentResult(path, failureStatus(e))
+        }
+    }
+
+/** 优先复制请求项，再复制其余历史附件；每个目标文件独立提交，失败仅删除本次创建的文件。 */
+internal fun copyRetryAttachments(
+    source: File, target: File, paths: List<String>, maxBytes: Long, gate: WorkspaceFileGate,
+    ensureActive: () -> Unit = {},
+): List<RetryAttachmentResult> {
+    val requested = paths.distinct()
+    val all = LinkedHashSet(requested)
+    val inbox = File(source, INBOX)
+    fun collect(dir: File, prefix: String) {
+        ensureActive()
+        if (Files.isSymbolicLink(dir.toPath())) return
+        for (child in dir.listFiles().orEmpty().sortedBy { it.name }) {
+            if (Files.isSymbolicLink(child.toPath())) continue
+            val path = "$prefix${child.name}"
+            if (child.isDirectory) collect(child, "$path/")
+            else if (child.isFile && retryRelative(path) != null) all.add(path)
+        }
+    }
+    collect(inbox, INBOX_PREFIX)
+    var remaining = maxBytes.coerceAtLeast(0)
+    val results = mutableMapOf<String, RetryAttachmentResult>()
+    for (path in all) {
+        ensureActive()
+        val rel = retryRelative(path)
+        if (rel == null) {
+            results[path] = RetryAttachmentResult(path, RetryAttachmentStatus.FAILED)
+            continue
+        }
+        var sourceOpened = false
+        try {
+            gate.openRead(source, rel).use { input ->
+                sourceOpened = true
+                if (input.currentSize() > remaining) {
+                    results[path] = RetryAttachmentResult(path, RetryAttachmentStatus.OVER_LIMIT)
+                } else {
+                    if (!target.isDirectory && !target.mkdirs()) throw IOException("cannot create target workspace")
+                    gate.createNew(target, rel).use { output ->
+                        try {
+                            var written = 0L
+                            val buffer = ByteArray(64 * 1024)
+                            val stream = input.input()
+                            while (true) {
+                                ensureActive()
+                                val n = stream.read(buffer)
+                                if (n < 0) break
+                                if (n.toLong() > remaining - written) throw RetryLimitException()
+                                output.write(if (n == buffer.size) buffer else buffer.copyOf(n))
+                                written += n
+                            }
+                            remaining -= written
+                            results[path] = RetryAttachmentResult(path, RetryAttachmentStatus.COPIED, written)
+                        } catch (e: Throwable) {
+                            output.delete()
+                            throw e
+                        }
+                    }
+                }
+            }
+        } catch (e: CancellationException) { throw e } catch (e: RetryLimitException) {
+            results[path] = RetryAttachmentResult(path, RetryAttachmentStatus.OVER_LIMIT)
+        } catch (e: Exception) {
+            results[path] = RetryAttachmentResult(path, if (sourceOpened) RetryAttachmentStatus.FAILED else failureStatus(e))
+        }
+    }
+    return paths.map { results.getValue(it) }
+}
+
+private class RetryLimitException : IOException()
 
 /**
  * 把 [source]/inbox 复制到 [target]/inbox:只收普通文件,不跟随符号链接,路径规范化后必须仍在各自 inbox 下;

@@ -1,0 +1,22 @@
+<resources>
+    <string name="device_access_group">روشن کردن صفحه و باز کردن قفل از راه دور</string>
+    <string name="device_access_title">اجازهٔ روشن کردن صفحه و باز کردن قفل از راه دور</string>
+    <string name="device_access_sub">رایانه‌ای که توکن MCP شما را دارد می‌تواند صفحهٔ این گوشی را روشن و قفل آن را باز کند.</string>
+    <string name="device_access_credential">اطلاعات قفل صفحه</string>
+    <string name="device_access_no_credential">تنظیم نشده · فقط قفل کشیدنی یا بدون قفل صفحه</string>
+    <string name="device_access_pin_saved">رمز عددی ذخیره شده · برای جایگزینی بزنید</string>
+    <string name="device_access_password_saved">گذرواژه ذخیره شده · برای جایگزینی بزنید</string>
+    <string name="device_access_blocked">باز کردن قفل متوقف شده · اطلاعات قفل را در این گوشی بررسی و دوباره ذخیره کنید</string>
+    <string name="device_access_clear">حذف اطلاعات قفل ذخیره‌شده</string>
+    <string name="device_access_foot">به‌طور پیش‌فرض خاموش است. اطلاعات قفل در این گوشی رمزگذاری می‌شوند و هرگز به مدل یا رایانه ارسال نمی‌شوند. یک تلاش ناموفق، تلاش‌های بعدی را متوقف می‌کند. پس از راه‌اندازی مجدد، ابتدا خودتان یک بار قفل گوشی را باز کنید. کنترل گوشی باید تنظیم شده باشد.</string>
+    <string name="device_access_pin">رمز عددی</string>
+    <string name="device_access_password">گذرواژه</string>
+    <string name="device_access_value">اطلاعات قفل</string>
+    <string name="device_access_value_hint">رمز فعلی قفل صفحه را وارد کنید</string>
+    <string name="device_access_repeat">تأیید</string>
+    <string name="device_access_repeat_hint">دوباره آن را وارد کنید</string>
+    <string name="device_access_save">ذخیرهٔ اطلاعات قفل</string>
+    <string name="device_access_pin_hint">از رمز عددی فعلی ۴ تا ۱۶ رقمی استفاده کنید. ذخیرهٔ دوباره پس از خطا یک تلاش جدید را مجاز می‌کند.</string>
+    <string name="device_access_password_hint">از گذرواژهٔ فعلی ۴ تا ۶۴ نویسه‌ای استفاده کنید: حروف انگلیسی، اعداد، فاصله و نمادهای رایج ASCII. نویسه‌های دیگر و قفل الگویی پشتیبانی نمی‌شوند.</string>
+    <string name="device_access_save_failed">ذخیره نشد. فضای ذخیره‌سازی گوشی را بررسی کنید و دوباره تلاش کنید.</string>
+</resources>

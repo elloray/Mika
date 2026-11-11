@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="calls_default_sim_settings">Default outgoing SIM</string>
+    <string name="calls_device_and_permissions">Device and permissions</string>
+    <string name="calls_edit_rule">Edit</string>
+    <string name="calls_nav_receive">Answer</string>
+    <string name="calls_nav_task">Call task</string>
+    <string name="calls_pause_enable_first">Turn on auto-answer to pause it temporarily.</string>
+    <string name="calls_rule_delay_summary">Answer delay: %1$d s</string>
+    <string name="calls_rule_pause">Temporary pause</string>
+    <string name="calls_rule_scope">Who AI answers</string>
+    <string name="calls_sim_ask_each_time">No preferred SIM</string>
+    <string name="calls_task_back_to_edit">Back to editing</string>
+    <string name="calls_task_confirm_dial">Confirm and dial</string>
+    <string name="calls_task_confirm_note">Mika uses this brief for this call. Dialing uses the selected SIM and may incur carrier and realtime voice charges.</string>
+    <string name="calls_task_constraints">What must not be promised</string>
+    <string name="calls_task_context">Additional context</string>
+    <string name="calls_task_filled">Added</string>
+    <string name="calls_task_goal">What should this call achieve? (required)</string>
+    <string name="calls_task_goal_example">For example, confirm Friday availability and note the price.</string>
+    <string name="calls_task_limit">%1$d / %2$d characters</string>
+    <string name="calls_task_number_hint">Enter an ordinary phone number with 7–15 digits.</string>
+    <string name="calls_task_one_off">The brief applies to this call only. Find the call and its brief in History.</string>
+    <string name="calls_task_optional">Optional</string>
+    <string name="calls_task_pick_sim">Choose a SIM for this call</string>
+    <string name="calls_task_questions">Questions to ask</string>
+    <string name="calls_task_questions_hint">One question per line</string>
+    <string name="calls_task_questions_limit">Up to %1$d questions, %2$d characters each.</string>
+    <string name="calls_task_replace_action">Replace draft</string>
+    <string name="calls_task_replace_note">This replaces the current call draft with a task from History. It does not dial.</string>
+    <string name="calls_task_replace_title">Replace this draft?</string>
+    <string name="calls_task_review">Review call task</string>
+    <string name="calls_task_review_blocked">To dial, the phone must be ready and idle, with a SIM selected.</string>
+    <string name="calls_task_sim_override_summary">This call: %1$s · Preferred: %2$s</string>
+    <string name="calls_voice_settings">Voice</string>
+</resources>

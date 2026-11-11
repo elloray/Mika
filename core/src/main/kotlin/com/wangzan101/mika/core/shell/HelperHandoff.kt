@@ -14,6 +14,9 @@ import java.security.SecureRandom
  */
 object HelperHandoff {
     const val SHELL_UID = 2000
+    private const val PER_USER_RANGE = 100_000
+    private const val FIRST_APP_UID = 10_000
+    private const val LAST_APP_UID = 19_999
     const val METHOD_ATTACH = "attach"
     const val HELPER_CLASS = "com.wangzan101.mika.shell.HelperMain"
 
@@ -147,6 +150,20 @@ object HelperHandoff {
 
     private fun quote(s: String) = "'" + s.replace("'", "'\\''") + "'"
 
+    enum class CallerClass { Root, Shell, ShellOtherUser, OrdinaryApp, Other }
+
+    /** 只保留排查交接所需的调用方类别,不把具体 UID 写进诊断。 */
+    fun callerClass(uid: Int): CallerClass {
+        val appId = uid % PER_USER_RANGE
+        return when {
+            uid == 0 -> CallerClass.Root
+            uid == SHELL_UID -> CallerClass.Shell
+            appId == SHELL_UID -> CallerClass.ShellOtherUser
+            appId in FIRST_APP_UID..LAST_APP_UID -> CallerClass.OrdinaryApp
+            else -> CallerClass.Other
+        }
+    }
+
     enum class Reject {
         /** 调用方不是 shell(uid 2000)。 */
         NotShell,
@@ -170,6 +187,22 @@ object HelperHandoff {
         helperApk != appApk -> Reject.StaleApk
         !hasBinder -> Reject.NoBinder
         else -> null
+    }
+}
+
+/** 当前启动尝试的交接拒绝;新启动、成功交接或解除配对后不再展示上一次的原因。 */
+class HandoffDiagnostics {
+    @Volatile var lastRejection: String? = null
+        private set
+
+    @Synchronized fun launchStarted() { lastRejection = null }
+
+    @Synchronized fun clear() { lastRejection = null }
+
+    @Synchronized fun reject(why: HelperHandoff.Reject, callingUid: Int) {
+        lastRejection = if (why == HelperHandoff.Reject.NotShell) {
+            "${why.name}(caller=${HelperHandoff.callerClass(callingUid).name})"
+        } else why.name
     }
 }
 

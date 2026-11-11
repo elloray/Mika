@@ -4,7 +4,7 @@ import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
 import android.widget.Toast
-import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
 import com.wangzan101.mika.ui.components.MikaDialog
 import androidx.compose.material3.Text
@@ -28,6 +28,7 @@ import com.wangzan101.mika.core.mcp.McpUsb
 import com.wangzan101.mika.core.remote.RemoteActivity
 import com.wangzan101.mika.core.remote.RelayState
 import com.wangzan101.mika.mcp.McpRuntime
+import com.wangzan101.mika.settings.McpSettings
 import com.wangzan101.mika.mcp.McpServerState
 import com.wangzan101.mika.ui.components.ButtonKind
 import com.wangzan101.mika.ui.components.ButtonSize
@@ -42,6 +43,10 @@ import com.wangzan101.mika.ui.components.RadioRow
 import com.wangzan101.mika.ui.components.RowActions
 import com.wangzan101.mika.ui.components.SegmentedControl
 import com.wangzan101.mika.ui.components.TileTone
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.ui.text.input.KeyboardType
 import com.wangzan101.mika.ui.theme.MikaIcons
 import com.wangzan101.mika.ui.theme.MikaTheme
 import kotlinx.coroutines.Dispatchers
@@ -79,6 +84,7 @@ fun McpScreen(runtime: McpRuntime, onBack: () -> Unit) {
         ComputerAccessUi(state, enabled, usbOn, (state as? McpServerState.Listening)?.port ?: runtime.settings.port,
             activity, addresses, token, usbCommand, relayConfig.enabled, relayState),
         onBack, runtime::setUsbEnabled, runtime::setEnabled,
+        onPortChange = runtime::setPort,
         onCopy = { copy(context, it) }, onRegenerate = { confirmRegenerate = true },
         deviceSettings = {
             val historyEnabled by runtime.settings.historyEnabled.collectAsState()
@@ -121,6 +127,7 @@ internal fun ComputerAccessPage(
     onBack: () -> Unit,
     onUsbEnabled: (Boolean) -> Unit,
     onNetworkEnabled: (Boolean) -> Unit,
+    onPortChange: (Int) -> Unit,
     onCopy: (String) -> Unit,
     onRegenerate: () -> Unit,
     deviceSettings: @Composable () -> Unit,
@@ -128,6 +135,7 @@ internal fun ComputerAccessPage(
 ) {
     var client by remember { mutableStateOf(0) }
     var advanced by remember { mutableStateOf(false) }
+    var editingPort by remember { mutableStateOf(false) }
     var transport by remember { mutableStateOf(0) }
     PageScaffold(stringResource(R.string.mcp_title), onBack) {
         ConnectionStatus(ui)
@@ -164,8 +172,14 @@ internal fun ComputerAccessPage(
                     onClick = { onNetworkEnabled(!ui.networkEnabled) }) {
                     MikaSwitch(ui.networkEnabled, onNetworkEnabled, Modifier.testTag("mcp-enabled"))
                 }
+                ListRow(
+                    MikaIcons.Link, stringResource(R.string.mcp_port_title), ui.port.toString(),
+                    // 端口被占时换一个;改动即重绑并按新端口重写电脑上的连接脚本
+                    onClick = { editingPort = true },
+                )
             }
             FooterNote(stringResource(R.string.mcp_port_detail, ui.port))
+            if (editingPort) PortDialog(current = ui.port, onPick = { onPortChange(it); editingPort = false }, onDismiss = { editingPort = false })
             if (ui.networkEnabled || ui.relayEnabled) {
                 GroupLabel(stringResource(R.string.mcp_token))
                 GroupCard {
@@ -179,6 +193,40 @@ internal fun ComputerAccessPage(
             deviceSettings()
         }
     }
+}
+
+/** 监听端口的编辑:默认 8765 一个快捷项,别的口在输入框里填(1024–65535)。 */
+@Composable
+private fun PortDialog(current: Int, onPick: (Int) -> Unit, onDismiss: () -> Unit) {
+    var custom by remember { mutableStateOf(if (current != McpSettings.DEFAULT_PORT) current.toString() else "") }
+    val value = custom.toIntOrNull()?.takeIf { it in McpSettings.PORT_RANGE }
+    MikaDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.mcp_port_title)) },
+        text = {
+            Column {
+                Text(stringResource(R.string.mcp_port_dialog_sub), Modifier.padding(bottom = 8.dp))
+                RadioRow(stringResource(R.string.mcp_port_default, McpSettings.DEFAULT_PORT), selected = current == McpSettings.DEFAULT_PORT,
+                    onClick = { onPick(McpSettings.DEFAULT_PORT) }, first = true)
+                OutlinedTextField(
+                    value = custom,
+                    onValueChange = { custom = it.filter(Char::isDigit).take(5) },
+                    singleLine = true,
+                    label = { Text(stringResource(R.string.mcp_port_custom)) },
+                    isError = custom.isNotEmpty() && value == null,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                )
+                if (custom.isNotEmpty() && value == null) {
+                    Text(stringResource(R.string.mcp_port_invalid), Modifier.padding(top = 4.dp))
+                }
+            }
+        },
+        confirmButton = {
+            TextButton({ value?.let(onPick) }, enabled = value != null) { Text(stringResource(R.string.mcp_port_apply)) }
+        },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) } },
+    )
 }
 
 @Composable

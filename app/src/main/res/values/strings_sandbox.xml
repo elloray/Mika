@@ -16,8 +16,8 @@
     <string name="sandbox_incomplete">Environment files are incomplete; you can reset it in Settings → Advanced</string>
     <string name="sandbox_not_finished">Setup didn’t finish; you can retry</string>
     <string name="sandbox_network">Allow scripts to go online</string>
-    <string name="sandbox_network_sub">Off by default</string>
-    <string name="sandbox_network_explain">By default Mika works with files and runs scripts offline. With this on, scripts can use the network (for example to look up papers or maps) and could also send out files from the chat.</string>
+    <string name="sandbox_network_sub">On by default</string>
+    <string name="sandbox_network_explain">By default Mika works with files and runs scripts online. With this on, scripts can use the network (for example to look up papers or maps) and could also send out files from the chat.</string>
     <string name="sandbox_isolation_unavailable">This device can’t keep scripts offline: Mika can only work with files and run scripts when “Allow scripts to go online” is on</string>
     <string name="sandbox_reset_title">Reset the environment?</string>
     <string name="sandbox_reset_body">Deletes the environment Mika uses for files and scripts, plus the files created in each chat (including ones you attached), then sets it up again automatically. Chats and settings aren’t affected.</string>

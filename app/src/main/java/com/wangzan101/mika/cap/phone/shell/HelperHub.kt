@@ -10,6 +10,7 @@ import android.os.Bundle
 import android.os.SystemClock
 import android.util.Log
 import com.wangzan101.mika.cap.phone.PhoneServices
+import com.wangzan101.mika.core.shell.HandoffDiagnostics
 import com.wangzan101.mika.core.shell.HandoffNonces
 import com.wangzan101.mika.core.shell.HelperHandoff
 import com.wangzan101.mika.core.shell.HelperRestoreReport
@@ -38,9 +39,10 @@ class HelperHub(context: Context) {
     /** 助手交接时报来的「Mika 被杀后由它拉起来」的记录(诊断信息用);没拉过为 null。 */
     val restores: StateFlow<HelperRestoreReport?> = _restores.asStateFlow()
 
-    /** 最近一次交接拒绝的固定枚举;不含口令、Binder、包路径或调用方数据。 */
-    @Volatile var lastHandoffRejection: String? = null
-        private set
+    private val handoffDiagnostics = HandoffDiagnostics()
+
+    /** 本次启动尝试的交接拒绝;不含口令、Binder、包路径或具体 UID。 */
+    val lastHandoffRejection: String? get() = handoffDiagnostics.lastRejection
 
     /** 经助手代连本进程的 WebView 调试套接字;助手不在时抛 IOException,助手拒绝或连不上为 null。 */
     fun openDevtoolsSocket(endpoint: String): ParcelFileDescriptor? {
@@ -53,7 +55,10 @@ class HelperHub(context: Context) {
     private val nonces: HandoffNonces by lazy { HandoffNonces(PrefsNonceStore(app), SystemClock::elapsedRealtime, System::currentTimeMillis) }
 
     /** 经 adbd 起新助手前调:这个一次性口令经 exec 流的标准输入交给助手。 */
-    fun issueLaunchNonce(): String = nonces.issueLaunch()
+    fun issueLaunchNonce(): String {
+        handoffDiagnostics.launchStarted()
+        return nonces.issueLaunch()
+    }
 
     /** 写进「用电脑启动」脚本的一次性口令(见 [HandoffNonces.usbNonce]);交接走的是同一个 [offer]。 */
     fun usbNonce(): String = nonces.usbNonce()
@@ -64,6 +69,7 @@ class HelperHub(context: Context) {
     /** 解除配对:口令全部作废(还活着的助手下次交接会被拒绝并退出),手里的接口也放掉。 */
     fun forget() {
         nonces.clear()
+        handoffDiagnostics.clear()
         _shell.value = null
     }
 
@@ -81,23 +87,24 @@ class HelperHub(context: Context) {
             helperApk = extras?.getString(HelperHandoff.KEY_APK),
             appApk = app.applicationInfo.sourceDir,
             hasBinder = binder != null,
-        )?.let { return reject(it) }
+        )?.let { return reject(callingUid, it) }
         val gate = nonces
         val nonce = extras?.getString(HelperHandoff.KEY_NONCE)
         // 口令不对就不碰对方给的 Binder
-        if (!gate.matches(nonce)) return reject(HelperHandoff.Reject.BadNonce)
+        if (!gate.matches(nonce)) return reject(callingUid, HelperHandoff.Reject.BadNonce)
         val shell = IMikaShell.Stub.asInterface(binder!!)
         val ids = runCatching { shell.identity() }.getOrNull()
         if (ids == null || ids.size < 2 || ids[0] != callingUid || ids[1] != callingPid) {
-            return reject(HelperHandoff.Reject.BinderElsewhere)
+            return reject(callingUid, HelperHandoff.Reject.BinderElsewhere)
         }
-        val next = gate.accept(nonce) ?: return reject(HelperHandoff.Reject.BadNonce)
+        val next = gate.accept(nonce) ?: return reject(callingUid, HelperHandoff.Reject.BadNonce)
         try {
             binder.linkToDeath({ _shell.compareAndSet(shell, null) }, 0)
         } catch (e: Exception) {
-            return reject(HelperHandoff.Reject.NoBinder)
+            return reject(callingUid, HelperHandoff.Reject.NoBinder)
         }
         // 换了新的助手:旧的随后会被新的结束,它的死亡通知因为不是当前这个而被忽略
+        handoffDiagnostics.clear()
         _shell.value = shell
         if (extras?.containsKey(HelperHandoff.KEY_RESTORED_AT) == true) {
             _restores.value = HelperRestoreReport(
@@ -112,9 +119,9 @@ class HelperHub(context: Context) {
         }
     }
 
-    private fun reject(why: HelperHandoff.Reject): Bundle {
-        lastHandoffRejection = why.name
-        Log.w(TAG, "helper handoff rejected: $why")
+    private fun reject(callingUid: Int, why: HelperHandoff.Reject): Bundle {
+        handoffDiagnostics.reject(why, callingUid)
+        Log.w(TAG, "helper handoff rejected: ${handoffDiagnostics.lastRejection}")
         return Bundle().apply {
             putBoolean(HelperHandoff.KEY_ACCEPTED, false)
             putString(HelperHandoff.KEY_REASON, why.name)

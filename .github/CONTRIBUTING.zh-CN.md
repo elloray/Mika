@@ -37,7 +37,7 @@ python3 tools/i18n/translations.py check                  # 轻量翻译资源�
 - README 里夹在 `generated` 标记之间的段落由 `./gradlew updateReadme` 生成，不要手改；单元测试会检查它们没过期。
 - README 有几种语言：仓库根目录的英文 `README.md` 是原文，译文都在 `docs/readme/`。其中简体中文 `README.zh-CN.md` 和 `README.md` 一样带生成段落；`README.zh-Hant.md`、`README.ja.md`、`README.ko.md`、`README.es.md` 的生成段落换成一句指向英文或简体中文 README 的话。根目录的 `README.en.md` 只是一句指向 `README.md` 的话，留着让旧链接还能用。每份译文开头有 `<!-- translated-from: README.md @ <指纹> -->`，指纹是根目录 README.md 去掉生成段落后的 SHA-256 前 12 位。改了 README.md 以后，`ReadmeTranslationsTest` 会列出过期的译文并给出新指纹：照着改动更新译文，再把开头的指纹换成新的。译文还要和 README.md 的 `## ` 小节数、本地图片保持一致。欢迎母语使用者直接提 PR 改进译文。
 - 沙箱的原生程序和自带运行环境已在仓库里；重新构建见 [`tools/sandbox/README.md`](../tools/sandbox/README.md)。
-- 不需要 JDK 或 Android SDK 的翻译 key 检查与多语对照 CSV 导出见 [`tools/i18n/README.md`](../tools/i18n/README.md)。轻量检查覆盖当前全部 10 种 UI 语言（含 Arabic），但不能替代 JVM `StringResourcesTest` 对精确占位符、CLDR 复数规则和语言注册的权威检查。
+- 不需要 JDK 或 Android SDK 的翻译 key 检查与多语对照 CSV 导出见 [`tools/i18n/README.md`](../tools/i18n/README.md)。轻量检查覆盖当前全部 11 种 UI 语言（含 Arabic 和 Persian），但不能替代 JVM `StringResourcesTest` 对精确占位符、CLDR 复数规则和语言注册的权威检查。
 - 真机评测见 [`eval/README.md`](../eval/README.md)。
 
 ### CI

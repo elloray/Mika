@@ -1,10 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="web_search_title">Pesquisa na web</string>
+    <string name="web_search_provider">Serviço de pesquisa</string>
+    <string name="web_search_note_you">Sem chave usa a API gratuita (100 pesquisas por dia); com chave usa a API paga.</string>
+    <string name="web_search_searxng_url">URL da instância</string>
+    <string name="web_search_note_jina">Precisa de uma chave de API. Usa a pesquisa do Jina (s.jina.ai).</string>
+    <string name="web_search_note_exa">Precisa de uma chave de API. Usa a pesquisa do Exa (api.exa.ai).</string>
+    <string name="web_search_note_searxng">Sua própria instância do SearXNG, sem chave. Ela precisa permitir saída JSON (adicione json a search.formats no settings.yml).</string>
+    <string name="web_search_api_key_required">Chave de API (obrigatória)</string>
+    <string name="web_search_missing_key">O %1$s precisa de uma chave de API para funcionar.</string>
+    <string name="web_search_get_key">Obter uma chave de API</string>
+    <string name="web_search_privacy">A chave é armazenada criptografada neste telefone. Os resultados são tratados como conteúdo não confiável.</string>
     <string name="web_search_row_sub">Serviço de pesquisa opcional; a pesquisa no navegador está sempre disponível</string>
-    <string name="web_search_hint">Desativada por padrão. O Mika envia os parâmetros query e count ao seu endpoint HTTP JSON. A chave opcional é enviada como token Bearer e armazenada criptografada neste telefone. Os resultados são tratados como conteúdo não confiável.</string>
     <string name="web_search_enabled">Ativar pesquisa na web</string>
-    <string name="web_search_endpoint">URL do endpoint de pesquisa</string>
     <string name="web_search_api_key">Chave de API (opcional)</string>
     <string name="web_search_invalid_endpoint">Digite um URL HTTP ou HTTPS sem parâmetros de consulta.</string>
     <string name="web_search_action">Pesquisar na web</string>

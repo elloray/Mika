@@ -85,7 +85,7 @@ adb shell am start-foreground-service -n com.wangzan101.mika/.mcp.McpService -a 
 
 Access switches, token copying and replacement, and remote wake/unlock are under "Advanced settings", collapsed by default. "CLI / Skill" and "MCP" share the USB / Wi-Fi / VPN connection selector. "CLI / Skill" has two steps: install and connect; connect verifies the connection. Network mode uses the HTTP origin and a token file, without MCP configuration.
 
-The token is stored encrypted on the phone, the same way as provider API keys. Turning the switch off closes the port (if USB mode is still on, only the listener on the phone itself stays).
+The token is stored encrypted on the phone, the same way as provider API keys. Turning the switch off closes the port (if USB mode is still on, only the listener on the phone itself stays). If the default port 8765 is taken by another service on the phone, change it under Advanced settings › Listening port (1024–65535); it applies immediately, and `connect` and `adb forward` on the computer follow the port shown on the phone.
 
 ### Connecting from a computer
 

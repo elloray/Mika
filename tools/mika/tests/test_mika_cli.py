@@ -357,6 +357,20 @@ else:
             result, body = self.invoke("doctor", server=server)
             self.assertIn("[redacted]", body["error"]["message"])
 
+    def test_text_cut_through_a_surrogate_pair_still_prints_one_json_document(self):
+        # A phone-side string truncated mid surrogate pair arrives as \ud800, which has no UTF-8
+        # form. The result is still JSON, so it is escaped rather than crashing on an empty stdout.
+        # Raw bytes: the wire carries the ASCII escape, which is what the phone actually sends.
+        payload = json.dumps({**SNAPSHOT, "goal": "cut \ud800"}).encode()
+        with api(lambda method, path, body: (200, payload, {}) if path.endswith("/t1") else None) as server:
+            command = [sys.executable, str(SCRIPT), "--json", "task", "status", "t1",
+                       "--url", "http://127.0.0.1:" + str(server.server_port), "--token-file", str(self.token_file)]
+            result = subprocess.run(command, text=True, encoding="utf-8", capture_output=True,
+                                    cwd=self.directory, env={**os.environ, "PYTHONUTF8": "1"}, timeout=15)
+            self.assertEqual(0, result.returncode, result.stderr)
+            self.assertEqual("cut \ud800", json.loads(result.stdout)["goal"])
+            self.assertNotIn(TOKEN, result.stdout + result.stderr)
+
     def test_adb_connect_owns_only_its_temporary_forward(self):
         with api() as server:
             adb, env, _, calls = self.fake_adb(server)

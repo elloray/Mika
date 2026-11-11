@@ -47,6 +47,14 @@ class VoiceInput(
                     ?: return FailedSession(SpeechFailure.Unavailable(SpeechEngineSpec.Why.DoubaoNotConfigured))
                 DoubaoSpeech(PcmRecorder(streaming = true), { DoubaoTransport().connect(credentials, spec.resourceId) })
             }
+            is SpeechEngineSpec.FunAsr -> LiveSpeech(PcmRecorder(streaming = true, unbounded = true), FunAsrProtocol(spec.language), { LiveAsrTransport().connect(spec.url) })
+            is SpeechEngineSpec.Bailian -> {
+                val key = settings.bailianKey(spec.region)
+                    ?: return FailedSession(SpeechFailure.Unavailable(SpeechEngineSpec.Why.BailianNotConfigured))
+                LiveSpeech(PcmRecorder(streaming = true, unbounded = true), BailianProtocol(spec.model, spec.language), {
+                    LiveAsrTransport().connect(spec.region.endpoint(spec.workspace), mapOf("Authorization" to "Bearer $key"))
+                })
+            }
             is SpeechEngineSpec.System -> SystemSpeechSession(
                 context, spec.onDevice, tag,
                 onNoResponse = settings::noteSystemSilent, onAnswered = settings::noteSystemAnswered,

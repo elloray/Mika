@@ -94,6 +94,21 @@ class HistoryReadTest {
         assertEquals("history", tool.observations[0].source)
     }
 
+    @Test fun readsStructuredProgressForResuming() {
+        val events = listOf(
+            RunEvent.ModelReply(2, 1, "先加第一批", "phone_calendar_bulk_insert", "{}", null, null, null),
+            RunEvent.Criteria(3, listOf("36 条日程都已保存"), emptyList(),
+                progress = RunEvent.Progress("已加日程", 12, 36, "第 12 条")),
+        )
+        val r = call(FakeRecords(mapOf("run-a" to events)), """{"turn":2}""").content
+        val items = (r["items"] as JsonArray).map { it as JsonObject }
+        assertEquals(listOf("note", "progress"), items.map { it["kind"]!!.jsonPrimitive.content })
+        val progress = items[1]["text"]!!.jsonPrimitive.content
+        assertTrue(progress, "36 条日程都已保存" in progress)
+        assertTrue(progress, "已加日程 12/36" in progress)
+        assertTrue(progress, "boundary: 第 12 条" in progress)
+    }
+
     @Test fun pagesThroughLongRecords() {
         val big = (1..10).map { RunEvent.Observed(it.toLong(), it, "第${it}页 " + "字".repeat(1_900), id = it) }
         val records = FakeRecords(mapOf("run-a" to big))

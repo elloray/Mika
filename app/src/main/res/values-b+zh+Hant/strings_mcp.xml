@@ -33,6 +33,12 @@
     <string name="mcp_advanced_hide">收起進階設定</string>
     <string name="mcp_advanced_sub">存取開關、權杖與遠端喚醒</string>
     <string name="mcp_port_detail">連接埠 %1$d。手機重新啟動後 USB 存取會關閉。</string>
+    <string name="mcp_port_title">監聽埠</string>
+    <string name="mcp_port_dialog_sub">預設埠被手機上其他服務佔用時換一個。改完立即生效，電腦按新埠重新連線。</string>
+    <string name="mcp_port_default">預設（%1$d）</string>
+    <string name="mcp_port_custom">埠</string>
+    <string name="mcp_port_invalid">請輸入 1024 到 65535 的整數。</string>
+    <string name="mcp_port_apply">套用</string>
     <string name="mcp_network_scope">允許 Wi-Fi 和私有網路存取，每次請求都需要權杖。</string>
     <string name="mcp_cli_install">1. 準備電腦端工具</string>
     <string name="mcp_cli_install_sub">把安裝指引傳給電腦上的 AI 助手，或在電腦依指南手動安裝。</string>

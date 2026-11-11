@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="teach_title">Mika に教える</string>
+    <string name="teach_menu">Mika に教える</string>
+    <string name="teach_goal_label">目標</string>
+    <string name="teach_goal_hint">Mika に何を覚えてほしいですか。一文で。</string>
+    <string name="teach_disclosure">「示範を開始」を押したあと、手順はこの端末だけに残します。モデルが設定されている場合、技能の下書きを作るときに目標と手順の要約（パスワード、確認コード、支払い内容は除く）をそのモデルへ送ります。モデルが無いときは端末上で整理するだけで、送信しません。受け入れるまで技能は使われず、試し実行は成功していません。</string>
+    <string name="teach_continue">続ける</string>
+    <string name="teach_ready_body">Mika は見るだけで、端末は操作しません。一時停止、終了、破棄ができます。「示範を開始」を押すまで記録しません。</string>
+    <string name="teach_start">示範を開始</string>
+    <string name="teach_learning">学習中</string>
+    <string name="teach_paused">一時停止</string>
+    <string name="teach_pause">一時停止</string>
+    <string name="teach_resume">示範を続ける</string>
+    <string name="teach_end">示範を終える</string>
+    <string name="teach_discard">破棄</string>
+    <string name="teach_discard_body">この示範を破棄し、保存した手順を削除しますか？</string>
+    <string name="teach_review">振り返る</string>
+    <string name="teach_correct">この手順を直す</string>
+    <string name="teach_clarify">この手順は何ですか？</string>
+    <string name="teach_remove">削除</string>
+    <string name="teach_generate">技能の下書きを作る</string>
+    <string name="teach_busy">タスクの実行中です。終わってから教えてください。</string>
+    <string name="teach_need_a11y">先にユーザー補助をオンにしてください。オフだと操作を見られません。</string>
+    <string name="teach_interrupted">アプリの再起動またはユーザー補助のオフで示範は止まっています。続けるまで記録しません。</string>
+    <string name="teach_need_goal">先に目標を一文書いてください。</string>
+    <string name="teach_secret_goal">目標がパスワードや確認コードに見えるため、保存しませんでした。</string>
+    <string name="teach_draft_failed">下書きを作れませんでした。手順は残っています。</string>
+    <string name="teach_draft_ready">下書きは「記憶と技能」の確認待ちにあります。受け入れるまで使われず、試し実行も成功していません。</string>
+    <string name="teach_open_drafts">下書きを見る</string>
+    <string name="teach_no_steps">残った手順はありません。</string>
+    <string name="teach_blocked_task">いま学習中のため、このタスクは開始しませんでした。</string>
+    <string name="teach_channel">Mika に教える</string>
+    <string name="teach_sensitive_note">機密の入力は保存していません。</string>
+    <string name="teach_insufficient_note">画面の情報が足りません。座標の操作ではありません。</string>
+    <string name="teach_notification">Mika は端末を操作していません。</string>
+    <string name="teach_no_visible">「学習中」バーを表示できなかったので、記録は始まっていません。通知の許可は不要です。ユーザー補助のオーバーレイが表示でき、一時停止と終了ができる必要があります。</string>
+    <string name="teach_watch_lost">「学習中」バーが消えたので、示範を止めました。これ以上は記録しません。</string>
+    <string name="teach_shelf_expand">Mika に教えるを表示</string>
+    <string name="teach_shelf_collapse">Mika に教えるを隠す</string>
+</resources>

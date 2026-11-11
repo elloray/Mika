@@ -37,6 +37,18 @@ class StopSummaryTest {
         RunEvent.Observed(7, 6, "推荐职位:张三 产品经理 已沟通 / 李四 运营 已沟通"),
     )
 
+    @Test fun summariesKeepAcceptanceAndLatestConfirmedProgress() {
+        val events = greeting + RunEvent.Criteria(8, listOf("36 条日程都已保存"), emptyList(),
+            progress = RunEvent.Progress("已加日程", 12, 36, "第 12 条"))
+        val text = StopSummary.plain("添加整月日程", events, null, ::label, ::app)
+        assertTrue(text, text.contains("- 验收:36 条日程都已保存\n"))
+        assertTrue(text, text.contains("- 已确认进度:已加日程 · 12/36 · 第 12 条\n"))
+        val facts = StopSummary.facts("添加整月日程", events, null, ::label, ::app)
+        assertTrue(facts, facts.contains("<acceptance>\n36 条日程都已保存\n</acceptance>"))
+        assertTrue(facts, facts.contains("<progress>\n已加日程 · 12/36 · 第 12 条\n</progress>"))
+        assertTrue(StopSummary.worthSaying(events.filterIsInstance<RunEvent.Criteria>(), null))
+    }
+
     @Test fun plainSummaryCountsBatchActionsAndNamesThem() {
         val text = StopSummary.plain("把推荐里的岗位都打个招呼", greeting, null, ::label, ::app)
         assertEquals(

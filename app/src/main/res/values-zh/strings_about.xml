@@ -59,4 +59,11 @@
     <string name="diagnostics_share">分享</string>
     <string name="diagnostics_copied">已复制</string>
     <string name="diagnostics_loading">正在收集…</string>
+    <string name="about_auto_update">自动更新</string>
+    <string name="about_auto_update_detail">仅在连接 Wi-Fi 时后台下载新版本，安装前会询问</string>
+    <string name="about_auto_update_disable">关闭自动更新</string>
+    <string name="about_auto_update_ready">Mika %1$s 已下载</string>
+    <string name="about_auto_update_confirm_title">新版 Mika 已就绪</string>
+    <string name="about_auto_update_confirm_detail">可以现在安装 %1$s，也可以关闭自动更新，之后在设置里手动检查。</string>
+    <string name="about_auto_update_now">立即更新</string>
 </resources>

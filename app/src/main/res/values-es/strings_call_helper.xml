@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="calls_helper_setup_title">Asistente de audio de Mika</string>
+    <string name="calls_helper_setup_intro">Android gestiona las llamadas normales. Mika usa el asistente de audio para escuchar y hablar en llamadas con IA. La depuración inalámbrica permite iniciar o recuperar el asistente desde el teléfono sin un ordenador. Conéctate a una red Wi-Fi para vincularlo; la voz de IA en directo también requiere internet.</string>
+    <string name="calls_helper_unavailable">No se puede configurar el asistente de audio en este dispositivo.</string>
+    <string name="calls_helper_unavailable_reason">Android no ofrece los ajustes necesarios para iniciar el asistente en este dispositivo. Las llamadas normales siguen funcionando en la aplicación Teléfono.</string>
+    <string name="calls_helper_ready">Asistente de audio conectado</string>
+    <string name="calls_helper_usb_running">Asistente de audio en funcionamiento · iniciado por USB</string>
+    <string name="calls_helper_usb_stopped">El asistente de audio iniciado por USB se ha detenido.</string>
+    <string name="calls_helper_wireless_recovery">Vincúlalo una vez en este teléfono para poder reiniciarlo sin un ordenador si se detiene. Conéctate a una red Wi-Fi para configurarlo.</string>
+    <string name="calls_helper_wireless_unavailable">La depuración inalámbrica no está disponible en este teléfono.</string>
+    <string name="calls_helper_setup_wireless">Configurar la recuperación inalámbrica</string>
+    <string name="calls_helper_hide_usb">Ocultar la alternativa por ordenador</string>
+    <string name="calls_helper_show_usb">Alternativa por ordenador</string>
+    <string name="calls_helper_usb_fallback">Si la configuración inalámbrica no está disponible y tienes un ordenador, conecta el teléfono mediante un cable USB y ejecuta este comando en el ordenador. Puede que necesites repetirlo tras una actualización o un reinicio.</string>
+    <string name="calls_helper_wireless_reconnect">Si el asistente se detiene, conéctate a una red Wi-Fi y activa la depuración inalámbrica si Android la ha desactivado. Vuelve a vincularlo solo si se te solicita.</string>
+    <string name="calls_helper_wireless_debugging_body">Conéctate a una red Wi-Fi y activa la depuración inalámbrica en las opciones para desarrolladores. Toca Permitir si Android lo solicita. Luego vuelve a Mika para continuar con el código de vinculación.</string>
+    <string name="calls_helper_usb_debugging_body">Activa la depuración USB en las opciones para desarrolladores y confirma. No necesitas conectar un cable para la configuración inalámbrica. Deja el resto de los ajustes como están.</string>
+    <string name="calls_helper_usb_debugging_brief">No se necesita cable para la configuración inalámbrica</string>
+    <string name="calls_helper_connect_body">Después de la vinculación, Mika se conecta al asistente de audio de este teléfono.</string>
+    <string name="calls_helper_wifi_needed">Conéctate a una red Wi-Fi para iniciar o recuperar el asistente de audio mediante la depuración inalámbrica.</string>
+    <string name="calls_helper_repair_needed">La vinculación no está disponible. Vuelve a vincularlo desde este teléfono.</string>
+    <string name="calls_helper_name">Asistente de audio</string>
+    <string name="calls_helper_disconnected">Conéctalo para activar el audio bidireccional en llamadas con IA</string>
+    <string name="calls_helper_manage">Gestionar</string>
+    <string name="calls_helper_set_up">Configurar</string>
+    <string name="calls_helper_pairing_done">Asistente de audio conectado. Puedes volver a Mika.</string>
+    <string name="calls_helper_pairing_problem">Vuelve a Mika para ver cómo volver a conectarlo.</string>
+</resources>

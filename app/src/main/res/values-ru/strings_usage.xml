@@ -37,4 +37,17 @@
     <string name="usage_input">Вход</string>
     <string name="usage_output">Выход</string>
     <string name="usage_calls">Вызовы</string>
+    <string name="usage_allowance_title">Текущая квота</string>
+    <string name="usage_allowance_loading">Проверяем квоту…</string>
+    <string name="usage_allowance_unavailable">Временно недоступно</string>
+    <string name="usage_allowance_balance">Баланс аккаунта: %1$s</string>
+    <string name="usage_allowance_key_limit">Остаток лимита расходов по ключу: %1$s</string>
+    <string name="usage_allowance_no_key_limit">Для ключа не задан лимит расходов</string>
+    <string name="usage_allowance_view_balance">Посмотреть баланс аккаунта</string>
+    <string name="usage_allowance_reset_daily">Обновляется ежедневно</string>
+    <string name="usage_allowance_reset_weekly">Обновляется еженедельно</string>
+    <string name="usage_allowance_reset_monthly">Обновляется ежемесячно</string>
+    <string name="usage_allowance_updated">Последнее обновление: %1$s</string>
+    <string name="usage_allowance_self_hosted">Подключение к собственному серверу</string>
+    <string name="usage_allowance_unsupported">Проверка квоты недоступна для этого подключения</string>
 </resources>

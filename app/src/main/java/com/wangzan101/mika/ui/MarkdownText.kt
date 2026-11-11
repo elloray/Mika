@@ -46,6 +46,13 @@ import com.wangzan101.mika.ui.theme.MikaTheme
 /** 按 Markdown 显示一段回答；流式草稿用临时闭合的语法预览。 */
 @Composable
 fun MarkdownText(markdown: String, style: TextStyle, modifier: Modifier = Modifier, streaming: Boolean = false) {
+    MarkdownDocument(markdown, streaming) { blocks ->
+        MarkdownBlocks(blocks, style, modifier)
+    }
+}
+
+@Composable
+internal fun MarkdownDocument(markdown: String, streaming: Boolean = false, content: @Composable (List<MdBlock>) -> Unit) {
     // 流式片段更新频繁，在后台解析；上一帧保留到新片段准备好，避免主线程卡顿和文字闪空。
     val colors = MikaTheme.colors
     val styles = remember(colors) { MarkdownModel.Styles.of(colors) }
@@ -68,12 +75,12 @@ fun MarkdownText(markdown: String, style: TextStyle, modifier: Modifier = Modifi
         }
     }
     CompositionLocalProvider(LocalUriHandler provides uriHandler) {
-        Blocks(blocks, style, modifier, depth = 0)
+        content(blocks)
     }
 }
 
 @Composable
-private fun Blocks(blocks: List<MdBlock>, style: TextStyle, modifier: Modifier = Modifier, depth: Int, gap: Int = 8) {
+internal fun MarkdownBlocks(blocks: List<MdBlock>, style: TextStyle, modifier: Modifier = Modifier, depth: Int = 0, gap: Int = 8) {
     Column(modifier, verticalArrangement = Arrangement.spacedBy(gap.dp)) {
         blocks.forEach { Block(it, style, depth) }
     }
@@ -100,14 +107,14 @@ private fun Block(b: MdBlock, style: TextStyle, depth: Int) {
         }
         is MdBlock.Quote -> Row(Modifier.height(IntrinsicSize.Min)) {
             Box(Modifier.width(3.dp).fillMaxHeight().background(MikaTheme.colors.hair, RoundedCornerShape(2.dp)))
-            Blocks(b.blocks, style.copy(color = MikaTheme.colors.ink2), Modifier.padding(start = 10.dp), depth + 1)
+            MarkdownBlocks(b.blocks, style.copy(color = MikaTheme.colors.ink2), Modifier.padding(start = 10.dp), depth + 1)
         }
         is MdBlock.ListBlock -> Column(verticalArrangement = Arrangement.spacedBy(if (b.tight) 3.dp else 8.dp)) {
             b.items.forEachIndexed { i, item ->
                 Row {
                     val marker = if (b.start != null) "${b.start + i}." else if (depth % 2 == 0) "•" else "◦"
                     Text(marker, Modifier.widthIn(min = 18.dp).padding(end = 6.dp), style = style.copy(color = MikaTheme.colors.ink2))
-                    Blocks(item, style, depth = depth + 1, gap = if (b.tight) 3 else 8)
+                    MarkdownBlocks(item, style, depth = depth + 1, gap = if (b.tight) 3 else 8)
                 }
             }
         }

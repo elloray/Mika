@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="calls_task_dial_now">Llamar ahora</string>
+    <string name="calls_task_dial_locked">Llamar al bloquear</string>
+    <string name="calls_task_dial_locked_note">Bloquea el teléfono en 45 segundos. Se intentará una llamada con este número, SIM y tarea. Puedes cancelarla en la notificación. Apagar la pantalla sin bloquear el teléfono no inicia la llamada.</string>
+    <string name="calls_task_dial_locked_confirm">Confirmar y esperar el bloqueo</string>
+</resources>

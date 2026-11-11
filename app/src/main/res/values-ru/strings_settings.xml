@@ -179,4 +179,10 @@
     <string name="quit_row_sub">Останавливает фоновые задачи и скрывает плавающую капсулу</string>
     <string name="quit_confirm_body">Выполняющиеся задачи остановятся, плавающая капсула и уведомления исчезнут. При следующем запуске Mika всё вернётся.</string>
     <string name="quit_confirm_action">Выйти</string>
+    <string name="settings_task_token_budget">Бюджет токенов на задачу</string>
+    <string name="settings_task_token_budget_sub">Учитываются только входные и выходные токены, сообщённые провайдером. После достижения бюджета новые запросы не отправляются. Выполняемый запрос может превысить его; вызовы без сведений об использовании считаются равными 0.</string>
+    <string name="settings_token_budget_unlimited">Без ограничения</string>
+    <string name="settings_token_budget_custom">Свой бюджет токенов</string>
+    <string name="settings_token_budget_apply">Использовать</string>
+    <string name="settings_token_budget_invalid">Введите целое число от %1$s до %2$s.</string>
 </resources>

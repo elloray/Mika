@@ -7,6 +7,7 @@
     <string name="tool_set_timer">Pasang timer</string>
     <string name="tool_show_alarms">Tampilkan alarm</string>
     <string name="tool_add_calendar_event">Tambah acara kalender</string>
+    <string name="tool_calendar_bulk_insert">Tambah acara kalender secara massal</string>
     <string name="tool_set_wheel">Putar pemilih roda</string>
     <string name="tool_scroll_find">Gulir untuk mencari</string>
     <string name="tool_wait_condition">Tunggu kondisi layar</string>

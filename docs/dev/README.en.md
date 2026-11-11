@@ -28,6 +28,7 @@ Apart from the knowledge format, the developer docs are in Chinese for now.
 | [chatgpt-signin-check.md](chatgpt-signin-check.md) | Walking through "Sign in with ChatGPT" on a computer with the app's own code, before trying it on a phone |
 | [remote-device-access-check.md](remote-device-access-check.md) | Verification record for remote wake and unlock |
 | [remote-mcp.md](remote-mcp.md) | Remote CLI / MCP design (Chinese); [English deployment guide](../../tools/relay/README.md) |
+| [teach-mika.md](teach-mika.md) | How a demonstration becomes a skill draft waiting for review (Chinese) |
 
 ## Developer docs elsewhere in the repo
 

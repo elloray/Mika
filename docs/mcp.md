@@ -85,7 +85,7 @@ adb shell am start-foreground-service -n com.wangzan101.mika/.mcp.McpService -a 
 
 访问开关、令牌的复制与更换、远程亮屏与解锁都在「高级设置」中，默认收起。「CLI / Skill」与「MCP」共用 USB / Wi-Fi / VPN 连接方式选择。「CLI / Skill」只有安装和连接两步，connect 会验证连接；网络方式使用 HTTP 根地址和令牌文件，使用 CLI 不需要 MCP 配置。
 
-令牌和服务商的 API Key 一样加密存在手机上。关掉开关，端口就关了（USB 那种还开着的话，只留本机上的监听）。
+令牌和服务商的 API Key 一样加密存在手机上。关掉开关，端口就关了（USB 那种还开着的话，只留本机上的监听）。默认端口 8765 被手机上其他服务占用时，可以在「高级设置 › 监听端口」里换一个（1024–65535），改完立即生效；电脑上的 `connect` 和 `adb forward` 都以手机上显示的端口为准。
 
 ### 从电脑连接
 

@@ -275,6 +275,13 @@ interface ScreenPort {
     suspend fun systemAction(action: SystemAction): SystemActionResult = SystemActionResult(ActionResult.Failed("unsupported"))
 
     /**
+     * 经安卓日历提供方一次写入一批日程，不打开日历界面。调用方已完整校验全部事件；
+     * 权限不足、没有可写日历或写入结果不确定时返回对应失败原因，不自动换路径重写。
+     */
+    suspend fun bulkCalendarInsert(events: List<SystemAction.AddCalendarEvent>): SystemActionResult =
+        SystemActionResult(ActionResult.Failed(SystemActionResult.NOT_SUPPORTED))
+
+    /**
      * 把编号 [ref] 那个滚轮(或滚轮里的一项)转到显示 [value]:在端口里一次做完(能输入就输入,能无障碍滚就一格格滚,
      * 都不行就按一格多高拖),每做几下读回一次。不支持的端口报 unsupported。
      */

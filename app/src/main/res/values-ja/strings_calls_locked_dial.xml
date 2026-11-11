@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="calls_task_dial_now">今すぐ発信</string>
+    <string name="calls_task_dial_locked">ロックしてから発信</string>
+    <string name="calls_task_dial_locked_note">45 秒以内にロックしてください。この番号、SIM、タスクで一度だけ発信を試みます。通知から取り消せます。 画面が消えても端末がロックされていなければ発信しません。</string>
+    <string name="calls_task_dial_locked_confirm">確認してロックを待つ</string>
+</resources>

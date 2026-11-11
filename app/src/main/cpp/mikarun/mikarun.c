@@ -5,24 +5,36 @@
  *
  * 用法:
  *   libmikarun.so [--timeout <秒,1-3600>] [--net on|off] [--nice <0-19,默认10>]
- *                 [--max-procs <默认256>] [--max-file-mb <默认2048>] -- <程序> [参数…]
- *   libmikarun.so --self-test    输出 "mikarun ok" 与 "seccomp ok" 或 "seccomp unavailable: <原因>",退出 0
+ *                 [--max-procs <默认256>] [--max-file-mb <默认2048>]
+ *                 [--pty [--pty-cols <1-1000,默认80>] [--pty-rows <1-1000,默认24>]
+ *                  [--pty-size <文件>]] -- <程序> [参数…]
+ *   libmikarun.so --self-test    输出 "mikarun ok"、"seccomp ok" / "seccomp unavailable: <原因>"、
+ *                                "pty ok" / "pty unavailable: <原因>",退出 0
  *
  * 不给 --net 时按 off 处理(断网是默认值)。不给 --timeout 时不限时。
+ * --pty 把命令接到一块伪终端上(控制终端),用于用户自己开的终端;不给时仍是普通管道。
+ * --pty-size 指向一个普通文件,内容是 "列 行";运行中每 200ms 读一次,变了就用 TIOCSWINSZ
+ * 改窗口大小(内核会给前台进程组发 SIGWINCH)。
  * 退出码:命令自身的退出码;超时 124;命令被信号 N 杀死 128+N;
  *         启动器自身出错 125,原因写在标准错误最后一行,以 "mikarun:" 开头。
  */
+
+#ifndef _GNU_SOURCE
+#define _GNU_SOURCE
+#endif
 
 #include <dirent.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <libgen.h>
 #include <limits.h>
+#include <poll.h>
 #include <signal.h>
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/ioctl.h>
 #include <sys/prctl.h>
 #include <sys/resource.h>
 #include <sys/socket.h>
@@ -30,6 +42,7 @@
 #include <sys/syscall.h>
 #include <sys/types.h>
 #include <sys/wait.h>
+#include <termios.h>
 #include <time.h>
 #include <unistd.h>
 
@@ -65,6 +78,10 @@ struct options {
 	long nice;
 	long max_procs;
 	long max_file_mb;
+	int pty;           /* 1 = 给命令一块伪终端 */
+	long pty_cols;     /* 1-1000,默认 80 */
+	long pty_rows;     /* 1-1000,默认 24 */
+	const char *pty_size_path; /* --pty-size:每 200ms 读一次 "列 行",变了就改窗口大小 */
 	char **command; /* 以 NULL 结尾,指向 argv 内部 */
 };
 
@@ -104,6 +121,8 @@ static int parse_options(int argc, char **argv, struct options *opts)
 	opts->nice = 10;
 	opts->max_procs = 256;
 	opts->max_file_mb = 2048;
+	opts->pty_cols = 80;
+	opts->pty_rows = 24;
 	for (; i < argc; i++) {
 		const char *arg = argv[i];
 		const char *value = i + 1 < argc ? argv[i + 1] : NULL;
@@ -118,6 +137,10 @@ static int parse_options(int argc, char **argv, struct options *opts)
 			opts->self_test = 1;
 			continue;
 		}
+		if (strcmp(arg, "--pty") == 0) {
+			opts->pty = 1;
+			continue;
+		}
 		if (strcmp(arg, "--net") == 0) {
 			if (value != NULL && strcmp(value, "on") == 0)
 				opts->net_off = 0;
@@ -125,6 +148,14 @@ static int parse_options(int argc, char **argv, struct options *opts)
 				opts->net_off = 1;
 			else
 				return fail("invalid value for --net (on|off)", value), -1;
+			i++;
+			continue;
+		}
+		if (strcmp(arg, "--pty-size") == 0) {
+			if (value == NULL)
+				return fail("missing value for --pty-size", NULL), -1;
+			opts->pty = 1;
+			opts->pty_size_path = value;
 			i++;
 			continue;
 		}
@@ -136,6 +167,12 @@ static int parse_options(int argc, char **argv, struct options *opts)
 			target = &opts->max_procs; min = 1; max = 65536;
 		} else if (strcmp(arg, "--max-file-mb") == 0) {
 			target = &opts->max_file_mb; min = 1; max = 1048576;
+		} else if (strcmp(arg, "--pty-cols") == 0) {
+			opts->pty = 1;
+			target = &opts->pty_cols; min = 1; max = 1000;
+		} else if (strcmp(arg, "--pty-rows") == 0) {
+			opts->pty = 1;
+			target = &opts->pty_rows; min = 1; max = 1000;
 		}
 		if (target != NULL) {
 			if (parse_long(arg, value, min, max, target) != 0)
@@ -258,6 +295,8 @@ static int probe_net_filter(char *reason, size_t reason_len)
 	return 0;
 }
 
+static int pty_self_test(char *reason, size_t reason_len);
+
 static int self_test(void)
 {
 	char reason[160];
@@ -268,6 +307,10 @@ static int self_test(void)
 		printf("seccomp ok\n");
 	else
 		printf("seccomp unavailable: %s\n", reason);
+	if (pty_self_test(reason, sizeof(reason)) == 0)
+		printf("pty ok\n");
+	else
+		printf("pty unavailable: %s\n", reason);
 	if (fflush(stdout) != 0)
 		return fail("self-test", "cannot write stdout");
 	return 0;
@@ -601,6 +644,230 @@ static void close_inherited_fds(void)
 	closedir(dir);
 }
 
+/* ---------- 伪终端 ---------- */
+
+/* 写满 [len] 字节;被信号打断就接着写。返回 0 成功。 */
+static int write_all(int fd, const char *buf, size_t len)
+{
+	while (len > 0) {
+		ssize_t n = write(fd, buf, len);
+
+		if (n < 0) {
+			if (errno == EINTR)
+				continue;
+			return -1;
+		}
+		buf += n;
+		len -= (size_t)n;
+	}
+	return 0;
+}
+
+/* 建一对 pty;[cols]/[rows] 已限定在 1-1000。失败时 reason 写原因。 */
+static int open_pty(int *master, int *slave, long cols, long rows, char *reason, size_t reason_len)
+{
+	struct winsize ws;
+	char *name;
+	int m, s;
+
+	m = posix_openpt(O_RDWR | O_NOCTTY | O_CLOEXEC);
+	if (m < 0) {
+		snprintf(reason, reason_len, "posix_openpt: %s", strerror(errno));
+		return -1;
+	}
+	if (grantpt(m) != 0) {
+		snprintf(reason, reason_len, "grantpt: %s", strerror(errno));
+		close(m);
+		return -1;
+	}
+	if (unlockpt(m) != 0) {
+		snprintf(reason, reason_len, "unlockpt: %s", strerror(errno));
+		close(m);
+		return -1;
+	}
+	name = ptsname(m);
+	if (name == NULL) {
+		snprintf(reason, reason_len, "ptsname: %s", strerror(errno));
+		close(m);
+		return -1;
+	}
+	s = open(name, O_RDWR | O_NOCTTY | O_CLOEXEC);
+	if (s < 0) {
+		snprintf(reason, reason_len, "open %s: %s", name, strerror(errno));
+		close(m);
+		return -1;
+	}
+	memset(&ws, 0, sizeof(ws));
+	ws.ws_col = (unsigned short)cols;
+	ws.ws_row = (unsigned short)rows;
+	if (ioctl(s, TIOCSWINSZ, &ws) != 0) {
+		snprintf(reason, reason_len, "TIOCSWINSZ: %s", strerror(errno));
+		close(s);
+		close(m);
+		return -1;
+	}
+	*master = m;
+	*slave = s;
+	return 0;
+}
+
+static int pty_self_test(char *reason, size_t reason_len)
+{
+	int master = -1, slave = -1;
+
+	if (open_pty(&master, &slave, 80, 24, reason, reason_len) != 0)
+		return -1;
+	if (!isatty(slave)) {
+		snprintf(reason, reason_len, "slave is not a tty");
+		close(slave);
+		close(master);
+		return -1;
+	}
+	close(slave);
+	close(master);
+	return 0;
+}
+
+/*
+ * 读 --pty-size 文件("列 行");变了就 ioctl(TIOCSWINSZ),内核会给前台进程组发 SIGWINCH。
+ * 文件不存在、内容不完整或数值越界时什么也不做,下一轮再试。
+ */
+static void apply_pty_size(int master, const char *path, long *cols, long *rows)
+{
+	char buf[64];
+	struct winsize ws;
+	long c, r;
+	ssize_t n;
+	int fd;
+
+	if (path == NULL || *path == '\0')
+		return;
+	fd = open(path, O_RDONLY | O_CLOEXEC);
+	if (fd < 0)
+		return;
+	n = read(fd, buf, sizeof(buf) - 1);
+	close(fd);
+	if (n <= 0)
+		return;
+	buf[n] = '\0';
+	if (sscanf(buf, "%ld %ld", &c, &r) != 2)
+		return;
+	if (c < 1 || c > 1000 || r < 1 || r > 1000 || (c == *cols && r == *rows))
+		return;
+	memset(&ws, 0, sizeof(ws));
+	ws.ws_col = (unsigned short)c;
+	ws.ws_row = (unsigned short)r;
+	if (ioctl(master, TIOCSWINSZ, &ws) == 0) {
+		*cols = c;
+		*rows = r;
+	}
+}
+
+/*
+ * pty 模式下的等待循环:把 stdin 转给 master、把 master 的输出转给 stdout,同时照看子进程和信号。
+ * 子进程退出、超时或被 SIGTERM 打断后,再把从端里剩下的字读完(最多 200 毫秒),不丢最后一行。
+ */
+static void relay_pty(int master, pid_t child, const struct options *opts,
+	int *status, int *have_status, int *timed_out, int *terminated, sigset_t *wait_set)
+{
+	char buf[8192];
+	int master_open = 1;
+	int stdin_open = 1;
+	long deadline = 0;
+	long last_cols = opts->pty_cols;
+	long last_rows = opts->pty_rows;
+	long last_size_check = 0;
+
+	if (opts->timeout_sec > 0)
+		deadline = now_ms() + opts->timeout_sec * 1000L;
+
+	for (;;) {
+		struct pollfd fds[2];
+		struct timespec zero = { 0, 0 };
+		int timeout = POLL_MS;
+		int pr, i, sig;
+		long now = now_ms();
+
+		if (opts->pty_size_path != NULL && now - last_size_check >= 200) {
+			apply_pty_size(master, opts->pty_size_path, &last_cols, &last_rows);
+			last_size_check = now;
+		}
+		reap(child, status, have_status);
+		if (*have_status)
+			break;
+		if (deadline != 0) {
+			long left = deadline - now_ms();
+
+			if (left <= 0) {
+				*timed_out = 1;
+				break;
+			}
+			if (left < timeout)
+				timeout = (int)left;
+		}
+
+		fds[0].fd = master_open ? master : -1;
+		fds[0].events = POLLIN;
+		fds[0].revents = 0;
+		fds[1].fd = stdin_open ? STDIN_FILENO : -1;
+		fds[1].events = POLLIN;
+		fds[1].revents = 0;
+		pr = poll(fds, 2, timeout);
+		if (pr < 0 && errno != EINTR)
+			break;
+		if (pr > 0) {
+			for (i = 0; i < 2; i++) {
+				ssize_t n;
+
+				if (fds[i].fd < 0 || fds[i].revents == 0)
+					continue;
+				if (fds[i].fd == master) {
+					n = read(master, buf, sizeof(buf));
+					if (n > 0) {
+						if (write_all(STDOUT_FILENO, buf, (size_t)n) != 0)
+							master_open = 0;
+					} else if (n == 0 || (errno != EINTR && errno != EAGAIN)) {
+						master_open = 0; /* EIO:子进程关掉了从端 */
+					}
+				} else {
+					n = read(STDIN_FILENO, buf, sizeof(buf));
+					if (n > 0) {
+						if (write_all(master, buf, (size_t)n) != 0)
+							stdin_open = 0;
+					} else if (n == 0 || (errno != EINTR && errno != EAGAIN)) {
+						stdin_open = 0;
+						/* stdin 关了:给 shell 一个 EOF,让它自己退出;从端还开着就还能收输出 */
+						if (master_open && write_all(master, "\004", 1) != 0)
+							master_open = 0;
+					}
+				}
+			}
+		}
+		/* 不阻塞地看一眼有没有要处理的信号;SIGCHLD 下一轮 reap */
+		sig = sigtimedwait(wait_set, NULL, &zero);
+		if (sig == SIGTERM || sig == SIGINT || sig == SIGHUP) {
+			*terminated = sig;
+			break;
+		}
+	}
+
+	while (master_open) {
+		struct pollfd pfd;
+		ssize_t n;
+
+		pfd.fd = master;
+		pfd.events = POLLIN;
+		pfd.revents = 0;
+		if (poll(&pfd, 1, 200) <= 0)
+			break;
+		n = read(master, buf, sizeof(buf));
+		if (n <= 0)
+			break;
+		if (write_all(STDOUT_FILENO, buf, (size_t)n) != 0)
+			break;
+	}
+}
+
 /* 自成会话、收割者、父死信号、优先级、OOM 分数、资源上限、断网。返回 0 成功。 */
 static int prepare(const struct options *opts)
 {
@@ -648,6 +915,8 @@ static int run(const struct options *opts)
 {
 	sigset_t wait_set, orig_set;
 	int status = 0, have_status = 0, timed_out = 0, terminated = 0;
+	int pty_master = -1, pty_slave = -1;
+	char pty_reason[160];
 	long deadline = 0;
 	pid_t child;
 
@@ -663,10 +932,17 @@ static int run(const struct options *opts)
 		return fail("sigprocmask", strerror(errno));
 	if (prepare(opts) != 0)
 		return EXIT_LAUNCHER_ERROR;
+	if (opts->pty && open_pty(&pty_master, &pty_slave, opts->pty_cols, opts->pty_rows, pty_reason, sizeof(pty_reason)) != 0)
+		return fail("pty", pty_reason);
 
 	child = fork();
-	if (child < 0)
+	if (child < 0) {
+		if (opts->pty) {
+			close(pty_slave);
+			close(pty_master);
+		}
 		return fail("fork", strerror(errno));
+	}
 	if (child == 0) {
 		sigprocmask(SIG_SETMASK, &orig_set, NULL);
 		/*
@@ -676,37 +952,64 @@ static int run(const struct options *opts)
 		 */
 		prctl(PR_SET_PDEATHSIG, SIGKILL, 0, 0, 0);
 		set_oom_score_adj("1000");
+		if (opts->pty) {
+			/*
+			 * 父进程在 prepare() 里已经 setsid();子进程另建一个会话,才能把从端设成控制终端。
+			 * 从端在 fork 前就打开了,这里不再经过文件系统。
+			 */
+			if (setsid() < 0 && getsid(0) != getpid()) {
+				fprintf(stderr, "mikarun: pty: setsid: %s\n", strerror(errno));
+				_exit(EXIT_LAUNCHER_ERROR);
+			}
+			if (ioctl(pty_slave, TIOCSCTTY, 0) != 0) {
+				fprintf(stderr, "mikarun: pty: TIOCSCTTY: %s\n", strerror(errno));
+				_exit(EXIT_LAUNCHER_ERROR);
+			}
+			if (dup2(pty_slave, STDIN_FILENO) < 0 || dup2(pty_slave, STDOUT_FILENO) < 0 ||
+			    dup2(pty_slave, STDERR_FILENO) < 0) {
+				fprintf(stderr, "mikarun: pty: dup2: %s\n", strerror(errno));
+				_exit(EXIT_LAUNCHER_ERROR);
+			}
+			close(pty_slave);
+			close(pty_master);
+		}
 		close_inherited_fds();
 		execv(opts->command[0], opts->command);
 		fprintf(stderr, "mikarun: exec failed: %s\n", strerror(errno));
 		_exit(EXIT_LAUNCHER_ERROR);
 	}
 
-	if (opts->timeout_sec > 0)
-		deadline = now_ms() + opts->timeout_sec * 1000L;
-	for (;;) {
-		struct timespec ts, *tsp = NULL;
-		int sig;
+	if (opts->pty) {
+		close(pty_slave);
+		relay_pty(pty_master, child, opts, &status, &have_status, &timed_out, &terminated, &wait_set);
+		close(pty_master);
+	} else {
+		if (opts->timeout_sec > 0)
+			deadline = now_ms() + opts->timeout_sec * 1000L;
+		for (;;) {
+			struct timespec ts, *tsp = NULL;
+			int sig;
 
-		reap(child, &status, &have_status);
-		if (have_status)
-			break;
-		if (deadline != 0) {
-			long left = deadline - now_ms();
-			if (left <= 0) {
-				timed_out = 1;
+			reap(child, &status, &have_status);
+			if (have_status)
+				break;
+			if (deadline != 0) {
+				long left = deadline - now_ms();
+				if (left <= 0) {
+					timed_out = 1;
+					break;
+				}
+				ts.tv_sec = left / 1000;
+				ts.tv_nsec = (left % 1000) * 1000000L;
+				tsp = &ts;
+			}
+			sig = sigtimedwait(&wait_set, NULL, tsp);
+			if (sig == SIGTERM || sig == SIGINT || sig == SIGHUP) {
+				terminated = sig;
 				break;
 			}
-			ts.tv_sec = left / 1000;
-			ts.tv_nsec = (left % 1000) * 1000000L;
-			tsp = &ts;
+			/* SIGCHLD、超时(EAGAIN)、EINTR:回到循环开头重新检查 */
 		}
-		sig = sigtimedwait(&wait_set, NULL, tsp);
-		if (sig == SIGTERM || sig == SIGINT || sig == SIGHUP) {
-			terminated = sig;
-			break;
-		}
-		/* SIGCHLD、超时(EAGAIN)、EINTR:回到循环开头重新检查 */
 	}
 
 	/* 命令正常结束时也清一遍:留在后台的进程不能活过这条命令 */

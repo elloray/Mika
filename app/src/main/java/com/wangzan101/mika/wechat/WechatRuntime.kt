@@ -7,10 +7,13 @@ import android.net.Network
 import android.util.Log
 import com.wangzan101.mika.BuildConfig
 import com.wangzan101.mika.MikaApp
+import com.wangzan101.mika.R
+import com.wangzan101.mika.i18n.tr
 import com.wangzan101.mika.core.action.ConfirmChoice
 import com.wangzan101.mika.core.net.NetProxy
 import com.wangzan101.mika.core.run.ChannelGateway
 import com.wangzan101.mika.core.run.ChannelPeer
+import com.wangzan101.mika.core.run.Delivery
 import com.wangzan101.mika.core.run.MemoryOwnerIdentity
 import com.wangzan101.mika.core.run.RunId
 import com.wangzan101.mika.core.wechat.WechatAccount
@@ -44,7 +47,7 @@ sealed interface WechatConnectionState {
     data class Failed(val message: String) : WechatConnectionState
 }
 
-/** 单账号、私聊文本的微信运行时。监听存活由独立前台服务负责，任务仍只进 TaskService。 */
+/** 单账号、私聊文字和图片的微信运行时。监听存活由独立前台服务负责，任务仍只进 TaskService。 */
 class WechatRuntime(
     private val context: Context,
     val store: WechatStore,
@@ -75,13 +78,21 @@ class WechatRuntime(
         })
 
     val channel = WechatChannel(store, api,
-        activeAsk = { threadId -> app.taskState.run(threadId)?.activeAsk })
+        activeAsk = { threadId -> app.taskState.run(threadId)?.activeAsk },
+        imageFiles = androidWechatImages(context, api),
+        imageFailureText = { tr(R.string.wechat_image_receive_failed) },
+        reportImageFailure = ::reportImageFailure)
+
+    private suspend fun reportImageFailure(peer: ChannelPeer, notice: Delivery.Notice) {
+        app.outbox.deliver(channel, peer, notice)
+    }
     private var registration: AutoCloseable? = null
     private var monitor: Job? = null
     private val network = WechatNetwork(context) { restartMonitor() }
     private val _state = MutableStateFlow<WechatConnectionState>(
         if (store.account() == null) WechatConnectionState.NeedsBinding else WechatConnectionState.Off)
     val state: StateFlow<WechatConnectionState> = _state.asStateFlow()
+    val allowUnlock: StateFlow<Boolean> = store.allowUnlock
 
     fun channelFor(id: String) = channel.takeIf { id == WechatChannel.ID }
     fun acknowledge(messageId: String) = store.acknowledge(messageId)
@@ -129,6 +140,8 @@ class WechatRuntime(
             stop()
         }
     }
+
+    fun setUnlockAllowed(allowed: Boolean) = store.setUnlockAllowed(allowed)
 
     suspend fun startLogin(): WechatQrStart = withContext(Dispatchers.IO) { api.startLogin() }
 

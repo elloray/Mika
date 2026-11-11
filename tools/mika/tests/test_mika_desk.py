@@ -72,7 +72,7 @@ class DeskTest(unittest.TestCase):
 
         with api(respond) as phone, self.launch(phone) as url:
             self.assertIn('data-i18n="heading"', request(url, path="/")[1])
-            for path in ["/desk.css", "/desk.js"]:
+            for path in ["/desk.css", "/desk.js", "/notifications.js"]:
                 self.assertEqual(200, request(url, path=path)[0])
             code, overview = request(url, {"action": "overview"})
             self.assertEqual(200, code)
@@ -146,7 +146,7 @@ class DeskTest(unittest.TestCase):
         table = script[script.index("const STRINGS = {"):script.index("\n};", script.index("const STRINGS = {"))]
         strings = dict(re.findall(r'^  (\w+): \["([^"]+)", "[^"]+"\],$', table, re.M))
         self.assertEqual(len(strings), table.count("\n  "), "every entry needs non-empty Chinese and English text")
-        used = set(re.findall(r'\bt\("(\w+)"', script))
+        used = set(re.findall(r'\bt\("(\w+)"', script + (desk_dir / "notifications.js").read_text(encoding="utf-8")))
         used |= set(re.findall(r'data-i18n(?:-placeholder|-label)?="(\w+)"', (desk_dir / "index.html").read_text(encoding="utf-8")))
         used |= set(re.findall(r'"(err[A-Z]\w*)"', script))
         self.assertEqual(set(), used - strings.keys())

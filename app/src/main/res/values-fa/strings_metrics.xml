@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="metrics_model">تفکر مدل</string>
+    <string name="metrics_observe">خواندن صفحه</string>
+    <string name="metrics_act">اقدام‌ها</string>
+    <string name="metrics_other">سایر موارد (انتظار و تلاش دوباره)</string>
+    <string name="metrics_title">آمار اجرا</string>
+    <string name="metrics_sub">زمان، تعداد رفت‌وبرگشت به مدل و توکن‌های اجراهای اخیر</string>
+    <string name="metrics_empty">هنوز آماری ثبت نشده است. از میکا بخواهید کاری انجام دهد تا اینجا ثبت شود.</string>
+    <string name="metrics_note">فقط %1$d اجرای آخر در این گوشی محاسبه می‌شود. زمان از آغاز کار میکا شروع می‌شود؛ اولین بازخورد زمانی است که نخستین نشانهٔ کار را می‌بینید.</string>
+    <string name="metrics_copy">کپی JSON</string>
+    <string name="metrics_share">اشتراک‌گذاری JSON</string>
+    <string name="metrics_last_10">۱۰ مورد آخر</string>
+    <plurals name="metrics_runs">
+        <item quantity="one">%1$d</item>
+        <item quantity="other">%1$d</item>
+    </plurals>
+    <string name="duration_h_m">%1$d ساعت و %2$d دقیقه</string>
+    <string name="metrics_total">در مجموع %1$s</string>
+    <plurals name="metrics_round_trips">
+        <item quantity="one">%1$d رفت‌وبرگشت به مدل</item>
+        <item quantity="other">%1$d رفت‌وبرگشت به مدل</item>
+    </plurals>
+    <string name="metrics_first_feedback_at">اولین بازخورد: %1$s</string>
+    <string name="metrics_retry_wait">از این مقدار، انتظار برای تلاش دوباره</string>
+    <string name="metrics_input_tokens">توکن‌های ورودی</string>
+    <string name="metrics_output_tokens">توکن‌های خروجی</string>
+    <string name="usage_cached">تعداد استفاده از حافظهٔ نهان</string>
+    <string name="metrics_no_usage">مصرفی گزارش نشده است</string>
+    <string name="metrics_all_calls">همهٔ فراخوانی‌های منطقی مدل</string>
+    <string name="metrics_all_http_calls">همهٔ درخواست‌های HTTP</string>
+    <plurals name="metrics_all_calls_value">
+        <item quantity="one">%1$d (شامل فراخوانی‌های جانبی و تلاش‌های دوباره)</item>
+        <item quantity="other">%1$d (شامل فراخوانی‌های جانبی و تلاش‌های دوباره)</item>
+    </plurals>
+    <string name="metrics_steps">مراحل</string>
+    <string name="metrics_observe_act">خواندن‌ها / اقدام‌ها</string>
+    <string name="metrics_observe_act_value">%1$d / %2$d</string>
+    <string name="metrics_counted">محاسبه‌شده</string>
+    <plurals name="metrics_n_runs">
+        <item quantity="one">%1$d اجرا</item>
+        <item quantity="other">%1$d اجرا</item>
+    </plurals>
+    <string name="metrics_success_rate">نرخ موفقیت</string>
+    <string name="metrics_success_value">%1$s (%2$d/%3$d)</string>
+    <string name="metrics_median_time">میانهٔ زمان</string>
+    <string name="metrics_median_feedback">میانهٔ زمان اولین بازخورد</string>
+    <string name="metrics_avg_round_trips">میانگین رفت‌وبرگشت به مدل</string>
+    <string name="metrics_avg_round_trips_value">%1$s</string>
+    <string name="metrics_avg_tokens">میانگین توکن‌ها</string>
+    <plurals name="metrics_copied">
+        <item quantity="one">خلاصهٔ %1$d اجرا کپی شد</item>
+        <item quantity="other">خلاصهٔ %1$d اجرا کپی شد</item>
+    </plurals>
+    <string name="metrics_export_failed">خروجی گرفتن ممکن نشد؛ ممکن است داده‌ها بیش از حد بزرگ باشند. بازهٔ کوچک‌تری انتخاب کنید.</string>
+    <string name="metrics_where_time">ببینید زمان صرف چه بخش‌هایی شد</string>
+    <string name="metrics_overview">نمای کلی</string>
+    <string name="metrics_time_split">زمان صرف چه بخش‌هایی شد</string>
+    <string name="metrics_export">دریافت خروجی</string>
+    <plurals name="metrics_summary_of">
+        <item quantity="one">خلاصهٔ این %1$d اجرا</item>
+        <item quantity="other">خلاصهٔ این %1$d اجرا</item>
+    </plurals>
+    <string name="metrics_summary_sub">یک مورد برای هر اجرا، برای بررسی شخصی شما</string>
+    <plurals name="chat_steps_n">
+        <item quantity="one">%1$d مرحله</item>
+        <item quantity="other">%1$d مرحله</item>
+    </plurals>
+</resources>

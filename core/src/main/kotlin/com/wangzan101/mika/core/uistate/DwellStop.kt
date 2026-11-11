@@ -4,6 +4,9 @@ import com.wangzan101.mika.core.run.SKIPPED_FOR_NEW_MESSAGE
 import com.wangzan101.mika.core.tool.FAILURE_MESSAGES
 import com.wangzan101.mika.core.tool.ToolExecution
 import com.wangzan101.mika.core.tool.fail
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.put
 
 /** 这个网站本任务里看的页、这个 App 换的屏到了上限:不再换页、换屏(见 [PageLimitReached])。 */
 const val PAGE_LIMIT = "page_limit"
@@ -16,8 +19,13 @@ internal sealed class DwellStop(message: String) : Exception(message) {
 }
 
 /** 本任务里这个网站来的页、限制浏览快慢的这个 App 换的屏到了上限:不再换页、换屏,先回答或问用户。[site] 是网站主机名或 App 包名。 */
-internal class PageLimitReached(val site: String, val pages: Int, val cap: Int) :
-    DwellStop("Pages or screens opened in $site in this task: $pages (limit $cap).") {
+internal class PageLimitReached(val site: String, val pages: Int, val cap: Int, val scope: Scope) :
+    DwellStop("Mika reached its per-task ${scope.label} budget for $site ($pages/$cap).") {
+    enum class Scope(val wireName: String, val label: String) {
+        APP_SCREENS("app_screens", "app screen"),
+        WEB_PAGES("web_pages", "web page"),
+    }
+
     override val code get() = PAGE_LIMIT
     override val detail get() = message
 }
@@ -28,5 +36,14 @@ internal class DwellInterrupted : DwellStop("The pause before this action was cu
 }
 
 /** 不做这个动作的工具结果:说明为什么停、接下来怎么办(到上限时附上这个网站、App 看了几页)。 */
-internal fun dwellStopped(e: DwellStop): ToolExecution =
-    fail(e.code, listOfNotNull(FAILURE_MESSAGES.getValue(e.code), e.detail).joinToString(" "))
+internal fun dwellStopped(e: DwellStop): ToolExecution {
+    val failure = fail(e.code, listOfNotNull(FAILURE_MESSAGES.getValue(e.code), e.detail).joinToString(" "))
+    if (e !is PageLimitReached) return failure
+    val budget = buildJsonObject {
+        put("scope", e.scope.wireName)
+        put("target", e.site)
+        put("used", e.pages)
+        put("limit", e.cap)
+    }
+    return failure.with(content = JsonObject(failure.content + ("navigationBudget" to budget)))
+}

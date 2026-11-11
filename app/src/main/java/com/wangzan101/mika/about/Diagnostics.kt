@@ -68,7 +68,7 @@ data class DiagnosticsSnapshot(
         val appsAfterTask: String? = null,
         /** 最近启动助手到达的固定阶段;这次进程还没启动过为 null。 */
         val helperLaunchStage: String? = null,
-        /** 最近一次 Binder 交接拒绝的固定枚举;没有被拒过为 null。 */
+        /** 本次启动尝试的 Binder 交接拒绝;NotShell 只带固定调用方类别,没有具体 UID。 */
         val helperHandoffRejection: String? = null,
     )
 

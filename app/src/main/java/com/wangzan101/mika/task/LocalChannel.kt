@@ -18,7 +18,8 @@ class LocalChannel(private val deliverLocal: suspend (ChannelPeer, Delivery) -> 
         return AutoCloseable { if (this.sink === sink) this.sink = null }
     }
 
-    override suspend fun send(peer: ChannelPeer, delivery: Delivery): SendOutcome = deliverLocal(peer, delivery)
+    override suspend fun send(peer: ChannelPeer, delivery: Delivery): SendOutcome =
+        if (delivery is Delivery.Image) SendOutcome.Failed else deliverLocal(peer, delivery)
     suspend fun receive(input: ChannelInput) { sink?.receive(input) }
 
     companion object { const val ID = "local" }

@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="calls_task_dial_now">Dial now</string>
+    <string name="calls_task_dial_locked">Dial after locking</string>
+    <string name="calls_task_dial_locked_note">Lock this phone within 45 seconds. Mika will make one attempt with this number, SIM and task. You can cancel from the notification. Turning the screen off without actually locking the phone will not dial.</string>
+    <string name="calls_task_dial_locked_confirm">Confirm and wait for lock</string>
+</resources>

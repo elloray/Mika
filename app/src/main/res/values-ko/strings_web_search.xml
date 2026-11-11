@@ -1,10 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="web_search_title">웹 검색</string>
+    <string name="web_search_provider">검색 서비스</string>
+    <string name="web_search_note_you">키 없이 무료 API(하루 100회)를 쓰고, 키를 넣으면 유료 API를 써요.</string>
+    <string name="web_search_searxng_url">인스턴스 주소</string>
+    <string name="web_search_note_jina">API 키가 필요해요. Jina 검색(s.jina.ai)을 사용합니다.</string>
+    <string name="web_search_note_exa">API 키가 필요해요. Exa 검색(api.exa.ai)을 사용합니다.</string>
+    <string name="web_search_note_searxng">직접 운영하는 SearXNG 인스턴스, 키는 필요 없어요. 인스턴스에서 JSON 출력을 켜야 해요(settings.yml의 search.formats에 json 추가).</string>
+    <string name="web_search_api_key_required">API 키(필수)</string>
+    <string name="web_search_missing_key">%1$s을(를) 쓰려면 API 키가 필요해요.</string>
+    <string name="web_search_get_key">API 키 받기</string>
+    <string name="web_search_privacy">키는 암호화되어 저장되며 검색 결과는 신뢰할 수 없는 콘텐츠로 처리됩니다.</string>
     <string name="web_search_row_sub">검색 서비스는 선택 사항이며 브라우저 검색은 언제나 사용할 수 있습니다</string>
-    <string name="web_search_hint">기본적으로 꺼져 있습니다. 검색 주소와 선택적 API 키를 설정하세요. 키는 암호화되어 저장되며 검색 결과는 신뢰할 수 없는 콘텐츠로 처리됩니다.</string>
     <string name="web_search_enabled">웹 검색 사용</string>
-    <string name="web_search_endpoint">검색 엔드포인트 URL</string>
     <string name="web_search_api_key">API 키(선택 사항)</string>
     <string name="web_search_invalid_endpoint">쿼리 매개변수가 없는 HTTP 또는 HTTPS URL을 입력하세요.</string>
     <string name="web_search_action">웹 검색하기</string>

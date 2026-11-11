@@ -68,6 +68,29 @@ class HelperHandoffTest {
     }
 
     @Test
+    fun rejectionDiagnosticsAreScopedAndClassifyTheCallerWithoutNumericUids() {
+        val diagnostics = HandoffDiagnostics()
+        diagnostics.reject(Reject.NotShell, callingUid = 0)
+        assertEquals("NotShell(caller=Root)", diagnostics.lastRejection)
+
+        diagnostics.launchStarted()
+        assertNull(diagnostics.lastRejection)
+        diagnostics.reject(Reject.NotShell, callingUid = 102_000)
+        assertEquals("NotShell(caller=ShellOtherUser)", diagnostics.lastRejection)
+        diagnostics.reject(Reject.NotShell, callingUid = 10_123)
+        assertEquals("NotShell(caller=OrdinaryApp)", diagnostics.lastRejection)
+        assertFalse(diagnostics.lastRejection!!.contains("10123"))
+        diagnostics.reject(Reject.NotShell, callingUid = 1_000)
+        assertEquals("NotShell(caller=Other)", diagnostics.lastRejection)
+        diagnostics.reject(Reject.StaleApk, callingUid = 0)
+        assertEquals("StaleApk", diagnostics.lastRejection)
+
+        diagnostics.clear()
+        assertNull(diagnostics.lastRejection)
+        assertEquals(HelperHandoff.CallerClass.Shell, HelperHandoff.callerClass(2_000))
+    }
+
+    @Test
     fun launchNonceIsSingleUseAndRotates() {
         val g = nonces()
         val launch = g.issueLaunch()

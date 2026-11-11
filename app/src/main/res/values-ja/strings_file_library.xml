@@ -1,0 +1,24 @@
+<resources>
+    <string name="file_library_title">ファイル</string>
+    <string name="file_library_search">ファイル名を検索</string>
+    <string name="file_library_all">すべての会話</string>
+    <string name="file_library_current">現在の会話</string>
+    <string name="file_library_sources">すべての種類</string>
+    <string name="file_library_input">添付ファイル</string>
+    <string name="file_library_output">生成されたファイル</string>
+    <string name="file_library_loading">ファイルを読み込み中…</string>
+    <string name="file_library_empty">ファイルが見つかりません</string>
+    <string name="file_library_missing">利用できません</string>
+    <string name="file_library_available">利用可能</string>
+    <string name="file_library_open">開く</string>
+    <string name="file_library_share">共有</string>
+    <string name="file_library_add">下書きに追加</string>
+    <string name="file_library_choose">会話を選択</string>
+    <string name="file_library_new">新しい会話</string>
+    <string name="file_library_error">このファイルにアクセスできません</string>
+    <string name="file_library_retry">再試行</string>
+    <string name="file_library_partial">一部の会話を読み込めませんでした。</string>
+    <string name="file_library_unknown_time">日時不明</string>
+    <string name="file_library_draft_saved">選択した会話の下書きに追加しました。切り替え可能になったら、その会話を開いてください。</string>
+    <string name="file_library_load_failed">ファイルを読み込めませんでした。</string>
+</resources>

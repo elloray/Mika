@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="call_instructions_title">Instruksi panggilan</string>
+    <string name="call_instructions_intro">Instruksi tersimpan berlaku untuk panggilan berikutnya. Semua instruksi aktif dikirim ke Volcengine saat menyiapkan panggilan AI, meski panggilan tidak dijawab. Penelepon tidak dapat mengubahnya.</string>
+    <string name="call_instructions_add">Tambah instruksi</string>
+    <string name="call_instructions_empty">Tulis apa yang boleh dikatakan dan perlu ditanyakan asisten. Perubahan berlaku mulai panggilan berikutnya.</string>
+    <string name="call_instructions_heading">Judul</string>
+    <string name="call_instructions_situation">Kapan berlaku</string>
+    <string name="call_instructions_response">Cara menanggapi</string>
+    <string name="call_instructions_save">Simpan instruksi</string>
+    <string name="call_instructions_cancel">Batal</string>
+    <string name="call_instructions_edit">Edit</string>
+    <string name="call_instructions_delete">Hapus</string>
+    <string name="call_instructions_delete_confirm">Hapus instruksi ini? Instruksi ini tidak lagi berlaku untuk panggilan berikutnya.</string>
+    <string name="call_instructions_expiry">Berlaku selama</string>
+    <string name="call_instructions_forever">Sampai saya ubah</string>
+    <string name="call_instructions_today">Sampai malam ini</string>
+    <string name="call_instructions_two_hours">Dua jam</string>
+    <string name="call_instructions_expired">Kedaluwarsa</string>
+    <string name="call_instructions_saved">Tersimpan di ponsel ini</string>
+    <string name="call_instructions_failed">Gagal menyimpan. Draf Anda masih ada.</string>
+    <string name="call_instructions_presets">Mulai dari skenario</string>
+    <string name="call_instructions_delivery">Pengiriman</string>
+    <string name="call_instructions_delivery_when">Kurir atau pengantar menelepon</string>
+    <string name="call_instructions_delivery_reply">Tanyakan lokasi paket dan apakah perlu ditelepon kembali. Jangan mengarang alamat atau memberi izin masuk.</string>
+    <string name="call_instructions_business">Pertanyaan bisnis</string>
+    <string name="call_instructions_business_when">Pelanggan menanyakan produk, layanan, atau janji</string>
+    <string name="call_instructions_business_reply">Tanyakan kebutuhan, jumlah atau waktu yang diinginkan, serta cara menghubungi. Catat pesan tanpa menjanjikan harga atau janji.</string>
+    <string name="call_instructions_review_limit">Tinjau balasan dan ringkas instruksi hingga 800 karakter sebelum menyimpan.</string>
+</resources>

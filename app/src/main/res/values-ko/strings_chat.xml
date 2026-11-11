@@ -6,15 +6,41 @@
     <string name="chat_greeting_evening">좋은 저녁이에요</string>
     <string name="chat_greeting_night">늦은 시간이네요</string>
     <string name="chat_empty_prompt">Mika가 무엇을 할까요?</string>
+    <string name="chat_example_github_star">https://github.com/wangzan101/mika 를 열고 이 프로젝트에 별을 달아 줘</string>
     <string name="chat_example_follow">X를 열어 Wang Zan(@wangzan101)을 검색하고 계정을 팔로우해 줘</string>
     <string name="chat_example_group_summary">WhatsApp에서 오늘 읽지 않은 메시지를 요약하고 답장이 필요한 내용을 표시해 줘</string>
-    <string name="chat_example_jobs">LinkedIn에서 원격 AI 프로덕트 매니저 채용 공고 5개를 찾아 지원 요건을 비교해 줘</string>
-    <string name="chat_example_multi_step">Amazon에서 100달러 미만의 평점 높은 무선 이어폰 3개를 찾아 장단점을 비교해 줘</string>
     <string name="chat_example_alarms">내일 아침 9시 40분, 9시 50분, 10시에 알람을 맞춰 줘</string>
-    <string name="chat_example_ai_apps">휴대폰에 설치된 AI 앱을 찾아 각각 어떤 점을 가장 잘하는지 묻고 답변을 비교해 줘</string>
+    <string name="chat_example_replace_title">현재 초안을 바꿀까요?</string>
+    <string name="chat_example_replace_body">추천 작업이 이미 입력한 내용을 대체합니다.</string>
+    <string name="chat_example_replace_action">초안 바꾸기</string>
+    <string name="recommendations_title">추천 작업</string>
+    <string name="recommendations_drag">드래그하여 순서 변경</string>
+    <string name="recommendations_drag_hint">손잡이를 드래그하여 표시 순서를 바꾸세요.</string>
+    <string name="recommendations_move_up">위로 이동</string>
+    <string name="recommendations_move_down">아래로 이동</string>
+    <string name="recommendations_sub">홈에 표시되는 작업과 프롬프트 관리</string>
+    <string name="recommendations_add">추천 작업 추가</string>
+    <string name="recommendations_edit">추천 작업 편집</string>
+    <string name="recommendations_empty">추천 작업이 없습니다</string>
+    <string name="recommendations_empty_sub">추가하면 새 대화 홈에 표시됩니다</string>
+    <string name="recommendations_title_label">제목</string>
+    <string name="recommendations_prompt_label">프롬프트</string>
+    <string name="recommendations_delete">삭제</string>
+    <string name="recommendations_delete_title">이 추천 작업을 삭제할까요?</string>
+    <string name="recommendations_delete_body">삭제하면 홈에 더 이상 표시되지 않습니다.</string>
+    <string name="recommendations_save_failed">저장하지 못했습니다. 다시 시도해 주세요.</string>
+    <string name="recommendations_title_required">제목을 입력하세요</string>
+    <string name="recommendations_prompt_required">프롬프트를 입력하세요</string>
+    <string name="recommendations_too_long">제목 또는 프롬프트가 너무 깁니다</string>
+    <string name="recommendations_too_many">추천 작업은 최대 %1$d개까지 저장할 수 있습니다</string>
+    <string name="recommendations_unreadable">저장된 추천 작업을 읽지 못해 아직 수정할 수 없습니다.</string>
+    <string name="recommendations_reset">지우고 다시 시작</string>
+    <string name="recommendations_reset_body">읽을 수 없는 파일은 빈 목록으로 바뀝니다.</string>
+    <string name="recommendations_footer">새 대화 홈에서 작업을 누르면 프롬프트가 입력창에 들어갑니다. 자동으로 보내지 않습니다.</string>
+    <string name="share_draft_replace_body">공유한 내용이 현재 초안을 대체합니다.</string>
     <string name="chat_working_on">%1$s에서 작업 중</string>
     <string name="chat_working">작업 중</string>
-    <string name="share_draft_failed">공유한 내용을 새 대화에 추가하지 못했어요</string>
+    <string name="share_draft_failed">공유한 내용을 대화에 추가하지 못했어요</string>
     <string name="chat_wait_previous_task">이전 작업이 끝나면 시작해요</string>
     <string name="chat_wait_unlock">잠금 해제를 기다리는 중</string>
     <string name="chat_waiting_for_you">내 차례를 기다리는 중</string>
@@ -42,6 +68,10 @@
     <string name="chat_continue">계속</string>
     <string name="chat_not_done">끝내지 못했어요</string>
     <string name="chat_stopped">중지됨.</string>
+    <string name="chat_resume_checkpoint">중단한 곳에서 계속</string>
+    <string name="chat_restart_task">처음부터 다시 시작</string>
+    <string name="chat_resume_request">중단한 곳에서 계속: %1$s</string>
+    <string name="chat_restart_request">처음부터 다시 시작: %1$s</string>
     <string name="chat_view_source">출처 보기</string>
     <string name="chat_open">열기</string>
     <string name="chat_attach_rejected">추가하지 못했어요: %1$s (파일당 200MB 미만이어야 해요)</string>
@@ -63,11 +93,41 @@
     <plurals name="drawer_delete_schedules">
         <item quantity="other">이 채팅의 예약 작업 %1$d개는 유지돼요.</item>
     </plurals>
+    <string name="drawer_select">선택</string>
+    <string name="drawer_selected_count">%1$d개 선택됨</string>
+    <string name="drawer_select_all">전체 선택</string>
+    <string name="drawer_select_none">선택 해제</string>
+    <string name="drawer_delete_many_title">선택한 채팅을 삭제할까요?</string>
+    <plurals name="drawer_delete_many_body">
+        <item quantity="other">선택한 채팅 %1$d개와 그 안의 파일이 삭제돼요.</item>
+    </plurals>
+    <plurals name="drawer_delete_many_running">
+        <item quantity="other">실행 중인 작업 %1$d개가 중지돼요.</item>
+    </plurals>
+    <plurals name="drawer_delete_many_schedules">
+        <item quantity="other">그 안의 예약 작업 %1$d개는 유지돼요.</item>
+    </plurals>
+    <plurals name="drawer_delete_progress">
+        <item quantity="other">채팅 %1$d개를 삭제하는 중…</item>
+    </plurals>
+    <plurals name="drawer_delete_done">
+        <item quantity="other">채팅 %1$d개를 삭제했어요.</item>
+    </plurals>
+    <plurals name="drawer_delete_partial">
+        <item quantity="other">채팅 %1$d개를 삭제했고 %2$d개는 실패했어요.</item>
+    </plurals>
     <string name="drawer_actions">채팅 옵션</string>
     <string name="drawer_rename">이름 바꾸기</string>
     <string name="drawer_rename_title">채팅 이름 바꾸기</string>
     <string name="drawer_pinned">고정됨</string>
     <string name="drawer_pinned_mark">고정됨</string>
+    <string name="drawer_search_hint">대화 검색</string>
+    <string name="drawer_search_results">검색 결과</string>
+    <string name="drawer_search_empty">“%1$s”에 해당하는 대화가 없습니다</string>
+    <string name="drawer_search_empty_hint">제목과 대화 내용만 검색합니다</string>
+    <string name="drawer_searching">검색 중…</string>
+    <string name="drawer_search_clear">검색 지우기</string>
+    <string name="drawer_search_truncated">처음 %1$d개 결과만 표시합니다</string>
     <string name="settings_title">설정</string>
     <string name="chat_unconfirmed">확인하지 못했어요: %1$s</string>
     <string name="chat_unverified">완료했지만 확인하지 못했어요</string>
@@ -92,6 +152,7 @@
     </plurals>
     <string name="attach_add">첨부 추가</string>
     <string name="attach_close">첨부 패널 닫기</string>
+    <string name="attach_blocked_running">작업 실행 중에는 첨부 파일을 추가할 수 없습니다. 먼저 대기 모드로 전환하세요</string>
     <string name="attach_camera">카메라</string>
     <string name="attach_album">사진</string>
     <string name="attach_files">파일</string>
@@ -142,6 +203,10 @@
     <string name="chat_branch_attachments_skipped">첨부 파일을 모두 복사하지 못했어요</string>
     <string name="chat_branch_retry">여기서 다시 묻기</string>
     <string name="chat_branch_attachments_readd">첨부 파일을 다시 추가하세요</string>
+    <string name="chat_attach_unavailable">추가하지 못했어요: %1$s. 파일을 사용할 수 있고 크기 제한을 넘지 않았는지 확인하세요.</string>
+    <string name="chat_retry_missing">%1$s: 파일이 없어요</string>
+    <string name="chat_retry_limit">%1$s: 복사 제한을 초과했어요</string>
+    <string name="chat_retry_failed">%1$s: 복사하지 못했어요</string>
     <string name="chat_select_hint">텍스트를 길게 눌러 선택하세요</string>
     <string name="chat_quote_remove">인용 삭제</string>
     <string name="chat_quoting_mika">Mika 인용: %1$s</string>

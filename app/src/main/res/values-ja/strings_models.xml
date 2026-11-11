@@ -189,4 +189,7 @@
     <string name="speech_footer">音声モデルらしいものだけを表示しています。お使いのモデルが見当たらない場合は、名前を入力してください。選ぶと、短い音声をテストとして文字に変換します。</string>
     <string name="speech_pick_failed">そのモデルでは文字に変換できませんでした: %1$s</string>
     <string name="speech_pick_timeout">%1$s はテスト用の音声に %2$d 秒以内に応答しませんでした</string>
+    <string name="models_daily_token_budget">プロバイダーの1日の Token 予算</string>
+    <string name="models_daily_token_budget_sub">ローカル暦日で、このプロバイダーの全モデル・全用途について報告された入力・出力 Token を集計します。予算に達すると次のリクエストを止めます。実行中のリクエストで超過する場合があり、未報告の使用量は 0 です。ローカル日付が変わると再開します。</string>
+    <string name="models_daily_token_budget_save_failed">予算を保存できませんでした。以前の設定が引き続き使われます。</string>
 </resources>

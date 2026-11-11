@@ -35,4 +35,17 @@
     <string name="usage_input">Input</string>
     <string name="usage_output">Output</string>
     <string name="usage_calls">Calls</string>
+    <string name="usage_allowance_title">Current allowance</string>
+    <string name="usage_allowance_loading">Checking allowance…</string>
+    <string name="usage_allowance_unavailable">Temporarily unavailable</string>
+    <string name="usage_allowance_balance">Account balance: %1$s</string>
+    <string name="usage_allowance_key_limit">Key spending limit remaining: %1$s</string>
+    <string name="usage_allowance_no_key_limit">No spending limit set for this key</string>
+    <string name="usage_allowance_view_balance">View account balance</string>
+    <string name="usage_allowance_reset_daily">Resets daily</string>
+    <string name="usage_allowance_reset_weekly">Resets weekly</string>
+    <string name="usage_allowance_reset_monthly">Resets monthly</string>
+    <string name="usage_allowance_updated">Last updated %1$s</string>
+    <string name="usage_allowance_self_hosted">Self-hosted connection</string>
+    <string name="usage_allowance_unsupported">Allowance lookup unavailable for this connection</string>
 </resources>

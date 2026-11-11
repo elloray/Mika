@@ -7,6 +7,7 @@
     <string name="tool_set_timer">Definir temporizador</string>
     <string name="tool_show_alarms">Mostrar alarmes</string>
     <string name="tool_add_calendar_event">Adicionar evento ao calendário</string>
+    <string name="tool_calendar_bulk_insert">Adicionar eventos ao calendário em lote</string>
     <string name="tool_set_wheel">Girar seletor</string>
     <string name="tool_scroll_find">Rolar para encontrar</string>
     <string name="tool_wait_condition">Aguardar condição da tela</string>

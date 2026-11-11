@@ -2,6 +2,7 @@ package com.wangzan101.mika.core.knowledge
 
 import com.wangzan101.mika.core.skills.PersonalSkills
 import com.wangzan101.mika.core.skills.SkillStatus
+import com.wangzan101.mika.core.teach.TeachSkill
 
 /** 内置的 App 知识(kind `app`)、站点知识(`site`)、技能(`skill`),或用户的个人技能(`personal`);[files] 是可读的文件(主文件在前,其余是附件)。 */
 data class GuideInfo(
@@ -219,14 +220,19 @@ class GuideCatalog private constructor(
             fun one(k: String) = meta[k] as? String
             fun many(k: String) = (meta[k] as? List<*>)?.filterIsInstance<String>() ?: listOfNotNull(one(k)?.takeIf { it.isNotEmpty() })
             val valid = one("name") == s.name && body.isNotBlank()
+            val demonstrated = TeachSkill.isDemonstrated(s)
+            val trialNote = if (s.status == SkillStatus.trial) "[Unverified personal skill draft: use it only as a trial; the result must be checked.]\n" else ""
+            val demoNote = if (demonstrated) TeachSkill.USE_NOTE + "\n" else ""
             PersonalEntry(
                 GuideInfo(
                     kind = PERSONAL_KIND, name = s.name, display = one("display")?.takeIf { it.isNotEmpty() } ?: s.name,
-                    description = (if (s.status == SkillStatus.trial) "[unverified: check the result when trying it] " else "") + (one("description") ?: ""), aliases = many("aliases"),
+                    description = (if (s.status == SkillStatus.trial) "[unverified: check the result when trying it] " else "") +
+                        (if (demonstrated) TeachSkill.INDEX_NOTE else "") + (one("description") ?: ""),
+                    aliases = many("aliases"),
                     terms = many("apps") + many("domains"), files = listOf(SKILL_FILE),
                     apps = many("apps"), sites = many("sites") + many("domains"),
                 ),
-                body.takeIf { valid }?.let { if (s.status == SkillStatus.trial) "[Unverified personal skill draft: use it only as a trial; the result must be checked.]\n$it" else it },
+                body.takeIf { valid }?.let { demoNote + trialNote + it },
             )
         }
 

@@ -33,7 +33,7 @@ def browser_desk(respond, locale="zh-CN"):
                 raise unittest.SkipTest(f"Playwright's Chromium is unavailable: {exc}")
             try:
                 # The assertions read the Chinese strings; test_mika_desk checks both languages exist.
-                page = browser.new_page(locale=locale)
+                page = browser.new_context(locale=locale).new_page()
                 page.goto(url.geturl())
                 yield page, phone
             finally:

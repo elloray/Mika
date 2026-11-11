@@ -23,7 +23,12 @@ import kotlinx.coroutines.channels.ReceiveChannel
  * stop 返回到目前为止的全部 PCM;录满 [maxMs] 自动停止,之后再 stop 仍返回已录的内容。
  * 录音权限由调用方先检查,这里拿不到麦克风就返回 false。stop 会短暂阻塞(等读循环退出),别在主线程调。
  */
-class PcmRecorder(private val maxMs: Int = 60_000, private val streaming: Boolean = false) : StreamingRecorder {
+class PcmRecorder(
+    private val maxMs: Int = 60_000,
+    private val streaming: Boolean = false,
+    /** 流式时不留整段录音、录多久都行(不预留 [maxMs] 的缓冲,也不到点自停);[stop] 返回空。用于不封顶的会话。 */
+    private val unbounded: Boolean = false,
+) : StreamingRecorder {
     // At most five seconds while a connection is opening. Never silently drop a sample.
     private val audio = Channel<ShortArray>(100)
     override val chunks: ReceiveChannel<ShortArray> = audio
@@ -69,7 +74,7 @@ class PcmRecorder(private val maxMs: Int = 60_000, private val streaming: Boolea
                 rec.release()
                 return false
             }
-            pcm = ShortArray(Wav.RATE * maxMs / 1000)
+            pcm = ShortArray(if (unbounded && streaming) 0 else Wav.RATE * maxMs / 1000)
             size = 0
             _level.value = 0f
             record = rec
@@ -95,14 +100,16 @@ class PcmRecorder(private val maxMs: Int = 60_000, private val streaming: Boolea
                 if (record !== rec) return // 已被 stop/cancel
                 // 在锁里、确认还没被停掉之后才写,免得 cancel 刚归零又被这一块的音量盖回去
                 _level.value = lvl
-                val take = minOf(n, pcm.size - size)
-                System.arraycopy(buf, 0, pcm, size, take)
-                size += take
+                val take = if (unbounded && streaming) n else minOf(n, pcm.size - size)
+                if (!(unbounded && streaming)) {
+                    System.arraycopy(buf, 0, pcm, size, take)
+                    size += take
+                }
                 if (streaming && audio.trySend(buf.copyOf(take)).isFailure) {
                     audio.close(IOException("Audio stream buffer exceeded"))
                     return@synchronized true
                 }
-                size >= pcm.size
+                !(unbounded && streaming) && size >= pcm.size
             }
             if (full) break
         }

@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="calls_device_allow_notifications">Permitir notificaciones</string>
+    <string name="calls_device_allow_phone">Permitir permisos de teléfono</string>
+    <string name="calls_device_helper">Asistente integrado</string>
+    <string name="calls_device_helper_connected">Conectado</string>
+    <string name="calls_device_notifications">Notificaciones de llamadas</string>
+    <string name="calls_device_notifications_app_off">Las notificaciones de la app están desactivadas</string>
+    <string name="calls_device_notifications_calls_off">El canal de llamadas con IA está desactivado</string>
+    <string name="calls_device_notifications_permission_missing">No se ha concedido el permiso de notificaciones</string>
+    <string name="calls_device_notifications_standby_off">El canal de espera en segundo plano está desactivado</string>
+    <string name="calls_device_notifications_unknown">No se pudo comprobar el estado de las notificaciones</string>
+    <string name="calls_device_open_app_settings">Abrir los permisos de la app</string>
+    <string name="calls_device_pair_helper">Conectar el asistente</string>
+    <string name="calls_device_permission_granted">Permitido</string>
+    <string name="calls_device_phone_permissions">Permisos de teléfono</string>
+    <string name="calls_device_phone_permissions_note">Permite consultar el estado y realizar llamadas</string>
+    <string name="calls_device_ready_to_test">Listo para probar el audio manualmente</string>
+    <string name="calls_device_system_settings_failed">No se pudieron abrir los ajustes del sistema. Abre la información de la app en los ajustes de Android.</string>
+    <string name="calls_background_auto_off">La respuesta automática está desactivada</string>
+    <string name="calls_background_battery">Batería y actividad en segundo plano</string>
+    <string name="calls_background_battery_managed">Android aplica la optimización de la batería</string>
+    <string name="calls_background_battery_restricted">Android indica que la actividad en segundo plano está restringida</string>
+    <string name="calls_background_battery_unknown">No se pudo comprobar la política de batería</string>
+    <string name="calls_background_battery_unrestricted">Android indica una excepción a la optimización de la batería</string>
+    <string name="calls_background_lock_screen_note">Para las llamadas entrantes, permite las notificaciones de llamadas en la pantalla de bloqueo. Si la espera se detiene a menudo, revisa los ajustes de batería y segundo plano. Que el servicio esté activo no confirma que se pueda responder con la pantalla bloqueada.</string>
+    <string name="calls_background_not_running">Detenido · solo responde automáticamente con la app visible y el teléfono desbloqueado</string>
+    <string name="calls_background_open_battery">Abrir ajustes de batería</string>
+    <string name="calls_background_running">En ejecución</string>
+    <string name="calls_background_service">Espera de llamadas entrantes</string>
+    <string name="calls_background_settings">Segundo plano y pantalla de bloqueo</string>
+    <string name="calls_background_start">Iniciar la espera en segundo plano</string>
+    <string name="calls_background_starting">Iniciando…</string>
+    <string name="calls_device_locked_dial_pending">Llamar tras bloquear</string>
+    <string name="calls_device_locked_dial_remaining">Bloquea el teléfono en %1$d s</string>
+    <string name="calls_device_locked_dial_preparing">Preparando la llamada con el teléfono bloqueado</string>
+    <string name="calls_device_locked_dial_cancel">Cancelar</string>
+</resources>

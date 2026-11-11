@@ -34,11 +34,11 @@ class ToolGroupsTest {
     private fun all() = toolDispatcher(FakeScreen(), web = FakeWebPort(), sandbox = FakeSandbox(), workspace = { "w" })
     private fun names(specs: List<ToolSpec>) = specs.map { it.name }
 
-    /** 只聊天时发给模型的:通用工具(接管、报障碍、回看画面不在内)加五个入口。 */
+    /** 只聊天时发给模型的:通用工具(接管、报障碍、回看画面不在内)加各能力的入口。 */
     private val chatOnly = listOf(
         "wait", "ask_user", "request_confirmation", "end_not_done",
         "phone_list_apps", "phone_launch_app", "phone_set_alarm", "phone_set_timer", "phone_add_calendar_event",
-        "web_navigate", "web_read_page", "run_command",
+        "phone_calendar_bulk_insert", "web_navigate", "web_read_page", "run_command",
     )
 
     @Test fun chatOnlyGetsBaseAndEntries() {
@@ -48,7 +48,7 @@ class ToolGroupsTest {
         // 入口收着时用短说明,参数和全文一样
         val now = d.offeredNow().associateBy { it.name }
         val full = d.definitions().associateBy { it.name }
-        for (e in listOf("phone_launch_app", "phone_list_apps", "phone_set_alarm", "phone_set_timer", "phone_add_calendar_event", "web_navigate", "web_read_page", "run_command")) {
+        for (e in listOf("phone_launch_app", "phone_list_apps", "phone_set_alarm", "phone_set_timer", "phone_add_calendar_event", "phone_calendar_bulk_insert", "web_navigate", "web_read_page", "run_command")) {
             assertEquals(Prompts.entry(e), now.getValue(e).description)
             assertEquals(full.getValue(e).parametersJsonSchema, now.getValue(e).parametersJsonSchema)
             assertTrue(e, now.getValue(e).description.length < full.getValue(e).description.length)
@@ -80,6 +80,7 @@ class ToolGroupsTest {
         // 设闹钟、计时器单用就够:不展开手机一组
         d.execute(call("phone_set_alarm", """{"hour":9,"minute":40}"""))
         d.execute(call("phone_set_timer", """{"seconds":600}"""))
+        d.execute(call("phone_calendar_bulk_insert", """{"events":[{"title":"t","start":"2026-11-02T14:30"}]}"""))
         d.execute(call("web_read_page", """{"url":"https://example.com"}"""))
         assertEquals(emptySet<String>(), d.expanded)
         assertEquals(emptySet<String>(), d.used)

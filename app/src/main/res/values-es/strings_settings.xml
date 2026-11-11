@@ -175,4 +175,10 @@
     <string name="quit_row_sub">Detiene las tareas en segundo plano y oculta la cápsula flotante</string>
     <string name="quit_confirm_body">Las tareas en curso se detendrán, y la cápsula flotante y las notificaciones desaparecerán. Al volver a abrir Mika, todo vuelve.</string>
     <string name="quit_confirm_action">Salir</string>
+    <string name="settings_task_token_budget">Presupuesto de tokens por tarea</string>
+    <string name="settings_task_token_budget_sub">Solo cuentan los tokens de entrada y salida informados por el proveedor. Al alcanzar el presupuesto no se envían más solicitudes. Una solicitud en curso puede superarlo; las llamadas sin uso informado cuentan como 0.</string>
+    <string name="settings_token_budget_unlimited">Sin límite</string>
+    <string name="settings_token_budget_custom">Presupuesto de tokens personalizado</string>
+    <string name="settings_token_budget_apply">Usar</string>
+    <string name="settings_token_budget_invalid">Introduce un número entero entre %1$s y %2$s.</string>
 </resources>

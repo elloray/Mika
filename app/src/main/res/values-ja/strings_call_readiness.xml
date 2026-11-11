@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="calls_device_allow_notifications">通知を許可</string>
+    <string name="calls_device_allow_phone">電話の権限を許可</string>
+    <string name="calls_device_helper">内蔵ヘルパー</string>
+    <string name="calls_device_helper_connected">接続済み</string>
+    <string name="calls_device_notifications">通話通知</string>
+    <string name="calls_device_notifications_app_off">アプリの通知はオフです</string>
+    <string name="calls_device_notifications_calls_off">AI 通話の通知チャンネルはオフです</string>
+    <string name="calls_device_notifications_permission_missing">通知の権限が許可されていません</string>
+    <string name="calls_device_notifications_standby_off">バックグラウンド待機の通知チャンネルはオフです</string>
+    <string name="calls_device_notifications_unknown">通知の状態を確認できませんでした</string>
+    <string name="calls_device_open_app_settings">アプリの権限設定を開く</string>
+    <string name="calls_device_pair_helper">ヘルパーを接続</string>
+    <string name="calls_device_permission_granted">許可済み</string>
+    <string name="calls_device_phone_permissions">電話の権限</string>
+    <string name="calls_device_phone_permissions_note">通話状態の読み取りと発信を許可してください</string>
+    <string name="calls_device_ready_to_test">手動で通話音声を確認できます</string>
+    <string name="calls_device_system_settings_failed">システム設定を開けませんでした。Android の設定からアプリ情報を開いてください。</string>
+    <string name="calls_background_auto_off">自動応答はオフです</string>
+    <string name="calls_background_battery">バッテリーとバックグラウンド動作</string>
+    <string name="calls_background_battery_managed">Android のバッテリー最適化が適用されています</string>
+    <string name="calls_background_battery_restricted">Android によるバックグラウンド制限があります</string>
+    <string name="calls_background_battery_unknown">バッテリー設定を確認できませんでした</string>
+    <string name="calls_background_battery_unrestricted">Android のバッテリー最適化の対象外です</string>
+    <string name="calls_background_lock_screen_note">着信に備え、ロック画面に通話通知を表示できるようにしてください。待機が繰り返し止まる場合は、バッテリーとバックグラウンドの設定を確認してください。サービスが実行中でも、ロック中の応答は別途確認が必要です。</string>
+    <string name="calls_background_not_running">停止中 · アプリを表示しロックを解除している間のみ自動応答</string>
+    <string name="calls_background_open_battery">バッテリー設定を開く</string>
+    <string name="calls_background_running">実行中</string>
+    <string name="calls_background_service">着信のバックグラウンド待機</string>
+    <string name="calls_background_settings">バックグラウンドとロック画面</string>
+    <string name="calls_background_start">バックグラウンド待機を開始</string>
+    <string name="calls_background_starting">開始中…</string>
+    <string name="calls_device_locked_dial_pending">ロック後に発信</string>
+    <string name="calls_device_locked_dial_remaining">%1$d 秒以内に端末をロックしてください</string>
+    <string name="calls_device_locked_dial_preparing">ロック画面からの発信を準備中</string>
+    <string name="calls_device_locked_dial_cancel">キャンセル</string>
+</resources>

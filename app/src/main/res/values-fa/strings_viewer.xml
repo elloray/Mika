@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="viewer_no_open_app">برنامه‌ای برای باز کردن این فایل وجود ندارد</string>
+    <string name="viewer_no_share_app">برنامه‌ای برای اشتراک‌گذاری این فایل وجود ندارد</string>
+    <string name="viewer_open_elsewhere">باز کردن با برنامه‌ای دیگر</string>
+    <string name="viewer_unsupported">این فایل در میکا قابل نمایش نیست.</string>
+    <string name="viewer_read_error">خواندن این فایل با مشکل مواجه شد.</string>
+    <string name="viewer_page">صفحهٔ %1$d</string>
+    <string name="viewer_truncated">این فایل بزرگ است؛ فقط ابتدای آن نمایش داده می‌شود.</string>
+</resources>

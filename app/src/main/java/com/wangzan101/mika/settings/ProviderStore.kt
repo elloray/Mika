@@ -33,6 +33,7 @@ import com.wangzan101.mika.core.model.PromptCaching
 import com.wangzan101.mika.core.model.ResponsesModel
 import com.wangzan101.mika.core.model.Role
 import com.wangzan101.mika.core.model.ToolSpec
+import com.wangzan101.mika.core.usage.TokenBudgetLimits
 import com.wangzan101.mika.core.usage.UsagePurpose
 import com.wangzan101.mika.core.usage.UsageSink
 import com.wangzan101.mika.core.usage.UsageSource
@@ -54,6 +55,7 @@ import kotlinx.serialization.json.intOrNull
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
+import kotlinx.serialization.json.longOrNull
 import kotlinx.serialization.json.put
 import kotlinx.serialization.json.putJsonArray
 import kotlinx.serialization.json.putJsonObject
@@ -146,6 +148,8 @@ data class Provider(
     val contextSettings: Map<String, ModelContextSettings> = emptyMap(),
     /** 用户说的某个模型能不能看图(按模型名):比列表和预设初值都算数,见 [ModelOptions.seesImages]。 */
     val visionOverrides: Map<String, Boolean> = emptyMap(),
+    /** 这家每天所有模型、用途合计的已报告 Token 预算；null 不限制。 */
+    val dailyTokenBudget: Long? = null,
 ) {
     val key: String get() = ProviderConnection.keyOf(kind, baseUrl, name)
 
@@ -280,6 +284,8 @@ class ProviderStore(
     dir: File,
     private val cipher: KeyCipher,
     private val usage: UsageSink = UsageSink { _, _ -> },
+    /** 每次请求前实时查询这家当前本地日的已报告 Token；默认不启用每日限制。 */
+    private val dailyUsage: (String) -> Long = { 0L },
     private val newId: () -> String = { UUID.randomUUID().toString() },
     /** 发给模型服务的 User-Agent;App 给 `Mika/<版本>`。 */
     private val userAgent: String = "Mika",
@@ -310,6 +316,10 @@ class ProviderStore(
     private val _providers = MutableStateFlow<List<Provider>>(emptyList())
     /** 已连接的服务商,按连接的先后。 */
     val providers: StateFlow<List<Provider>> = _providers.asStateFlow()
+
+    // 换 Key 时服务商列表可能没变，额度页用版本号作废旧结果。
+    private val _providerKeyRevisions = MutableStateFlow<Map<String, Long>>(emptyMap())
+    internal val providerKeyRevisions = _providerKeyRevisions.asStateFlow()
 
     private val _configs = MutableStateFlow<List<ProviderConfig>>(emptyList())
     val configs: StateFlow<List<ProviderConfig>> = _configs.asStateFlow()
@@ -355,6 +365,17 @@ class ProviderStore(
     fun providerKey(providerId: String): String? {
         val enc = synchronized(this) { keys[providerId] } ?: return null
         return runCatching { String(cipher.decrypt(decode(enc))) }.getOrNull()
+    }
+
+    /** 只为仍匹配这次额度查询的服务商配置取 Key。 */
+    @Synchronized
+    internal fun allowanceKey(provider: Provider, revision: Long): String? =
+        if (matchesAllowanceConnection(provider, revision)) providerKey(provider.id) else null
+
+    internal fun matchesAllowanceConnection(provider: Provider, revision: Long): Boolean {
+        val current = provider(provider.id) ?: return false
+        return current.baseUrl == provider.baseUrl && current.kind == provider.kind && current.signIn == provider.signIn &&
+            (_providerKeyRevisions.value[provider.id] ?: 0L) == revision
     }
 
     /** 这个服务商存了 Key 没有(本地服务可以不填)。 */
@@ -451,6 +472,7 @@ class ProviderStore(
         _roles.value = _roles.value.keepOnly(_configs.value.map { it.id }.toSet())
         prune()
         if (providerId in keys) setKey(providerId, "")
+        _providerKeyRevisions.value -= providerId
         writeConfig()
     }
 
@@ -519,6 +541,21 @@ class ProviderStore(
         return true
     }
 
+    /** 修改这家每日 Token 预算；写盘失败时保留内存和盘上原值。 */
+    @Synchronized
+    fun setDailyTokenBudget(providerId: String, limit: Long?): Boolean {
+        if (limit != null && !TokenBudgetLimits.valid(limit)) return false
+        val p = provider(providerId) ?: return false
+        val updated = _providers.value.map { if (it.id == p.id) p.copy(dailyTokenBudget = limit) else it }
+        try {
+            writeAtomically(configFile, configJson(updated))
+        } catch (_: Exception) {
+            return false
+        }
+        _providers.value = updated
+        return true
+    }
+
     /** 记下用户说的 [model] 能不能看图(见 [Provider.visionOverrides]);服务商不存在时返回 false。 */
     @Synchronized
     fun setModelVision(providerId: String, model: String, sees: Boolean): Boolean {
@@ -574,7 +611,15 @@ class ProviderStore(
         modelFactory(configured, apiKey(cfg.id), listed?.endpoint, ClientSetup(
             headers(p?.sessionHeader, session), reasoningEffort = _roles.value.reasoningEffort(role),
             thinkingTypes = listed?.thinkingTypes, readTimeoutSeconds = settings?.readTimeoutSeconds,
-        )).metered(source, usage)
+        )).metered(source, usage, ::checkDailyBudget)
+    }
+
+    /** 每次实际请求前重查配置和账本；达到预算时不发请求，也不记一笔虚假调用。 */
+    private fun checkDailyBudget(source: UsageSource) {
+        val p = provider(source.providerId) ?: return
+        val limit = p.dailyTokenBudget ?: return
+        val used = dailyUsage(source.providerId)
+        if (used >= limit) throw ModelError.DailyBudgetExceeded(p.name, limit, used)
     }
 
     /**
@@ -834,6 +879,8 @@ class ProviderStore(
     private fun setKey(providerId: String, apiKey: String) {
         keys = if (apiKey.isEmpty()) keys - providerId else keys + (providerId to encode(cipher.encrypt(apiKey.toByteArray())))
         writeAtomically(keyFile, keysJson())
+        val revisions = _providerKeyRevisions.value
+        _providerKeyRevisions.value = revisions + (providerId to ((revisions[providerId] ?: 0L) + 1))
     }
 
     /** 删掉没有用途在用的模型配置。Key 存在服务商上,不受影响。 */
@@ -951,6 +998,7 @@ class ProviderStore(
         // 旧版本存下的没有这一项:按地址对得上的预设补上(读入后写回文件时记进去)
         sessionHeader = o["sessionHeader"]?.jsonPrimitive?.content ?: ProviderPresets.forBaseUrl(o.str("baseUrl"))?.sessionHeader,
         signIn = o["signIn"]?.jsonPrimitive?.content,
+        dailyTokenBudget = o.positiveLong("dailyTokenBudget")?.takeIf(TokenBudgetLimits::valid),
         verifiedModels = o["verifiedModels"]?.jsonArray?.map { it.jsonPrimitive.content }?.toSet().orEmpty(),
         contextSettings = (o["contextSettings"] as? JsonObject).orEmpty().mapNotNull { (model, raw) ->
             val entry = raw as? JsonObject ?: return@mapNotNull null
@@ -1025,6 +1073,7 @@ class ProviderStore(
 
     private fun JsonObject.str(k: String) = this[k]!!.jsonPrimitive.content
     private fun JsonObject.positiveInt(k: String) = (this[k] as? JsonPrimitive)?.intOrNull?.takeIf { it > 0 }
+    private fun JsonObject.positiveLong(k: String) = (this[k] as? JsonPrimitive)?.longOrNull?.takeIf { it > 0 }
 
     private fun writeConfig() = writeAtomically(configFile, configJson())
 
@@ -1036,6 +1085,7 @@ class ProviderStore(
                         put("id", p.id); put("name", p.name); put("kind", p.kind.name); put("baseUrl", p.baseUrl)
                         p.sessionHeader?.let { put("sessionHeader", it) }
                         p.signIn?.let { put("signIn", it) }
+                        p.dailyTokenBudget?.let { put("dailyTokenBudget", it) }
                         if (p.savedUntested) put("untested", true)
                         if (p.verifiedModels.isNotEmpty()) putJsonArray("verifiedModels") { p.verifiedModels.forEach { add(it) } }
                         if (p.contextSettings.isNotEmpty()) putJsonObject("contextSettings") {
@@ -1194,8 +1244,9 @@ class ProviderStore(
             else ProviderConfig.Kind.of(endpoint.protocol) to endpoint.adapterBaseUrl
 
         /** 产品里的那份(App 建):配置在 files/settings 下,Key 用 Android 密钥库加密,用量记到 [usage]。 */
-        fun create(context: Context, usage: UsageSink, userAgent: String): ProviderStore =
-            ProviderStore(File(context.applicationContext.filesDir, "settings"), KeystoreKeyCipher(), usage, userAgent = userAgent)
+        fun create(context: Context, usage: UsageSink, userAgent: String, dailyUsage: (String) -> Long = { 0L }): ProviderStore =
+            ProviderStore(File(context.applicationContext.filesDir, "settings"), KeystoreKeyCipher(), usage,
+                dailyUsage = dailyUsage, userAgent = userAgent)
 
         /** App 内共用的那份(经 [Owner] 给出)。 */
         fun get(context: Context): ProviderStore = (context.applicationContext as? Owner)?.providers

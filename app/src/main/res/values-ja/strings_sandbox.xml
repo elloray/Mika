@@ -16,8 +16,8 @@
     <string name="sandbox_incomplete">環境のファイルが不完全です。「設定 → 詳細設定」でリセットできます</string>
     <string name="sandbox_not_finished">セットアップが完了しませんでした。もう一度お試しください</string>
     <string name="sandbox_network">スクリプトのネットワーク接続を許可</string>
-    <string name="sandbox_network_sub">デフォルトではオフ</string>
-    <string name="sandbox_network_explain">デフォルトでは、Mika はファイルの操作とスクリプトの実行をオフラインで行います。これをオンにすると、スクリプトがネットワークを使えるようになり(論文や地図の検索など)、チャット内のファイルを外部に送信することもできてしまいます。</string>
+    <string name="sandbox_network_sub">デフォルトではオン</string>
+    <string name="sandbox_network_explain">デフォルトでは、Mika はファイルの操作とスクリプトの実行をオンラインで行います。これをオンにすると、スクリプトがネットワークを使えるようになり(論文や地図の検索など)、チャット内のファイルを外部に送信することもできてしまいます。</string>
     <string name="sandbox_isolation_unavailable">この端末では、スクリプトをオフラインに保てません。Mika がファイルの操作やスクリプトの実行をするには、「スクリプトのネットワーク接続を許可」をオンにする必要があります</string>
     <string name="sandbox_reset_title">環境をリセットしますか？</string>
     <string name="sandbox_reset_body">Mika がファイルとスクリプトに使う環境と、各チャットで作成されたファイル(添付したものを含む)を削除し、自動で設定し直します。チャットと設定には影響しません。</string>

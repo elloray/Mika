@@ -33,6 +33,12 @@
     <string name="mcp_advanced_hide">고급 설정 숨기기</string>
     <string name="mcp_advanced_sub">접속 스위치, 토큰, 원격 깨우기</string>
     <string name="mcp_port_detail">%1$d번 포트. 휴대전화를 재부팅하면 USB 접속이 꺼져요.</string>
+    <string name="mcp_port_title">수신 포트</string>
+    <string name="mcp_port_dialog_sub">기본 포트가 이 휴대폰의 다른 서비스에 사용 중일 때 변경하세요. 즉시 적용되며 컴퓨터는 새 포트로 다시 연결합니다.</string>
+    <string name="mcp_port_default">기본(%1$d)</string>
+    <string name="mcp_port_custom">포트</string>
+    <string name="mcp_port_invalid">1024에서 65535 사이의 정수를 입력하세요.</string>
+    <string name="mcp_port_apply">적용</string>
     <string name="mcp_network_scope">Wi-Fi와 사설 네트워크에서의 접속을 허용해요. 모든 요청에 토큰이 필요해요.</string>
     <string name="mcp_cli_install">1. 컴퓨터 설정</string>
     <string name="mcp_cli_install_sub">설치 안내를 컴퓨터의 AI에게 보내거나, 컴퓨터에서 직접 따라 하세요.</string>

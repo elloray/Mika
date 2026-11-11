@@ -29,13 +29,23 @@ class McpSettings(private val dir: File, private val cipher: KeyCipher, private 
     @Volatile private var cachedToken: String? = null
 
     /** 监听的端口;文件里没写就用 [DEFAULT_PORT]。 */
-    val port: Int
+    val port: Int get() = portValue
+
+    @Volatile private var portValue: Int
 
     init {
         val o = runCatching { Json.parseToJsonElement(file.readText()) as? JsonObject }.getOrNull()
         _enabled = MutableStateFlow((o?.get("enabled") as? JsonPrimitive)?.booleanOrNull ?: false)
         _historyEnabled = MutableStateFlow((o?.get("historyEnabled") as? JsonPrimitive)?.booleanOrNull ?: false)
-        port = (o?.get("port") as? JsonPrimitive)?.intOrNull?.takeIf { it in 1024..65535 } ?: DEFAULT_PORT
+        portValue = (o?.get("port") as? JsonPrimitive)?.intOrNull?.takeIf { it in PORT_RANGE } ?: DEFAULT_PORT
+    }
+
+    /** 换一个监听端口(电脑连接开着时由调用方重绑并重写连接信息);[port] 必须在 [PORT_RANGE] 里。 */
+    @Synchronized fun setPort(port: Int) {
+        require(port in PORT_RANGE) { "port must be in $PORT_RANGE" }
+        if (port == portValue) return
+        portValue = port
+        save()
     }
 
     val enabled: StateFlow<Boolean> = _enabled.asStateFlow()
@@ -82,6 +92,8 @@ class McpSettings(private val dir: File, private val cipher: KeyCipher, private 
 
     companion object {
         const val DEFAULT_PORT = 8765
+        /** 端口允许的范围;读取和写入同一套。 */
+        val PORT_RANGE = 1024..65535
         private const val MIN_TOKEN = 32
     }
 }

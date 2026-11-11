@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="call_instructions_title">Указания для звонков</string>
+    <string name="call_instructions_intro">Сохранённые указания применяются к будущим звонкам. Все активные указания отправляются в Volcengine при подготовке AI-звонка, даже если на него не ответят. Собеседник не может менять указания.</string>
+    <string name="call_instructions_add">Добавить указание</string>
+    <string name="call_instructions_empty">Укажите, что помощник может сказать и что ему нужно уточнить. Изменения применяются со следующего звонка.</string>
+    <string name="call_instructions_heading">Название</string>
+    <string name="call_instructions_situation">Когда применять</string>
+    <string name="call_instructions_response">Как отвечать</string>
+    <string name="call_instructions_save">Сохранить указание</string>
+    <string name="call_instructions_cancel">Отмена</string>
+    <string name="call_instructions_edit">Изменить</string>
+    <string name="call_instructions_delete">Удалить</string>
+    <string name="call_instructions_delete_confirm">Удалить это указание? Оно больше не будет применяться к будущим звонкам.</string>
+    <string name="call_instructions_expiry">Срок действия</string>
+    <string name="call_instructions_forever">Пока я не изменю</string>
+    <string name="call_instructions_today">До конца дня</string>
+    <string name="call_instructions_two_hours">Два часа</string>
+    <string name="call_instructions_expired">Срок истёк</string>
+    <string name="call_instructions_saved">Сохранено на этом телефоне</string>
+    <string name="call_instructions_failed">Не удалось сохранить. Черновик остался.</string>
+    <string name="call_instructions_presets">Начать со сценария</string>
+    <string name="call_instructions_delivery">Доставка</string>
+    <string name="call_instructions_delivery_when">Звонит курьер или водитель доставки</string>
+    <string name="call_instructions_delivery_reply">Уточните, где посылка и нужен ли обратный звонок. Не выдумывайте адрес и не разрешайте вход.</string>
+    <string name="call_instructions_business">Деловой запрос</string>
+    <string name="call_instructions_business_when">Клиент спрашивает о товаре, услуге или записи</string>
+    <string name="call_instructions_business_reply">Уточните потребность, количество или удобное время и способ связи. Запишите сообщение, не обещая цену или запись.</string>
+    <string name="call_instructions_review_limit">Проверьте ответ и сократите указание до 800 символов перед сохранением.</string>
+</resources>

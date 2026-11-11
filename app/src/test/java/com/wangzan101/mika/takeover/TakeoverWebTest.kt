@@ -97,13 +97,17 @@ class TakeoverWebTest {
     }
 
     @Test
-    fun putAsideStillTimesOutWhenNobodyComesBack() = test {
+    fun putAsideKeepsWaitingAndDoesNotTimeOut() = test {
         takeover.onState(waiting)
         takeover.handOver()
         takeover.putAside()
         advanceTimeBy(Takeover.TAKEOVER_WAIT_TIMEOUT_MS + 1)
         runCurrent()
-        assertEquals(HandBackOutcome.timeout, port.results.single().outcome)
+        assertTrue(port.results.isEmpty())
+        assertEquals(Takeover.Stage.Waiting, takeover.stage.value)
+        assertTrue(takeover.handOver())
+        assertTrue(takeover.handBack())
+        assertEquals(HandBackOutcome.complete, port.results.single().outcome)
     }
 
     @Test

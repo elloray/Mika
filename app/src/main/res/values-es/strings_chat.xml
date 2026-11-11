@@ -6,15 +6,41 @@
     <string name="chat_greeting_evening">Buenas noches</string>
     <string name="chat_greeting_night">Despierto hasta tarde</string>
     <string name="chat_empty_prompt">¿Qué debería hacer Mika?</string>
+    <string name="chat_example_github_star">Abre https://github.com/wangzan101/mika y dale una estrella al proyecto.</string>
     <string name="chat_example_follow">Abre X, busca a Wang Zan (@wangzan101) y sigue la cuenta.</string>
     <string name="chat_example_group_summary">Abre WhatsApp y resume los mensajes no leídos de hoy, destacando todo lo que necesite mi respuesta.</string>
-    <string name="chat_example_jobs">Abre LinkedIn, busca cinco empleos remotos de gestor de producto de IA y compara sus requisitos.</string>
-    <string name="chat_example_multi_step">Encuentra en Amazon tres auriculares inalámbricos bien valorados por menos de 100 USD y compara sus ventajas y desventajas.</string>
     <string name="chat_example_alarms">Pon alarmas mañana por la mañana a las 9:40, 9:50 y 10:00.</string>
-    <string name="chat_example_ai_apps">Encuentra las apps de IA instaladas en mi teléfono, pregúntales qué hace mejor cada una y compara sus respuestas.</string>
+    <string name="chat_example_replace_title">¿Reemplazar el borrador actual?</string>
+    <string name="chat_example_replace_body">La tarea recomendada reemplazará lo que ya escribiste.</string>
+    <string name="chat_example_replace_action">Reemplazar borrador</string>
+    <string name="recommendations_title">Tareas recomendadas</string>
+    <string name="recommendations_drag">Arrastra para cambiar el orden</string>
+    <string name="recommendations_drag_hint">Arrastra el control para cambiar el orden.</string>
+    <string name="recommendations_move_up">Subir</string>
+    <string name="recommendations_move_down">Bajar</string>
+    <string name="recommendations_sub">Administra las tareas y los prompts de la pantalla de inicio</string>
+    <string name="recommendations_add">Añadir tarea recomendada</string>
+    <string name="recommendations_edit">Editar tarea recomendada</string>
+    <string name="recommendations_empty">No hay tareas recomendadas</string>
+    <string name="recommendations_empty_sub">Las tareas añadidas aparecen en un chat nuevo</string>
+    <string name="recommendations_title_label">Título</string>
+    <string name="recommendations_prompt_label">Prompt</string>
+    <string name="recommendations_delete">Eliminar</string>
+    <string name="recommendations_delete_title">¿Eliminar esta tarea recomendada?</string>
+    <string name="recommendations_delete_body">Dejará de aparecer en la pantalla de inicio.</string>
+    <string name="recommendations_save_failed">No se pudo guardar. Inténtalo de nuevo.</string>
+    <string name="recommendations_title_required">Escribe un título</string>
+    <string name="recommendations_prompt_required">Escribe un prompt</string>
+    <string name="recommendations_too_long">El título o el prompt es demasiado largo</string>
+    <string name="recommendations_too_many">Puedes guardar hasta %1$d tareas recomendadas</string>
+    <string name="recommendations_unreadable">No se pudieron leer las tareas guardadas, así que aún no se pueden cambiar.</string>
+    <string name="recommendations_reset">Borrar y empezar de nuevo</string>
+    <string name="recommendations_reset_body">El archivo ilegible se reemplazará por una lista vacía.</string>
+    <string name="recommendations_footer">En un chat nuevo, toca una tarea para poner su prompt en el campo de texto. No se envía automáticamente.</string>
+    <string name="share_draft_replace_body">El contenido compartido reemplazará el borrador actual.</string>
     <string name="chat_working_on">Trabajando en %1$s</string>
     <string name="chat_working">Trabajando</string>
-    <string name="share_draft_failed">No se pudo añadir el contenido compartido a una conversación nueva</string>
+    <string name="share_draft_failed">No se pudo añadir el contenido compartido a la conversación</string>
     <string name="chat_wait_previous_task">Empieza cuando termine la tarea anterior</string>
     <string name="chat_wait_unlock">Esperando a que desbloquees</string>
     <string name="chat_waiting_for_you">Esperándote</string>
@@ -44,6 +70,10 @@
     <string name="chat_continue">Continuar</string>
     <string name="chat_not_done">Sin terminar</string>
     <string name="chat_stopped">Detenida.</string>
+    <string name="chat_resume_checkpoint">Continuar desde el punto de interrupción</string>
+    <string name="chat_restart_task">Empezar de nuevo</string>
+    <string name="chat_resume_request">Continúa desde el punto de interrupción: %1$s</string>
+    <string name="chat_restart_request">Empieza de nuevo: %1$s</string>
     <string name="chat_view_source">Ver origen</string>
     <string name="chat_open">Abrir</string>
     <string name="chat_attach_rejected">No se pudo añadir: %1$s (cada archivo debe pesar menos de 200 MB)</string>
@@ -67,11 +97,53 @@
         <item quantity="many">Se conservarán %1$d tareas programadas de este chat.</item>
         <item quantity="other">Se conservarán %1$d tareas programadas de este chat.</item>
     </plurals>
+    <string name="drawer_select">Seleccionar</string>
+    <string name="drawer_selected_count">%1$d seleccionados</string>
+    <string name="drawer_select_all">Seleccionar todo</string>
+    <string name="drawer_select_none">Quitar selección</string>
+    <string name="drawer_delete_many_title">¿Eliminar los chats seleccionados?</string>
+    <plurals name="drawer_delete_many_body">
+        <item quantity="one">Se eliminará %1$d chat y los archivos que contiene.</item>
+        <item quantity="many">Se eliminarán %1$d chats y los archivos que contienen.</item>
+        <item quantity="other">Se eliminarán %1$d chats y los archivos que contienen.</item>
+    </plurals>
+    <plurals name="drawer_delete_many_running">
+        <item quantity="one">Se detendrá %1$d tarea en ejecución.</item>
+        <item quantity="many">Se detendrán %1$d tareas en ejecución.</item>
+        <item quantity="other">Se detendrán %1$d tareas en ejecución.</item>
+    </plurals>
+    <plurals name="drawer_delete_many_schedules">
+        <item quantity="one">Se conservará %1$d tarea programada.</item>
+        <item quantity="many">Se conservarán %1$d tareas programadas.</item>
+        <item quantity="other">Se conservarán %1$d tareas programadas.</item>
+    </plurals>
+    <plurals name="drawer_delete_progress">
+        <item quantity="one">Eliminando %1$d chat…</item>
+        <item quantity="many">Eliminando %1$d chats…</item>
+        <item quantity="other">Eliminando %1$d chats…</item>
+    </plurals>
+    <plurals name="drawer_delete_done">
+        <item quantity="one">Se eliminó %1$d chat.</item>
+        <item quantity="many">Se eliminaron %1$d chats.</item>
+        <item quantity="other">Se eliminaron %1$d chats.</item>
+    </plurals>
+    <plurals name="drawer_delete_partial">
+        <item quantity="one">Se eliminó %1$d chat; %2$d falló.</item>
+        <item quantity="many">Se eliminaron %1$d chats; %2$d fallaron.</item>
+        <item quantity="other">Se eliminaron %1$d chats; %2$d fallaron.</item>
+    </plurals>
     <string name="drawer_actions">Opciones del chat</string>
     <string name="drawer_rename">Cambiar nombre</string>
     <string name="drawer_rename_title">Cambiar el nombre del chat</string>
     <string name="drawer_pinned">Fijados</string>
     <string name="drawer_pinned_mark">Fijado</string>
+    <string name="drawer_search_hint">Buscar chats</string>
+    <string name="drawer_search_results">Resultados de la búsqueda</string>
+    <string name="drawer_search_empty">Ningún chat coincide con «%1$s»</string>
+    <string name="drawer_search_empty_hint">Solo busca en los títulos y en el texto de los chats</string>
+    <string name="drawer_searching">Buscando…</string>
+    <string name="drawer_search_clear">Borrar búsqueda</string>
+    <string name="drawer_search_truncated">Se muestran los primeros %1$d resultados</string>
     <string name="settings_title">Ajustes</string>
     <string name="chat_unconfirmed">No se pudo confirmar: %1$s</string>
     <string name="chat_unverified">Hecho, pero sin poder verificar</string>
@@ -100,6 +172,7 @@
     </plurals>
     <string name="attach_add">Añadir adjunto</string>
     <string name="attach_close">Cerrar el panel de adjuntos</string>
+    <string name="attach_blocked_running">No puedes añadir adjuntos mientras se ejecuta una tarea; cambia al modo de cola para adjuntar</string>
     <string name="attach_camera">Cámara</string>
     <string name="attach_album">Fotos</string>
     <string name="attach_files">Archivos</string>
@@ -152,6 +225,10 @@
     <string name="chat_branch_attachments_skipped">No se copiaron todos los adjuntos</string>
     <string name="chat_branch_retry">Volver a preguntar desde aquí</string>
     <string name="chat_branch_attachments_readd">Vuelve a adjuntar los archivos que quieras incluir</string>
+    <string name="chat_attach_unavailable">No se pudo añadir: %1$s. Comprueba que los archivos estén disponibles y no superen el límite de tamaño.</string>
+    <string name="chat_retry_missing">%1$s: el archivo no existe</string>
+    <string name="chat_retry_limit">%1$s: se alcanzó el límite de copia</string>
+    <string name="chat_retry_failed">%1$s: no se pudo copiar</string>
     <string name="chat_select_hint">Mantén pulsado el texto para seleccionarlo</string>
     <string name="chat_quote_remove">Quitar cita</string>
     <string name="chat_quoting_mika">Citando a Mika: %1$s</string>

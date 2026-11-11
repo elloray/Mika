@@ -1,6 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="browser_engine">Bing</string>
+    <string name="browser_engine_bing">Bing</string>
+    <string name="browser_engine_google">Google</string>
+    <string name="browser_engine_duckduckgo">DuckDuckGo</string>
+    <string name="browser_engine_baidu">Baidu</string>
+    <string name="browser_engine_choose">搜尋引擎</string>
+    <string name="browser_engine_custom_add">自訂搜尋引擎</string>
+    <string name="browser_engine_custom_name">名稱</string>
+    <string name="browser_engine_custom_url">搜尋網址</string>
+    <string name="browser_engine_custom_hint" formatted="false">用 %s 代表搜尋詞，例如 https://example.com/search?q=%s</string>
+    <string name="browser_engine_custom_invalid" formatted="false">請填寫名稱和包含一個 %s 的 http(s) 網址</string>
+    <string name="browser_engine_custom_remove">移除%1$s</string>
     <string name="browser_recent_source">最近開啟</string>
     <string name="browser_search_colon">搜尋：%1$s</string>
     <string name="browser_search_q">搜尋「%1$s」</string>
@@ -14,6 +24,25 @@
     <string name="browser_external_link">這是開啟其他應用程式的連結，瀏覽器裡不開啟。</string>
     <string name="browser_bad_scheme">這個網址打不開：瀏覽器只打開網頁（http、https）。</string>
     <string name="browser_blocked_app_link">已攔下一個開啟其他應用程式的連結。</string>
+    <string name="browser_downloads">下載</string>
+    <string name="browser_download_started">正在下載 %1$s</string>
+    <string name="browser_download_failed_start">無法下載這個檔案</string>
+    <string name="browser_download_empty">還沒有下載</string>
+    <string name="browser_download_running">正在下載…</string>
+    <string name="browser_download_done">已下載</string>
+    <string name="browser_download_failed">下載失敗</string>
+    <string name="browser_download_open">開啟</string>
+    <string name="browser_download_cancel">取消下載</string>
+    <string name="browser_download_delete">刪除</string>
+    <string name="browser_download_delete_q">刪除這個下載？</string>
+    <string name="browser_download_open_failed">沒有能開啟這個檔案的應用程式</string>
+    <string name="browser_permission_ask">這個網站請求使用：</string>
+    <string name="browser_permission_camera">相機</string>
+    <string name="browser_permission_microphone">麥克風</string>
+    <string name="browser_permission_camera_mic">相機和麥克風</string>
+    <string name="browser_permission_location">位置</string>
+    <string name="browser_permission_allow">允許</string>
+    <string name="browser_permission_block">封鎖</string>
     <string name="browser_no_download">瀏覽器裡暫時不能下載檔案。</string>
     <string name="browser_crashed">網頁出了問題，已經關掉，可以重新開啟。</string>
     <string name="browser_logged_in">已登入，Mika 辦事時也能用了。</string>
@@ -50,8 +79,8 @@
     <string name="browser_leave_body">你在這個網頁上做的修改可能不會儲存。</string>
     <string name="browser_leave">離開</string>
     <string name="browser_search_hint">搜尋或輸入網址</string>
-    <string name="browser_engine_note">用Bing搜尋</string>
-    <string name="browser_typing_note">輸入網址直接開啟，其他內容用Bing搜尋</string>
+    <string name="browser_engine_note">用%1$s搜尋</string>
+    <string name="browser_typing_note">輸入網址直接開啟，其他內容用%1$s搜尋</string>
     <string name="browser_login_legend">已登入，Mika 辦事時也能直接用</string>
     <string name="browser_add_hint">開啟網站後，在「更多」裡點「加入常用網站」</string>
     <string name="browser_edit_favorites">整理常用網站</string>
@@ -59,6 +88,32 @@
     <string name="browser_long_press">長按某個網站也能進來整理</string>
     <string name="browser_favorites">常用網站</string>
     <string name="browser_edit">整理</string>
+    <string name="browser_bookmarks">書籤</string>
+    <string name="browser_all">全部</string>
+    <string name="browser_bookmark_add">加入書籤</string>
+    <string name="browser_bookmark_remove">移除書籤</string>
+    <string name="browser_bookmarked">已加入書籤</string>
+    <string name="browser_unbookmarked">已從書籤移除</string>
+    <string name="browser_bookmark_empty">開啟網頁後，在「更多」裡點「加入書籤」</string>
+    <string name="browser_bookmark_rename">修改書籤標題</string>
+    <string name="browser_bookmark_name">標題</string>
+    <string name="browser_tabs">分頁</string>
+    <string name="browser_new_tab">新增分頁</string>
+    <string name="browser_no_tabs">沒有開啟的分頁</string>
+    <string name="browser_close_tab">關閉分頁</string>
+    <string name="browser_history">歷史記錄</string>
+    <string name="browser_clear_history">清除歷史記錄</string>
+    <string name="browser_clear_history_q">清除全部歷史記錄？</string>
+    <string name="browser_find">在頁面中尋找</string>
+    <string name="browser_find_prev">上一個</string>
+    <string name="browser_find_next">下一個</string>
+    <string name="browser_find_close">關閉尋找</string>
+    <string name="browser_find_no_matches">沒有符合項目</string>
+    <string name="browser_clear_data">清除瀏覽資料</string>
+    <string name="browser_clear_site_data">Cookie 和網站資料</string>
+    <string name="browser_clear_site_data_sub">會登出所有網站，包括 Mika 辦事時用的</string>
+    <string name="browser_clear_cache">快取檔案</string>
+    <string name="browser_data_cleared">瀏覽資料已清除</string>
     <string name="browser_clear_input">清空</string>
     <string name="browser_open_site">開啟%1$s</string>
     <string name="browser_remove_site">移除%1$s</string>

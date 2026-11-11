@@ -63,9 +63,9 @@ class StopSummary(
         private const val NOTE_CHARS = 120
         private const val DRAFT_CHARS = 1200
 
-        /** 有没有可交代的:做过至少一件事,或停下时已经写出了字。都没有就只说「已停止」。 */
+        /** 有没有可交代的:做过至少一件事、已经确认过进度,或停下时已经写出了字。都没有就只说「已停止」。 */
         fun worthSaying(events: List<RunEvent>, draft: String?): Boolean =
-            events.any { it is RunEvent.Activity } || !draft.isNullOrBlank()
+            events.any { it is RunEvent.Activity || it is RunEvent.Criteria && (it.criteria.isNotEmpty() || it.progress != null) } || !draft.isNullOrBlank()
 
         /**
          * 交给模型的材料(有上限,不带画面):用户的要求、做过的事(一件一行,带那一步模型写的用意)、最近读到的内容、
@@ -91,9 +91,14 @@ class StopSummary(
                 else lines.take(20) + "…(中间省略 ${lines.size - MAX_LINES} 件)…" + lines.takeLast(MAX_LINES - 20)
             val reads = events.filterIsInstance<RunEvent.Observed>().filter { it.kind == ObsKind.Read.wire && it.text.isNotBlank() }
                 .takeLast(MAX_READS).map { it.text.clip(READ_CHARS) }
+            val checkpoint = events.filterIsInstance<RunEvent.Criteria>().lastOrNull { it.criteria.isNotEmpty() || it.progress != null }
             return buildString {
                 append("<request>\n").append(untag(goal)).append("\n</request>\n\n")
                 append("<actions>\n").append(untag(shown.joinToString("\n").ifEmpty { "(还没做任何操作)" })).append("\n</actions>")
+                checkpoint?.let { c ->
+                    if (c.criteria.isNotEmpty()) append("\n\n<acceptance>\n").append(untag(c.criteria.joinToString("\n"))).append("\n</acceptance>")
+                    c.progress?.let { p -> append("\n\n<progress>\n").append(untag(progress(p))).append("\n</progress>") }
+                }
                 if (reads.isNotEmpty()) append("\n\n<last_read>\n").append(untag(reads.joinToString("\n----\n"))).append("\n</last_read>")
                 draft?.trim()?.takeIf(String::isNotEmpty)?.let { append("\n\n<draft>\n").append(untag(it.clip(DRAFT_CHARS))).append("\n</draft>") }
             }
@@ -114,9 +119,14 @@ class StopSummary(
                 .groupingBy { label(it.label) }.eachCount()
             val outward = acts.filter { it.outward && !it.failed }
             val failed = acts.count { it.failed }
+            val checkpoint = events.filterIsInstance<RunEvent.Criteria>().lastOrNull { it.criteria.isNotEmpty() || it.progress != null }
             if (places.isNotEmpty()) lines += "去过:" + list(places, 4)
             if (seen.isNotEmpty()) lines += "看过:" + list(seen, 4)
             if (done.isNotEmpty()) lines += "做过:" + done.entries.joinToString("、") { (what, n) -> if (n > 1) "$what $n 次" else what }
+            checkpoint?.let { c ->
+                if (c.criteria.isNotEmpty()) lines += "验收:" + c.criteria.joinToString("；")
+                c.progress?.let { p -> lines += "已确认进度:" + progress(p) }
+            }
             if (outward.isNotEmpty()) {
                 val where = outward.mapNotNull { a -> a.target?.let { placeOf(it, appLabel) } }.distinct()
                 val which = outward.map { it.step }.distinct().mapNotNull(notes::get).distinct()
@@ -127,7 +137,8 @@ class StopSummary(
             draft?.trim()?.takeIf(String::isNotEmpty)?.let { lines += "停下时正在写:" + it.clip(200) }
             val head = if (acts.isEmpty()) "已经停下,还没开始操作。" else "已经停下,停止前做了这些:"
             val body = lines.joinToString("\n") { "- $it" }
-            val tail = "「${goal.trim().clip(40)}」还没做完的部分没有接着做。"
+            val tail = if (checkpoint?.complete == true) "「${goal.trim().clip(40)}」已确认达到验收条件,但任务没有正常收尾。"
+                else "「${goal.trim().clip(40)}」还没做完的部分没有接着做。"
             return listOf(head, body, tail).filter(String::isNotEmpty).joinToString("\n")
         }
 
@@ -164,7 +175,16 @@ class StopSummary(
             runCatching { (Json.parseToJsonElement(it) as? JsonObject)?.get("reason") as? JsonPrimitive }.getOrNull()?.contentOrNull?.trim()
         }
 
-        private val TAG = Regex("</?\\s*(request|actions|last_read|draft)\\s*>", RegexOption.IGNORE_CASE)
+        private fun progress(p: RunEvent.Progress): String {
+            val count = when {
+                p.done != null && p.total != null -> "${p.done}/${p.total}"
+                p.done != null -> "${p.done} 件"
+                else -> null
+            }
+            return listOfNotNull(p.name.takeIf(String::isNotBlank), count, p.boundary?.takeIf(String::isNotBlank)).joinToString(" · ")
+        }
+
+        private val TAG = Regex("</?\\s*(request|actions|acceptance|progress|last_read|draft)\\s*>", RegexOption.IGNORE_CASE)
 
         /** 材料里自带的标签去掉,免得它提前收口、把后面的话装成写的人的输入。 */
         private fun untag(s: String) = s.replace(TAG, "")

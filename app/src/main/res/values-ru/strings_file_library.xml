@@ -1,0 +1,24 @@
+<resources>
+    <string name="file_library_title">Файлы</string>
+    <string name="file_library_search">Поиск по имени файла</string>
+    <string name="file_library_all">Все беседы</string>
+    <string name="file_library_current">Текущая беседа</string>
+    <string name="file_library_sources">Все источники</string>
+    <string name="file_library_input">Вложения</string>
+    <string name="file_library_output">Созданные файлы</string>
+    <string name="file_library_loading">Загрузка файлов…</string>
+    <string name="file_library_empty">Файлы не найдены</string>
+    <string name="file_library_missing">Недоступен</string>
+    <string name="file_library_available">Доступен</string>
+    <string name="file_library_open">Открыть</string>
+    <string name="file_library_share">Поделиться</string>
+    <string name="file_library_add">Добавить в черновик</string>
+    <string name="file_library_choose">Выберите беседу</string>
+    <string name="file_library_new">Новая беседа</string>
+    <string name="file_library_error">Не удалось открыть файл</string>
+    <string name="file_library_retry">Повторить</string>
+    <string name="file_library_partial">Не удалось прочитать некоторые беседы.</string>
+    <string name="file_library_unknown_time">Время неизвестно</string>
+    <string name="file_library_draft_saved">Добавлено в черновик выбранной беседы. Перейдите к ней, когда это станет возможно.</string>
+    <string name="file_library_load_failed">Не удалось загрузить файлы.</string>
+</resources>

@@ -187,4 +187,10 @@
     <string name="quit_row_sub">إيقاف مهام الخلفية وإخفاء الكبسولة العائمة</string>
     <string name="quit_confirm_body">ستتوقف المهام الجارية، وستختفي الكبسولة العائمة والإشعارات. افتح Mika مرة أخرى ليعود كل شيء.</string>
     <string name="quit_confirm_action">إنهاء</string>
+    <string name="settings_task_token_budget">ميزانية Token لكل مهمة</string>
+    <string name="settings_task_token_budget_sub">تُحسب فقط رموز الإدخال والإخراج التي يبلغ عنها مزود الخدمة. عند بلوغ الميزانية لا تُرسل طلبات أخرى. قد تتجاوز الطلبات الجارية الميزانية، وتُحسب المكالمات بلا استخدام مُبلغ عنه بصفر.</string>
+    <string name="settings_token_budget_unlimited">بلا حد</string>
+    <string name="settings_token_budget_custom">ميزانية Token مخصصة</string>
+    <string name="settings_token_budget_apply">استخدام</string>
+    <string name="settings_token_budget_invalid">أدخل عددًا صحيحًا من %1$s إلى %2$s.</string>
 </resources>

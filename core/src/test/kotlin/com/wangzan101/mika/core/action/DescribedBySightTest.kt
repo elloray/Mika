@@ -94,4 +94,16 @@ class DescribedBySightTest {
         assertTrue(vision.requests.isEmpty())
         assertTrue(screen.calls.isEmpty())
     }
+
+    @Test fun namedCustomEditorInReadableTreeUsesVisualConfirmation() = runTest {
+        val inner = LocScreen(List(8) { i -> uiEl("@e$i", "设置项$i", listOf(0, i * 100, 999, i * 100 + 80)) } +
+            uiEl("@e9", "消息输入区", listOf(0, 880, 800, 940)).copy(role = "View", editable = false))
+        val screen = Blind(inner)
+        val box = """{"bbox_2d":[0,880,800,940],"seen":"消息输入区"}"""
+        val vision = model(box, "是", box, "是")
+        val c = content(type(executor(screen, vision), """{"element":"消息输入区","text":"明天见"}"""))
+        assertEquals(c.toString(), "true", c.s("ok"))
+        assertEquals(listOf("typeAt 432,2183 明天见"), screen.calls)
+        assertEquals(4, vision.requests.size)
+    }
 }

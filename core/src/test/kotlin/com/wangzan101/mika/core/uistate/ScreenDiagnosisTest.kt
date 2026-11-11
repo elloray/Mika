@@ -62,9 +62,18 @@ class ScreenDiagnosisTest {
         assertEquals(ScreenState.LOADING, c.state); assertFalse(c.needsHuman)
     }
 
-    @Test fun changingScreenIsLoading() {
+    @Test fun animationWithReadableContentIsUsable() {
         val c = ScreenDiagnosis.classify(facts(changing = true))
-        assertEquals(ScreenState.LOADING, c.state); assertFalse(c.needsHuman)
+        assertEquals(ScreenState.NORMAL, c.state); assertFalse(c.needsHuman)
+    }
+
+    @Test fun changingWithoutReadableContentStillLoads() {
+        assertEquals(ScreenState.LOADING, ScreenDiagnosis.classify(facts(changing = true, readable = 0)).state)
+        assertEquals(ScreenState.LOADING, ScreenDiagnosis.classify(facts(changing = true, hasWindow = false)).state)
+    }
+
+    @Test fun animationDoesNotBypassHumanOnlyPages() {
+        assertEquals(ScreenState.NEEDS_HUMAN, ScreenDiagnosis.classify(facts(changing = true, password = true)).state)
     }
 
     @Test fun humanOnlyPages() {

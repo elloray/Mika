@@ -6,15 +6,41 @@
     <string name="chat_greeting_evening">Добрый вечер</string>
     <string name="chat_greeting_night">Не спится?</string>
     <string name="chat_empty_prompt">Что поручить Mika?</string>
+    <string name="chat_example_github_star">Открой https://github.com/wangzan101/mika и поставь звезду этому проекту.</string>
     <string name="chat_example_follow">Открой X, найди Wang Zan (@wangzan101) и подпишись на этот аккаунт.</string>
     <string name="chat_example_group_summary">Открой WhatsApp и кратко перескажи сегодняшние непрочитанные сообщения, отметив те, на которые нужно ответить.</string>
-    <string name="chat_example_jobs">Открой LinkedIn, найди пять удалённых вакансий AI-продакт-менеджера и сравни требования.</string>
-    <string name="chat_example_multi_step">Найди на Amazon три модели беспроводных наушников с высоким рейтингом дешевле 100 долларов и сравни их плюсы и минусы.</string>
     <string name="chat_example_alarms">Поставь будильники на завтра на 9:40, 9:50 и 10:00 утра.</string>
-    <string name="chat_example_ai_apps">Найди установленные на моём телефоне приложения с ИИ, спроси каждое, что у него получается лучше всего, и сравни ответы.</string>
+    <string name="chat_example_replace_title">Заменить текущий черновик?</string>
+    <string name="chat_example_replace_body">Рекомендуемая задача заменит уже введённый текст.</string>
+    <string name="chat_example_replace_action">Заменить черновик</string>
+    <string name="recommendations_title">Рекомендуемые задачи</string>
+    <string name="recommendations_drag">Перетащите для изменения порядка</string>
+    <string name="recommendations_drag_hint">Перетащите значок, чтобы изменить порядок отображения.</string>
+    <string name="recommendations_move_up">Переместить вверх</string>
+    <string name="recommendations_move_down">Переместить вниз</string>
+    <string name="recommendations_sub">Управляйте задачами и подсказками на главном экране</string>
+    <string name="recommendations_add">Добавить задачу</string>
+    <string name="recommendations_edit">Изменить задачу</string>
+    <string name="recommendations_empty">Нет рекомендуемых задач</string>
+    <string name="recommendations_empty_sub">Добавленные задачи появятся в новом чате</string>
+    <string name="recommendations_title_label">Название</string>
+    <string name="recommendations_prompt_label">Подсказка</string>
+    <string name="recommendations_delete">Удалить</string>
+    <string name="recommendations_delete_title">Удалить эту задачу?</string>
+    <string name="recommendations_delete_body">Она больше не будет показана на главном экране.</string>
+    <string name="recommendations_save_failed">Не удалось сохранить. Попробуйте ещё раз.</string>
+    <string name="recommendations_title_required">Введите название</string>
+    <string name="recommendations_prompt_required">Введите подсказку</string>
+    <string name="recommendations_too_long">Название или подсказка слишком длинные</string>
+    <string name="recommendations_too_many">Можно сохранить не больше %1$d задач</string>
+    <string name="recommendations_unreadable">Не удалось прочитать сохранённые задачи, поэтому их пока нельзя изменить.</string>
+    <string name="recommendations_reset">Очистить и начать заново</string>
+    <string name="recommendations_reset_body">Нечитаемый файл будет заменён пустым списком.</string>
+    <string name="recommendations_footer">В новом чате нажмите задачу, чтобы вставить подсказку в поле ввода. Она не отправится сама.</string>
+    <string name="share_draft_replace_body">Поделённый материал заменит текущий черновик.</string>
     <string name="chat_working_on">Работает в приложении «%1$s»</string>
     <string name="chat_working">Работает</string>
-    <string name="share_draft_failed">Не удалось добавить материал в новый разговор</string>
+    <string name="share_draft_failed">Не удалось добавить материал в разговор</string>
     <string name="chat_wait_previous_task">Начнётся после завершения предыдущей задачи</string>
     <string name="chat_wait_unlock">Ждёт, пока вы разблокируете телефон</string>
     <string name="chat_waiting_for_you">Ждёт вас</string>
@@ -45,6 +71,10 @@
     <string name="chat_continue">Продолжить</string>
     <string name="chat_not_done">Не завершено</string>
     <string name="chat_stopped">Остановлено.</string>
+    <string name="chat_resume_checkpoint">Продолжить с места остановки</string>
+    <string name="chat_restart_task">Начать заново</string>
+    <string name="chat_resume_request">Продолжи с места остановки: %1$s</string>
+    <string name="chat_restart_request">Начни заново: %1$s</string>
     <string name="chat_view_source">Показать источник</string>
     <string name="chat_open">Открыть</string>
     <string name="chat_attach_rejected">Не удалось добавить: %1$s (каждый файл должен быть меньше 200 МБ)</string>
@@ -69,11 +99,59 @@
         <item quantity="many">В этом чате будут сохранены %1$d задач по расписанию.</item>
         <item quantity="other">В этом чате будет сохранена %1$d задача по расписанию.</item>
     </plurals>
+    <string name="drawer_select">Выбрать</string>
+    <string name="drawer_selected_count">Выбрано: %1$d</string>
+    <string name="drawer_select_all">Выбрать все</string>
+    <string name="drawer_select_none">Снять выбор</string>
+    <string name="drawer_delete_many_title">Удалить выбранные чаты?</string>
+    <plurals name="drawer_delete_many_body">
+        <item quantity="one">Будет удалён %1$d чат и файлы в нём.</item>
+        <item quantity="few">Будут удалены %1$d чата и файлы в них.</item>
+        <item quantity="many">Будет удалено %1$d чатов и файлы в них.</item>
+        <item quantity="other">Будет удалено %1$d чата и файлы в них.</item>
+    </plurals>
+    <plurals name="drawer_delete_many_running">
+        <item quantity="one">Будет остановлена %1$d выполняемая задача.</item>
+        <item quantity="few">Будут остановлены %1$d выполняемые задачи.</item>
+        <item quantity="many">Будет остановлено %1$d выполняемых задач.</item>
+        <item quantity="other">Будет остановлено %1$d выполняемой задачи.</item>
+    </plurals>
+    <plurals name="drawer_delete_many_schedules">
+        <item quantity="one">Будет сохранена %1$d задача по расписанию в них.</item>
+        <item quantity="few">Будут сохранены %1$d задачи по расписанию в них.</item>
+        <item quantity="many">Будет сохранено %1$d задач по расписанию в них.</item>
+        <item quantity="other">Будет сохранено %1$d задачи по расписанию в них.</item>
+    </plurals>
+    <plurals name="drawer_delete_progress">
+        <item quantity="one">Удаление %1$d чата…</item>
+        <item quantity="few">Удаление %1$d чатов…</item>
+        <item quantity="many">Удаление %1$d чатов…</item>
+        <item quantity="other">Удаление %1$d чата…</item>
+    </plurals>
+    <plurals name="drawer_delete_done">
+        <item quantity="one">Удалён %1$d чат.</item>
+        <item quantity="few">Удалено %1$d чата.</item>
+        <item quantity="many">Удалено %1$d чатов.</item>
+        <item quantity="other">Удалено %1$d чата.</item>
+    </plurals>
+    <plurals name="drawer_delete_partial">
+        <item quantity="one">Удалён %1$d чат, %2$d не удалось.</item>
+        <item quantity="few">Удалено %1$d чата, %2$d не удалось.</item>
+        <item quantity="many">Удалено %1$d чатов, %2$d не удалось.</item>
+        <item quantity="other">Удалено %1$d чата, %2$d не удалось.</item>
+    </plurals>
     <string name="drawer_actions">Действия с чатом</string>
     <string name="drawer_rename">Переименовать</string>
     <string name="drawer_rename_title">Переименовать чат</string>
     <string name="drawer_pinned">Закреплённые</string>
     <string name="drawer_pinned_mark">Закреплён</string>
+    <string name="drawer_search_hint">Поиск чатов</string>
+    <string name="drawer_search_results">Результаты поиска</string>
+    <string name="drawer_search_empty">Нет чатов, совпадающих с «%1$s»</string>
+    <string name="drawer_search_empty_hint">Поиск только по названиям и тексту чатов</string>
+    <string name="drawer_searching">Идёт поиск…</string>
+    <string name="drawer_search_clear">Очистить поиск</string>
+    <string name="drawer_search_truncated">Показаны первые %1$d результатов</string>
     <string name="settings_title">Настройки</string>
     <string name="chat_unconfirmed">Не удалось подтвердить: %1$s</string>
     <string name="chat_unverified">Готово, но проверить не удалось</string>
@@ -104,6 +182,7 @@
     </plurals>
     <string name="attach_add">Добавить вложение</string>
     <string name="attach_close">Закрыть панель вложений</string>
+    <string name="attach_blocked_running">Пока выполняется задача, вложения добавить нельзя — сначала переключитесь в режим очереди</string>
     <string name="attach_camera">Камера</string>
     <string name="attach_album">Фото</string>
     <string name="attach_files">Файлы</string>
@@ -157,6 +236,10 @@
     <string name="chat_branch_attachments_skipped">Не все вложения скопированы</string>
     <string name="chat_branch_retry">Спросить заново отсюда</string>
     <string name="chat_branch_attachments_readd">Добавьте нужные вложения заново</string>
+    <string name="chat_attach_unavailable">Не удалось добавить: %1$s. Убедитесь, что файлы доступны и не превышают ограничение размера.</string>
+    <string name="chat_retry_missing">%1$s: файл не найден</string>
+    <string name="chat_retry_limit">%1$s: превышен лимит копирования</string>
+    <string name="chat_retry_failed">%1$s: не удалось скопировать</string>
     <string name="chat_select_hint">Нажмите на текст и удерживайте, чтобы выделить его</string>
     <string name="chat_quote_remove">Убрать цитату</string>
     <string name="chat_quoting_mika">Цитата Mika: %1$s</string>

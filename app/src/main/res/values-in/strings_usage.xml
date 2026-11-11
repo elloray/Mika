@@ -34,4 +34,17 @@
     <string name="usage_input">Masukan</string>
     <string name="usage_output">Keluaran</string>
     <string name="usage_calls">Panggilan</string>
+    <string name="usage_allowance_title">Kuota saat ini</string>
+    <string name="usage_allowance_loading">Memeriksa kuota…</string>
+    <string name="usage_allowance_unavailable">Untuk sementara tidak tersedia</string>
+    <string name="usage_allowance_balance">Saldo akun: %1$s</string>
+    <string name="usage_allowance_key_limit">Sisa batas pengeluaran kunci: %1$s</string>
+    <string name="usage_allowance_no_key_limit">Tidak ada batas pengeluaran untuk kunci ini</string>
+    <string name="usage_allowance_view_balance">Lihat saldo akun</string>
+    <string name="usage_allowance_reset_daily">Disetel ulang setiap hari</string>
+    <string name="usage_allowance_reset_weekly">Disetel ulang setiap minggu</string>
+    <string name="usage_allowance_reset_monthly">Disetel ulang setiap bulan</string>
+    <string name="usage_allowance_updated">Terakhir diperbarui %1$s</string>
+    <string name="usage_allowance_self_hosted">Koneksi yang dihosting sendiri</string>
+    <string name="usage_allowance_unsupported">Kuota tidak dapat diperiksa untuk koneksi ini</string>
 </resources>

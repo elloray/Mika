@@ -33,6 +33,12 @@
     <string name="mcp_advanced_hide">詳細設定を非表示</string>
     <string name="mcp_advanced_sub">アクセスのスイッチ、トークン、リモートでのスリープ解除</string>
     <string name="mcp_port_detail">ポート %1$d。USB アクセスはスマホを再起動するとオフになります。</string>
+    <string name="mcp_port_title">リッスンポート</string>
+    <string name="mcp_port_dialog_sub">既定のポートがこの端末の他のサービスに使われているときに変更します。変更はすぐ反映され、パソコンは新しいポートで再接続します。</string>
+    <string name="mcp_port_default">既定（%1$d）</string>
+    <string name="mcp_port_custom">ポート</string>
+    <string name="mcp_port_invalid">1024～65535 の整数を入力してください。</string>
+    <string name="mcp_port_apply">適用</string>
     <string name="mcp_network_scope">Wi-Fi とプライベートネットワークからのアクセスを許可します。リクエストにはすべてトークンが必要です。</string>
     <string name="mcp_cli_install">1. パソコンを準備</string>
     <string name="mcp_cli_install_sub">インストールガイドをパソコンの AI に送るか、パソコンで自分で手順を進めてください。</string>

@@ -18,13 +18,14 @@ class ChangeWaitTest {
         val treeChangedAt: Long = Long.MAX_VALUE,
     ) {
         var now = 0L
-        suspend fun run(before: IntArray?) = ChangeWait.awaitStableChange(
+        suspend fun run(before: IntArray?, fallback: (suspend () -> Boolean)? = null) = ChangeWait.awaitStableChange(
             now = { now },
             sleep = { now += it },
             frame = { frameAt(now) },
             quietForMs = { now - lastEventAt(now) },
             treeChanged = { now >= treeChangedAt },
             beforeFrame = before,
+            fallback = fallback,
         )
     }
 
@@ -89,5 +90,51 @@ class ChangeWaitTest {
         assertTrue(changed.run(before))
         assertTrue(changed.now >= ChangeWait.CAP_MS)
         assertFalse(Fake(frameAt = { before }, lastEventAt = { it }).run(before))
+    }
+
+    @Test fun fallbackRunsAtProbeWhenPrimaryHasNoEffect() = runTest {
+        var fallbackAt = -1L
+        val f = Fake(
+            frameAt = { t -> if (fallbackAt in 0..t) after else before },
+            lastEventAt = { t -> if (fallbackAt in 0..t) fallbackAt else -10_000 },
+        )
+        val changed = f.run(before) {
+            fallbackAt = f.now
+            true
+        }
+        assertTrue(changed)
+        assertTrue("fallback triggered at $fallbackAt", fallbackAt == ChangeWait.PROBE_MS)
+        assertTrue("settled at ${f.now}", f.now in (ChangeWait.PROBE_MS + ChangeWait.QUIET_MS)..(ChangeWait.PROBE_MS + ChangeWait.QUIET_MS + ChangeWait.POLL_MS))
+    }
+
+    @Test fun fallbackSkippedWhenPrimaryAlreadyAnimatingOrEmittingEvents() = runTest {
+        var calls = 0
+        // 550 ms 时画面已经开始动了,不能误触发备用点击
+        val animating = Fake(frameAt = { t -> when { t < 300 -> before; t < 900 -> moving(t); else -> after } })
+        assertTrue(animating.run(before) { calls++; true })
+        assertTrue(calls == 0)
+
+        // 550 ms 时无障碍事件还没安静,也不能抢着补点
+        val noisy = Fake(
+            frameAt = { t -> if (t < 800) before else after },
+            lastEventAt = { t -> minOf(t, 700) },
+            treeChangedAt = 800,
+        )
+        assertTrue(noisy.run(before) { calls++; true })
+        assertTrue(calls == 0)
+    }
+
+    @Test fun fallbackExtendsDeadlineAndSkippedFallbackKeepsOriginalCap() = runTest {
+        // 备用通道在 550 ms 触发后,页面到 2_700 ms(超过原 2_500 ms 上限)才变,新窗口仍能等到
+        var fallbackAt = -1L
+        val extended = Fake(frameAt = { t -> if (t < 2_700) before else after })
+        assertTrue(extended.run(before) { fallbackAt = extended.now; true })
+        assertTrue(fallbackAt == ChangeWait.PROBE_MS)
+        assertTrue("settled at ${extended.now}", extended.now in 2_700..(ChangeWait.PROBE_MS + ChangeWait.CAP_MS))
+
+        // 备用通道返回 false(无可用备用目标)时,照原上限 2_500 ms 结束,不白等双倍时间
+        val noTarget = Fake(frameAt = { before })
+        assertFalse(noTarget.run(before) { false })
+        assertTrue("ended at ${noTarget.now}", noTarget.now in ChangeWait.CAP_MS..(ChangeWait.CAP_MS + ChangeWait.POLL_MS))
     }
 }

@@ -76,6 +76,7 @@ internal object RemoteTaskRecord {
         FailKind.Model -> "model"
         FailKind.Guard -> "guard"
         FailKind.StepLimit -> "step_limit"
+        FailKind.TokenLimit -> "token_limit"
         FailKind.Environment -> "environment"
         FailKind.Interrupted -> "interrupted"
     }

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="calls_record_brief">خلاصه وظیفه</string>
+    <string name="calls_record_goal">نتیجه مطلوب</string>
+    <string name="calls_record_questions">سؤالاتی که باید پرسید</string>
+    <string name="calls_record_context">زمینه</string>
+    <string name="calls_record_constraints">محدودیت‌های وعده‌ها و اقدامات</string>
+    <string name="calls_record_reuse">استفاده به‌عنوان وظیفه جدید</string>
+    <string name="calls_record_result_unconfirmed">تماس پایان یافت. برای تأیید نتیجه، متن گفتگو را بررسی کنید؛ علامت‌گذاری به‌عنوان رسیدگی‌شده به معنای دستیابی به هدف نیست.</string>
+</resources>

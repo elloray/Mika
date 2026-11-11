@@ -64,6 +64,7 @@ type gateway struct {
 	pairHash        string
 	pairUntil       time.Time
 	limits          map[string]limitEntry
+	console         *consoleStore
 	now             func() time.Time
 	requestTimeout  time.Duration
 	// trustProxy reads the caller's address from the reverse proxy's X-Forwarded-For entry.
@@ -71,7 +72,7 @@ type gateway struct {
 }
 
 func newGateway(base, owner string, s *store) *gateway {
-	return &gateway{base: base, ownerHash: digest(owner), store: s, limits: map[string]limitEntry{}, now: time.Now, requestTimeout: 65 * time.Second}
+	return &gateway{base: base, ownerHash: digest(owner), store: s, limits: map[string]limitEntry{}, console: newConsoleStore(), now: time.Now, requestTimeout: 65 * time.Second}
 }
 func (g *gateway) disconnect() {
 	g.mu.Lock()
@@ -149,7 +150,7 @@ func (g *gateway) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if strings.HasPrefix(g.base, "https://") {
 		w.Header().Set("Strict-Transport-Security", "max-age=31536000")
 	}
-	w.Header().Set("Content-Security-Policy", "default-src 'none'; style-src 'self'; script-src 'self'; form-action 'self'; frame-ancestors 'none'; base-uri 'none'")
+	w.Header().Set("Content-Security-Policy", "default-src 'none'; style-src 'self'; script-src 'self'; connect-src 'self'; img-src 'self' data:; form-action 'self'; frame-ancestors 'none'; base-uri 'none'")
 	if !strings.EqualFold(r.Host, strings.TrimPrefix(strings.TrimPrefix(g.base, "https://"), "http://")) {
 		failure(w, 400, "invalid_host")
 		return
@@ -171,8 +172,20 @@ func (g *gateway) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		g.pair(w, r)
 	case "/device":
 		g.deviceEndpoint(w, r)
+	case "/app":
+		g.consolePage(w, r)
+	case "/console.css", "/console.js":
+		g.asset(w, r)
+	case "/web/session":
+		g.consoleSession(w, r)
+	case "/web/login":
+		g.consoleLogin(w, r)
+	case "/web/logout":
+		g.consoleLogout(w, r)
 	default:
-		if relayPath(r.URL.Path) {
+		if strings.HasPrefix(r.URL.Path, "/web/api/") {
+			g.consoleProxy(w, r)
+		} else if relayPath(r.URL.Path) {
 			g.proxy(w, r)
 		} else {
 			failure(w, 404, "not_found")

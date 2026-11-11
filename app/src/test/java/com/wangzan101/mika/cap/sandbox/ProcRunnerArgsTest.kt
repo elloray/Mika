@@ -38,6 +38,36 @@ class ProcRunnerArgsTest {
         assertTrue(root.hasPair("--net", "on"))
     }
 
+    @Test fun shellArgvUsesPtyAndNoTimeout() {
+        val argv = ProcRunner.argv(
+            dirs, ws, "", 0, network = false, standIns = emptyList(), command = listOf("/bin/sh"),
+            devices = emptyList(), pty = true, ptyCols = 100, ptyRows = 30,
+        )
+        assertTrue(argv.contains("--pty"))
+        assertTrue(argv.hasPair("--pty-cols", "100"))
+        assertTrue(argv.hasPair("--pty-rows", "30"))
+        assertFalse("terminal sessions have no time limit", argv.contains("--timeout"))
+        assertTrue(argv.hasPair("--net", "off"))
+        assertEquals("/bin/sh", argv.last())
+    }
+
+    @Test fun shellArgvPassesSizeFile() {
+        val size = File(java.io.File("/tmp").path, "pty.size")
+        val argv = ProcRunner.argv(
+            dirs, ws, "", 0, network = true, standIns = emptyList(), command = listOf("/bin/sh"),
+            devices = emptyList(), pty = true, ptySizePath = size,
+        )
+        assertTrue(argv.hasPair("--pty-size", size.path))
+        assertTrue(argv.contains("--pty"))
+    }
+
+    @Test fun shellEnvHasTerminalSettings() {
+        val env = ProcRunner.env(dirs, null, null, "conv1", pty = true)
+        assertEquals("xterm-256color", env["TERM"])
+        assertEquals("/dev/null", env["HISTFILE"])
+        assertTrue(env.keys.none { it == "MIKA_BRIDGE" || it == "MIKA_TOKEN" })
+    }
+
     @Test fun envIsMinimal() {
         val env = ProcRunner.env(dirs, null, null, "conv1")
         assertEquals(setOf("PROOT_LOADER", "PROOT_TMP_DIR", "HOME", "PATH", "LANG", "TMPDIR", "TZ", "MIKA_CONVERSATION"), env.keys)

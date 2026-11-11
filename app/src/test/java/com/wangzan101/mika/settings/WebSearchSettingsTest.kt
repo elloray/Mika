@@ -1,6 +1,12 @@
 package com.wangzan101.mika.settings
 
+import com.wangzan101.mika.core.search.ExaSearch
+import com.wangzan101.mika.core.search.JinaSearch
+import com.wangzan101.mika.core.search.SearxngSearch
+import com.wangzan101.mika.core.search.WebSearchProvider
+import com.wangzan101.mika.core.search.YouSearch
 import com.wangzan101.mika.settings.FeatureFlagsCapsuleTest.MemoryPrefs
+import java.util.Base64
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -13,32 +19,104 @@ class WebSearchSettingsTest {
         override fun decrypt(data: ByteArray) = data
     }
 
-    @Test fun freshInstallIsOffWithoutAnEndpoint() {
-        val settings = WebSearchSettings(MemoryPrefs(), identityCipher)
-        assertEquals(WebSearchConfig(), settings.get())
-        assertNull(settings.service())
+    private fun settings(prefs: MemoryPrefs = MemoryPrefs()) = WebSearchSettings(prefs, identityCipher)
+
+    /** 升级前只存了 enabled、endpoint、api_key_encrypted。 */
+    private fun legacy(prefs: MemoryPrefs, endpoint: String, key: String) {
+        prefs.edit().putBoolean("enabled", true).putString("endpoint", endpoint)
+            .putString("api_key_encrypted", Base64.getEncoder().encodeToString(key.toByteArray())).commit()
     }
 
-    @Test fun configurationAndEncryptedKeySurviveRestart() {
-        val prefs = MemoryPrefs()
-        val expected = WebSearchConfig(true, "https://example.com/search", "secret")
-        WebSearchSettings(prefs, identityCipher).set(expected)
-        assertEquals(expected, WebSearchSettings(prefs, identityCipher).get())
-        assertTrue(WebSearchSettings(prefs, identityCipher).service() != null)
-        assertFalse(prefs.getString("api_key_encrypted", null)!!.contains("secret"))
+    @Test fun freshInstallIsOffAndPicksYou() {
+        val config = settings().get()
+        assertFalse(config.enabled)
+        assertEquals(WebSearchProvider.You, config.provider)
+        assertNull(settings().service())
     }
 
-    @Test fun disabledOrInvalidConfigurationCannotCreateAService() {
+    @Test fun youWorksWithoutAKey() {
         val prefs = MemoryPrefs()
-        val settings = WebSearchSettings(prefs, identityCipher)
-        settings.set(WebSearchConfig(false, "https://example.com/search", "key"))
-        assertNull(settings.service())
-        prefs.edit().putBoolean("enabled", true).putString("endpoint", "not a URL").commit()
-        assertNull(WebSearchSettings(prefs, identityCipher).service())
+        settings(prefs).set(WebSearchConfig(true, WebSearchProvider.You))
+        assertTrue(settings(prefs).service() is YouSearch)
+    }
+
+    @Test fun eachProviderKeepsItsOwnKey() {
+        val prefs = MemoryPrefs()
+        settings(prefs).set(
+            WebSearchConfig(
+                true, WebSearchProvider.Exa,
+                mapOf(
+                    WebSearchProvider.You to WebSearchEntry(apiKey = "you-key"),
+                    WebSearchProvider.Exa to WebSearchEntry(apiKey = "exa-key"),
+                    WebSearchProvider.Jina to WebSearchEntry(apiKey = "jina-key"),
+                ),
+            ),
+        )
+        val back = settings(prefs).get()
+        assertEquals("you-key", back.entries[WebSearchProvider.You]!!.apiKey)
+        assertEquals("exa-key", back.current.apiKey)
+        assertEquals("jina-key", back.entries[WebSearchProvider.Jina]!!.apiKey)
+        assertFalse(prefs.getString("api_key_encrypted_exa", null)!!.contains("exa-key"))
+        assertTrue(settings(prefs).service() is ExaSearch)
+    }
+
+    @Test fun anOldExaUrlBecomesExaWithItsKey() {
+        val prefs = MemoryPrefs()
+        legacy(prefs, "https://api.exa.ai/search", "exa-key")
+        val config = settings(prefs).get()
+        assertTrue(config.enabled)
+        assertEquals(WebSearchProvider.Exa, config.provider)
+        assertEquals("exa-key", config.current.apiKey)
+        assertTrue(settings(prefs).service() is ExaSearch)
+        // 保存后写成新的样子,旧的两个键删掉
+        settings(prefs).set(config)
+        assertNull(prefs.getString("endpoint", null))
+        assertNull(prefs.getString("api_key_encrypted", null))
+        assertEquals("exa-key", settings(prefs).get().entries[WebSearchProvider.Exa]!!.apiKey)
+    }
+
+    @Test fun anOldJinaUrlBecomesJina() {
+        val prefs = MemoryPrefs()
+        legacy(prefs, "https://s.jina.ai/", "jina-key")
+        assertEquals(WebSearchProvider.Jina, settings(prefs).get().provider)
+        assertTrue(settings(prefs).service() is JinaSearch)
+    }
+
+    @Test fun anyOtherOldUrlBecomesYouButOffAndDropsTheKey() {
+        val prefs = MemoryPrefs()
+        legacy(prefs, "https://example.com/search", "someone-elses-key")
+        val config = settings(prefs).get()
+        assertFalse(config.enabled)
+        assertEquals(WebSearchProvider.You, config.provider)
+        assertEquals("", config.current.apiKey)
+        assertNull(settings(prefs).service())
     }
 
     @Test(expected = IllegalArgumentException::class)
-    fun enabledConfigurationRequiresAValidEndpoint() {
-        WebSearchSettings(MemoryPrefs(), identityCipher).set(WebSearchConfig(true, "", ""))
+    fun jinaCannotBeSavedWithoutAKey() {
+        settings().set(WebSearchConfig(true, WebSearchProvider.Jina))
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun exaCannotBeSavedWithoutAKeyEvenWhenOff() {
+        settings().set(WebSearchConfig(false, WebSearchProvider.Exa, mapOf(WebSearchProvider.Exa to WebSearchEntry(apiKey = " "))))
+    }
+
+    @Test fun searxngUsesTheInstanceAndNoKey() {
+        val prefs = MemoryPrefs()
+        settings(prefs).set(WebSearchConfig(true, WebSearchProvider.SearXNG, mapOf(WebSearchProvider.SearXNG to WebSearchEntry("https://searx.example.org"))))
+        assertTrue(settings(prefs).service() is SearxngSearch)
+        assertEquals("https://searx.example.org", settings(prefs).get().current.endpoint)
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun enabledSearxngNeedsAnAddress() {
+        settings().set(WebSearchConfig(true, WebSearchProvider.SearXNG))
+    }
+
+    @Test fun anUnknownStoredProviderFallsBackSafely() {
+        val prefs = MemoryPrefs()
+        prefs.edit().putBoolean("enabled", true).putString("provider", "gone").commit()
+        assertEquals(WebSearchProvider.You, settings(prefs).get().provider)
     }
 }

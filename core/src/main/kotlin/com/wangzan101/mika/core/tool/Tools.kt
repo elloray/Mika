@@ -30,6 +30,7 @@ sealed interface Outcome {
  * [observations]:这次调用读到的东西(能力给出,见 [Observation]);分发器记进证据账本后换成账本里那几条(带编号)。
  * [place]:这次调用之后任务在哪(由能力一侧按结果给出);没说为 null(沿用之前的)。
  * [waitMs]:这次调用里能力为了节奏有意停下的时间(网页一页没看够就换页时补的停留);运行记录把它算作等待。
+ * [followUpTools]: actions made useful by this result; expose their tools for the next model turn.
  */
 class ToolExecution(
     val content: JsonObject,
@@ -44,6 +45,7 @@ class ToolExecution(
     val observations: List<Observation> = emptyList(),
     val place: Place? = null,
     val waitMs: Long = 0,
+    val followUpTools: List<Verb> = emptyList(),
 ) {
     val image: ByteArray? get() = images.firstOrNull()
 
@@ -52,8 +54,9 @@ class ToolExecution(
         content: JsonObject = this.content, changed: Boolean? = this.changed, frame: ByteArray? = this.frame, images: List<ByteArray> = this.images,
         record: JsonObject = this.record, screenElements: JsonArray? = this.screenElements, imageIds: List<Int?> = this.imageIds,
         observations: List<Observation> = this.observations, place: Place? = this.place, waitMs: Long = this.waitMs,
+        followUpTools: List<Verb> = this.followUpTools,
     ) = ToolExecution(content, changed = changed, outcome = outcome, frame = frame, images = images, record = record,
-        screenElements = screenElements, imageIds = imageIds, observations = observations, place = place, waitMs = waitMs)
+        screenElements = screenElements, imageIds = imageIds, observations = observations, place = place, waitMs = waitMs, followUpTools = followUpTools)
 
     /** 另读到了 [more]。 */
     fun observing(vararg more: Observation?): ToolExecution = more.filterNotNull().let { if (it.isEmpty()) this else with(observations = observations + it) }

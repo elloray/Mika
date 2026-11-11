@@ -29,4 +29,11 @@ class ContextEditMenuTest {
         assertNull(menu.freshPaste(setOf("paste-old"), listOf("paste", "paste-old"), isPaste))
         assertNull(menu.freshPaste(emptySet(), listOf("copy"), isPaste))
     }
+
+    @Test fun ignoresNewEditorContainersButKeepsOtherCommandGuards() {
+        val isPaste: (String) -> Boolean = { it == "paste" }
+        val containers = setOf("editor", "backdrop")
+        assertEquals("paste", menu.freshPaste(setOf("editor"), listOf("editor", "backdrop", "paste"), isPaste, containers))
+        assertNull(menu.freshPaste(setOf("editor"), listOf("backdrop", "paste", "copy"), isPaste, containers))
+    }
 }

@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="call_instructions_title">تعليمات المكالمات</string>
+    <string name="call_instructions_intro">تُطبق التعليمات المحفوظة على المكالمات القادمة. تُرسل كل التعليمات النشطة إلى Volcengine عند تحضير مكالمة الذكاء الاصطناعي، حتى إن لم يُرد على المكالمة. لا يمكن للمتصل تعديلها.</string>
+    <string name="call_instructions_add">إضافة تعليمات</string>
+    <string name="call_instructions_empty">اكتب ما يمكن للمساعد قوله وما يحتاج إلى سؤاله. تسري التغييرات بدءًا من المكالمة القادمة.</string>
+    <string name="call_instructions_heading">العنوان</string>
+    <string name="call_instructions_situation">متى تُطبق</string>
+    <string name="call_instructions_response">طريقة الرد</string>
+    <string name="call_instructions_save">حفظ التعليمات</string>
+    <string name="call_instructions_cancel">إلغاء</string>
+    <string name="call_instructions_edit">تعديل</string>
+    <string name="call_instructions_delete">حذف</string>
+    <string name="call_instructions_delete_confirm">هل تريد حذف هذه التعليمات؟ لن تُطبق على المكالمات القادمة.</string>
+    <string name="call_instructions_expiry">مدة الصلاحية</string>
+    <string name="call_instructions_forever">حتى أغيّرها</string>
+    <string name="call_instructions_today">حتى الليلة</string>
+    <string name="call_instructions_two_hours">ساعتان</string>
+    <string name="call_instructions_expired">منتهية الصلاحية</string>
+    <string name="call_instructions_saved">محفوظة على هذا الهاتف</string>
+    <string name="call_instructions_failed">تعذر الحفظ. ما زالت المسودة موجودة.</string>
+    <string name="call_instructions_presets">ابدأ بسيناريو</string>
+    <string name="call_instructions_delivery">التوصيل</string>
+    <string name="call_instructions_delivery_when">يتصل مندوب شحن أو توصيل</string>
+    <string name="call_instructions_delivery_reply">اسأل عن مكان الطرد وما إذا كانت هناك حاجة إلى معاودة الاتصال. لا تختلق عنوانًا ولا تمنح إذن الدخول.</string>
+    <string name="call_instructions_business">استفسار تجاري</string>
+    <string name="call_instructions_business_when">يسأل عميل عن منتج أو خدمة أو موعد</string>
+    <string name="call_instructions_business_reply">اسأل عما يحتاج إليه والكمية أو الوقت المفضل ووسيلة تواصل. دوّن الرسالة دون الالتزام بسعر أو موعد.</string>
+    <string name="call_instructions_review_limit">راجع الرد واختصر التعليمات إلى 800 حرف قبل الحفظ.</string>
+</resources>

@@ -16,8 +16,8 @@
     <string name="sandbox_incomplete">執行環境檔案不完整,可在設定 → 進階裡重置</string>
     <string name="sandbox_not_finished">安裝沒有完成,可以重試</string>
     <string name="sandbox_network">允許腳本連上網路</string>
-    <string name="sandbox_network_sub">預設關閉</string>
-    <string name="sandbox_network_explain">Mika 處理檔案、執行腳本時預設不連上網路。開啟後腳本可以連上網路(比如查論文、查地圖),也可能把對話裡的檔案發出去。</string>
+    <string name="sandbox_network_sub">預設開啟</string>
+    <string name="sandbox_network_explain">Mika 處理檔案、執行腳本時預設連上網路。開啟後腳本可以連上網路(比如查論文、查地圖),也可能把對話裡的檔案發出去。</string>
     <string name="sandbox_isolation_unavailable">此裝置無法限制腳本連上網路:只有開啟「允許腳本連上網路」時,Mika 才能處理檔案和執行腳本</string>
     <string name="sandbox_reset_title">重置執行環境?</string>
     <string name="sandbox_reset_body">會刪除 Mika 處理檔案、執行腳本用的執行環境,以及各對話裡生成的檔案(包括你附加的檔案),然後自動重新準備。對話記錄和設定不受影響。</string>

@@ -2,6 +2,7 @@ package com.wangzan101.mika.core.mcp
 
 import com.wangzan101.mika.core.remote.RemoteAccess
 import com.wangzan101.mika.core.remote.HttpRequest
+import com.wangzan101.mika.core.remote.RemoteOwnership
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -11,6 +12,7 @@ import java.net.InetAddress
 class McpAccessTest {
     private var now = 0L
     private val access = RemoteAccess({ TOKEN }, { now })
+    private val pass = RemoteAccess.Verdict.Pass(RemoteOwnership.of(TOKEN))
 
     private fun req(headers: Map<String, String> = emptyMap(), path: String = "/mcp", from: String = "192.168.1.20", source: String? = null) =
         HttpRequest("POST", path, headers.mapKeys { it.key.lowercase() }, ByteArray(0), InetAddress.getByName(from),
@@ -24,8 +26,8 @@ class McpAccessTest {
         assertEquals(401, status(access.check(req(mapOf("Authorization" to TOKEN)))))
         assertEquals(401, status(access.check(req(mapOf("Authorization" to "Basic $TOKEN")))))
         val r = access.check(req(mapOf("Authorization" to "Bearer $TOKEN")))
-        assertEquals(RemoteAccess.Verdict.Pass, r)
-        assertEquals(RemoteAccess.Verdict.Pass, access.check(req(mapOf("Authorization" to "bearer $TOKEN"))))
+        assertEquals(pass, r)
+        assertEquals(pass, access.check(req(mapOf("Authorization" to "bearer $TOKEN"))))
         assertEquals("Bearer", (access.check(req()) as RemoteAccess.Verdict.Reject).headers["WWW-Authenticate"])
     }
 
@@ -53,9 +55,9 @@ class McpAccessTest {
         assertEquals(429, status(locked))
         assertEquals("60", (locked as RemoteAccess.Verdict.Reject).headers["Retry-After"])
         // 别的地址不受影响
-        assertEquals(RemoteAccess.Verdict.Pass, access.check(req(mapOf("Authorization" to "Bearer $TOKEN"), from = "192.168.1.21")))
+        assertEquals(pass, access.check(req(mapOf("Authorization" to "Bearer $TOKEN"), from = "192.168.1.21")))
         now += 61_000
-        assertEquals(RemoteAccess.Verdict.Pass, access.check(req(mapOf("Authorization" to "Bearer $TOKEN"))))
+        assertEquals(pass, access.check(req(mapOf("Authorization" to "Bearer $TOKEN"))))
     }
 
     @Test fun relayedCallersCoolDownSeparatelyAndALockedCallerLearnsNothing() {
@@ -64,7 +66,7 @@ class McpAccessTest {
         repeat(5) { assertEquals(401, status(relay.check(req(from = "0.0.0.0", source = guesser)))) }
         // 冷却中连正确令牌也是 429:放行就会把「猜对了」告诉猜的人
         assertEquals(429, status(relay.check(req(mapOf("Authorization" to "Bearer $TOKEN"), from = "0.0.0.0", source = guesser))))
-        assertEquals(RemoteAccess.Verdict.Pass, relay.check(req(mapOf("Authorization" to "Bearer $TOKEN"), from = "0.0.0.0", source = owner)))
+        assertEquals(pass, relay.check(req(mapOf("Authorization" to "Bearer $TOKEN"), from = "0.0.0.0", source = owner)))
         assertEquals(403, status(relay.check(req(mapOf("Authorization" to "Bearer $TOKEN", "Origin" to "https://example.test"), from = "0.0.0.0", source = owner))))
     }
 
@@ -73,7 +75,7 @@ class McpAccessTest {
             assertEquals(401, status(access.check(req(mapOf("Authorization" to "Bearer guess")))))
             now += 20_000
         }
-        assertEquals(RemoteAccess.Verdict.Pass, access.check(req(mapOf("Authorization" to "Bearer $TOKEN"))))
+        assertEquals(pass, access.check(req(mapOf("Authorization" to "Bearer $TOKEN"))))
     }
 
     @Test fun constantTimeCompare() {

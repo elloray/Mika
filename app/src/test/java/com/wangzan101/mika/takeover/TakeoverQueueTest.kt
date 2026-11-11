@@ -1,7 +1,6 @@
 package com.wangzan101.mika.takeover
 
 import com.wangzan101.mika.core.agent.TaskState
-import com.wangzan101.mika.core.tool.HandBackOutcome
 import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
@@ -35,13 +34,14 @@ class TakeoverQueueTest {
         assertEquals(listOf("toMain:1", "unmute:a.app"), portB.log)
     }
 
-    // 排在后面的接管不计时:等前一个的用户处理多久都不会把它判成超时;排到最前后才开始计时
-    @Test fun queuedTakeoverDoesNotTimeOutBehindFirst() = runTest {
+    // 排在后面的接管不提醒；轮到最前后才开始计算提醒间隔，提醒不会把等待变成超时。
+    @Test fun queuedTakeoverStartsRemindersAtTheFront() = runTest {
         val queue = TakeoverQueue()
         val portA = TakeoverControllerTest.FakePort()
         val portB = TakeoverControllerTest.FakePort()
+        var reminders = 0
         val a = Takeover(portA, backgroundScope, queue) { testScheduler.currentTime }
-        val b = Takeover(portB, backgroundScope, queue) { testScheduler.currentTime }
+        val b = Takeover(portB, backgroundScope, queue, now = { testScheduler.currentTime }, remind = { reminders++ })
         a.onState(TaskState.WaitingTakeover("login", "请登录"))
         b.onState(TaskState.WaitingTakeover("captcha", "请拖动滑块"))
         assertTrue(a.handOver())
@@ -49,14 +49,18 @@ class TakeoverQueueTest {
         runCurrent()
         assertEquals(Takeover.Stage.Waiting, b.stage.value)
         assertTrue(portB.results.isEmpty())
+        assertEquals(0, reminders)
 
         assertTrue(a.handBack())
         runCurrent()
         advanceTimeBy(Takeover.TAKEOVER_WAIT_TIMEOUT_MS - 1_000)
         runCurrent()
         assertTrue(portB.results.isEmpty())
+        assertEquals(0, reminders)
         advanceTimeBy(2_000)
         runCurrent()
-        assertEquals(listOf(HandBackOutcome.timeout), portB.results.map { it.outcome })
+        assertTrue(portB.results.isEmpty())
+        assertEquals(Takeover.Stage.Waiting, b.stage.value)
+        assertEquals(1, reminders)
     }
 }

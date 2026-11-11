@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="appaccess_title">دسترسی به برنامه‌ها</string>
+    <string name="appaccess_row_sub">مسدود کردن برنامه‌ها و اشتراک‌گذاری صفحه برای هر برنامه</string>
+    <string name="appaccess_intro">انتخاب کنید میکا با ابزارهای معمول کنترل گوشی کدام برنامه‌ها را می‌تواند بخواند و کنترل کند. این تنظیم دستورات شل، محیط اجرا و دسترسی رایانه (MCP) را محدود نمی‌کند.</string>
+    <string name="appaccess_privacy">دسته‌بندی، نام برنامه‌ها و بسته‌های آن‌ها را به مدل هوش مصنوعی ارسال می‌کند؛ «به‌روزرسانی فهرست برنامه‌ها» ابتدا از شما اجازه می‌گیرد.</string>
+    <string name="appaccess_unavailable">تنظیمات دسترسی به برنامه‌ها خوانده نمی‌شود، بنابراین دسترسی معمول به گوشی متوقف است. بازنشانی، مجوزها و دسته‌های ذخیره‌شده را پاک می‌کند.</string>
+    <string name="appaccess_reset">بازنشانی دسترسی به برنامه‌ها</string>
+    <string name="appaccess_search">جست‌وجوی نام یا بسته</string>
+    <string name="appaccess_refreshing">در حال دسته‌بندی…</string>
+    <string name="appaccess_refresh">به‌روزرسانی فهرست برنامه‌ها</string>
+    <string name="appaccess_recommend">پیشنهاد مسدودسازی</string>
+    <string name="appaccess_recommend_count">پیشنهاد مسدودسازی · %1$d</string>
+    <string name="appaccess_allow_all">اجازه به همه</string>
+    <string name="appaccess_risk_note">استفادهٔ خودکار از این برنامه‌ها ممکن است محدودیت‌هایی برای حساب ایجاد کند؛ مواردی را که نیاز ندارید مسدود کنید.</string>
+    <string name="appaccess_blocked">مسدود</string>
+    <string name="appaccess_allowed">مجاز</string>
+    <string name="appaccess_revoke_share">لغو اشتراک‌گذاری صفحه برای %1$s</string>
+
+    <string name="appaccess_send_title">فهرست برنامه‌ها به هوش مصنوعی ارسال شود؟</string>
+    <string name="appaccess_send_body">به‌روزرسانی، برنامه‌های نصب‌شده را می‌خواند و برای تعیین دستهٔ خطر، نام برنامه‌ها و بسته‌هایشان را به مدل هوش مصنوعی تنظیم‌شده توسط شما ارسال می‌کند. محتوای داخل برنامه‌ها ارسال نمی‌شود.</string>
+    <string name="appaccess_send_confirm">ادامه و دسته‌بندی</string>
+    <string name="appaccess_cancel">انصراف</string>
+
+    <string name="appaccess_recommend_title">پیشنهاد مسدودسازی: برنامه‌های مالی</string>
+    <string name="appaccess_recommend_body">این برنامه‌ها در دستهٔ مالی یا پرداخت قرار گرفته‌اند و میکا همچنان می‌تواند آن‌ها را کنترل کند. آن‌ها را یک‌به‌یک یا یک‌جا مسدود کنید.</string>
+    <string name="appaccess_recommend_empty">موردی برای مسدود کردن وجود ندارد.</string>
+    <string name="appaccess_block">مسدود کردن</string>
+    <string name="appaccess_block_all">مسدود کردن همه</string>
+
+    <string name="appaccess_edit_category">تغییر دسته</string>
+    <string name="appaccess_category_manual">تعیین‌شده توسط شما</string>
+
+    <string name="appaccess_error_save">ذخیره نشد</string>
+    <string name="appaccess_error_no_model">مدلی در دسترس نیست. فهرست برنامه‌ها به‌روزرسانی شد، اما دسته‌بندی آن ممکن نیست.</string>
+    <string name="appaccess_error_refresh">به‌روزرسانی ناموفق بود</string>
+    <string name="appaccess_error_load">فهرست برنامه‌ها خوانده نشد</string>
+
+    <string name="appaccess_category_finance">مالی</string>
+    <string name="appaccess_category_social">اجتماعی</string>
+    <string name="appaccess_category_game">بازی</string>
+    <string name="appaccess_category_shopping">خرید</string>
+    <string name="appaccess_category_productivity">بهره‌وری</string>
+    <string name="appaccess_category_media">رسانه</string>
+    <string name="appaccess_category_other">سایر</string>
+    <string name="appaccess_category_unknown">دسته‌بندی‌نشده</string>
+
+    <string name="appaccess_share_title">اشتراک‌گذاری صفحهٔ %1$s</string>
+    <string name="appaccess_share_body">این برنامه مسدود است. اشتراک‌گذاری صفحه به شما اجازه می‌دهد عمداً صفحهٔ آن را به اشتراک بگذارید؛ خواندن و کنترل خودکار همچنان مسدود می‌ماند.</string>
+    <string name="appaccess_share_allow">فقط اجازهٔ اشتراک‌گذاری صفحه</string>
+    <string name="appaccess_share_unblock">خارج کردن از فهرست مسدودشده‌ها</string>
+    <string name="appaccess_share_cancel">لغو اشتراک‌گذاری</string>
+    <string name="appaccess_share_expired">مجوز اشتراک‌گذاری صفحه منقضی شد. یک عکس جدید از صفحه بگیرید.</string>
+</resources>

@@ -16,11 +16,11 @@ import com.wangzan101.mika.core.observation.Trust
 sealed interface RunEvent {
     val atMs: Long
 
-    /** [origin] 是谁发起的这次运行(`RunOrigin` 的小写名);手机上发起的不写。[stepLimit] 是这次运行的步数上限,不限制为 null。 */
+    /** [origin] 是谁发起的这次运行(`RunOrigin` 的小写名);手机上发起的不写。两个预算不限制时都为 null。 */
     @Serializable @SerialName("task_started")
     data class TaskStarted(
         override val atMs: Long, val goal: String, val model: String,
-        val origin: String? = null, val stepLimit: Int? = null,
+        val origin: String? = null, val stepLimit: Int? = null, val tokenBudget: Long? = null,
     ) : RunEvent
 
     /** 本任务发给模型的系统提示词与工具定义的摘要([com.wangzan101.mika.core.prompt.PromptVersion])。 */

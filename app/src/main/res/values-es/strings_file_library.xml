@@ -1,0 +1,24 @@
+<resources>
+    <string name="file_library_title">Archivos</string>
+    <string name="file_library_search">Buscar por nombre</string>
+    <string name="file_library_all">Todas las conversaciones</string>
+    <string name="file_library_current">Conversación actual</string>
+    <string name="file_library_sources">Todos los orígenes</string>
+    <string name="file_library_input">Adjuntos</string>
+    <string name="file_library_output">Archivos creados</string>
+    <string name="file_library_loading">Cargando archivos…</string>
+    <string name="file_library_empty">No se encontraron archivos</string>
+    <string name="file_library_missing">No disponible</string>
+    <string name="file_library_available">Disponible</string>
+    <string name="file_library_open">Abrir</string>
+    <string name="file_library_share">Compartir</string>
+    <string name="file_library_add">Añadir al borrador</string>
+    <string name="file_library_choose">Elegir una conversación</string>
+    <string name="file_library_new">Nueva conversación</string>
+    <string name="file_library_error">No se puede acceder a este archivo</string>
+    <string name="file_library_retry">Reintentar</string>
+    <string name="file_library_partial">No se pudieron leer algunas conversaciones.</string>
+    <string name="file_library_unknown_time">Fecha desconocida</string>
+    <string name="file_library_draft_saved">Añadido al borrador de la conversación elegida. Cambia a ella cuando sea posible.</string>
+    <string name="file_library_load_failed">No se pudieron cargar los archivos.</string>
+</resources>

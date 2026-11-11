@@ -34,7 +34,13 @@ internal val ExchangeStatus.branchable: Boolean
     }
 
 /** 「从这里重新问」的结果:新对话编号、预填的文字、原消息是否带了要重新添加的附件/屏幕。 */
-data class BranchRetry(val conversationId: String, val prefill: String, val needsReattach: Boolean)
+data class BranchRetry(
+    val conversationId: String,
+    val prefill: String,
+    val needsReattach: Boolean,
+    val failures: List<com.wangzan101.mika.chat.RetryAttachmentResult> = emptyList(),
+    val screenNeedsReattach: Boolean = false,
+)
 
 /**
  * 长按的是哪条用户自己的话能「从这里重新问」:`u<轮次>` 且 [canRetryAt] 成立时返回轮次,否则 null。

@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="calls_helper_setup_title">دستیار صوتی Mika</string>
+    <string name="calls_helper_setup_intro">اندروید تماس‌های عادی را مدیریت می‌کند. Mika برای شنیدن و صحبت کردن در تماس‌های هوش مصنوعی از دستیار صوتی استفاده می‌کند. اشکال‌زدایی بی‌سیم به این گوشی اجازه می‌دهد دستیار را بدون رایانه راه‌اندازی یا بازیابی کند. برای جفت‌سازی به Wi-Fi متصل شوید؛ صدای زنده هوش مصنوعی نیز به اتصال اینترنت نیاز دارد.</string>
+    <string name="calls_helper_unavailable">دستیار صوتی روی این دستگاه قابل راه‌اندازی نیست.</string>
+    <string name="calls_helper_unavailable_reason">اندروید تنظیمات لازم برای راه‌اندازی دستیار را در اینجا فراهم نمی‌کند. تماس‌های عادی همچنان از طریق برنامه تلفن شما کار می‌کنند.</string>
+    <string name="calls_helper_ready">دستیار صوتی متصل شد</string>
+    <string name="calls_helper_usb_running">دستیار صوتی در حال اجرا · راه‌اندازی با USB</string>
+    <string name="calls_helper_usb_stopped">دستیار صوتی که با USB راه‌اندازی شده بود متوقف شد.</string>
+    <string name="calls_helper_wireless_recovery">یک بار روی این گوشی جفت‌سازی کنید تا در صورت توقف، دستیار بدون رایانه دوباره راه‌اندازی شود. برای راه‌اندازی به Wi-Fi متصل شوید.</string>
+    <string name="calls_helper_wireless_unavailable">اشکال‌زدایی بی‌سیم روی این گوشی در دسترس نیست.</string>
+    <string name="calls_helper_setup_wireless">راه‌اندازی بازیابی بی‌سیم</string>
+    <string name="calls_helper_hide_usb">پنهان کردن گزینه پشتیبان رایانه</string>
+    <string name="calls_helper_show_usb">گزینه پشتیبان رایانه</string>
+    <string name="calls_helper_usb_fallback">اگر راه‌اندازی بی‌سیم در دسترس نیست و رایانه دارید، یک کابل USB وصل کنید و این دستور را روی رایانه اجرا کنید. ممکن است لازم باشد پس از به‌روزرسانی یا راه‌اندازی مجدد، دوباره آن را اجرا کنید.</string>
+    <string name="calls_helper_wireless_reconnect">اگر دستیار متوقف شد، به Wi-Fi متصل شوید و اگر اندروید آن را خاموش کرده است، اشکال‌زدایی بی‌سیم را روشن کنید. فقط در صورت درخواست، دوباره جفت‌سازی کنید.</string>
+    <string name="calls_helper_wireless_debugging_body">به Wi-Fi متصل شوید و در گزینه‌های توسعه‌دهنده، اشکال‌زدایی بی‌سیم را روشن کنید. اگر اندروید پرسید، روی Allow بزنید. سپس برای ادامه به مرحله کد جفت‌سازی به Mika برگردید.</string>
+    <string name="calls_helper_usb_debugging_body">در گزینه‌های توسعه‌دهنده، اشکال‌زدایی USB را روشن و تأیید کنید. برای راه‌اندازی بی‌سیم نیازی به وصل کردن کابل نیست. تنظیمات دیگر را دست نزنید.</string>
+    <string name="calls_helper_usb_debugging_brief">برای راه‌اندازی بی‌سیم کابل لازم نیست</string>
+    <string name="calls_helper_connect_body">پس از جفت‌سازی، Mika به دستیار صوتی روی این گوشی متصل می‌شود.</string>
+    <string name="calls_helper_wifi_needed">برای راه‌اندازی یا بازیابی دستیار صوتی از طریق اشکال‌زدایی بی‌سیم، به Wi-Fi متصل شوید.</string>
+    <string name="calls_helper_repair_needed">جفت‌سازی در دسترس نیست. دوباره از این گوشی جفت‌سازی کنید.</string>
+    <string name="calls_helper_name">دستیار صوتی</string>
+    <string name="calls_helper_disconnected">برای فعال کردن صدای دوطرفه تماس‌های هوش مصنوعی، متصل شوید</string>
+    <string name="calls_helper_manage">مدیریت</string>
+    <string name="calls_helper_set_up">راه‌اندازی</string>
+    <string name="calls_helper_pairing_done">دستیار صوتی متصل شد. می‌توانید به Mika برگردید.</string>
+    <string name="calls_helper_pairing_problem">برای دیدن نحوه اتصال مجدد به Mika برگردید.</string>
+</resources>

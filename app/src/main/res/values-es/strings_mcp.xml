@@ -33,6 +33,12 @@
     <string name="mcp_advanced_hide">Ocultar ajustes avanzados</string>
     <string name="mcp_advanced_sub">Interruptores de acceso, tokens y activación remota</string>
     <string name="mcp_port_detail">Puerto %1$d. El acceso por USB se desactiva al reiniciar el teléfono.</string>
+    <string name="mcp_port_title">Puerto de escucha</string>
+    <string name="mcp_port_dialog_sub">Cámbialo cuando otra parte use el puerto predeterminado en este teléfono. Se aplica al momento; el equipo se reconecta por el nuevo puerto.</string>
+    <string name="mcp_port_default">Predeterminado (%1$d)</string>
+    <string name="mcp_port_custom">Puerto</string>
+    <string name="mcp_port_invalid">Introduce un número entero entre 1024 y 65535.</string>
+    <string name="mcp_port_apply">Aplicar</string>
     <string name="mcp_network_scope">Permitir el acceso por Wi-Fi y redes privadas. Cada solicitud necesita un token.</string>
     <string name="mcp_cli_install">1. Prepara tu ordenador</string>
     <string name="mcp_cli_install_sub">Envía la guía de instalación a la IA de tu ordenador, o síguela tú mismo en el ordenador.</string>

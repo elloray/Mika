@@ -31,6 +31,8 @@ data class SystemActionResult(
     val nextAlarmAfter: Long? = null,
     val alarmReadable: Boolean = false,
     val showing: Boolean = false,
+    /** 批量直写日程成功后，日历提供方逐条返回的事件地址。 */
+    val eventUris: List<String> = emptyList(),
 ) {
     companion object {
         const val NOT_SUPPORTED = "not_supported"

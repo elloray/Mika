@@ -33,7 +33,7 @@
     <string name="plans_repeat_interval">Интервал</string>
     <string name="plans_repeat_weekly">Еженедельно</string>
     <string name="plans_interval_minutes">Повторять каждые (минуты)</string>
-    <string name="plans_clock">Местное время: ЧЧ:мм</string>
+    <string name="plans_clock">Местное время (через запятую)</string>
     <string name="plans_zone">Идентификатор часового пояса</string>
     <string name="plans_condition_optional">Условие (необязательно)</string>
     <string name="plans_notify_change">При изменении</string>
@@ -47,7 +47,7 @@
     <string name="plans_error_reminder_condition">У фиксированного напоминания не может быть условия</string>
     <string name="plans_error_time">Введите корректные дату и время</string>
     <string name="plans_error_interval">Введите интервал от 1 до 525 600 минут</string>
-    <string name="plans_error_clock">Введите корректное время в формате ЧЧ:мм</string>
+    <string name="plans_error_clock">Введите время в формате ЧЧ:мм, разделяя значения запятыми</string>
     <string name="plans_error_zone">Введите корректный идентификатор часового пояса</string>
     <string name="plans_error_weekdays">Выберите хотя бы один день</string>
     <string name="plans_error_cooldown">Введите минимальный интервал от 1 до 525 600 минут</string>

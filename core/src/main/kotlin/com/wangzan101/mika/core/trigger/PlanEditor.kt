@@ -6,7 +6,7 @@ import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.format.ResolverStyle
 
-/** 手动编辑器支持的重复方式；更复杂的多钟点规则仍由后续数据模型扩展承接。 */
+/** 手动编辑器和模型编辑共用的重复方式。 */
 enum class PlanRepeat { Once, Interval, Daily, Weekly }
 
 enum class PlanValidation {
@@ -72,7 +72,7 @@ fun TriggerDefinition.toPlanDraft(): PlanDraft {
         },
         firstAt = formatPlanEditorTime(nextAtMs, zone),
         intervalMinutes = intervalMs?.let { (it / 60_000).toString() } ?: "60",
-        clock = calendarTime ?: "09:00",
+        clock = calendarClocks().takeIf { it.isNotEmpty() }?.joinToString(", ") ?: "09:00",
         zone = zone,
         weekdays = calendarDays.toSet(),
         whenIdle = idleOnly,
@@ -105,33 +105,42 @@ fun editedTrigger(
     val nextAt: Long
     var intervalMs: Long? = null
     var calendarTime: String? = null
+    var calendarTimes: List<String> = emptyList()
     var calendarZone: String? = null
     var calendarDays: List<Int> = emptyList()
     when (draft.repeat) {
         PlanRepeat.Once, PlanRepeat.Interval -> {
             nextAt = try {
-                LocalDateTime.parse(draft.firstAt.trim(), EDIT_TIME).atZone(zone).toInstant().toEpochMilli()
+                // 模型沿用 ISO 时间以保留秒和偏移；页面继续使用当地 yyyy-MM-dd HH:mm。
+                runCatching { Instant.parse(draft.firstAt.trim()).toEpochMilli() }.getOrElse {
+                    LocalDateTime.parse(draft.firstAt.trim(), EDIT_TIME).atZone(zone).toInstant().toEpochMilli()
+                }
             } catch (e: Exception) {
                 invalid(PlanValidation.InvalidFirstTime)
             }
-            if (nextAt <= nowMs) invalid(PlanValidation.TimeNotFuture)
             if (draft.repeat == PlanRepeat.Interval) {
                 val minutes = draft.intervalMinutes.trim().toLongOrNull()
                 if (minutes == null || minutes !in 1..525_600) invalid(PlanValidation.InvalidInterval)
                 intervalMs = minutes * 60_000
             }
+            val unchangedTime = original != null && original.calendarTime == null &&
+                original.nextAtMs == nextAt && original.intervalMs == intervalMs &&
+                (!draft.enabled || original.enabled)
+            if (nextAt <= nowMs && !unchangedTime) invalid(PlanValidation.TimeNotFuture)
         }
         PlanRepeat.Daily, PlanRepeat.Weekly -> {
             val days = if (draft.repeat == PlanRepeat.Weekly) draft.weekdays.sorted() else emptyList()
             if (draft.repeat == PlanRepeat.Weekly && (days.isEmpty() || days.any { it !in 1..7 })) {
                 invalid(PlanValidation.InvalidWeekdays)
             }
-            nextAt = try {
-                nextCalendarAt(draft.clock.trim(), zone.id, days, nowMs)
+            val clocks = try {
+                normalizedCalendarTimes(draft.clock.split(',', '，', '、', ';', '；', '،', '\n'))
             } catch (e: Exception) {
                 invalid(PlanValidation.InvalidClock)
             }
-            calendarTime = draft.clock.trim()
+            nextAt = nextCalendarAt(clocks, zone.id, days, nowMs)
+            calendarTime = clocks.first()
+            calendarTimes = clocks.takeIf { it.size > 1 }.orEmpty()
             calendarZone = zone.id
             calendarDays = days
         }
@@ -142,12 +151,8 @@ fun editedTrigger(
         minutes * 60_000
     } else null
     val reminderText = content.takeIf { draft.reminder }
-    val conditionChanged = original != null && (
-        original.conditionGoal != condition || original.notifyWhen != draft.notifyWhen ||
-            original.cooldownMs != cooldownMs || original.reminderText != reminderText
-        )
     val base = original ?: TriggerDefinition(newId, newThreadId, content, nextAt)
-    return base.copy(
+    val updated = base.copy(
         goal = content,
         nextAtMs = nextAt,
         intervalMs = intervalMs,
@@ -158,14 +163,11 @@ fun editedTrigger(
         calendarTime = calendarTime,
         calendarZone = calendarZone,
         calendarDays = calendarDays,
+        calendarTimes = calendarTimes,
         notifyWhen = draft.notifyWhen,
         cooldownMs = cooldownMs,
-        lastConditionMet = if (conditionChanged) null else base.lastConditionMet,
-        lastValue = if (conditionChanged) null else base.lastValue,
-        baselineValue = if (conditionChanged) null else base.baselineValue,
-        baselineAtMs = if (conditionChanged) null else base.baselineAtMs,
-        lastFiredAtMs = if (conditionChanged) null else base.lastFiredAtMs,
     )
+    return if (original == null) updated else updated.withConditionHistoryFrom(original)
 }
 
 private fun invalid(reason: PlanValidation): Nothing = throw PlanValidationException(reason)

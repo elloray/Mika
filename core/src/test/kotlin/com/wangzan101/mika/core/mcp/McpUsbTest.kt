@@ -3,6 +3,7 @@ package com.wangzan101.mika.core.mcp
 import com.wangzan101.mika.core.remote.RemoteHost
 import com.wangzan101.mika.core.remote.RemoteAccess
 import com.wangzan101.mika.core.remote.HttpRequest
+import com.wangzan101.mika.core.remote.HttpResponse
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
@@ -50,6 +51,27 @@ class McpUsbTest {
         // USB 关了:令牌当场作废
         val off = RemoteAccess({ NET }, loopbackToken = { null })
         assertEquals(401, status(off.check(req(USB, "127.0.0.1"))))
+    }
+
+    @Test fun usbTaskOwnerSurvivesTokenRotation() {
+        var usb = USB
+        val access = RemoteAccess({ NET }, loopbackToken = { usb })
+        fun owner(token: String, address: String): Pair<Int, String?> {
+            var owner: String? = null
+            val response = access.handle(req(token, address)) {
+                owner = it.accessOwner
+                HttpResponse(200)
+            }
+            return response.status to owner
+        }
+
+        val original = owner(USB, "127.0.0.1")
+        usb = "replacement-usb-token"
+        assertEquals(200, original.first)
+        assertEquals(original, owner(usb, "127.0.0.1"))
+        assertEquals(401 to null, owner(USB, "127.0.0.1"))
+        assertEquals(401 to null, owner(usb, "192.168.1.20"))
+        assertTrue(original.second != owner(NET, "127.0.0.1").second)
     }
 
     @Test fun loopbackHostAcceptsTheUsbTokenOverHttp() {

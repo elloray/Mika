@@ -6,15 +6,41 @@
     <string name="chat_greeting_evening">晚上好</string>
     <string name="chat_greeting_night">夜深了</string>
     <string name="chat_empty_prompt">想让 Mika 做什么？</string>
+    <string name="chat_example_github_star">打开网页 https://github.com/wangzan101/mika，给这个项目点 star</string>
     <string name="chat_example_follow">打开小红书，搜索博主“王赞不赞”，点击关注，然后加入群聊</string>
     <string name="chat_example_group_summary">帮我总结微信群聊，Mika内测体验群今天都聊了些啥</string>
-    <string name="chat_example_jobs">在Boss直聘上帮我投递AI产品经理岗位，150个投满</string>
-    <string name="chat_example_multi_step">帮我打开汽水音乐，看广告领取24小时听歌VIP会员</string>
     <string name="chat_example_alarms">帮我订明天早上9:40、9:50、10:00 的闹钟</string>
-    <string name="chat_example_ai_apps">看看我手机里有哪些 AI App，分别问问它们各自有什么优势，最后做个对比</string>
+    <string name="chat_example_replace_title">替换当前草稿？</string>
+    <string name="chat_example_replace_body">推荐任务会替换你已经输入的内容。</string>
+    <string name="chat_example_replace_action">替换草稿</string>
+    <string name="recommendations_title">推荐任务</string>
+    <string name="recommendations_drag">拖动调整顺序</string>
+    <string name="recommendations_drag_hint">拖动右侧把手调整展示顺序。</string>
+    <string name="recommendations_move_up">上移</string>
+    <string name="recommendations_move_down">下移</string>
+    <string name="recommendations_sub">管理首页显示的任务和提示词</string>
+    <string name="recommendations_add">添加推荐任务</string>
+    <string name="recommendations_edit">编辑推荐任务</string>
+    <string name="recommendations_empty">还没有推荐任务</string>
+    <string name="recommendations_empty_sub">添加后会出现在新对话首页</string>
+    <string name="recommendations_title_label">标题</string>
+    <string name="recommendations_prompt_label">提示词</string>
+    <string name="recommendations_delete">删除</string>
+    <string name="recommendations_delete_title">删除这条推荐任务？</string>
+    <string name="recommendations_delete_body">删除后，首页不再显示它。</string>
+    <string name="recommendations_save_failed">没能保存，请再试一次。</string>
+    <string name="recommendations_title_required">请填写标题</string>
+    <string name="recommendations_prompt_required">请填写提示词</string>
+    <string name="recommendations_too_long">标题或提示词太长了</string>
+    <string name="recommendations_too_many">最多保存 %1$d 条推荐任务</string>
+    <string name="recommendations_unreadable">没能读取已保存的推荐任务，暂时不能修改。</string>
+    <string name="recommendations_reset">清空并重新开始</string>
+    <string name="recommendations_reset_body">读不出来的文件会被一份空列表替换。</string>
+    <string name="recommendations_footer">在新对话首页点一条任务，会把提示词填进输入框，不会自动发送。</string>
+    <string name="share_draft_replace_body">分享的内容会替换当前草稿。</string>
     <string name="chat_working_on">正在操作%1$s</string>
     <string name="chat_working">正在处理</string>
-    <string name="share_draft_failed">没能把分享内容放进新对话</string>
+    <string name="share_draft_failed">没能把分享内容放进对话</string>
     <string name="chat_wait_previous_task">等前一个任务做完再开始</string>
     <string name="chat_wait_unlock">等你解锁手机</string>
     <string name="chat_waiting_for_you">等你处理</string>
@@ -42,6 +68,10 @@
     <string name="chat_continue">继续</string>
     <string name="chat_not_done">没有完成</string>
     <string name="chat_stopped">已停止。</string>
+    <string name="chat_resume_checkpoint">从断点继续</string>
+    <string name="chat_restart_task">重新开始</string>
+    <string name="chat_resume_request">从断点继续：%1$s</string>
+    <string name="chat_restart_request">重新开始：%1$s</string>
     <string name="chat_view_source">查看来源</string>
     <string name="chat_open">打开</string>
     <string name="chat_attach_rejected">没能添加:%1$s(单个文件不超过 200 MB)</string>
@@ -63,11 +93,41 @@
     <plurals name="drawer_delete_schedules">
         <item quantity="other">这个对话里的 %1$d 条定时任务会保留。</item>
     </plurals>
+    <string name="drawer_select">多选</string>
+    <string name="drawer_selected_count">已选 %1$d 条</string>
+    <string name="drawer_select_all">全选</string>
+    <string name="drawer_select_none">取消全选</string>
+    <string name="drawer_delete_many_title">删除选中的对话？</string>
+    <plurals name="drawer_delete_many_body">
+        <item quantity="other">将删除 %1$d 个对话，里面的文件都会删掉。</item>
+    </plurals>
+    <plurals name="drawer_delete_many_running">
+        <item quantity="other">其中 %1$d 个正在进行的任务会被停止。</item>
+    </plurals>
+    <plurals name="drawer_delete_many_schedules">
+        <item quantity="other">里面的 %1$d 条定时任务会保留。</item>
+    </plurals>
+    <plurals name="drawer_delete_progress">
+        <item quantity="other">正在删除 %1$d 个对话…</item>
+    </plurals>
+    <plurals name="drawer_delete_done">
+        <item quantity="other">已删除 %1$d 个对话。</item>
+    </plurals>
+    <plurals name="drawer_delete_partial">
+        <item quantity="other">已删除 %1$d 个对话，%2$d 个失败。</item>
+    </plurals>
     <string name="drawer_actions">对话操作</string>
     <string name="drawer_rename">改名</string>
     <string name="drawer_rename_title">改名</string>
     <string name="drawer_pinned">置顶</string>
     <string name="drawer_pinned_mark">已置顶</string>
+    <string name="drawer_search_hint">搜索对话</string>
+    <string name="drawer_search_results">搜索结果</string>
+    <string name="drawer_search_empty">没有找到「%1$s」</string>
+    <string name="drawer_search_empty_hint">只搜索标题和对话内容</string>
+    <string name="drawer_searching">正在搜索…</string>
+    <string name="drawer_search_clear">清空搜索</string>
+    <string name="drawer_search_truncated">只显示前 %1$d 条结果</string>
     <string name="settings_title">设置</string>
     <string name="chat_unconfirmed">这几处没能确认:%1$s</string>
     <string name="chat_unverified">办完了,但没能核实</string>
@@ -92,6 +152,7 @@
     </plurals>
     <string name="attach_add">添加附件</string>
     <string name="attach_close">收起附件面板</string>
+    <string name="attach_blocked_running">任务运行中暂不支持添加附件，可切换到排队模式</string>
     <string name="attach_camera">相机</string>
     <string name="attach_album">相册</string>
     <string name="attach_files">文件</string>
@@ -142,6 +203,10 @@
     <string name="chat_branch_attachments_skipped">附件没有全部复制</string>
     <string name="chat_branch_retry">从这里重新问</string>
     <string name="chat_branch_attachments_readd">附件需要重新添加</string>
+    <string name="chat_attach_unavailable">没能添加：%1$s。请检查文件是否存在且未超过大小限制。</string>
+    <string name="chat_retry_missing">%1$s：文件不存在</string>
+    <string name="chat_retry_limit">%1$s：超过复制上限</string>
+    <string name="chat_retry_failed">%1$s：复制失败</string>
     <string name="chat_select_hint">长按文字就能选择</string>
     <string name="chat_quote_remove">去掉引用</string>
     <string name="chat_quoting_mika">引用 Mika:%1$s</string>

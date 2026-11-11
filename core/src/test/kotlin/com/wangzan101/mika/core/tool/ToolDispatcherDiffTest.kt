@@ -210,7 +210,7 @@ class ToolDispatcherDiffTest {
     @Test fun changingScreenCarriesNote() = runTest {
         val s = ListScreen(ten).apply { changing = true }
         val screen = toolDispatcher(s, inlineScreen = true).execute(call("phone_back")).content["screen"]!!.jsonObject
-        assertEquals("true", screen.s("screenChangedDuringRead")); assertTrue("observe again" in screen.s("note"))
+        assertEquals("true", screen.s("screenChangedDuringRead")); assertTrue("Observe again" in screen.s("note"))
     }
 
     @Test fun evidenceSkipsRepeatedReads() = runTest {

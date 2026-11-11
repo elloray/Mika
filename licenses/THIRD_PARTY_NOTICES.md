@@ -1,5 +1,16 @@
 # Third-party notices
 
+## 通话功能（calls/）实现
+
+- Source: https://github.com/DzsGatsby/FlashPhone（Mika 的 Apache-2.0 fork）
+- License: Apache-2.0
+- Usage: 通话功能（拨号、接听、挂断、AI 接听、人工接管、PCM 音频桥、实时语音客户端）按上游
+  Apache-2.0 许可并入,涉及:
+  - `app/src/main/java/com/wangzan101/mika/calls/`
+  - `app/src/main/java/com/wangzan101/mika/cap/phone/shell/ShellCallAudio.kt`
+  - `core/src/main/kotlin/com/wangzan101/mika/core/calls/`
+- Service: 实时语音经火山引擎（Volcengine）的 WebSocket 接口,凭证由用户在通话设置页填写。
+
 ## scrcpy
 
 - Project: https://github.com/Genymobile/scrcpy
@@ -244,4 +255,35 @@ SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
 CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
 OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+```
+
+## xterm.js
+
+- Project: https://github.com/xtermjs/xterm.js
+- Version: `@xterm/xterm` 5.5.0, `@xterm/addon-fit` 0.10.0
+- License: MIT
+- Usage: 用户终端页面的终端仿真器，随 APK 打包在 `app/src/main/assets/terminal/`。
+
+```
+Copyright (c) 2017-2019, The xterm.js authors (https://github.com/xtermjs/xterm.js)
+Copyright (c) 2014-2016, SourceLair Private Company (https://www.sourcelair.com)
+Copyright (c) 2012-2013, Christopher Jeffrey (https://github.com/chjj/)
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE.
 ```

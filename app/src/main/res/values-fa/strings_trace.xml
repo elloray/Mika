@@ -1,0 +1,36 @@
+<resources>
+    <string name="trace_switch">ثبت گزارش دقیق اجرا</string>
+    <string name="trace_switch_detail">برای اجراهای جدید. متن درخواست ممکن است حاوی اطلاعات خصوصی باشد. با خاموش کردن این گزینه، ثبت بلافاصله متوقف می‌شود.</string>
+    <string name="trace_storage_limit">محدودیت فضای گزارش‌ها</string>
+    <string name="trace_storage_hint">در صورت نیاز به فضا، گزارش‌های قدیمی‌ترِ پایان‌یافته حذف می‌شوند.</string>
+    <string name="trace_storage_value">%1$d MiB</string>
+    <string name="trace_title">گزارش دقیق اجرا</string>
+    <string name="trace_partial">گزارش ناقص</string>
+    <string name="trace_recorded">ثبت‌شده در این دستگاه</string>
+    <string name="trace_unknown">گزارش نشده</string>
+    <string name="trace_ok">موفق</string>
+    <string name="trace_error">خطا</string>
+    <string name="trace_cancelled">لغو شد</string>
+    <string name="trace_attempt">مرحلهٔ %1$d · تلاش %2$d · %3$s</string>
+    <string name="trace_tool">مرحلهٔ %1$d · %2$s</string>
+    <string name="trace_counts">ورودی %1$s · ذخیره‌شده در حافظهٔ نهان %2$s · بدون حافظهٔ نهان %3$s · خروجی %4$s</string>
+    <string name="trace_largest">بیشترین ورودی بدون حافظهٔ نهان</string>
+    <string name="trace_diff">اولین تفاوت: %1$s</string>
+    <string name="trace_no_body">متن درخواست ثبت نشده است</string>
+    <string name="trace_attach">افزودن متن با اطلاعات پوشانده‌شده</string>
+    <string name="trace_attach_hint">فقط در فایل ZIP محلی. پیش از ذخیره، متن درخواست بالا را بررسی کنید.</string>
+    <string name="trace_save">ذخیرهٔ این گزارش</string>
+    <string name="trace_saved">گزارش ذخیره شد</string>
+    <string name="trace_failed">دریافت خروجی گزارش ناموفق بود</string>
+    <string name="trace_send">ارسال از طریق OTLP/HTTP</string>
+    <string name="trace_network_hint">فقط فرادادهٔ این گزارش را ارسال می‌کند.</string>
+    <string name="trace_endpoint">نشانی دریافت گزارش‌ها</string>
+    <string name="trace_endpoint_hint">برای نشانی‌های عمومی از HTTPS استفاده کنید. در میزبان محلی و شبکهٔ محلی HTTP نیز مجاز است.</string>
+    <string name="trace_header_name">نام سرآیند احراز هویت</string>
+    <string name="trace_header_value">مقدار سرآیند احراز هویت (اختیاری)</string>
+    <string name="trace_sent">گزارش پذیرفته شد</string>
+    <string name="trace_sent_warning">گزارش پذیرفته شد، اما گیرنده هشداری اعلام کرد</string>
+    <string name="trace_rejected">گیرنده %1$d بخش از گزارش را رد کرد</string>
+    <string name="trace_http_error">گیرنده HTTP %1$d را برگرداند</string>
+    <string name="trace_send_failed">ارسال گزارش ممکن نشد</string>
+</resources>

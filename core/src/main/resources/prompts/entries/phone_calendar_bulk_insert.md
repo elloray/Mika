@@ -1,0 +1,1 @@
+Insert 1-100 calendar events in one Android provider batch; prefer for 3 or more events. All items are validated before writing. On missing permission or no writable calendar, use phone_add_calendar_event instead. Never retry an unconfirmed write before checking for duplicates.

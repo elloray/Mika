@@ -1,0 +1,9 @@
+<resources>
+    <string name="calls_record_brief">Instruksi tugas ini</string>
+    <string name="calls_record_goal">Hasil yang diinginkan</string>
+    <string name="calls_record_questions">Pertanyaan yang harus diajukan</string>
+    <string name="calls_record_context">Latar belakang</string>
+    <string name="calls_record_constraints">Batas janji dan tindakan</string>
+    <string name="calls_record_reuse">Buat tugas baru dengan instruksi ini</string>
+    <string name="calls_record_result_unconfirmed">Panggilan berakhir. Periksa percakapan untuk memastikan hasilnya; tanda sudah ditangani tidak berarti tujuan telah tercapai.</string>
+</resources>

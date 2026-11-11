@@ -36,4 +36,17 @@
     <string name="usage_input">Entrada</string>
     <string name="usage_output">Salida</string>
     <string name="usage_calls">Llamadas</string>
+    <string name="usage_allowance_title">Cuota actual</string>
+    <string name="usage_allowance_loading">Consultando la cuota…</string>
+    <string name="usage_allowance_unavailable">No disponible temporalmente</string>
+    <string name="usage_allowance_balance">Saldo de la cuenta: %1$s</string>
+    <string name="usage_allowance_key_limit">Gasto restante para esta clave: %1$s</string>
+    <string name="usage_allowance_no_key_limit">Esta clave no tiene límite de gasto</string>
+    <string name="usage_allowance_view_balance">Ver saldo de la cuenta</string>
+    <string name="usage_allowance_reset_daily">Se restablece a diario</string>
+    <string name="usage_allowance_reset_weekly">Se restablece cada semana</string>
+    <string name="usage_allowance_reset_monthly">Se restablece cada mes</string>
+    <string name="usage_allowance_updated">Última actualización: %1$s</string>
+    <string name="usage_allowance_self_hosted">Conexión con alojamiento propio</string>
+    <string name="usage_allowance_unsupported">Esta conexión no permite consultar la cuota</string>
 </resources>

@@ -170,7 +170,7 @@ class AppKnowledgeDrafter(private val model: ChatModel) {
             val backs = lines.count { tools.verb(it.tool) == Verb.Back }
             val bumpy = lines.size >= MIN_LESSON_ACTIONS && (misses >= BUMPY_MISSES || backs >= BUMPY_BACKS)
             val notDone = (end is TaskState.Succeeded && (outcome == RunOutcome.Partial || outcome == RunOutcome.NotPossible)) ||
-                (end is TaskState.Failed && (end.kind == FailKind.GaveUp || end.kind == FailKind.StepLimit))
+                (end is TaskState.Failed && (end.kind == FailKind.GaveUp || end.kind == FailKind.StepLimit || end.kind == FailKind.TokenLimit))
             return when {
                 LearnGate.done(end, outcome) -> when {
                     bumpy -> AppRunKind.Bumpy

@@ -116,6 +116,14 @@ Doing the task
   chat history. Judge progress from the content, page state and task result.
   If the state and content remain unchanged after several attempts, try a
   different method or report the actual blocker.
+- When the user explicitly continues an interrupted or failed task, start a
+  fresh run: the previous live state and tool resources are gone. Read the
+  interruption summary and previously confirmed count and boundary, then check
+  current state before continuing. Do not repeat an irreversible action that is
+  confirmed done, and do not claim the previous live state was restored.
+- When the user explicitly restarts a task, do not inherit the previous run's
+  completion claims; work from the original request and reassess its criteria.
+  Still check current state before repeating irreversible or outward actions.
 - When a step genuinely requires the user's hands and the tools cannot do it,
   hand over at that step.
 - When part of the request cannot be done here, decide whether it is a
@@ -314,8 +322,12 @@ phone on the main screen at the same time.
   into; otherwise open the app and type.
 - For alarms, timers and calendar events, prefer phone_set_alarm,
   phone_set_timer and phone_add_calendar_event over operating the clock or
-  calendar screens (phone_show_alarms opens the alarm list to check, change
-  or delete one). Operate those screens only when they return not_supported.
+  calendar screens. For 3 or more events, use phone_calendar_bulk_insert;
+  if it lacks calendar permission or a writable calendar, fall back to
+  phone_add_calendar_event. Never retry an unconfirmed bulk write before
+  checking for duplicates (phone_show_alarms opens the alarm list to check,
+  change or delete one). Operate those screens only when direct tools cannot
+  do the task.
 - For wheel or drum pickers (time, date, region...), call phone_set_wheel once
   per wheel instead of swiping it step by step.
 - An app may be installed more than once (another copy in another user or

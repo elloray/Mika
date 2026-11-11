@@ -1,6 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="browser_engine">Bing</string>
+    <string name="browser_engine_bing">Bing</string>
+    <string name="browser_engine_google">Google</string>
+    <string name="browser_engine_duckduckgo">DuckDuckGo</string>
+    <string name="browser_engine_baidu">Baidu</string>
+    <string name="browser_engine_choose">Mesin pencari</string>
+    <string name="browser_engine_custom_add">Mesin pencari khusus</string>
+    <string name="browser_engine_custom_name">Nama</string>
+    <string name="browser_engine_custom_url">URL pencarian</string>
+    <string name="browser_engine_custom_hint" formatted="false">Letakkan %s di tempat kata pencarian, misalnya https://example.com/search?q=%s</string>
+    <string name="browser_engine_custom_invalid" formatted="false">Masukkan nama dan URL http(s) dengan tepat satu %s</string>
+    <string name="browser_engine_custom_remove">Hapus %1$s</string>
     <string name="browser_recent_source">Baru dibuka</string>
     <string name="browser_search_colon">Cari: %1$s</string>
     <string name="browser_search_q">Cari “%1$s”</string>
@@ -14,6 +24,25 @@
     <string name="browser_external_link">Tautan ini membuka aplikasi lain, jadi browser tidak akan membukanya.</string>
     <string name="browser_bad_scheme">Alamat ini tidak bisa dibuka: browser hanya membuka halaman web (http, https).</string>
     <string name="browser_blocked_app_link">Tautan yang membuka aplikasi lain diblokir.</string>
+    <string name="browser_downloads">Unduhan</string>
+    <string name="browser_download_started">Mengunduh %1$s</string>
+    <string name="browser_download_failed_start">Tidak dapat mengunduh file ini</string>
+    <string name="browser_download_empty">Belum ada unduhan</string>
+    <string name="browser_download_running">Mengunduh…</string>
+    <string name="browser_download_done">Selesai diunduh</string>
+    <string name="browser_download_failed">Unduhan gagal</string>
+    <string name="browser_download_open">Buka</string>
+    <string name="browser_download_cancel">Batalkan unduhan</string>
+    <string name="browser_download_delete">Hapus</string>
+    <string name="browser_download_delete_q">Hapus unduhan ini?</string>
+    <string name="browser_download_open_failed">Tidak ada aplikasi yang bisa membuka file ini</string>
+    <string name="browser_permission_ask">Situs ini meminta akses:</string>
+    <string name="browser_permission_camera">Kamera</string>
+    <string name="browser_permission_microphone">Mikrofon</string>
+    <string name="browser_permission_camera_mic">Kamera dan mikrofon</string>
+    <string name="browser_permission_location">Lokasi</string>
+    <string name="browser_permission_allow">Izinkan</string>
+    <string name="browser_permission_block">Blokir</string>
     <string name="browser_no_download">Browser belum bisa mengunduh berkas.</string>
     <string name="browser_crashed">Halaman mengalami masalah dan ditutup. Anda bisa membukanya lagi.</string>
     <string name="browser_logged_in">Sudah masuk — Mika juga bisa memakainya untuk tugas.</string>
@@ -50,8 +79,8 @@
     <string name="browser_leave_body">Perubahan yang Anda buat di halaman ini mungkin tidak tersimpan.</string>
     <string name="browser_leave">Tinggalkan</string>
     <string name="browser_search_hint">Cari atau ketik URL</string>
-    <string name="browser_engine_note">Cari dengan Bing</string>
-    <string name="browser_typing_note">URL langsung dibuka; selain itu dicari dengan Bing</string>
+    <string name="browser_engine_note">Cari dengan %1$s</string>
+    <string name="browser_typing_note">URL langsung dibuka; selain itu dicari dengan %1$s</string>
     <string name="browser_login_legend">Sudah masuk — Mika bisa langsung memakainya untuk tugas</string>
     <string name="browser_add_hint">Buka sebuah situs, lalu ketuk “Tambah ke favorit” di bawah “Lainnya”</string>
     <string name="browser_edit_favorites">Ubah favorit</string>
@@ -59,6 +88,32 @@
     <string name="browser_long_press">Anda juga bisa menekan lama sebuah situs untuk mengubahnya</string>
     <string name="browser_favorites">Favorit</string>
     <string name="browser_edit">Ubah</string>
+    <string name="browser_bookmarks">Markah</string>
+    <string name="browser_all">Semua</string>
+    <string name="browser_bookmark_add">Tambahkan markah</string>
+    <string name="browser_bookmark_remove">Hapus markah</string>
+    <string name="browser_bookmarked">Ditambahkan ke markah</string>
+    <string name="browser_unbookmarked">Dihapus dari markah</string>
+    <string name="browser_bookmark_empty">Buka halaman lalu ketuk «Tambahkan markah» di «Lainnya»</string>
+    <string name="browser_bookmark_rename">Ganti nama markah</string>
+    <string name="browser_bookmark_name">Judul</string>
+    <string name="browser_tabs">Tab</string>
+    <string name="browser_new_tab">Tab baru</string>
+    <string name="browser_no_tabs">Tidak ada tab terbuka</string>
+    <string name="browser_close_tab">Tutup tab</string>
+    <string name="browser_history">Riwayat</string>
+    <string name="browser_clear_history">Hapus riwayat</string>
+    <string name="browser_clear_history_q">Hapus semua riwayat?</string>
+    <string name="browser_find">Cari di halaman</string>
+    <string name="browser_find_prev">Kecocokan sebelumnya</string>
+    <string name="browser_find_next">Kecocokan berikutnya</string>
+    <string name="browser_find_close">Tutup pencarian</string>
+    <string name="browser_find_no_matches">Tidak ada kecocokan</string>
+    <string name="browser_clear_data">Hapus data penjelajahan</string>
+    <string name="browser_clear_site_data">Cookie dan data situs</string>
+    <string name="browser_clear_site_data_sub">Akan keluar dari semua situs, termasuk yang dipakai Mika untuk tugas</string>
+    <string name="browser_clear_cache">File cache</string>
+    <string name="browser_data_cleared">Data penjelajahan dihapus</string>
     <string name="browser_clear_input">Hapus</string>
     <string name="browser_open_site">Buka %1$s</string>
     <string name="browser_remove_site">Hapus %1$s</string>

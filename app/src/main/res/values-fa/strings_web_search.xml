@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="web_search_title">جست‌وجوی وب</string>
+    <string name="web_search_provider">سرویس جست‌وجو</string>
+    <string name="web_search_note_you">بدون کلید کار می‌کند (رایگان، روزانه ۱۰۰ جست‌وجو)؛ با کلید از API پولی استفاده می‌کند.</string>
+    <string name="web_search_searxng_url">نشانی نمونه</string>
+    <string name="web_search_note_jina">به کلید API نیاز دارد. نتایج از جست‌وجوی Jina (s.jina.ai) دریافت می‌شوند.</string>
+    <string name="web_search_note_exa">به کلید API نیاز دارد. نتایج از جست‌وجوی Exa (api.exa.ai) دریافت می‌شوند.</string>
+    <string name="web_search_note_searxng">نمونهٔ شخصی SearXNG شما؛ بدون نیاز به کلید. نمونه باید خروجی JSON را مجاز کند (در settings.yml، مقدار json را به search.formats اضافه کنید).</string>
+    <string name="web_search_api_key_required">کلید API (الزامی)</string>
+    <string name="web_search_missing_key">%1$s برای کار کردن به کلید API نیاز دارد.</string>
+    <string name="web_search_get_key">دریافت کلید API</string>
+    <string name="web_search_privacy">کلید به‌صورت رمزگذاری‌شده در این گوشی ذخیره می‌شود. نتایج جست‌وجو غیرقابل اعتماد در نظر گرفته می‌شوند.</string>
+    <string name="web_search_row_sub">سرویس جست‌وجوی اختیاری؛ جست‌وجوی مرورگر همیشه در دسترس است</string>
+    <string name="web_search_enabled">فعال کردن جست‌وجوی وب</string>
+    <string name="web_search_api_key">کلید API (اختیاری)</string>
+    <string name="web_search_invalid_endpoint">یک نشانی HTTP یا HTTPS بدون پارامترهای پرس‌وجو وارد کنید.</string>
+    <string name="web_search_action">جست‌وجو در وب</string>
+</resources>

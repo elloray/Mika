@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="calls_default_sim_settings">默认拨号 SIM</string>
+    <string name="calls_device_and_permissions">设备与权限</string>
+    <string name="calls_edit_rule">编辑</string>
+    <string name="calls_nav_receive">接听</string>
+    <string name="calls_nav_task">电话任务</string>
+    <string name="calls_pause_enable_first">启用自动接听后可临时暂停。</string>
+    <string name="calls_rule_delay_summary">接听等待：%1$d 秒</string>
+    <string name="calls_rule_pause">临时暂停</string>
+    <string name="calls_rule_scope">接听范围</string>
+    <string name="calls_sim_ask_each_time">不指定默认 SIM</string>
+    <string name="calls_task_back_to_edit">返回修改</string>
+    <string name="calls_task_confirm_dial">确认并拨打</string>
+    <string name="calls_task_confirm_note">Mika 只为这通电话使用任务单。确认后使用所选 SIM 拨号，可能产生运营商和实时语音费用。</string>
+    <string name="calls_task_constraints">不能承诺什么</string>
+    <string name="calls_task_context">补充情况</string>
+    <string name="calls_task_filled">已填写</string>
+    <string name="calls_task_goal">这次要办成什么？（必填）</string>
+    <string name="calls_task_goal_example">例如：确认周五有没有空位，并记下价格。</string>
+    <string name="calls_task_limit">%1$d / %2$d 字</string>
+    <string name="calls_task_number_hint">填写 7–15 位普通电话号码。</string>
+    <string name="calls_task_one_off">任务单仅用于这通电话。通话结束后可在记录中查看任务与通话。</string>
+    <string name="calls_task_optional">可选</string>
+    <string name="calls_task_pick_sim">请选择这次使用的 SIM</string>
+    <string name="calls_task_questions">需要问清的问题</string>
+    <string name="calls_task_questions_hint">每行一个问题</string>
+    <string name="calls_task_questions_limit">最多 %1$d 个问题，每个不超过 %2$d 字。</string>
+    <string name="calls_task_replace_action">替换草稿</string>
+    <string name="calls_task_replace_note">用记录中的任务替换当前草稿。此操作不会拨号。</string>
+    <string name="calls_task_replace_title">替换当前草稿？</string>
+    <string name="calls_task_review">核对本次任务</string>
+    <string name="calls_task_review_blocked">拨号前需确认设备就绪、没有其他通话，并选择 SIM。</string>
+    <string name="calls_task_sim_override_summary">本次：%1$s · 默认：%2$s</string>
+    <string name="calls_voice_settings">语音</string>
+</resources>

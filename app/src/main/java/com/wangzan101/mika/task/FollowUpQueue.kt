@@ -1,5 +1,9 @@
 package com.wangzan101.mika.task
 
+import com.wangzan101.mika.core.run.Attendance
+import com.wangzan101.mika.core.run.ChannelPeer
+import com.wangzan101.mika.core.run.RunOrigin
+import com.wangzan101.mika.core.run.RunProvenance
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -30,6 +34,10 @@ data class QueuedFollowUp(
     val createdAt: Long = 0L,
     val source: QueuedSource = QueuedSource.Explicit,
     val claimed: Boolean = false,
+    /** 排队不能改变任务身份；恢复后仍按原渠道执行、回复并应用对应的解锁策略。 */
+    val provenance: RunProvenance = RunProvenance(),
+    val channelPeer: ChannelPeer? = null,
+    val channelMessageId: String? = null,
 )
 
 /** 排队项的落盘方式,测试里换成内存实现。 */
@@ -66,6 +74,9 @@ class FileFollowUpQueueStore(private val file: File) : FollowUpQueueStore {
                     createdAt = o["createdAt"]?.jsonPrimitive?.longOrNull ?: 0L,
                     source = QueuedSource.entries.firstOrNull { it.name == o["source"]?.jsonPrimitive?.contentOrNull }
                         ?: QueuedSource.Explicit,
+                    provenance = provenance(o),
+                    channelPeer = channelPeer(o),
+                    channelMessageId = o["channelMessageId"]?.jsonPrimitive?.contentOrNull,
                 )
             }.distinctBy { it.id }
         }.getOrElse {
@@ -87,6 +98,16 @@ class FileFollowUpQueueStore(private val file: File) : FollowUpQueueStore {
                 put("text", q.text)
                 put("createdAt", q.createdAt)
                 put("source", q.source.name)
+                put("provenance", buildJsonObject {
+                    put("origin", q.provenance.origin.name)
+                    put("attendance", q.provenance.attendance.name)
+                })
+                q.channelPeer?.let { peer -> put("channelPeer", buildJsonObject {
+                    put("channelId", peer.channelId)
+                    put("peerId", peer.peerId)
+                    put("threadId", peer.threadId)
+                }) }
+                put("channelMessageId", q.channelMessageId)
             }
         }).toString()
         val temp = File(file.parentFile, file.name + ".tmp")
@@ -95,6 +116,27 @@ class FileFollowUpQueueStore(private val file: File) : FollowUpQueueStore {
             temp.delete()
             error("follow-up queue rename failed")
         }
+    }
+
+    private fun provenance(o: JsonObject): RunProvenance {
+        val value = o["provenance"] as? JsonObject ?: return RunProvenance()
+        return RunProvenance(
+            origin = RunOrigin.entries.firstOrNull { it.name == value["origin"]?.jsonPrimitive?.contentOrNull }
+                ?: RunOrigin.Ui,
+            attendance = Attendance.entries.firstOrNull { it.name == value["attendance"]?.jsonPrimitive?.contentOrNull }
+                ?: Attendance.Present,
+        )
+    }
+
+    private fun channelPeer(o: JsonObject): ChannelPeer? {
+        val peer = o["channelPeer"] as? JsonObject ?: return null
+        return runCatching {
+            ChannelPeer(
+                peer.getValue("channelId").jsonPrimitive.content,
+                peer.getValue("peerId").jsonPrimitive.content,
+                peer.getValue("threadId").jsonPrimitive.content,
+            )
+        }.getOrNull()
     }
 }
 

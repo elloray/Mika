@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="{{.Lang}}">
+<html lang="{{.Lang}}"{{if eq .Lang "fa"}} dir="rtl"{{end}}>
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -12,10 +12,10 @@
   <main>
     <div class="intro"><h1>{{index .Copy "heading"}}</h1><p>{{index .Copy "intro"}}</p></div>
     {{if .Message}}<section class="notice {{if .Bad}}notice-bad{{else}}notice-ok{{end}}" role="{{if .Bad}}alert{{else}}status{{end}}"><strong>{{index .Copy .Message}}</strong></section>{{end}}
-    {{if .Code}}<section class="card pairing-code" aria-labelledby="code-heading"><h2 id="code-heading">{{index .Copy "pairingCode"}}</h2><output><strong>{{.Code}}</strong></output><p class="caption">{{index .Copy "codeHint"}}</p></section>{{end}}
+    {{if .Code}}<section class="card pairing-code" aria-labelledby="code-heading"><h2 id="code-heading">{{index .Copy "pairingCode"}}</h2><output dir="ltr"><strong>{{.Code}}</strong></output><p class="caption">{{index .Copy "codeHint"}}</p></section>{{end}}
     <h2 class="group-label">{{if .Confirm}}{{index .Copy "confirmTitle"}}{{else}}{{index .Copy "pairingTitle"}}{{end}}</h2>
     <form id="pairing-form" class="card" action="/admin" method="post">
-      <div class="field-row"><label for="owner-key">{{index .Copy "ownerKey"}}</label><input id="owner-key" name="owner_key" type="password" required autocomplete="current-password" spellcheck="false" placeholder="{{index .Copy "ownerRequired"}}" data-required-message="{{index .Copy "ownerRequired"}}" aria-describedby="owner-hint"></div>
+      <div class="field-row"><label for="owner-key">{{index .Copy "ownerKey"}}</label><input id="owner-key" name="owner_key" type="password" dir="auto" required autocomplete="current-password" spellcheck="false" placeholder="{{index .Copy "ownerRequired"}}" data-required-message="{{index .Copy "ownerRequired"}}" aria-describedby="owner-hint"></div>
       <div class="form-copy"><p id="owner-hint" class="caption">{{index .Copy "ownerHint"}}</p>{{if .Confirm}}<p>{{index .Copy "confirmBody"}}</p>{{end}}</div>
       <div class="actions">
         {{if .Confirm}}<input type="hidden" name="action" value="revoke"><button class="button" type="submit" name="confirm" value="yes">{{index .Copy "confirm"}}</button><a class="button button-tonal" href="/">{{index .Copy "cancel"}}</a>
@@ -25,7 +25,7 @@
     <p class="footer-note">{{index .Copy "phoneHint"}}</p>
     <h2 class="group-label">{{index .Copy "aboutTitle"}}</h2>
     <section class="card"><div class="text-row"><strong>{{index .Copy "accessTitle"}}</strong><p class="caption">{{index .Copy "accessBody"}}</p></div><div class="text-row"><strong>{{index .Copy "privacyTitle"}}</strong><p class="caption">{{index .Copy "privacyBody"}}</p></div></section>
-    <form class="language-row" action="/language" method="post"><label for="language">{{index .Copy "language"}}</label><select id="language" name="lang"><option value="auto" {{if eq .Preference "auto"}}selected{{end}}>{{index .Copy "automatic"}}</option><option value="en" {{if eq .Preference "en"}}selected{{end}}>English</option><option value="zh-Hans" {{if eq .Preference "zh-Hans"}}selected{{end}}>简体中文</option><option value="zh-Hant" {{if eq .Preference "zh-Hant"}}selected{{end}}>繁體中文</option></select><button class="button button-small button-tonal" type="submit">{{index .Copy "apply"}}</button></form>
+    <form class="language-row" action="/language" method="post"><label for="language">{{index .Copy "language"}}</label><select id="language" name="lang"><option value="auto" {{if eq .Preference "auto"}}selected{{end}}>{{index .Copy "automatic"}}</option><option value="en" {{if eq .Preference "en"}}selected{{end}}>English</option><option value="fa" {{if eq .Preference "fa"}}selected{{end}}>فارسی</option><option value="zh-Hans" {{if eq .Preference "zh-Hans"}}selected{{end}}>简体中文</option><option value="zh-Hant" {{if eq .Preference "zh-Hant"}}selected{{end}}>繁體中文</option></select><button class="button button-small button-tonal" type="submit">{{index .Copy "apply"}}</button></form>
     <footer>{{index .Copy "footer"}}</footer>
   </main>
   <dialog id="confirm-dialog" aria-labelledby="confirm-heading"><form method="dialog"><h2 id="confirm-heading">{{index .Copy "confirmTitle"}}</h2><p>{{index .Copy "confirmBody"}}</p><div class="actions"><button class="button button-tonal" value="cancel">{{index .Copy "cancel"}}</button><button id="confirm-revoke" class="button" value="confirm">{{index .Copy "confirm"}}</button></div></form></dialog>

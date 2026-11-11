@@ -23,7 +23,7 @@ class HttpRequest(
     val query: String = "",
     /** 失败冷却按它记。本地监听就是对方地址;经网关转发的是网关看到的调用方地址,与本地地址分开记。 */
     val source: String = remote.hostAddress ?: "?",
-    /** 已认证访问令牌的不可逆归属摘要;未经过 RemoteAccess 的适配器调用只使用兼容作用域。 */
+    /** 已认证连接的任务归属;未经过 RemoteAccess 的适配器调用只使用兼容作用域。 */
     val accessOwner: String? = null,
 ) {
     fun header(name: String): String? = headers[name.lowercase()]

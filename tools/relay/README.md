@@ -60,6 +60,14 @@ Wake and unlock are **off over the gateway by default**. Over the LAN only devic
 
 The gateway does not provide OAuth registration, discovery, authorization or refresh tokens. Clients that require those flows without accepting a custom Bearer header are outside this version's supported client set. Browser-origin protocol requests are rejected by the phone, matching LAN access. The existing MCP endpoint returns JSON without SSE or session IDs.
 
+## Read-only web console
+
+The gateway also serves a read-only console at `https://mika.example.com/app`. Sign in with the phone access token; the browser receives only an HttpOnly session cookie, and the gateway keeps the token in memory (never on disk). The console lists conversations and their turns, plus tasks that are running on the phone, including tasks started on the phone itself.
+
+Only these reads are forwarded: `/api/v1`, `/api/v1/tasks`, `/api/v1/tasks/{id}`, `/api/v1/running`, `/api/v1/conversations`, `/api/v1/conversations/{id}`. It cannot start, answer, steer or cancel tasks, approve payments, or change phone settings. Browser `Origin` and cookies are stripped before forwarding; the phone still authenticates every request with the stored token.
+
+Implementation and the expected phone contract: [CONSOLE.md](CONSOLE.md). The console needs a Mika build whose `/api/v1` capabilities include `conversations` and `running`; an older phone gets a clear "phone update required" message instead of a broken page.
+
 ## Pairing, tokens and recovery
 
 There are three separate roles:

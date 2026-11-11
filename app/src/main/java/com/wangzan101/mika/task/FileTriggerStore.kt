@@ -7,6 +7,7 @@ import com.wangzan101.mika.core.trigger.TriggerSnapshot
 import com.wangzan101.mika.core.trigger.TriggerStore
 import com.wangzan101.mika.core.trigger.TriggerWindow
 import com.wangzan101.mika.core.trigger.TriggerWindowState
+import com.wangzan101.mika.core.trigger.normalizedCalendarTimes
 import java.io.File
 import java.io.FileOutputStream
 import kotlinx.serialization.Serializable
@@ -14,7 +15,7 @@ import kotlinx.serialization.encodeToString
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
 
-/** 条件计划的扩展状态单独落盘；旧版只读主文件，不会因为它不认识这些字段而把全部计划当成坏文件。 */
+/** 计划扩展状态单独落盘；旧版仍能读主文件，多钟点降级为首个钟点。 */
 @Serializable
 private data class ConditionPlanState(
     val notifyWhen: ConditionNotify = ConditionNotify.BecomesMet,
@@ -23,6 +24,7 @@ private data class ConditionPlanState(
     val baselineValue: String? = null,
     val baselineAtMs: Long? = null,
     val lastFiredAtMs: Long? = null,
+    val calendarTimes: List<String> = emptyList(),
 )
 
 @Serializable
@@ -31,7 +33,7 @@ private data class ConditionPlanSnapshot(val states: Map<String, ConditionPlanSt
 private val CONDITION_JSON = Json { ignoreUnknownKeys = true }
 
 private fun TriggerDefinition.conditionState() = ConditionPlanState(
-    notifyWhen, cooldownMs, lastValue, baselineValue, baselineAtMs, lastFiredAtMs,
+    notifyWhen, cooldownMs, lastValue, baselineValue, baselineAtMs, lastFiredAtMs, calendarTimes,
 )
 
 /** 主文件保持旧版 schema；新增字段只能进 sidecar。 */
@@ -42,11 +44,17 @@ private fun TriggerDefinition.legacy() = copy(
     baselineValue = null,
     baselineAtMs = null,
     lastFiredAtMs = null,
+    calendarTimes = emptyList(),
 )
 
 private fun TriggerDefinition.withConditionState(state: ConditionPlanState?): TriggerDefinition {
-    if (state == null || conditionGoal == null) return this
-    return copy(
+    if (state == null) return this
+    // 旧版改过首个钟点、或扩展列表损坏时，沿用主文件，不让 sidecar 破坏整份计划。
+    val times = state.calendarTimes.takeIf { it.firstOrNull() == calendarTime &&
+        runCatching { normalizedCalendarTimes(it) == it }.getOrDefault(false) }.orEmpty()
+    val plan = copy(calendarTimes = times)
+    if (conditionGoal == null) return plan
+    return plan.copy(
         notifyWhen = state.notifyWhen,
         cooldownMs = state.cooldownMs,
         lastValue = state.lastValue,
@@ -75,6 +83,7 @@ class FileTriggerStore(
     } else TriggerSnapshot(emptyList(), emptyList()))
 
     @Synchronized override fun upsert(trigger: TriggerDefinition) { memory.upsert(trigger); save() }
+    @Synchronized fun edit(trigger: TriggerDefinition): Boolean = memory.edit(trigger).also { if (it) save() }
     @Synchronized override fun remove(id: String) { memory.remove(id); save() }
     @Synchronized override fun get(id: String) = memory.get(id)
     @Synchronized override fun all() = memory.all()
@@ -101,7 +110,8 @@ class FileTriggerStore(
         val snapshot = memory.snapshot()
         writeAtomic(file, Json.encodeToString(snapshot.copy(triggers = snapshot.triggers.map { it.legacy() })))
         conditionStates.clear()
-        snapshot.triggers.filter { it.conditionGoal != null }.forEach { conditionStates[it.id] = it.conditionState() }
+        snapshot.triggers.filter { it.conditionGoal != null || it.calendarTimes.isNotEmpty() }
+            .forEach { conditionStates[it.id] = it.conditionState() }
         writeAtomic(conditionFile, CONDITION_JSON.encodeToString(ConditionPlanSnapshot(conditionStates.toMap())))
     }
 

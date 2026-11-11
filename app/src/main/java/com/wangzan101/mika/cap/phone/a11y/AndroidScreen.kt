@@ -411,15 +411,26 @@ class AndroidScreen(
 
     override suspend fun tapRef(ref: String, snapshotId: String): ActionResult = withContext(Dispatchers.IO) {
         if (!hasDisplay) return@withContext NO_APP_OPEN
-        when (val target = resolve(ref, snapshotId)) {
-            null -> ActionResult.Failed("ref_expired")
-            else -> verified(relocatedTo = target.second) { click(target.first) }
+        val (node, relocatedTo) = resolve(ref, snapshotId) ?: return@withContext ActionResult.Failed("ref_expired")
+        val target = ancestorOrSelf(node) { isClickableTarget(it) }
+        val rect = Rect().also(node::getBoundsInScreen)
+        val touchFallback: suspend (EventClock) -> Boolean = { clock ->
+            clock.mark()
+            touch(pacing.within(rect.left, rect.top, rect.right, rect.bottom))
+        }
+        if (target == null) return@withContext verified(relocatedTo = relocatedTo) {
+            touch(pacing.within(rect.left, rect.top, rect.right, rect.bottom))
+        }
+        val outward = ClickFallback.mayBeOutward(ScreenReader.labelOf(node), node.viewIdResourceName) ||
+            ClickFallback.mayBeOutward(ScreenReader.labelOf(target), target.viewIdResourceName)
+        verified(relocatedTo = relocatedTo, fallback = touchFallback, retryWhenUnchanged = !outward) {
+            target.performAction(AccessibilityNodeInfo.ACTION_CLICK)
         }
     }
 
     override suspend fun tapXY(x: Int, y: Int): ActionResult = withContext(Dispatchers.IO) {
         if (!hasDisplay) return@withContext NO_APP_OPEN
-        verified { tapAt(x, y) }
+        verified(fallback = { clock -> clickNodeAt(x, y, clock) }) { tapAt(x, y) }
     }
 
     override suspend fun doubleTapRef(ref: String, snapshotId: String): ActionResult = withContext(Dispatchers.IO) {
@@ -513,13 +524,24 @@ class AndroidScreen(
         val found = when (val f = findField(ref, snapshotId)) {
             is Field.Found -> f
             is Field.Missing -> return@withContext when {
-                f.reason == "not_editable" -> ActionResult.Failed(f.reason, "If this is a visible input box, give its point instead.")
+                f.reason == "not_editable" -> {
+                    if (ref != null && snapshotId != null) {
+                        contextPasteAnchor(ref, snapshotId)?.let { anchor ->
+                            pasteFromContextMenu(anchor, text)?.let { return@withContext it }
+                        }
+                    }
+                    ActionResult.Failed(f.reason, "The referenced control did not expose an editor or a verified Paste menu.")
+                }
                 f.reason != NO_FOCUS -> ActionResult.Failed(f.reason)
                 // 屏上什么都没拿着输入焦点、也没弹输入法:没有框接得住粘贴,不去粘(粘了界面别处一动就会被当成「可能打进去了」)
                 !somethingHoldsInputFocus() -> ActionResult.Failed(NO_FOCUS)
                 else -> typeUnseen(text)
             }
         }
+        typeField(found, text)
+    }
+
+    private suspend fun typeField(found: Field.Found, text: String): ActionResult {
         var field = found.node
         val original = FieldShape.of(field)
         var focusUncertain = false
@@ -555,7 +577,7 @@ class AndroidScreen(
         val io = object : TextField {
             override fun read(): String? {
                 if (inputUncertain) return null
-                if (field.refresh()) return ScreenReader.fieldText(field, placeholder, text)
+                if (field.refresh() && visibleInputTarget(field)) return ScreenReader.fieldText(field, placeholder, text)
                 // 有的 App 内容一变就换掉输入控件:当前拿着输入焦点的那个和原来的类型、资源 ID、位置都对得上才改读它,
                 // 否则算读不回,也不往别的框里写
                 val now = focusedEditable()?.takeIf { sameField(original, it) } ?: return null
@@ -595,7 +617,7 @@ class AndroidScreen(
         ).joinToString(" ").ifEmpty { null }
         // 字可能只是显示出来、App 并没收到:不能报「一致」
         val reported = if (pasteUnavailable && verification != Verification.MISMATCH) Verification.UNKNOWN else verification
-        ok(verification = reported, hint = hint, secret = field.isPassword, relocatedTo = found.relocatedTo)
+        return ok(verification = reported, hint = hint, secret = field.isPassword, relocatedTo = found.relocatedTo)
     }
 
     override suspend fun clearText(ref: String?, snapshotId: String?): ActionResult = withContext(Dispatchers.IO) {
@@ -608,11 +630,15 @@ class AndroidScreen(
                 else -> clearUnseen()
             }
         }
+        clearField(found)
+    }
+
+    private suspend fun clearField(found: Field.Found): ActionResult {
         val field = found.node
         val cleared = if (inWebView(field)) inputText(field, "") else {
             if (setText(field, "")) AsciiTextKeys.DISPATCHED else AsciiTextKeys.NOT_SENT
         }
-        return@withContext when (cleared) {
+        return when (cleared) {
             null -> ActionResult.Failed(PASTE_UNAVAILABLE, HINT_PASTE_BLOCKED)
             AsciiTextKeys.NOT_SENT -> ActionResult.Failed("action_failed")
             else -> {
@@ -634,19 +660,32 @@ class AndroidScreen(
      */
     override suspend fun typeAt(x: Int, y: Int, text: String): ActionResult = withContext(Dispatchers.IO) {
         if (!hasDisplay) return@withContext NO_APP_OPEN
-        val anchor = contextPasteAnchor(x, y)
+        val hit = pointHit(x, y)
+        val anchor = hit?.contextPasteAnchor()
+        val target = hit?.node?.takeIf(ScreenReader::canSetText) ?: anchor
         val original = anchor?.let(FieldShape::of)
         val keyTask = if (anchor != null && AsciiTextKeys.supports(text)) {
             runCatching { shell.topTaskId(displayId) }.getOrDefault(-1)
         } else -1
-        val keyboardBefore = imeBounds() != null
         val tapped = verified { tapAt(x, y) }
         if (tapped !is ActionResult.Ok) return@withContext tapped
         // 点了开出了别的 App(开到用户主屏上又挪回来的也是):不打字,照实报这一下点的结果
         if (tapped.opened != null) return@withContext tapped
         tapped.appSwitched?.takeIf { !tapped.switchedByTarget }?.let { return@withContext UnseenField.tapSwitched(it) }
-        if (focusedEditable() != null) return@withContext typeText(null, null, text)
-        val typed = if (anchor != null && original != null && pointEditorFocusMismatch(anchor)) {
+        when (val focused = focusedField()) {
+            is Field.Missing -> if (focused.reason == EDITOR_NOT_VISIBLE) {
+                return@withContext ActionResult.Failed(EDITOR_NOT_VISIBLE)
+            }
+            is Field.Found -> {
+                if (target != null && !samePointFocus(target, focused.node)) {
+                    return@withContext ActionResult.Failed(
+                        INPUT_NOT_SENT, "The tapped editor did not take input focus; no text was sent.",
+                    )
+                }
+                return@withContext typeField(focused, text)
+            }
+        }
+        val typed = if (target != null && pointEditorFocusMismatch(target)) {
             // 点击没有让目标拿到焦点,另一个隐藏编辑框还拿着焦点时,按键会写进那个框;这次正文尚未发送。
             ActionResult.Failed(INPUT_NOT_SENT, "The tapped editor did not take input focus; no text was sent.")
         } else {
@@ -658,12 +697,10 @@ class AndroidScreen(
             if (keyTask >= 0 && (typed.reason == INPUT_NOT_SENT || typed.reason == PASTE_UNAVAILABLE)) {
                 typeWithKeys(anchor, original, keyTask, text)?.let { return@withContext it }
             }
-            if (typed.reason == INPUT_NOT_SENT) {
+            if (ContextPastePolicy.canRetry(typed.reason)) {
                 val sameEditorFocused = pointEditorHasFocus(anchor, original)
-                // 自绘编辑器可能只有光标或高亮,不弹输入法。
-                if (tapped.changed == false || (!keyboardBefore && imeBounds() != null) || sameEditorFocused) {
-                    pasteFromContextMenu(anchor, text)?.let { return@withContext it }
-                }
+                // The local Paste command itself confirms that the custom control can accept text.
+                pasteFromContextMenu(anchor, text)?.let { return@withContext it }
                 if (sameEditorFocused && keyTask < 0) {
                     return@withContext typed.copy(hint = "The editor did not accept clipboard input. Call hand_to_user to enter the text.")
                 }
@@ -676,6 +713,7 @@ class AndroidScreen(
     private suspend fun typeWithKeys(
         anchor: AccessibilityNodeInfo, original: FieldShape, taskId: Int, text: String,
     ): ActionResult? {
+        if (blockedFocusedEditor()) return ActionResult.Failed(EDITOR_NOT_VISIBLE)
         if (imeBounds() != null || focusedEditable() != null || !pointEditorHasFocus(anchor, original)) return null
         val pkg = anchor.packageName?.toString() ?: return null
         currentCoroutineContext().ensureActive()
@@ -685,6 +723,7 @@ class AndroidScreen(
                 "key_input_unconfirmed", "Select-all may have reached the field. Check it before entering text again.",
             )
         }
+        if (blockedFocusedEditor()) return ActionResult.Failed(EDITOR_NOT_VISIBLE)
         val sent = runCatching { shell.injectAsciiText(displayId, taskId, pkg, text) }.getOrDefault(AsciiTextKeys.UNCONFIRMED)
         return when (sent) {
             AsciiTextKeys.NOT_SENT -> null
@@ -703,8 +742,11 @@ class AndroidScreen(
         } ?: return false
         if (window.id != anchor.windowId) return true
         val focus = window.root?.findFocus(AccessibilityNodeInfo.FOCUS_INPUT) ?: return false
-        return !within(anchor, focus) && !within(focus, anchor)
+        return !samePointFocus(anchor, focus)
     }
+
+    private fun samePointFocus(target: AccessibilityNodeInfo, focus: AccessibilityNodeInfo): Boolean =
+        target.windowId == focus.windowId && (within(target, focus) || within(focus, target))
 
     private fun pointEditorHasFocus(anchor: AccessibilityNodeInfo, original: FieldShape): Boolean {
         if (anchor.isCheckable || anchor.isScrollable) return false
@@ -722,12 +764,31 @@ class AndroidScreen(
     /** 清空这一点上的输入框,做法同 [typeAt]。 */
     override suspend fun clearAt(x: Int, y: Int): ActionResult = withContext(Dispatchers.IO) {
         if (!hasDisplay) return@withContext NO_APP_OPEN
+        val hit = pointHit(x, y)
+        val target = hit?.node?.takeIf(ScreenReader::canSetText) ?: hit?.contextPasteAnchor()
         val tapped = verified { tapAt(x, y) }
         if (tapped !is ActionResult.Ok) return@withContext tapped
         // 点了开出了别的 App(开到用户主屏上又挪回来的也是):不清空,照实报这一下点的结果
         if (tapped.opened != null) return@withContext tapped
         tapped.appSwitched?.takeIf { !tapped.switchedByTarget }?.let { return@withContext UnseenField.tapSwitched(it) }
-        if (focusedEditable() != null) return@withContext clearText(null, null)
+        when (val focused = focusedField()) {
+            is Field.Missing -> if (focused.reason == EDITOR_NOT_VISIBLE) {
+                return@withContext ActionResult.Failed(EDITOR_NOT_VISIBLE)
+            }
+            is Field.Found -> {
+                if (target != null && !samePointFocus(target, focused.node)) {
+                    return@withContext ActionResult.Failed(
+                        INPUT_NOT_SENT, "The tapped editor did not take input focus; no text was cleared.",
+                    )
+                }
+                return@withContext clearField(focused)
+            }
+        }
+        if (target != null && pointEditorFocusMismatch(target)) {
+            return@withContext ActionResult.Failed(
+                INPUT_NOT_SENT, "The tapped editor did not take input focus; no text was cleared.",
+            )
+        }
         clearUnseen(atPoint = true)
     }
 
@@ -738,6 +799,7 @@ class AndroidScreen(
      * 没弹输入法而前后一点没变,就请模型先点输入框。弹着输入法时键盘上的字不算屏上的字。
      */
     private suspend fun typeUnseen(text: String, atPoint: Boolean = false): ActionResult {
+        if (blockedFocusedEditor()) return ActionResult.Failed(EDITOR_NOT_VISIBLE)
         val ime = imeBox()
         val before = readVisibleText()?.let { UnseenField.outside(it, ime) }
         val beforeTree = treeHash()
@@ -745,9 +807,10 @@ class AndroidScreen(
         var pasted: Int? = null
         val changed = withEventClock { clock ->
             clock.mark()
+            if (blockedFocusedEditor()) return@withEventClock null
             pasted = pasteUnseen(text)
             pasted != null && pasted != AsciiTextKeys.NOT_SENT && awaitChange(clock, beforeTree, beforeFrame)
-        }
+        } ?: return ActionResult.Failed(EDITOR_NOT_VISIBLE)
         when (pasted) {
             null -> return ActionResult.Failed(PASTE_UNAVAILABLE, HINT_PASTE_BLOCKED)
             AsciiTextKeys.NOT_SENT -> return ActionResult.Failed(
@@ -772,10 +835,12 @@ class AndroidScreen(
      */
     private fun pasteUnseen(text: String): Int? =
         withClipboardText(text) {
+            if (blockedFocusedEditor()) return@withClipboardText AsciiTextKeys.NOT_SENT
             when (ctrlKey(KeyEvent.KEYCODE_A)) {
                 AsciiTextKeys.NOT_SENT -> return@withClipboardText AsciiTextKeys.NOT_SENT
                 AsciiTextKeys.UNCONFIRMED -> return@withClipboardText AsciiTextKeys.UNCONFIRMED
             }
+            if (blockedFocusedEditor()) return@withClipboardText AsciiTextKeys.NOT_SENT
             val focus = ScreenReader.contentWindows(windows()).firstOrNull { it.isFocused }?.root
                 ?.findFocus(AccessibilityNodeInfo.FOCUS_INPUT)?.takeIf { it.isVisibleToUser && it.isEnabled && !it.isPassword }
             val sent = if (focus?.actionList?.any { it.id == AccessibilityNodeInfo.ACTION_PASTE } == true) {
@@ -788,27 +853,36 @@ class AndroidScreen(
             sent
         }
 
-    /** Retain the actual node hit by an explicit point, even if its provider does not expose an editor. */
-    private fun contextPasteAnchor(x: Int, y: Int): AccessibilityNodeInfo? {
+    /** Retain the node at an explicit point independently of context-menu eligibility. */
+    private fun pointHit(x: Int, y: Int): NodeEntry? {
         if (handedOver() || imeBounds()?.contains(x, y) == true) return null
         val window = ScreenReader.contentWindows(windows()).firstOrNull()
             ?.takeIf { it.type == AccessibilityWindowInfo.TYPE_APPLICATION } ?: return null
         val entries = ScreenReader.read(listOf(window), screenWidth, screenHeight).entries
-        val hit = entries.mapNotNull { entry ->
+        return entries.mapNotNull { entry ->
             val bounds = Rect().also(entry.node::getBoundsInScreen)
             if (bounds.contains(x, y)) entry to bounds.width().toLong() * bounds.height() else null
-        }.minByOrNull { it.second }?.first ?: return null
-        return hit.node.takeIf {
-            it.isEnabled && !it.isPassword && !it.isLongClickable && !hit.locator.inList &&
-                !hit.element.role.endsWith("Button")
-        }
+        }.minByOrNull { it.second }?.first
     }
+
+    private fun NodeEntry.contextPasteAnchor(): AccessibilityNodeInfo? = node.takeIf { contextPasteCandidate(this) }
+
+    private fun contextPasteAnchor(ref: String, snapshotId: String): AccessibilityNodeInfo? {
+        if (handedOver()) return null
+        val node = resolve(ref, snapshotId)?.first ?: return null
+        val entry = read().entries.firstOrNull { it.node == node } ?: return null
+        return node.takeIf { contextPasteCandidate(entry) }
+    }
+
+    private fun contextPasteCandidate(entry: NodeEntry): Boolean = ContextPastePolicy.canProbe(
+        entry.node.isEnabled, entry.node.isPassword, entry.locator.inList, entry.element.role,
+    )
 
     /** The editor must still be present, with only its own app's windows above it. */
     private fun contextPasteScope(
         anchor: AccessibilityNodeInfo, original: FieldShape,
     ): Pair<Rect, List<AccessibilityWindowInfo>>? {
-        if (!hasDisplay || handedOver() || !anchor.refresh() || !anchor.isEnabled || !anchor.isVisibleToUser ||
+        if (!hasDisplay || handedOver() || !anchor.refresh() || !visibleInputTarget(anchor) || blockedFocusedEditor() ||
             anchor.isPassword || (anchor.textSelectionStart >= 0 && anchor.textSelectionEnd >= 0 &&
                 anchor.textSelectionStart != anchor.textSelectionEnd)) return null
         val current = FieldShape.of(anchor)
@@ -830,11 +904,14 @@ class AndroidScreen(
         return bounds to scoped
     }
 
-    /** 只在粘贴键确定没发出后尝试编辑器自己刚弹出的菜单;点击 Paste 的结果不确定时不再走其他输入路径。 */
+    /** Confirm a newly opened editor menu before using its local Paste command. */
     private suspend fun pasteFromContextMenu(anchor: AccessibilityNodeInfo, text: String): ActionResult? {
         if (!anchor.refresh()) return null
         val original = FieldShape.of(anchor)
         if (contextPasteScope(anchor, original) == null) return null
+        val beforeText = readVisibleText()?.let { UnseenField.outside(it, imeBox()) }
+        val beforeTree = treeHash()
+        val beforeFrame = frameSignature()
         val menu = ContextEditMenu(Resources.getSystem().getString(android.R.string.paste))
         fun isPaste(node: AccessibilityNodeInfo): Boolean {
             val label = ScreenReader.ownLabel(node)
@@ -878,7 +955,10 @@ class AndroidScreen(
                     val (currentBounds, currentWindows) = contextPasteScope(anchor, original) ?: return@withClipboardText AsciiTextKeys.NOT_SENT
                     val current = controls(currentWindows)
                     sawNewControl = sawNewControl || current.any { it.node !in existing }
-                    val paste = menu.freshPaste(existing, near(currentBounds, current), ::isPaste)
+                    // Some editors add a clickable backdrop around the existing field.
+                    // Its ancestors are containers, not newly offered edit commands.
+                    val containers = generateSequence(anchor) { it.parent }.toSet()
+                    val paste = menu.freshPaste(existing, near(currentBounds, current), ::isPaste, containers)
                     if (paste != null && paste == previous) {
                         if (!paste.refresh() || !paste.isVisibleToUser || !paste.isEnabled || !paste.isClickable || !isPaste(paste) || handedOver()) {
                             return@withClipboardText AsciiTextKeys.NOT_SENT
@@ -900,7 +980,12 @@ class AndroidScreen(
         return when (pasted) {
             null -> ActionResult.Failed(PASTE_UNAVAILABLE, HINT_PASTE_BLOCKED)
             AsciiTextKeys.NOT_SENT -> null
-            AsciiTextKeys.DISPATCHED -> ok(verification = Verification.UNKNOWN, hint = "Used the editor's Paste menu.")
+            AsciiTextKeys.DISPATCHED -> {
+                val afterText = readVisibleText()?.let { UnseenField.outside(it, imeBox()) }
+                val changed = beforeTree != treeHash() || !beforeFrame.contentEquals(frameSignature())
+                val verification = UnseenField.verify(text, beforeText, afterText, changed)
+                ok(changed = changed, verification = verification, hint = "Used and checked the editor's Paste menu.")
+            }
             else -> ok(
                 verification = Verification.UNKNOWN,
                 hint = "The Paste menu click did not confirm delivery. Check the field before retrying.",
@@ -910,6 +995,7 @@ class AndroidScreen(
 
     /** 和 [typeUnseen] 同样的前提;全选确认投递后才按删除,不确定时停止,不换路径重试。 */
     private suspend fun clearUnseen(atPoint: Boolean = false): ActionResult {
+        if (blockedFocusedEditor()) return ActionResult.Failed(EDITOR_NOT_VISIBLE)
         val keyboardUp = imeBox() != null
         when (ctrlKey(KeyEvent.KEYCODE_A)) {
             AsciiTextKeys.NOT_SENT -> return ActionResult.Failed(
@@ -920,6 +1006,7 @@ class AndroidScreen(
                 hint = "Select-all may have been partially delivered; delete was not sent. Check the field before retrying.",
             )
         }
+        if (blockedFocusedEditor()) return ActionResult.Failed(EDITOR_NOT_VISIBLE)
         if (!shell.injectKey(displayId, KeyEvent.KEYCODE_DEL)) return ok(
             verification = Verification.UNKNOWN,
             hint = "Delete did not confirm delivery. Check the field before trying to clear it again.",
@@ -1365,6 +1452,9 @@ class AndroidScreen(
         )
     }
 
+    override suspend fun bulkCalendarInsert(events: List<SystemAction.AddCalendarEvent>): SystemActionResult =
+        withContext(Dispatchers.IO) { CalendarBulkWriter.insert(a11y, events) }
+
     private fun hintNotInFront(top: String?, expected: String) =
         "$expected took the action, but the screen shows ${top ?: "no app yet"}. Observe before acting."
 
@@ -1458,14 +1548,36 @@ class AndroidScreen(
      * 执行动作,等界面安静后比对前后指纹;再看前台有没有被切走。动作前后盯着主屏:动作让 App 开到了用户主屏上就挪回来,
      * 结果里报 opened(见 [takeSpill])。上一个动作过了一会儿才开到主屏上的,这一个动作不做,先说屏幕变了。
      */
-    private suspend fun verified(relocatedTo: String? = null, action: suspend () -> Boolean): ActionResult {
+    private suspend fun verified(
+        relocatedTo: String? = null,
+        fallback: (suspend (EventClock) -> Boolean)? = null,
+        retryWhenUnchanged: Boolean = true,
+        action: suspend () -> Boolean,
+    ): ActionResult {
         lateSpill()?.let { return ActionResult.Failed("opened_elsewhere", hintLateSpill(it.opened)) }
         val beforeTree = treeHash()
         val beforeFrame = frameSignature()
+        // 只有可能补点的动作才需要在动作前记住前台包名和输入法边界,其余动作不白读两次窗口
+        val backup = fallback?.takeIf { retryWhenUnchanged }
+        val beforePkg = backup?.let { ScreenReader.topPackage(windows()) }
+        val beforeIme = if (backup != null) imeBounds() else null
         val w = armSpillWatch()
         val changed = withEventClock { clock ->
             clock.mark()
-            if (action()) awaitChange(clock, beforeTree, beforeFrame) else null
+            if (action()) {
+                val retry: (suspend () -> Boolean)? = if (backup != null) {
+                    {
+                        if (!handedOver() && ScreenReader.topPackage(windows()) == beforePkg && imeBounds() == beforeIme) {
+                            backup(clock)
+                        } else false
+                    }
+                } else null
+                awaitChange(clock, beforeTree, beforeFrame, retry)
+            } else if (fallback != null) {
+                if (fallback(clock)) awaitChange(clock, beforeTree, beforeFrame) else null
+            } else {
+                null
+            }
         } ?: return ActionResult.Failed("action_failed")
         // 从挪回来的任务里又打开了一个的,一并算进来
         val profile = adoptFromAdopted(w)
@@ -1836,7 +1948,12 @@ class AndroidScreen(
     }
 
     /** 等界面稳定后比对指纹(规则见 [ChangeWait]);确认变了立即返回 true。 */
-    private suspend fun awaitChange(clock: EventClock, beforeTree: Long, beforeFrame: IntArray?): Boolean =
+    private suspend fun awaitChange(
+        clock: EventClock,
+        beforeTree: Long,
+        beforeFrame: IntArray?,
+        fallback: (suspend () -> Boolean)? = null,
+    ): Boolean =
         ChangeWait.awaitStableChange(
             now = SystemClock::uptimeMillis,
             sleep = { delay(it) },
@@ -1844,6 +1961,7 @@ class AndroidScreen(
             quietForMs = clock::quietForMs,
             treeChanged = { treeHash() != beforeTree },
             beforeFrame = beforeFrame,
+            fallback = fallback,
         )
 
     /** 前台不是目标 App、也不是它调起的系统页面或系统选择器时,返回当前前台包名及是否由目标 App 打开。 */
@@ -1961,31 +2079,43 @@ class AndroidScreen(
     private suspend fun findField(ref: String?, snapshotId: String?, tapToFocus: Boolean = true): Field {
         if (ref != null && snapshotId != null) {
             val (node, relocatedTo) = resolve(ref, snapshotId) ?: return Field.Missing("ref_expired")
-            val editable = if (ScreenReader.canSetText(node)) node else descendant(node, ScreenReader::canSetText)
-            if (editable != null) return Field.Found(editable, relocatedTo = relocatedTo)
+            val editable = if (ScreenReader.canSetText(node)) node
+                else descendant(node) { ScreenReader.canSetText(it) && visibleInputTarget(it) }
+            if (editable != null) {
+                if (!editable.refresh() || !visibleInputTarget(editable)) return Field.Missing(EDITOR_NOT_VISIBLE)
+                return Field.Found(editable, relocatedTo = relocatedTo)
+            }
             if (!tapToFocus || !looksLikeInputEntry(node)) return Field.Missing("not_editable")
             val focusedBefore = focusedEditable()
             val clicked = withEventClock { clock ->
                 clock.mark()
                 click(node).also { if (it) clock.awaitQuiet(QUIET_MS, FOCUS_WAIT_MS) }
             }
-            val now = focusedEditable()
-            return if (clicked && now != null && now != focusedBefore) Field.Found(now, tapped = true, relocatedTo = relocatedTo) else Field.Missing("not_editable")
+            val now = focusedField()
+            return when {
+                clicked && now is Field.Found && now.node != focusedBefore ->
+                    Field.Found(now.node, tapped = true, relocatedTo = relocatedTo)
+                clicked && now is Field.Missing && now.reason == EDITOR_NOT_VISIBLE -> now
+                else -> Field.Missing("not_editable")
+            }
         }
-        return focusedEditable()?.let { Field.Found(it) } ?: Field.Missing(NO_FOCUS)
+        return focusedField()
     }
 
     /** 认「同一个输入框」用的特征:类型、资源 ID、位置大小。 */
-    private data class FieldShape(val cls: String?, val rid: String?, val rect: android.graphics.Rect) {
+    private data class FieldShape(
+        val pkg: String?, val windowId: Int, val cls: String?, val rid: String?, val rect: Rect,
+    ) {
         companion object {
             fun of(n: AccessibilityNodeInfo) =
-                FieldShape(n.className?.toString(), n.viewIdResourceName, android.graphics.Rect().also { n.getBoundsInScreen(it) })
+                FieldShape(n.packageName?.toString(), n.windowId, n.className?.toString(), n.viewIdResourceName,
+                    Rect().also(n::getBoundsInScreen))
         }
     }
 
     private fun sameField(a: FieldShape, n: AccessibilityNodeInfo): Boolean {
         val b = FieldShape.of(n)
-        if (a.cls != b.cls || a.rid != b.rid) return false
+        if (a.pkg != b.pkg || a.windowId != b.windowId || a.cls != b.cls || a.rid != b.rid) return false
         // 大小要几乎一样;位置允许整页挪动一点(输入时页面常会上移),和编号找回用同一个上限
         val short = min(screenWidth, screenHeight)
         val sizeTol = short * SAME_FIELD_SIZE
@@ -2011,24 +2141,71 @@ class AndroidScreen(
     private fun somethingHoldsInputFocus(): Boolean =
         imeBounds() != null || focusedInput() != null
 
-    private fun focusedInput(): AccessibilityNodeInfo? =
-        ScreenReader.contentWindows(windows()).firstNotNullOfOrNull { it.root?.findFocus(AccessibilityNodeInfo.FOCUS_INPUT) }
-
-    /** 这块屏上拿着输入焦点的可编辑框;焦点落在容器(如网页)上时找它里面聚焦的可编辑节点。 */
-    private fun focusedEditable(): AccessibilityNodeInfo? {
-        for (w in ScreenReader.contentWindows(windows())) {
-            val focused = w.root?.findFocus(AccessibilityNodeInfo.FOCUS_INPUT) ?: continue
-            if (ScreenReader.canSetText(focused)) return focused
-            descendant(focused) { it.isFocused && ScreenReader.canSetText(it) }?.let { return it }
-        }
-        return null
+    private fun focusedInput(): AccessibilityNodeInfo? {
+        val content = ScreenReader.contentWindows(windows())
+        val focusedWindow = content.firstOrNull { it.isFocused }
+        if (focusedWindow != null) return focusedWindow.root?.findFocus(AccessibilityNodeInfo.FOCUS_INPUT)
+        return content.firstNotNullOfOrNull { it.root?.findFocus(AccessibilityNodeInfo.FOCUS_INPUT) }
     }
+
+    private fun visibleInputTarget(node: AccessibilityNodeInfo): Boolean =
+        node.isEnabled && ScreenReader.locatorOf(node, screenWidth, screenHeight) != null
+
+    /** Keep a known hidden native editor distinct from a custom editor absent from the tree. */
+    private fun focusedField(): Field {
+        val focus = focusedInput() ?: return Field.Missing(NO_FOCUS)
+        val editor = if (ScreenReader.canSetText(focus)) focus
+            else descendant(focus) { it.isFocused && ScreenReader.canSetText(it) } ?: return Field.Missing(NO_FOCUS)
+        return if (editor.refresh() && visibleInputTarget(editor)) Field.Found(editor) else Field.Missing(EDITOR_NOT_VISIBLE)
+    }
+
+    private fun focusedEditable(): AccessibilityNodeInfo? = (focusedField() as? Field.Found)?.node
+
+    private fun blockedFocusedEditor(): Boolean = (focusedField() as? Field.Missing)?.reason == EDITOR_NOT_VISIBLE
 
     // ---------- 底层操作 ----------
 
+    private fun isClickableTarget(node: AccessibilityNodeInfo): Boolean =
+        node.isEnabled && (node.isClickable || node.actionList.any { it.id == AccessibilityNodeInfo.ACTION_CLICK })
+
+    /** 坐标点击无反应时,反查该点处最小的可点控件改走无障碍点击;命中对外/不可逆按钮或大容器时不补点。 */
+    private fun clickNodeAt(x: Int, y: Int, clock: EventClock): Boolean {
+        if (!hasDisplay || handedOver() || imeBounds()?.contains(x, y) == true) return false
+        val window = ScreenReader.contentWindows(windows()).firstOrNull {
+            Rect().also(it::getBoundsInScreen).contains(x, y)
+        }?.takeIf { it.type == AccessibilityWindowInfo.TYPE_APPLICATION } ?: return false
+        val entries = ScreenReader.read(listOf(window), screenWidth, screenHeight).entries
+        val rect = Rect()
+        val hitEntries = entries.filter { entry ->
+            entry.node.getBoundsInScreen(rect)
+            rect.intersect(0, 0, screenWidth, screenHeight) && rect.contains(x, y)
+        }
+        if (hitEntries.isEmpty()) return false
+        if (hitEntries.any { ClickFallback.mayBeOutward(it.element.name, it.locator.resourceId) }) return false
+        val seen = HashSet<AccessibilityNodeInfo>()
+        val candidates = mutableListOf<ClickFallback.Candidate<AccessibilityNodeInfo>>()
+        for (entry in hitEntries) {
+            val target = ancestorOrSelf(entry.node) { isClickableTarget(it) } ?: continue
+            if (!seen.add(target) || !target.isVisibleToUser) continue
+            target.getBoundsInScreen(rect)
+            if (!rect.intersect(0, 0, screenWidth, screenHeight) || rect.isEmpty) continue
+            candidates += ClickFallback.Candidate(
+                item = target,
+                left = rect.left, top = rect.top, right = rect.right, bottom = rect.bottom,
+                label = ScreenReader.labelOf(target).ifBlank { entry.element.name.ifBlank { null } },
+                resourceId = target.viewIdResourceName ?: entry.locator.resourceId,
+                scrollable = target.isScrollable,
+                webView = target.className == WEB_VIEW,
+            )
+        }
+        val picked = ClickFallback.pickTarget(x, y, screenWidth, screenHeight, candidates) ?: return false
+        clock.mark()
+        return picked.performAction(AccessibilityNodeInfo.ACTION_CLICK)
+    }
+
     /** 优先对节点(或最近的可点祖先)发点击;不行再在其中心做手势,最后注入触摸。 */
     private suspend fun click(node: AccessibilityNodeInfo): Boolean {
-        val target = ancestorOrSelf(node) { it.isClickable && it.isEnabled }
+        val target = ancestorOrSelf(node) { isClickableTarget(it) }
         if (target != null && target.performAction(AccessibilityNodeInfo.ACTION_CLICK)) return true
         val rect = android.graphics.Rect().also { node.getBoundsInScreen(it) }
         return touch(pacing.within(rect.left, rect.top, rect.right, rect.bottom))
@@ -2083,9 +2260,10 @@ class AndroidScreen(
      * 其余结果用 [AsciiTextKeys] 三态表示。选择失败时不发删除或粘贴,避免只删一个字符或在光标处插入。
      */
     private fun inputText(node: AccessibilityNodeInfo, text: String): Int? {
-        node.refresh()
+        if (!node.refresh() || !visibleInputTarget(node)) return AsciiTextKeys.NOT_SENT
         val before = node.text?.toString().orEmpty()
         fun selectAll(): Boolean {
+            if (!node.refresh() || !visibleInputTarget(node) || node.text?.toString().orEmpty() != before) return false
             if (before.isEmpty()) return true
             val range = Bundle().apply {
                 putInt(AccessibilityNodeInfo.ACTION_ARGUMENT_SELECTION_START_INT, 0)
@@ -2096,10 +2274,12 @@ class AndroidScreen(
         if (text.isEmpty()) {
             if (before.isEmpty()) return AsciiTextKeys.DISPATCHED
             if (!selectAll()) return AsciiTextKeys.NOT_SENT
+            if (!node.refresh() || !visibleInputTarget(node)) return AsciiTextKeys.NOT_SENT
             return if (shell.injectKey(displayId, KeyEvent.KEYCODE_DEL)) AsciiTextKeys.DISPATCHED else AsciiTextKeys.UNCONFIRMED
         }
         return withClipboardText(text) {
             if (!selectAll()) return@withClipboardText AsciiTextKeys.NOT_SENT
+            if (!node.refresh() || !visibleInputTarget(node)) return@withClipboardText AsciiTextKeys.NOT_SENT
             // 标准动作返回 false 时也可能已经产生效果;按不确定处理,不补发快捷键。
             if (!node.performAction(AccessibilityNodeInfo.ACTION_PASTE)) return@withClipboardText AsciiTextKeys.UNCONFIRMED
             // App 是异步去读剪贴板的:等字变了再还原,最多等一会儿
@@ -2132,6 +2312,7 @@ class AndroidScreen(
     }
 
     private fun setText(node: AccessibilityNodeInfo, text: String): Boolean {
+        if (!node.refresh() || !visibleInputTarget(node)) return false
         val args = Bundle().apply { putCharSequence(AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE, text) }
         return node.performAction(AccessibilityNodeInfo.ACTION_SET_TEXT, args)
     }
@@ -2227,6 +2408,7 @@ class AndroidScreen(
         const val PICK_READ_MS = 2_000L
         val NO_APP_OPEN = ActionResult.Failed("no_app_open")
         const val NO_FOCUS = "no_focus"
+        const val EDITOR_NOT_VISIBLE = "editor_not_visible"
         const val PER_USER_RANGE = 100_000
         /** Mika 所在的用户:本来那份 App 在这里。 */
         val myUser: Int get() = AppCopyReader.myUser

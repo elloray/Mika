@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="teach_title">Ensinar a Mika</string>
+    <string name="teach_menu">Ensinar a Mika</string>
+    <string name="teach_goal_label">Objetivo</string>
+    <string name="teach_goal_hint">O que a Mika deve lembrar? Uma frase.</string>
+    <string name="teach_disclosure">Os passos ficam neste telefone e só depois de tocar em Começar demonstração. Se houver um modelo configurado, gerar a habilidade envia um resumo sem dados sensíveis do objetivo e dos passos a esse modelo. Senhas, códigos e dados de pagamento ficam de fora. Sem modelo, o rascunho é escrito no telefone e nada é enviado. Ele não é usado até você aceitar e não foi testado com sucesso.</string>
+    <string name="teach_continue">Continuar</string>
+    <string name="teach_ready_body">A Mika só observa e não opera o telefone. Você pode pausar, terminar ou descartar. Nada é gravado até tocar em Começar demonstração.</string>
+    <string name="teach_start">Começar demonstração</string>
+    <string name="teach_learning">Aprendendo</string>
+    <string name="teach_paused">Em pausa</string>
+    <string name="teach_pause">Pausar</string>
+    <string name="teach_resume">Continuar demonstração</string>
+    <string name="teach_end">Terminar demonstração</string>
+    <string name="teach_discard">Descartar</string>
+    <string name="teach_discard_body">Descartar esta demonstração e apagar os passos salvos?</string>
+    <string name="teach_review">Rever</string>
+    <string name="teach_correct">Corrigir este passo</string>
+    <string name="teach_clarify">O que este passo significou?</string>
+    <string name="teach_remove">Remover</string>
+    <string name="teach_generate">Gerar rascunho</string>
+    <string name="teach_busy">Há uma tarefa em andamento. Espere terminar antes de ensinar.</string>
+    <string name="teach_need_a11y">Ative a acessibilidade antes de demonstrar. Sem ela a Mika não vê os toques.</string>
+    <string name="teach_interrupted">A demonstração parou porque o app reiniciou ou a acessibilidade foi desligada. Nada é gravado até você continuar.</string>
+    <string name="teach_need_goal">Escreva um objetivo primeiro.</string>
+    <string name="teach_secret_goal">Esse objetivo parece uma senha ou um código, então não foi salvo.</string>
+    <string name="teach_draft_failed">Não foi possível escrever o rascunho. Os passos continuam aqui.</string>
+    <string name="teach_draft_ready">Há um rascunho em Memória e habilidades. Ele não é usado até você aceitar e não foi testado com sucesso.</string>
+    <string name="teach_open_drafts">Ver rascunhos</string>
+    <string name="teach_no_steps">Nenhum passo foi mantido.</string>
+    <string name="teach_blocked_task">A Mika está aprendendo, então esta tarefa não começou.</string>
+    <string name="teach_channel">Ensinar</string>
+    <string name="teach_sensitive_note">A entrada sensível não foi salva.</string>
+    <string name="teach_insufficient_note">Não há informação suficiente da interface. Isto não é uma ação por coordenadas.</string>
+    <string name="teach_notification">A Mika não está operando o telefone.</string>
+    <string name="teach_no_visible">A barra Aprendendo não pôde ser mostrada, então a gravação não começou. Permissão de notificação não é necessária. A sobreposição de acessibilidade precisa ficar visível, com Pausar e Terminar.</string>
+    <string name="teach_watch_lost">A barra Aprendendo sumiu, então a demonstração parou. Nada mais está sendo gravado.</string>
+    <string name="teach_shelf_expand">Mostrar Ensinar a Mika</string>
+    <string name="teach_shelf_collapse">Ocultar Ensinar a Mika</string>
+</resources>

@@ -187,4 +187,7 @@
     <string name="speech_footer">음성 모델로 보이는 모델만 표시돼요. 원하는 모델이 없으면 이름을 직접 입력하세요. 선택하면 짧은 클립을 테스트로 변환해요.</string>
     <string name="speech_pick_failed">그 모델은 변환하지 못했어요: %1$s</string>
     <string name="speech_pick_timeout">%1$s이(가) %2$d초 안에 테스트 클립에 응답하지 않았어요</string>
+    <string name="models_daily_token_budget">제공업체 일일 Token 예산</string>
+    <string name="models_daily_token_budget_sub">현지 달력 날짜를 기준으로 이 제공업체의 모든 모델과 용도에서 보고된 입력 및 출력 Token을 집계합니다. 예산에 도달하면 다음 요청을 차단하며, 진행 중인 요청은 예산을 초과할 수 있습니다. 보고되지 않은 사용량은 0으로 계산하고 현지 날짜가 바뀌면 초기화됩니다.</string>
+    <string name="models_daily_token_budget_save_failed">예산을 저장하지 못했습니다. 이전 설정이 그대로 유지됩니다.</string>
 </resources>

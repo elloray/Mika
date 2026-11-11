@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="calls_helper_setup_title">Asisten audio Mika</string>
+    <string name="calls_helper_setup_intro">Android menangani panggilan biasa. Mika menggunakan asisten audio untuk mendengar dan berbicara dalam panggilan AI. Debug nirkabel memungkinkan Anda memulai atau memulihkan asisten dari ponsel ini tanpa komputer. Sambungkan ke Wi-Fi untuk menyandingkan. Suara AI real-time juga memerlukan internet.</string>
+    <string name="calls_helper_unavailable">Asisten audio tidak dapat disiapkan di perangkat ini.</string>
+    <string name="calls_helper_unavailable_reason">Android tidak menyediakan pengaturan yang diperlukan untuk memulai asisten di perangkat ini. Panggilan biasa tetap berfungsi melalui aplikasi Telepon.</string>
+    <string name="calls_helper_ready">Asisten audio terhubung</string>
+    <string name="calls_helper_usb_running">Asisten audio berjalan · dimulai lewat USB</string>
+    <string name="calls_helper_usb_stopped">Asisten audio yang dimulai lewat USB telah berhenti.</string>
+    <string name="calls_helper_wireless_recovery">Sandingkan sekali di ponsel ini untuk memulai lagi tanpa komputer jika asisten berhenti. Sambungkan ke Wi-Fi saat menyiapkannya.</string>
+    <string name="calls_helper_wireless_unavailable">Debug nirkabel tidak tersedia di ponsel ini.</string>
+    <string name="calls_helper_setup_wireless">Siapkan pemulihan nirkabel</string>
+    <string name="calls_helper_hide_usb">Sembunyikan alternatif dengan komputer</string>
+    <string name="calls_helper_show_usb">Alternatif dengan komputer</string>
+    <string name="calls_helper_usb_fallback">Jika penyiapan nirkabel tidak tersedia dan ada komputer, sambungkan ponsel dengan kabel USB dan jalankan perintah ini di komputer. Anda mungkin perlu menjalankannya lagi setelah memperbarui atau memulai ulang ponsel.</string>
+    <string name="calls_helper_wireless_reconnect">Jika asisten berhenti, sambungkan ke Wi-Fi dan aktifkan Debug nirkabel jika Android telah menonaktifkannya. Sandingkan ulang hanya jika diminta.</string>
+    <string name="calls_helper_wireless_debugging_body">Sambungkan ke Wi-Fi dan aktifkan Debug nirkabel di Opsi developer. Ketuk Izinkan jika diminta Android. Lalu kembali ke Mika untuk melanjutkan ke langkah kode penyandingan.</string>
+    <string name="calls_helper_usb_debugging_body">Di Opsi developer, aktifkan Debug USB dan konfirmasikan. Anda tidak perlu menyambungkan kabel untuk penyiapan nirkabel. Jangan ubah pengaturan lainnya.</string>
+    <string name="calls_helper_usb_debugging_brief">Penyiapan nirkabel tidak memerlukan kabel</string>
+    <string name="calls_helper_connect_body">Setelah disandingkan, Mika akan terhubung ke asisten audio di ponsel ini.</string>
+    <string name="calls_helper_wifi_needed">Sambungkan ke Wi-Fi untuk memulai atau memulihkan asisten audio melalui Debug nirkabel.</string>
+    <string name="calls_helper_repair_needed">Penyandingan tidak tersedia. Sandingkan ulang dari ponsel ini.</string>
+    <string name="calls_helper_name">Asisten audio</string>
+    <string name="calls_helper_disconnected">Sambungkan untuk mengaktifkan audio dua arah dalam panggilan AI</string>
+    <string name="calls_helper_manage">Kelola</string>
+    <string name="calls_helper_set_up">Siapkan</string>
+    <string name="calls_helper_pairing_done">Asisten audio terhubung. Anda bisa kembali ke Mika.</string>
+    <string name="calls_helper_pairing_problem">Kembali ke Mika untuk melihat cara menyambungkan ulang.</string>
+</resources>

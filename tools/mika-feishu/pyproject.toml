@@ -1,0 +1,17 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "mika-feishu"
+version = "0.1.0"
+description = "Feishu bot connector for Mika's versioned phone task API"
+requires-python = ">=3.10"
+license = {file = "LICENSE"}
+dependencies = ["lark-oapi>=1.7.5,<2", "qrcode>=8.2,<9"]
+
+[project.scripts]
+mika-feishu = "mika_feishu.__main__:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]

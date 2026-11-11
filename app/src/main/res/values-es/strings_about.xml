@@ -59,4 +59,11 @@
     <string name="diagnostics_share">Compartir</string>
     <string name="diagnostics_copied">Copiado</string>
     <string name="diagnostics_loading">Recopilando…</string>
+    <string name="about_auto_update">Actualización automática</string>
+    <string name="about_auto_update_detail">Descarga nuevas versiones en segundo plano solo por Wi-Fi y pide confirmación antes de instalar</string>
+    <string name="about_auto_update_disable">Desactivar la actualización automática</string>
+    <string name="about_auto_update_ready">Mika %1$s descargado</string>
+    <string name="about_auto_update_confirm_title">La nueva versión de Mika está lista</string>
+    <string name="about_auto_update_confirm_detail">Instala %1$s ahora o desactiva las actualizaciones automáticas y búscalas manualmente en Ajustes.</string>
+    <string name="about_auto_update_now">Actualizar ahora</string>
 </resources>

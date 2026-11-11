@@ -1,7 +1,6 @@
 package com.wangzan101.mika.takeover
 
 import com.wangzan101.mika.core.agent.TaskState
-import com.wangzan101.mika.core.tool.HandBack
 import com.wangzan101.mika.core.tool.HandBackOutcome
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
@@ -16,17 +15,20 @@ class TakeoverTimeoutTest {
     private fun TestScope.takeover() = Takeover(port, backgroundScope) { testScheduler.currentTime }
 
     @Test
-    fun timesOutOnlyWhileWaiting() = runTest {
-        val t = takeover()
+    fun waitingRemindsWithoutEndingTheTask() = runTest {
+        var reminders = 0
+        val t = Takeover(port, backgroundScope, now = { testScheduler.currentTime }, remind = { reminders++ })
         t.onState(waiting)
         testScheduler.advanceTimeBy(Takeover.TAKEOVER_WAIT_TIMEOUT_MS - 1)
         testScheduler.runCurrent()
         assertTrue(port.log.isEmpty())
-        testScheduler.advanceTimeBy(1)
+        assertEquals(0, reminders)
+        testScheduler.advanceTimeBy(Takeover.TAKEOVER_WAIT_TIMEOUT_MS + 1)
         testScheduler.runCurrent()
-        assertEquals(listOf("resume:timeout"), port.log)
-        assertEquals(HandBack(HandBackOutcome.timeout), port.results.single())
-        assertEquals(Takeover.Stage.None, t.stage.value)
+        assertTrue(port.log.isEmpty())
+        assertTrue(port.results.isEmpty())
+        assertEquals(2, reminders)
+        assertEquals(Takeover.Stage.Waiting, t.stage.value)
     }
 
     @Test
@@ -46,14 +48,15 @@ class TakeoverTimeoutTest {
     }
 
     @Test
-    fun timeoutLeavesAppWhereItIs() = runTest {
+    fun waitingDoesNotMoveTheApp() = runTest {
         val t = takeover()
         t.onState(waiting)
         testScheduler.advanceTimeBy(Takeover.TAKEOVER_WAIT_TIMEOUT_MS + 1)
         testScheduler.runCurrent()
-        // 只交回结果:不挪动、不改声音
-        assertEquals(listOf("resume:timeout"), port.log)
+        // 提醒不挪动、不改声音，也不结束等待。
+        assertTrue(port.log.isEmpty())
         assertEquals(TakeoverControllerTest.AGENT, port.displays[1])
+        assertEquals(Takeover.Stage.Waiting, t.stage.value)
     }
 
     @Test
@@ -67,8 +70,9 @@ class TakeoverTimeoutTest {
     }
 
     @Test
-    fun newWaitRestartsTheClock() = runTest {
-        val t = takeover()
+    fun newWaitRestartsReminders() = runTest {
+        var reminders = 0
+        val t = Takeover(port, backgroundScope, now = { testScheduler.currentTime }, remind = { reminders++ })
         t.onState(waiting)
         testScheduler.advanceTimeBy(Takeover.TAKEOVER_WAIT_TIMEOUT_MS - 1_000)
         t.handBack()
@@ -77,8 +81,11 @@ class TakeoverTimeoutTest {
         testScheduler.advanceTimeBy(Takeover.TAKEOVER_WAIT_TIMEOUT_MS - 1)
         testScheduler.runCurrent()
         assertEquals(listOf("resume:complete"), port.log)
+        assertEquals(0, reminders)
         testScheduler.advanceTimeBy(1)
         testScheduler.runCurrent()
-        assertEquals(listOf("resume:complete", "resume:timeout"), port.log)
+        assertEquals(listOf("resume:complete"), port.log)
+        assertEquals(1, reminders)
+        assertEquals(Takeover.Stage.Waiting, t.stage.value)
     }
 }

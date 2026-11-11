@@ -167,4 +167,10 @@
     <string name="quit_row_sub">バックグラウンドのタスクを停止し、フローティングカプセルを閉じます</string>
     <string name="quit_confirm_body">実行中のタスクは停止し、フローティングカプセルと通知は消えます。次に Mika を開くと元に戻ります。</string>
     <string name="quit_confirm_action">終了</string>
+    <string name="settings_task_token_budget">タスクごとの Token 予算</string>
+    <string name="settings_task_token_budget_sub">プロバイダーが報告した入力・出力 Token のみを集計します。予算に達すると次のリクエストを開始しません。実行中のリクエストで予算を超える場合があり、使用量が報告されない呼び出しは 0 として扱います。</string>
+    <string name="settings_token_budget_unlimited">制限なし</string>
+    <string name="settings_token_budget_custom">カスタム Token 予算</string>
+    <string name="settings_token_budget_apply">使用</string>
+    <string name="settings_token_budget_invalid">%1$s〜%2$s の整数を入力してください。</string>
 </resources>

@@ -48,6 +48,12 @@ interface SpeechSession {
     /** 能边说边出字(系统、原生流式 ASR 为 true,整段文件转写为 false)。 */
     val live: Boolean
 
+    /**
+     * 按住多久都行:边说边传、不攒整段录音的流式识别,不受按住说话的 60 秒封顶,也不倒数。
+     * 默认 false(手机自带识别、整段转写和其余引擎照旧封顶)。
+     */
+    val unlimited: Boolean get() = false
+
     /** 松开:收尾并给 Final。 */
     fun release()
 

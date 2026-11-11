@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="calls_default_sim_settings">SIM saliente predeterminada</string>
+    <string name="calls_device_and_permissions">Dispositivo y permisos</string>
+    <string name="calls_edit_rule">Editar</string>
+    <string name="calls_nav_receive">Atender</string>
+    <string name="calls_nav_task">Tarea</string>
+    <string name="calls_pause_enable_first">Active la respuesta automática para pausarla temporalmente.</string>
+    <string name="calls_rule_delay_summary">Demora de respuesta: %1$d s</string>
+    <string name="calls_rule_pause">Pausa temporal</string>
+    <string name="calls_rule_scope">A quién atiende la IA</string>
+    <string name="calls_sim_ask_each_time">Sin SIM preferida</string>
+    <string name="calls_task_back_to_edit">Volver a editar</string>
+    <string name="calls_task_confirm_dial">Confirmar y llamar</string>
+    <string name="calls_task_confirm_note">Mika usa este encargo para esta llamada. Se usa la SIM elegida y pueden aplicarse cargos del operador y de voz en tiempo real.</string>
+    <string name="calls_task_constraints">Qué no se puede prometer</string>
+    <string name="calls_task_context">Contexto adicional</string>
+    <string name="calls_task_filled">Añadido</string>
+    <string name="calls_task_goal">¿Qué debe lograr esta llamada? (obligatorio)</string>
+    <string name="calls_task_goal_example">Por ejemplo, confirme si hay disponibilidad el viernes y anote el precio.</string>
+    <string name="calls_task_limit">%1$d / %2$d caracteres</string>
+    <string name="calls_task_number_hint">Introduzca un número de teléfono normal de 7–15 dígitos.</string>
+    <string name="calls_task_one_off">El encargo se aplica solo a esta llamada. Consulte la llamada y su encargo en el historial.</string>
+    <string name="calls_task_optional">Opcional</string>
+    <string name="calls_task_pick_sim">Elija una SIM para esta llamada</string>
+    <string name="calls_task_questions">Preguntas por hacer</string>
+    <string name="calls_task_questions_hint">Una pregunta por línea</string>
+    <string name="calls_task_questions_limit">Hasta %1$d preguntas, %2$d caracteres cada una.</string>
+    <string name="calls_task_replace_action">Sustituir borrador</string>
+    <string name="calls_task_replace_note">Sustituye el borrador actual por una tarea del historial. No realiza la llamada.</string>
+    <string name="calls_task_replace_title">¿Sustituir este borrador?</string>
+    <string name="calls_task_review">Revisar tarea</string>
+    <string name="calls_task_review_blocked">Para llamar, el teléfono debe estar listo, sin otra llamada y con una SIM seleccionada.</string>
+    <string name="calls_task_sim_override_summary">Esta llamada: %1$s · Preferida: %2$s</string>
+    <string name="calls_voice_settings">Voz</string>
+</resources>

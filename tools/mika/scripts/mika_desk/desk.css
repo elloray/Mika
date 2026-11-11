@@ -227,6 +227,7 @@ dd { margin: 0; }
 }
 .device-actions button,
 #pick button { padding: 4px 6px; color: var(--soft); }
+.notification-setting,
 .language {
   display: flex;
   align-items: center;
@@ -235,6 +236,9 @@ dd { margin: 0; }
   margin: 7px 0 10px;
   color: var(--muted);
 }
+.notification-setting { color: var(--ink); margin-bottom: 3px; cursor: pointer; }
+#notification-hint { color: var(--muted); line-height: 1.45; margin: 0 0 10px; }
+.turn:focus { outline: 1px solid var(--soft); outline-offset: 4px; border-radius: 5px; scroll-margin-block: 8px; }
 .language select {
   max-width: 68%;
   padding: 2px 4px;

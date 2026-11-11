@@ -19,7 +19,7 @@
 - **There is no Mika server.** What you say, screen contents and screenshots go only to the model provider you configure.
 - API keys, memories and your user profile are encrypted with the Android Keystore and stored on the phone. Conversations, run records and token usage stay on the device.
 - Update checks only contact GitHub.
-- The built-in browser visits only the sites you send it to; the sandbox is offline by default.
+- The built-in browser visits only the sites you send it to; the sandbox is online by default, and you can turn it off in Settings.
 
 ## License and third-party components
 

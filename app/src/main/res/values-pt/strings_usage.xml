@@ -36,4 +36,17 @@
     <string name="usage_input">Entrada</string>
     <string name="usage_output">Saída</string>
     <string name="usage_calls">Chamadas</string>
+    <string name="usage_allowance_title">Cota atual</string>
+    <string name="usage_allowance_loading">Consultando a cota…</string>
+    <string name="usage_allowance_unavailable">Temporariamente indisponível</string>
+    <string name="usage_allowance_balance">Saldo da conta: %1$s</string>
+    <string name="usage_allowance_key_limit">Limite de gastos restante da chave: %1$s</string>
+    <string name="usage_allowance_no_key_limit">Esta chave não tem limite de gastos</string>
+    <string name="usage_allowance_view_balance">Ver saldo da conta</string>
+    <string name="usage_allowance_reset_daily">Renovação diária</string>
+    <string name="usage_allowance_reset_weekly">Renovação semanal</string>
+    <string name="usage_allowance_reset_monthly">Renovação mensal</string>
+    <string name="usage_allowance_updated">Última atualização: %1$s</string>
+    <string name="usage_allowance_self_hosted">Conexão com hospedagem própria</string>
+    <string name="usage_allowance_unsupported">Esta conexão não permite consultar a cota</string>
 </resources>

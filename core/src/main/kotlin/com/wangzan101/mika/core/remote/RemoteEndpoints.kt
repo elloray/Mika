@@ -15,6 +15,7 @@ class RemoteEndpoints(
     private val device: DeviceAccess? = null,
     private val history: RemoteHistory? = null,
     private val records: RunExportSource? = null,
+    private val calls: com.wangzan101.mika.core.calls.PhoneCallPort? = null,
 ) {
     private val clients = LinkedHashMap<String, Long>()
     private val mutable = MutableStateFlow(RemoteActivity())
@@ -26,7 +27,7 @@ class RemoteEndpoints(
         val owner = req.accessOwner ?: "relay"
         val scopedTasks = tasks.scope(owner)
         val service = RemoteTaskService(scopedTasks, records = records?.scope(owner))
-        val rpc = McpRpc(McpTaskTools(service, device.takeIf { deviceAccess }), serverVersion) { remote, name -> seen(remote, name) }
+        val rpc = McpRpc(McpTaskTools(service, device.takeIf { deviceAccess }, calls.takeIf { deviceAccess }), serverVersion) { remote, name -> seen(remote, name) }
         if (req.path == McpRpc.PATH) return rpc.handle(req)
         if (req.path == RemoteTaskApi.ROOT || req.path.startsWith("${RemoteTaskApi.ROOT}/")) {
             seen(req.remote, req.header("x-mika-client")?.take(64))

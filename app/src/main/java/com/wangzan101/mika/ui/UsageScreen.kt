@@ -78,7 +78,7 @@ import com.wangzan101.mika.core.usage.UsageRange
 import com.wangzan101.mika.core.usage.UsageReport
 import com.wangzan101.mika.core.usage.UsageStep
 import com.wangzan101.mika.core.usage.UsageTotals
-import com.wangzan101.mika.settings.Provider
+import com.wangzan101.mika.settings.ProviderStore
 import com.wangzan101.mika.ui.components.FooterNote
 import com.wangzan101.mika.ui.components.IconTile
 import com.wangzan101.mika.ui.components.MikaCard
@@ -91,7 +91,6 @@ import com.wangzan101.mika.ui.theme.MikaShapes
 import com.wangzan101.mika.ui.theme.MikaTheme
 import com.wangzan101.mika.ui.theme.MikaType
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.withContext
 import java.math.BigDecimal
 import java.math.RoundingMode
@@ -250,12 +249,12 @@ object UsageCopy {
 }
 
 /**
- * 设置 › Token 用量:一个页面。顶上选时间和这段时间的总用量,下面三张图:用量趋势(按服务商叠起来)、
+ * 设置 › Token 用量。先显示当前额度，再选时间和查看总用量及三张图：用量趋势(按服务商叠起来)、
  * 按服务商排行(点一家选中,再点取消)、按模型排行(可切服务商)。选中的服务商只影响图里亮哪家、模型列哪家的,
  * 总用量始终是全部。账本每记一笔([UsageLedger.version])就重新统计;本地时区在统计时换算。
  */
 @Composable
-fun UsageScreen(ledger: UsageLedger, providers: StateFlow<List<Provider>>, onBack: () -> Unit) {
+fun UsageScreen(ledger: UsageLedger, store: ProviderStore, onBack: () -> Unit, onOpenUrl: (String) -> Unit) {
     var preset by rememberSaveable { mutableStateOf(UsagePreset.Week) }
     // 自定义范围的两头,存成纪元日(rememberSaveable 能存的类型)
     var customFrom by rememberSaveable { mutableStateOf<Long?>(null) }
@@ -263,7 +262,7 @@ fun UsageScreen(ledger: UsageLedger, providers: StateFlow<List<Provider>>, onBac
     var picking by remember { mutableStateOf(false) }
     var selected by rememberSaveable { mutableStateOf<String?>(null) }
     val version by ledger.version.collectAsState()
-    val live by providers.collectAsState()
+    val live by store.providers.collectAsState()
     val range = preset.range(customFrom?.let(LocalDate::ofEpochDay), customTo?.let(LocalDate::ofEpochDay))
     val zone = ZoneId.systemDefault()
     val report by produceState<UsageReport?>(null, version, range, live) {
@@ -284,6 +283,7 @@ fun UsageScreen(ledger: UsageLedger, providers: StateFlow<List<Provider>>, onBac
         onPickCustom = { picking = true },
         onSelect = { selected = it },
         onBack = onBack,
+        currentAllowance = { UsageAllowanceCard(live, store, onOpenUrl) },
     )
 
     if (picking) {
@@ -301,7 +301,7 @@ fun UsageScreen(ledger: UsageLedger, providers: StateFlow<List<Provider>>, onBac
 }
 
 /**
- * 不带状态的用量页,便于测试。[report] 为 null 表示还在统计,只显示范围选择。
+ * 不带状态的用量页，便于测试。[report] 为 null 表示还在统计历史用量。
  * [onPreset] 收到 [UsagePreset.Custom] 时由调用方打开日期选择;已经是自定义时点「改日期」也打开([onPickCustom])。
  * [selected] 是选中的服务商(null 为全部),点排行或胶囊经 [onSelect] 改。
  */
@@ -315,9 +315,11 @@ fun UsageContent(
     onPickCustom: () -> Unit,
     onSelect: (String?) -> Unit,
     onBack: () -> Unit,
+    currentAllowance: @Composable () -> Unit = {},
 ) {
     val c = MikaTheme.colors
     PageScaffold(UsageCopy.TITLE, onBack) {
+        currentAllowance()
         SegmentedControl(
             UsagePreset.entries.map { it.label }, preset.ordinal, { onPreset(UsagePreset.entries[it]) },
             tags = UsagePreset.entries.map { "usage-range-${it.name}" },

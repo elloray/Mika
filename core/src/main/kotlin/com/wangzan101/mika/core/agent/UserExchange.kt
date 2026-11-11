@@ -131,7 +131,7 @@ internal class UserExchange(
         })
     }
 
-    /** 等用户交回;取消任务(aborted)时返回 null。没交回就不说成交回了:跳过、超时不算失败,但如实告诉模型。 */
+    /** 等用户交回;取消任务(aborted)时返回 null。等待不超时,避免仍需用户处理时丢掉任务现场。 */
     suspend fun takeover(o: Outcome.Takeover, running: TaskState): ToolExecution? {
         if (provenance.attendance == Attendance.Unattended || provenance.origin == RunOrigin.Child) return null
         val pending = CompletableDeferred<HandBack>().also { takeoverReply = it }
@@ -142,8 +142,7 @@ internal class UserExchange(
         val since = now()
         val back = try {
             if (announce(ask) == DeliveryState.Failed) return null
-            if (provenance.attendance == Attendance.Reachable) withTimeoutOrNull(inputTimeoutMs) { pending.await() }
-            else pending.await()
+            pending.await()
         } finally { takeoverReply = null; resolve(ask) } ?: return null
         back.note?.let { utterances()?.add(it) }
         tools.noteTakeover(o.reason, back)

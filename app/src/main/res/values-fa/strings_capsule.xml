@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="card_approve_once">فقط این بار تأیید کن</string>
+    <string name="card_see_process">برای مشاهدهٔ روند کامل به میکا برگردید</string>
+    <string name="card_back_to_mika">بازگشت به میکا</string>
+    <string name="card_continue_last">ادامهٔ آخرین گفتگو</string>
+    <string name="card_screen">صفحهٔ پس‌زمینه؛ برای بزرگ کردن بزنید</string>
+    <string name="card_screen_label">پس‌زمینه</string>
+    <string name="card_zoomed">صفحهٔ بزرگ‌شدهٔ پس‌زمینه؛ برای بستن بزنید</string>
+    <string name="card_zoom_hint">میکا در پس‌زمینه مشغول کار است · برای بستن بزنید</string>
+    <string name="card_continuing">ادامهٔ «%1$s»</string>
+    <string name="card_queued_ahead">ابتدا مورد دیگری را که به شما واگذار شده انجام دهید، سپس به این مورد رسیدگی کنید</string>
+    <string name="card_hint_answer">به میکا پاسخ دهید…</string>
+    <string name="card_hint_continue">به گفتگو ادامه دهید…</string>
+    <plurals name="capsule_behind">
+        <item quantity="one">پس از این مورد، %1$d مورد دیگر در انتظار شماست</item>
+        <item quantity="other">پس از این مورد، %1$d مورد دیگر در انتظار شماست</item>
+    </plurals>
+    <string name="capsule_hold">در انتظار</string>
+    <string name="capsule_handed_over">در حال انجام توسط شما</string>
+    <string name="capsule_running">در حال انجام</string>
+    <string name="capsule_done">تمام شد</string>
+    <string name="capsule_failed">ناموفق بود</string>
+    <string name="capsule_stopped">متوقف شد</string>
+    <string name="capsule_stop">توقف این کار</string>
+    <string name="capsule_expand">باز کردن نمای این کار</string>
+    <string name="capsule_talk">گفتگو با میکا</string>
+    <string name="capsule_swap_side">انتقال به طرف دیگر</string>
+    <string name="capsule_desc_needs">%1$s، برای رسیدگی بزنید</string>
+    <string name="capsule_desc_running">میکا در حال انجام کار است: %1$s، برای جزئیات بزنید</string>
+    <string name="capsule_desc_other">میکا: %1$s، برای مشاهدهٔ جزئیات بزنید</string>
+    <string name="capsule_then_tap_right">پس از اتمام، سمت راست را بزنید</string>
+    <string name="capsule_need_of_total">%1$d مورد به توجه شما نیاز دارد · مجموعاً %2$d مورد</string>
+    <string name="capsule_of_total">%1$s · مجموعاً %2$d مورد</string>
+    <string name="capsule_done_tap">تمام شد · برای دیدن نتیجه بزنید</string>
+    <string name="capsule_failed_tap">ناموفق بود · برای دیدن علت بزنید</string>
+    <string name="capsule_needs_you">به توجه شما نیاز دارد: %1$s</string>
+    <string name="capsule_handle_it">بررسی کنید</string>
+    <string name="capsule_needs_ok">به تأیید شما نیاز دارد: %1$s</string>
+    <string name="capsule_asks">پرسش میکا: %1$s</string>
+    <string name="capsule_hold_why">در انتظار: %1$s</string>
+    <string name="capsule_you_handle">نوبت شماست</string>
+    <string name="capsule_thinking">در حال فکر کردن به مرحلهٔ بعد</string>
+    <string name="capsule_continuing">در حال ادامه</string>
+    <string name="capsule_replay">در حال دنبال کردن مسیر %1$d/%2$d</string>
+    <plurals name="capsule_batch">
+        <item quantity="one">%1$d مرحله به‌صورت هم‌زمان</item>
+        <item quantity="other">%1$d مرحله به‌صورت هم‌زمان</item>
+    </plurals>
+    <string name="and_more">" و موارد دیگر"</string>
+    <string name="capsule_hide">خاموش کردن کپسول</string>
+    <string name="capsule_hidden_hint">کپسول شناور خاموش شد. می‌توانید آن را در %1$s › %2$s دوباره روشن کنید.</string>
+</resources>

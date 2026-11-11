@@ -94,4 +94,6 @@
     <string name="timeline_running">Running</string>
     <string name="timeline_step_limit">Steps</string>
     <string name="timeline_step_limit_value">%1$d / %2$d</string>
+    <string name="timeline_token_budget">Token budget</string>
+    <string name="timeline_token_budget_value">%1$s / %2$s</string>
 </resources>

@@ -13,6 +13,7 @@ import androidx.compose.animation.core.CubicBezierEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.snap
@@ -30,10 +31,13 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
@@ -209,7 +213,21 @@ private fun PipWindow(
     val h by animateDpAsState(target.second, sizeSpec, label = "pipH")
     val wPx = with(density) { w.toPx() }
     val hPx = with(density) { h.toPx() }
-    val bounds = PipPhysics.Bounds(areaWidth, areaHeight, wPx, hPx, with(density) { 12.dp.toPx() }, topInset, bottomInset)
+    // 收起的小窗让开顶栏和输入栏(别挡住打字和顶栏的按钮);展开时整块背景已经压暗、它们本来也点不到,
+    // 小窗改放到整屏、只让开系统栏,不再挤在中间一小块里挪。展开收起途中按同一个时长插值,跟着大小一起挪,不跳。
+    val collapsedShare by animateFloatAsState(
+        if (pip.expanded) 0f else 1f,
+        if (reduceMotion) snap() else tween<Float>(350, easing = Ease),
+        label = "pipInset",
+    )
+    val (restTop, restBottom) = PipPhysics.restingInsets(
+        collapsedTop = topInset,
+        collapsedBottom = bottomInset,
+        safeTop = WindowInsets.statusBars.getTop(density).toFloat(),
+        safeBottom = WindowInsets.navigationBars.getBottom(density).toFloat(),
+        collapsedShare = collapsedShare,
+    )
+    val bounds = PipPhysics.Bounds(areaWidth, areaHeight, wPx, hPx, with(density) { 12.dp.toPx() }, restTop, restBottom)
     val currentBounds by rememberUpdatedState(bounds)
     val motionOff by rememberUpdatedState(reduceMotion)
     val expanded by rememberUpdatedState(pip.expanded)

@@ -34,6 +34,7 @@ class RemoteTaskHub(
     private val clock: () -> Long = System::currentTimeMillis,
 ) : McpTaskHost, RemoteTasks, RemoteRunIndex {
     private val receipts by lazy { RemoteTaskReceipts(context) }
+    internal fun migrateUsbOwner(previousOwner: String) = receipts.migrateUsbOwner(previousOwner)
     private val buses = HashMap<RunId, RunEventBus>()
     /** 同一 request_id 的附件任务必须把查重和单次消费放在同一把稳定锁里;scope() 每次返回新包装,不能拿它当锁。 */
     private val fileStartLock = Any()

@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="calls_device_allow_notifications">السماح بالإشعارات</string>
+    <string name="calls_device_allow_phone">السماح بأذونات الهاتف</string>
+    <string name="calls_device_helper">المساعد المدمج</string>
+    <string name="calls_device_helper_connected">متصل</string>
+    <string name="calls_device_notifications">إشعارات المكالمات</string>
+    <string name="calls_device_notifications_app_off">إشعارات التطبيق متوقفة</string>
+    <string name="calls_device_notifications_calls_off">قناة مكالمات الذكاء الاصطناعي متوقفة</string>
+    <string name="calls_device_notifications_permission_missing">لم يُمنح إذن الإشعارات</string>
+    <string name="calls_device_notifications_standby_off">قناة الانتظار في الخلفية متوقفة</string>
+    <string name="calls_device_notifications_unknown">تعذّر التحقق من حالة الإشعارات</string>
+    <string name="calls_device_open_app_settings">فتح إعدادات أذونات التطبيق</string>
+    <string name="calls_device_pair_helper">توصيل المساعد</string>
+    <string name="calls_device_permission_granted">مسموح</string>
+    <string name="calls_device_phone_permissions">أذونات الهاتف</string>
+    <string name="calls_device_phone_permissions_note">اسمح بقراءة حالة المكالمات وإجرائها</string>
+    <string name="calls_device_ready_to_test">جاهز لاختبار الصوت يدويًا</string>
+    <string name="calls_device_system_settings_failed">تعذّر فتح إعدادات النظام. افتح صفحة معلومات التطبيق في إعدادات Android.</string>
+    <string name="calls_background_auto_off">الرد التلقائي متوقف</string>
+    <string name="calls_background_battery">البطارية والنشاط في الخلفية</string>
+    <string name="calls_background_battery_managed">يطبّق Android تحسين استخدام البطارية</string>
+    <string name="calls_background_battery_restricted">يشير Android إلى أن النشاط في الخلفية مقيّد</string>
+    <string name="calls_background_battery_unknown">تعذّر التحقق من سياسة البطارية</string>
+    <string name="calls_background_battery_unrestricted">يشير Android إلى استثناء من تحسين استخدام البطارية</string>
+    <string name="calls_background_lock_screen_note">للمكالمات الواردة، اسمح بإشعارات المكالمات على شاشة القفل. إذا توقف الانتظار كثيرًا، راجع إعدادات البطارية والخلفية. تشغيل الخدمة لا يؤكد إمكانية الرد والهاتف مقفل.</string>
+    <string name="calls_background_not_running">متوقف · يعمل الرد التلقائي فقط عندما يكون التطبيق ظاهرًا والهاتف غير مقفل</string>
+    <string name="calls_background_open_battery">فتح إعدادات البطارية</string>
+    <string name="calls_background_running">قيد التشغيل</string>
+    <string name="calls_background_service">انتظار المكالمات الواردة</string>
+    <string name="calls_background_settings">الخلفية وشاشة القفل</string>
+    <string name="calls_background_start">بدء الانتظار في الخلفية</string>
+    <string name="calls_background_starting">جارٍ البدء…</string>
+    <string name="calls_device_locked_dial_pending">الاتصال بعد القفل</string>
+    <string name="calls_device_locked_dial_remaining">اقفل الهاتف خلال %1$d ثانية</string>
+    <string name="calls_device_locked_dial_preparing">جارٍ تحضير المكالمة والهاتف مقفل</string>
+    <string name="calls_device_locked_dial_cancel">إلغاء</string>
+</resources>

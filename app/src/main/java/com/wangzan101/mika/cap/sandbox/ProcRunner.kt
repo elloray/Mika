@@ -23,26 +23,41 @@ object ProcRunner {
     /**
      * [cwd]:`/workspace` 下的相对路径,空串为 `/workspace`;[standIns]:`files/sandbox/proc/` 里的替身文件名,
      * 各自绑到 /proc/<名字>。/dev 只绑 [ProotDevices] 列出的设备(不绑整个 /dev,见那里的说明)。
+     * [timeoutSec] 为 0 时不限时;[pty] 为 true 时给命令一块伪终端(用户终端用);
+     * [ptySizePath] 是运行中可改窗口大小的小文件(内容“列 行”,mikarun 每 200ms 读一次)。
      */
     fun argv(
         dirs: SandboxDirs, workspace: File, cwd: String, timeoutSec: Int, network: Boolean, standIns: List<String>, command: List<String>,
         devices: List<String> = ProotDevices.bindArgs(),
-    ): List<String> = listOf(
-        dirs.lib("libmikarun.so").path, "--timeout", timeoutSec.toString(), "--net", if (network) "on" else "off", "--",
-        dirs.lib("libproot.so").path, "--kill-on-exit", "--link2symlink", "-0", "-r", dirs.rootfs.path,
-    ) + devices + listOf("-b", "/proc", "-b", "/sys") +
-        standIns.flatMap { listOf("-b", "${File(dirs.procStandIns, it).path}:/proc/$it") } +
-        listOf(
-            "-b", "${workspace.path}:${SandboxPaths.WORKSPACE}",
-            "-b", "${dirs.skills.path}:${SandboxPaths.SKILLS}",
-            "-w", if (cwd.isEmpty()) SandboxPaths.WORKSPACE else "${SandboxPaths.WORKSPACE}/$cwd",
-        ) + command
+        pty: Boolean = false, ptyCols: Int = 80, ptyRows: Int = 24, ptySizePath: File? = null,
+    ): List<String> = buildList {
+        add(dirs.lib("libmikarun.so").path)
+        if (timeoutSec > 0) addAll(listOf("--timeout", timeoutSec.toString()))
+        addAll(listOf("--net", if (network) "on" else "off"))
+        if (pty) addAll(listOf("--pty", "--pty-cols", ptyCols.toString(), "--pty-rows", ptyRows.toString()))
+        if (pty && ptySizePath != null) addAll(listOf("--pty-size", ptySizePath.path))
+        add("--")
+        add(dirs.lib("libproot.so").path)
+        addAll(listOf("--kill-on-exit", "--link2symlink", "-0", "-r", dirs.rootfs.path))
+        addAll(devices)
+        addAll(listOf("-b", "/proc", "-b", "/sys"))
+        for (s in standIns) addAll(listOf("-b", "${File(dirs.procStandIns, s).path}:/proc/$s"))
+        addAll(
+            listOf(
+                "-b", "${workspace.path}:${SandboxPaths.WORKSPACE}",
+                "-b", "${dirs.skills.path}:${SandboxPaths.SKILLS}",
+                "-w", if (cwd.isEmpty()) SandboxPaths.WORKSPACE else "${SandboxPaths.WORKSPACE}/$cwd",
+            ),
+        )
+        addAll(command)
+    }
 
-    /** 环境先清空,只给这些;桥没开时不给 MIKA_BRIDGE / MIKA_TOKEN。 */
+    /** 环境先清空,只给这些;桥没开时不给 MIKA_BRIDGE / MIKA_TOKEN。[pty] 时给终端用的 TERM 和空历史文件。 */
     fun env(
         dirs: SandboxDirs, bridgeName: String?, token: String?, conversationId: String,
         /** 容器的网络代理;空串表示不用(见 NetProxyStore)。不允许联网时调用方给空串。 */
         proxy: String = "",
+        pty: Boolean = false,
     ): Map<String, String> = buildMap {
         put("PROOT_LOADER", dirs.lib("libproot_loader.so").path)
         put("PROOT_TMP_DIR", dirs.tmp.path)
@@ -55,6 +70,11 @@ object ProcRunner {
         bridgeName?.let { put("MIKA_BRIDGE", it) }
         token?.let { put("MIKA_TOKEN", it) }
         put("MIKA_CONVERSATION", conversationId)
+        if (pty) {
+            put("TERM", "xterm-256color")
+            // shell 的历史由 App 在内存里管;别把输入过的命令(可能有密钥)写进 rootfs。
+            put("HISTFILE", "/dev/null")
+        }
         // 代理只给容器里的命令用:常见工具认这几个变量(有的只认大写);本机地址不走代理
         if (proxy.isNotBlank()) {
             for (name in listOf("http_proxy", "https_proxy", "all_proxy")) {

@@ -38,4 +38,14 @@ class KeyguardDiagnosticsTest {
             KeyguardDiagnostics.window(2, false, 0, 10, 9, false),
         )
     }
+
+    @Test fun windowInventoryContainsOnlyTechnicalProperties() {
+        assertEquals(
+            "window_info[index=0,type=2032,package=com.android.systemui,focused=true,active=true]",
+            KeyguardDiagnostics.windowInfo(0, 2032, "com.android.systemui", focused = true, active = true),
+        )
+        val redacted = KeyguardDiagnostics.windowInfo(1, 1, "user text\nnext", focused = false, active = false)
+        assertFalse("user text" in redacted)
+        assertFalse('\n' in redacted)
+    }
 }

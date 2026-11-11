@@ -175,4 +175,10 @@
     <string name="quit_row_sub">Interrompe as tarefas em segundo plano e oculta a cápsula flutuante</string>
     <string name="quit_confirm_body">As tarefas em andamento serão interrompidas, e a cápsula flutuante e as notificações desaparecerão. Ao abrir o Mika de novo, tudo volta.</string>
     <string name="quit_confirm_action">Sair</string>
+    <string name="settings_task_token_budget">Orçamento de tokens por tarefa</string>
+    <string name="settings_task_token_budget_sub">Somente os tokens de entrada e saída informados pelo provedor contam. Ao atingir o orçamento, nenhuma nova solicitação é feita. Uma solicitação em andamento pode excedê-lo; chamadas sem uso informado contam como 0.</string>
+    <string name="settings_token_budget_unlimited">Sem limite</string>
+    <string name="settings_token_budget_custom">Orçamento de tokens personalizado</string>
+    <string name="settings_token_budget_apply">Usar</string>
+    <string name="settings_token_budget_invalid">Digite um número inteiro de %1$s a %2$s.</string>
 </resources>

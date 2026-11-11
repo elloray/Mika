@@ -38,6 +38,9 @@ class FileOutboxStore(private val file: File) : OutboxStore {
                     "result" -> Delivery.Result(id, threadId, text,
                         o["restored"]?.jsonPrimitive?.content == "true", o["title"]?.jsonPrimitive?.contentOrNull ?: tr(R.string.notif_result_title))
                     "progress" -> Delivery.Progress(id, threadId, text)
+                    "image" -> Delivery.Image(id, threadId, o.getValue("uri").jsonPrimitive.content,
+                        o.getValue("name").jsonPrimitive.content, o.getValue("size").jsonPrimitive.content.toLong(),
+                        o["sha256"]?.jsonPrimitive?.contentOrNull)
                     else -> Delivery.Notice(id, threadId, text)
                 }
                 records[id] = DeliveryRecord(peer, delivery, DeliveryState.valueOf(o.getValue("state").jsonPrimitive.content))
@@ -52,10 +55,14 @@ class FileOutboxStore(private val file: File) : OutboxStore {
     @Synchronized override fun get(id: String): DeliveryRecord? = records[id]
     @Synchronized override fun all(): List<DeliveryRecord> = records.values.toList()
 
-    @Synchronized override fun save(record: DeliveryRecord) {
-        records[record.delivery.id] = record
+    @Synchronized override fun save(record: DeliveryRecord) = saveAll(listOf(record))
+
+    @Synchronized override fun saveAll(records: List<DeliveryRecord>) {
+        if (records.isEmpty()) return
+        val next = LinkedHashMap(this.records)
+        records.forEach { next[it.delivery.id] = it }
         file.parentFile?.mkdirs()
-        val json = JsonArray(records.values.map { r -> buildJsonObject {
+        val json = JsonArray(next.values.map { r -> buildJsonObject {
             val d = r.delivery
             put("id", d.id); put("threadId", d.threadId)
             put("channelId", r.peer.channelId); put("peerId", r.peer.peerId)
@@ -69,11 +76,17 @@ class FileOutboxStore(private val file: File) : OutboxStore {
                     put("kind", "result"); put("text", d.text); put("restored", d.restored); put("title", d.title)
                 }
                 is Delivery.Progress -> { put("kind", "progress"); put("text", d.text) }
+                is Delivery.Image -> {
+                    put("kind", "image"); put("uri", d.uri); put("name", d.name); put("size", d.size)
+                    d.sha256?.let { put("sha256", it) }
+                }
                 is Delivery.Notice -> { put("kind", "notice"); put("text", d.text) }
             }
         } }).toString()
         val temp = File(file.parentFile, file.name + ".tmp")
         FileOutputStream(temp).use { out -> out.write(json.toByteArray(Charsets.UTF_8)); out.fd.sync() }
         check(temp.renameTo(file)) { "outbox rename failed" }
+        this.records.clear()
+        this.records.putAll(next)
     }
 }

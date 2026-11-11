@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="calls_default_sim_settings">SIM по умолчанию</string>
+    <string name="calls_device_and_permissions">Устройство и разрешения</string>
+    <string name="calls_edit_rule">Изменить</string>
+    <string name="calls_nav_receive">Приём</string>
+    <string name="calls_nav_task">Задача</string>
+    <string name="calls_pause_enable_first">Включите автоответ, чтобы временно его приостанавливать.</string>
+    <string name="calls_rule_delay_summary">Задержка ответа: %1$d с</string>
+    <string name="calls_rule_pause">Временная пауза</string>
+    <string name="calls_rule_scope">Кому отвечает ИИ</string>
+    <string name="calls_sim_ask_each_time">Без предпочитаемой SIM</string>
+    <string name="calls_task_back_to_edit">Вернуться к редактированию</string>
+    <string name="calls_task_confirm_dial">Подтвердить и позвонить</string>
+    <string name="calls_task_confirm_note">Mika использует задание только для этого звонка. Вызов с выбранной SIM может повлечь плату оператора и голосового сервиса.</string>
+    <string name="calls_task_constraints">Чего нельзя обещать</string>
+    <string name="calls_task_context">Дополнительные сведения</string>
+    <string name="calls_task_filled">Заполнено</string>
+    <string name="calls_task_goal">Какой результат нужен от звонка? (обязательно)</string>
+    <string name="calls_task_goal_example">Например, уточнить наличие мест на пятницу и узнать цену.</string>
+    <string name="calls_task_limit">%1$d / %2$d символов</string>
+    <string name="calls_task_number_hint">Введите обычный номер телефона из 7–15 цифр.</string>
+    <string name="calls_task_one_off">Задание действует только для этого звонка. Звонок и задание можно найти в истории.</string>
+    <string name="calls_task_optional">Необязательно</string>
+    <string name="calls_task_pick_sim">Выберите SIM для этого звонка</string>
+    <string name="calls_task_questions">Что нужно спросить</string>
+    <string name="calls_task_questions_hint">По одному вопросу на строку</string>
+    <string name="calls_task_questions_limit">До %1$d вопросов, по %2$d символов.</string>
+    <string name="calls_task_replace_action">Заменить черновик</string>
+    <string name="calls_task_replace_note">Заменит текущий черновик заданием из истории. Звонок не будет сделан.</string>
+    <string name="calls_task_replace_title">Заменить черновик?</string>
+    <string name="calls_task_review">Проверить задание</string>
+    <string name="calls_task_review_blocked">Для вызова телефон должен быть готов, без активного звонка и с выбранной SIM.</string>
+    <string name="calls_task_sim_override_summary">Этот звонок: %1$s · По умолчанию: %2$s</string>
+    <string name="calls_voice_settings">Голос</string>
+</resources>

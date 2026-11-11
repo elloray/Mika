@@ -1,1 +1,1 @@
-Capture the current screen as an image.
+Capture the current screen as an image. To give a screenshot to the user, set savePath to a new .png path under /workspace, then call share_file on the returned path. Saving does not overwrite an existing file. Models that cannot view images must set savePath; they can still capture and deliver the screenshot.

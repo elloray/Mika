@@ -92,6 +92,27 @@ class RunTimelineViewModelTest {
         assertNull(ready(unlimited).header.stepLimit)
     }
 
+    @Test fun headerCarriesTheTokenBudgetAndUsesAllMeteredCallsWhenAvailable() {
+        val id = run("查天气") {
+            event(RunEvent.TaskStarted(clock, "查天气", "m1", tokenBudget = 500_000))
+            event(RunEvent.ModelReply(clock + 1_000, 1, "", null, null, 100, 20, 0, 900, repliedAtMs = clock + 1_000))
+            event(RunEvent.ModelCalls(clock + 2_000, calls = 3, unreported = 0,
+                inputTokens = 300, outputTokens = 80, cachedTokens = 40, httpCalls = 3, httpUnreported = 0))
+            event(RunEvent.TaskEnded(clock + 3_000, "succeeded", "晴"))
+        }
+        val header = ready(id).header
+        assertEquals(500_000L, header.tokenBudget)
+        assertEquals("主循环和旁路调用合计；缓存输入不再加一次", 380L, header.tokensUsed)
+
+        val legacy = run("旧记录") {
+            event(RunEvent.TaskStarted(clock, "旧记录", "m1", tokenBudget = 100_000))
+            event(RunEvent.ModelReply(clock + 1_000, 1, "", null, null, 100, 20, 0, 900, repliedAtMs = clock + 1_000))
+            event(RunEvent.TaskEnded(clock + 2_000, "succeeded", "好了"))
+        }
+        assertEquals("没有总计事件的旧记录回退主循环 Token", 120L, ready(legacy).header.tokensUsed)
+        assertNull(ready(legacy).header.metrics!!.allInputTokens)
+    }
+
     /** 步数用完后的收尾那一轮记作第上限加一步:显示用了几步时不算它,不会出现 4 / 3。 */
     @Test fun stepsUsedNeverExceedsTheLimit() {
         val id = run("查快递") {

@@ -189,4 +189,7 @@
     <string name="speech_footer">只列像語音模型的；列表裡沒有的可以手填模型名稱，選的時候先試轉一小段。</string>
     <string name="speech_pick_failed">這個模型沒能轉寫：%1$s</string>
     <string name="speech_pick_timeout">%1$s 試轉一小段，%2$d 秒沒有回應</string>
+    <string name="models_daily_token_budget">服務商每日 Token 預算</string>
+    <string name="models_daily_token_budget_sub">按本地日曆日統計這家所有模型和用途的已回報輸入與輸出 Token。達到預算後不再發起下一次請求；進行中的請求可能超量，未回報用量按 0 計。本地日期變更後自動恢復。</string>
+    <string name="models_daily_token_budget_save_failed">預算儲存失敗，原設定未變。</string>
 </resources>

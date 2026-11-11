@@ -16,8 +16,8 @@
     <string name="sandbox_incomplete">Os arquivos do ambiente estão incompletos; você pode redefini-lo em Configurações → Avançado</string>
     <string name="sandbox_not_finished">A configuração não terminou; você pode tentar de novo</string>
     <string name="sandbox_network">Permitir que scripts acessem a internet</string>
-    <string name="sandbox_network_sub">Desativado por padrão</string>
-    <string name="sandbox_network_explain">Por padrão, o Mika trabalha com arquivos e executa scripts offline. Com isto ativado, os scripts podem usar a rede (por exemplo, para buscar artigos ou mapas) e também poderiam enviar para fora arquivos da conversa.</string>
+    <string name="sandbox_network_sub">Ativado por padrão</string>
+    <string name="sandbox_network_explain">Por padrão, o Mika trabalha com arquivos e executa scripts online. Com isto ativado, os scripts podem usar a rede (por exemplo, para buscar artigos ou mapas) e também poderiam enviar para fora arquivos da conversa.</string>
     <string name="sandbox_isolation_unavailable">Este dispositivo não consegue manter os scripts offline: o Mika só pode trabalhar com arquivos e executar scripts quando “Permitir que scripts acessem a internet” está ativado</string>
     <string name="sandbox_reset_title">Redefinir o ambiente?</string>
     <string name="sandbox_reset_body">Exclui o ambiente que o Mika usa para arquivos e scripts, além dos arquivos criados em cada conversa (inclusive os que você anexou), e depois o configura de novo automaticamente. As conversas e as configurações não são afetadas.</string>

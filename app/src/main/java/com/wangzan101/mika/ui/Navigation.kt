@@ -9,7 +9,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 
 /** App 里的页面。对话是根页面,其余都从它(或从设置)进去,返回时回到进来的那一页。 */
-enum class Route { Chat, Settings, Memory, Plans, Browser, Run, Source, PhoneSetup, Models, Usage, SpeechModel, Welcome, ModelSetup, About, License, Screens }
+enum class Route { Chat, Settings, Memory, Plans, Browser, Files, Run, Source, PhoneSetup, Models, Usage, SpeechModel, Welcome, ModelSetup, About, License, Screens, Teach, Calls }
 
 /**
  * 页面栈:最底下永远是对话页。[push] 进一页,[back] 回上一页(已在对话页时返回 false,交给系统退出)。
@@ -25,6 +25,10 @@ class NavStack(initial: List<Route> = listOf(Route.Chat), fromDrawer: Boolean = 
 
     /** 刚从侧栏进去的页面退回到了对话页,侧栏该重新打开;打开后调 [drawerReopened]。 */
     var reopenDrawer: Boolean by mutableStateOf(false)
+        private set
+
+    /** 每次外部跳转或系统分享回到对话页时递增,让已展开的侧栏一并收起。 */
+    var resetSerial: Int by mutableStateOf(0)
         private set
 
     val current: Route get() = stack.last()
@@ -67,6 +71,7 @@ class NavStack(initial: List<Route> = listOf(Route.Chat), fromDrawer: Boolean = 
         fromDrawer = false
         reopenDrawer = false
         stack = listOf(Route.Chat)
+        resetSerial++
     }
 
     companion object {

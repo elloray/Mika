@@ -1,6 +1,7 @@
 package com.wangzan101.mika.voice
 
 import com.wangzan101.mika.R
+import com.wangzan101.mika.core.model.ModelError
 import com.wangzan101.mika.i18n.tr
 import com.wangzan101.mika.settings.Provider
 
@@ -30,6 +31,12 @@ object SpeechOptions {
         return when (choice) {
             SpeechChoice.Off -> Summary(tr(R.string.models_off), null, false)
             is SpeechChoice.Doubao -> Summary(tr(R.string.speech_doubao_model), tr(R.string.speech_doubao_provider), false)
+            is SpeechChoice.FunAsr -> Summary(tr(R.string.speech_funasr_model), FunAsrProtocol.hostOf(choice.url), false)
+            is SpeechChoice.Bailian -> Summary(
+                choice.model,
+                tr(R.string.speech_bailian_provider) + " · " + tr(if (choice.region == BailianRegion.Singapore) R.string.speech_bailian_singapore else R.string.speech_bailian_beijing),
+                false,
+            )
             SpeechChoice.Auto -> when {
                 system.usable -> systemSummary(system)
                 system.available -> silent
@@ -46,6 +53,14 @@ object SpeechOptions {
                 Summary(choice.model, p.name, false)
             }
         }
+    }
+
+    /** 边说边转的服务在设置页里试连没通时的说法;不带服务端原话。 */
+    fun probeFailure(e: Throwable): String = when {
+        e is ModelError.Auth || e is LiveAsrError && e.auth -> tr(R.string.speech_live_auth)
+        e is LiveAsrError -> tr(R.string.speech_live_refused, e.code)
+        e is ModelError.RateLimited -> tr(R.string.speech_live_refused, "429")
+        else -> tr(R.string.speech_live_unreachable)
     }
 
     private fun systemSummary(system: SystemCapability) = Summary(

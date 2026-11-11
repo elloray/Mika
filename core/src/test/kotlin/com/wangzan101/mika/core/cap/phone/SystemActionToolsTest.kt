@@ -19,8 +19,10 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.ZoneId
+import java.time.ZoneOffset
 
 class SystemActionToolsTest {
     private val zone = ZoneId.systemDefault()
@@ -29,7 +31,15 @@ class SystemActionToolsTest {
 
     private class SystemScreen(var answer: (SystemAction) -> SystemActionResult) : ScreenPort by FakeScreen() {
         val asked = mutableListOf<SystemAction>()
+        val bulkAsked = mutableListOf<List<SystemAction.AddCalendarEvent>>()
+        var bulkAnswer: (List<SystemAction.AddCalendarEvent>) -> SystemActionResult = {
+            SystemActionResult(ActionResult.Failed(SystemActionResult.NOT_SUPPORTED))
+        }
         override suspend fun systemAction(action: SystemAction): SystemActionResult { asked += action; return answer(action) }
+        override suspend fun bulkCalendarInsert(events: List<SystemAction.AddCalendarEvent>): SystemActionResult {
+            bulkAsked += events
+            return bulkAnswer(events)
+        }
     }
 
     private fun call(name: String, args: String) = Part.ToolCall("c", name, args)
@@ -124,6 +134,72 @@ class SystemActionToolsTest {
         assertEquals(SystemAction.ShowAlarms, screen.asked.last())
     }
 
+    @Test fun bulkCalendarValidatesEverythingBeforeWriting() = runTest {
+        val screen = SystemScreen { error("single-event UI must not open") }
+        screen.bulkAnswer = { error("no write may start") }
+        val d = toolDispatcher(screen)
+        val bad = listOf(
+            """{"events":[]}""",
+            """{"events":"not an array"}""",
+            """{"events":[42]}""",
+            """{"events":[{"title":"ok","start":"2026-11-02T14:30"},{"title":"bad","start":"tomorrow"}]}""",
+            """{"events":[{"title":"ok","start":"2026-11-02T14:30"},{"title":"bad","start":"2026-11-02T15:00","end":"2026-11-02T14:00"}]}""",
+            """{"events":[{"title":"ok","start":"2026-11-02T14:30","surprise":true}]}""",
+            List(101) { """{"title":"t","start":"2026-11-02T14:30"}""" }.joinToString(",", """{"events":[""", "]}"),
+        )
+        for (args in bad) {
+            val r = d.execute(call("phone_calendar_bulk_insert", args)).content
+            assertEquals(args, "false", r.s("ok"))
+            assertEquals(args, "invalid_arguments", r.s("error"))
+        }
+        assertTrue(screen.bulkAsked.isEmpty())
+    }
+
+    @Test fun bulkCalendarWritesLocalAndUtcAllDayEvents() = runTest {
+        val screen = SystemScreen { error("single-event UI must not open") }
+        screen.bulkAnswer = { events ->
+            SystemActionResult(
+                ActionResult.Ok(),
+                eventUris = events.mapIndexed { i, _ -> "content://com.android.calendar/events/${101 + i}" },
+            )
+        }
+        val r = toolDispatcher(screen).execute(call("phone_calendar_bulk_insert", """
+            {"events":[
+              {"title":"timed","start":"2026-11-02T14:30","location":"room"},
+              {"title":"holiday","start":"2026-11-03","allDay":true}
+            ]}
+        """.trimIndent())).content
+        assertEquals("true", r.s("ok"))
+        assertEquals("2", r.s("inserted"))
+        assertEquals(listOf("101", "102"), r["eventIds"]!!.jsonArray.map { it.jsonPrimitive.content })
+        val begin = LocalDateTime.of(2026, 11, 2, 14, 30).atZone(zone).toInstant().toEpochMilli()
+        val day = LocalDate.of(2026, 11, 3).atStartOfDay(ZoneOffset.UTC).toInstant().toEpochMilli()
+        assertEquals(listOf(
+            SystemAction.AddCalendarEvent("timed", begin, begin + 3_600_000, false, "room", null),
+            SystemAction.AddCalendarEvent("holiday", day, day + 24 * 3_600_000, true, null, null),
+        ), screen.bulkAsked.single())
+    }
+
+    @Test fun bulkCalendarExplainsSafeFallbacks() = runTest {
+        val screen = SystemScreen { error("single-event UI must not open") }
+        val d = toolDispatcher(screen)
+        for (code in listOf("calendar_permission_required", "no_writable_calendar", "calendar_unavailable", "calendar_write_unconfirmed")) {
+            screen.bulkAnswer = { SystemActionResult(ActionResult.Failed(code)) }
+            val r = d.execute(call("phone_calendar_bulk_insert", """{"events":[{"title":"t","start":"2026-11-02T14:30"}]}""")).content
+            assertEquals(code, "false", r.s("ok"))
+            assertEquals(code, code, r.s("error"))
+            assertEquals(code, FAILURE_MESSAGES.getValue(code), r.s("message"))
+        }
+        for (uris in listOf(
+            emptyList(),
+            listOf("content://com.android.calendar/events/not-an-id"),
+        )) {
+            screen.bulkAnswer = { SystemActionResult(ActionResult.Ok(), eventUris = uris) }
+            val r = d.execute(call("phone_calendar_bulk_insert", """{"events":[{"title":"t","start":"2026-11-02T14:30"}]}""")).content
+            assertEquals("calendar_write_unconfirmed", r.s("error"))
+        }
+    }
+
     @Test fun silentActionThatOpenedAScreenSaysSo() = runTest {
         val screen = SystemScreen { SystemActionResult(ActionResult.Ok(), "com.example.clock", showing = true) }
         val r = toolDispatcher(screen).execute(call("phone_set_timer", """{"seconds":60}""")).content
@@ -149,6 +225,7 @@ class SystemActionToolsTest {
         assertEquals(1793601000000L, CalendarTime.parse("2026-11-02T14:30:00", false, z))
         assertEquals(1793601000000L, CalendarTime.parse("2026-11-02T06:30:00Z", false, z))
         assertEquals(1793548800000L, CalendarTime.parse("2026-11-02", true, z))
+        assertEquals(1793577600000L, CalendarTime.parse("2026-11-02", true, z, utcAllDay = true))
         assertNull(CalendarTime.parse("2026-11-02", false, z))
         assertNull(CalendarTime.parse("next friday", false, z))
     }

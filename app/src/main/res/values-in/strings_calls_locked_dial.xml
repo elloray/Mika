@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="calls_task_dial_now">Telepon sekarang</string>
+    <string name="calls_task_dial_locked">Telepon setelah dikunci</string>
+    <string name="calls_task_dial_locked_note">Kunci ponsel dalam 45 detik. Panggilan akan dicoba sekali dengan nomor, SIM, dan tugas ini. Anda dapat membatalkan dari notifikasi. Mematikan layar tanpa benar-benar mengunci ponsel tidak akan memulai panggilan.</string>
+    <string name="calls_task_dial_locked_confirm">Konfirmasi dan tunggu penguncian</string>
+</resources>

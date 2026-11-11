@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="calls_default_sim_settings">SIM default untuk menelepon</string>
+    <string name="calls_device_and_permissions">Perangkat dan izin</string>
+    <string name="calls_edit_rule">Edit</string>
+    <string name="calls_nav_receive">Terima</string>
+    <string name="calls_nav_task">Tugas</string>
+    <string name="calls_pause_enable_first">Aktifkan jawab otomatis untuk menjedanya sementara.</string>
+    <string name="calls_rule_delay_summary">Jeda sebelum menjawab: %1$d dtk</string>
+    <string name="calls_rule_pause">Jeda sementara</string>
+    <string name="calls_rule_scope">Siapa yang dijawab AI</string>
+    <string name="calls_sim_ask_each_time">Tanpa SIM pilihan</string>
+    <string name="calls_task_back_to_edit">Kembali mengedit</string>
+    <string name="calls_task_confirm_dial">Konfirmasi dan telepon</string>
+    <string name="calls_task_confirm_note">Mika memakai tugas ini hanya untuk panggilan ini. SIM pilihan digunakan dan biaya operator serta suara real-time dapat berlaku.</string>
+    <string name="calls_task_constraints">Apa yang tidak boleh dijanjikan</string>
+    <string name="calls_task_context">Konteks tambahan</string>
+    <string name="calls_task_filled">Terisi</string>
+    <string name="calls_task_goal">Apa tujuan panggilan ini? (wajib)</string>
+    <string name="calls_task_goal_example">Contoh: pastikan ketersediaan hari Jumat dan catat harganya.</string>
+    <string name="calls_task_limit">%1$d / %2$d karakter</string>
+    <string name="calls_task_number_hint">Masukkan nomor telepon biasa dengan 7–15 digit.</string>
+    <string name="calls_task_one_off">Tugas hanya berlaku untuk panggilan ini. Lihat panggilan dan tugasnya di Riwayat.</string>
+    <string name="calls_task_optional">Opsional</string>
+    <string name="calls_task_pick_sim">Pilih SIM untuk panggilan ini</string>
+    <string name="calls_task_questions">Pertanyaan yang perlu diajukan</string>
+    <string name="calls_task_questions_hint">Satu pertanyaan per baris</string>
+    <string name="calls_task_questions_limit">Maksimal %1$d pertanyaan, masing-masing %2$d karakter.</string>
+    <string name="calls_task_replace_action">Ganti draf</string>
+    <string name="calls_task_replace_note">Ganti draf saat ini dengan tugas dari Riwayat. Ini tidak melakukan panggilan.</string>
+    <string name="calls_task_replace_title">Ganti draf ini?</string>
+    <string name="calls_task_review">Tinjau tugas panggilan</string>
+    <string name="calls_task_review_blocked">Untuk menelepon, perangkat harus siap, tidak sedang digunakan, dan SIM sudah dipilih.</string>
+    <string name="calls_task_sim_override_summary">Panggilan ini: %1$s · Pilihan: %2$s</string>
+    <string name="calls_voice_settings">Suara</string>
+</resources>

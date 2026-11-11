@@ -73,8 +73,15 @@ open class ScreenAccessibility : AccessibilityService() {
         if (event.eventType == AccessibilityEvent.TYPE_WINDOWS_CHANGED || event.eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) {
             windowGeneration.incrementAndGet()
         }
-        val access = (application as com.wangzan101.mika.MikaApp).appAccess.current()
-        if (access.denial(event.packageName?.toString()) != null) return
+        val app = application as? com.wangzan101.mika.MikaApp
+        val access = app?.appAccess?.current()
+        if (access != null && access.denial(event.packageName?.toString()) != null) return
+        if (app != null && app.teachReady && app.teach.wantsEvents()) {
+            val displayId = displayOf(event)
+            if (displayId != Display.INVALID_DISPLAY) {
+                com.wangzan101.mika.teach.TeachEvents.capture(event, displayId)?.let(app.teach::offer)
+            }
+        }
         if (event.eventType == AccessibilityEvent.TYPE_NOTIFICATION_STATE_CHANGED && notifications.subscriptionCount.value > 0) {
             val notification = event.parcelableData as? Notification
             val title = notification?.extras?.getCharSequence(Notification.EXTRA_TITLE)?.toString()

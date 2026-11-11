@@ -1,0 +1,119 @@
+package com.wangzan101.mika.wechat
+
+import android.content.Context
+import android.net.Uri
+import com.wangzan101.mika.cap.sandbox.AndroidSandbox
+import com.wangzan101.mika.cap.sandbox.Attachments
+import com.wangzan101.mika.cap.sandbox.SandboxDirs
+import com.wangzan101.mika.cap.sandbox.SandboxState
+import com.wangzan101.mika.core.agent.AttachmentLines
+import com.wangzan101.mika.core.run.ChannelPeer
+import com.wangzan101.mika.core.run.Delivery
+import com.wangzan101.mika.core.wechat.WechatApi
+import com.wangzan101.mika.core.wechat.WechatDownloadedImage
+import com.wangzan101.mika.core.wechat.WechatImage
+import com.wangzan101.mika.core.wechat.WechatImages
+import com.wangzan101.mika.core.workspace.SandboxTree
+import com.wangzan101.mika.core.workspace.WorkspaceFileGate
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
+import kotlinx.coroutines.withContext
+import java.io.ByteArrayOutputStream
+import java.io.File
+import java.io.IOException
+import java.io.InputStream
+import java.net.URI
+import java.security.MessageDigest
+import java.util.UUID
+
+/** Media stays in the host; the generic task input contains only ordinary workspace attachment paths. */
+interface WechatImageFiles {
+    suspend fun receive(peer: ChannelPeer, messageId: String, text: String, images: List<WechatImage>,
+        accept: (String) -> Boolean): Boolean
+    suspend fun read(image: Delivery.Image): ByteArray
+}
+
+internal data class PreparedWechatImage(val bytes: ByteArray, val extension: String)
+
+internal fun androidWechatImages(context: Context, api: WechatApi): WechatImageFiles {
+    val dirs = SandboxDirs(context)
+    val sandbox = AndroidSandbox(context, SandboxState.get(context))
+    return StoredWechatImages(
+        File(context.cacheDir, "wechat-images"), api::downloadImage, ::prepareWechatImage,
+        dirs::workspace, dirs.gate, dirs.tree,
+        { thread -> sandbox.freeBytes() >= Attachments.MIN_FREE && sandbox.workspaceBytes(thread) <= Attachments.WORKSPACE_MAX },
+        { uri -> context.contentResolver.openInputStream(Uri.parse(uri)) },
+    )
+}
+
+/** A batch is imported atomically with its journal entry. Rejected/old-session batches leave no workspace files. */
+internal class StoredWechatImages(
+    private val tempDir: File,
+    private val download: suspend (WechatImage) -> WechatDownloadedImage,
+    private val prepare: (WechatDownloadedImage) -> PreparedWechatImage,
+    private val workspace: (String) -> File,
+    private val gate: WorkspaceFileGate,
+    private val tree: SandboxTree,
+    private val room: (String) -> Boolean,
+    private val openExport: (String) -> InputStream?,
+) : WechatImageFiles {
+    override suspend fun receive(peer: ChannelPeer, messageId: String, text: String, images: List<WechatImage>,
+        accept: (String) -> Boolean): Boolean = withContext(Dispatchers.IO) {
+        if (images.isEmpty() || images.size > WechatImages.MAX_IMAGES) throw IOException("Image count limit exceeded")
+        if (!room(peer.threadId)) throw IOException("Not enough space for images")
+        val batch = File(tempDir, "receive-${UUID.randomUUID()}")
+        if (!batch.mkdirs()) throw IOException("Cannot stage images")
+        try {
+            val sources = images.mapIndexed { index, image ->
+                currentCoroutineContext().ensureActive()
+                if (!room(peer.threadId)) throw IOException("Not enough space for images")
+                val prepared = prepare(download(image))
+                currentCoroutineContext().ensureActive()
+                val name = "wechat-${index + 1}.${prepared.extension}"
+                name to File(batch, name).apply { writeBytes(prepared.bytes) }
+            }
+            val taskContext = currentCoroutineContext()
+            Attachments.withTaskFiles(sources, workspace(peer.threadId), gate, tree, { room(peer.threadId) }) { stored ->
+                taskContext.ensureActive()
+                if (!room(peer.threadId)) throw IOException("Not enough space for images")
+                if (!accept(AttachmentLines.composeBytes(text, stored))) throw DiscardedImageBatch()
+                true
+            }
+        } catch (_: DiscardedImageBatch) { false }
+        finally { batch.deleteRecursively() }
+    }
+
+    override suspend fun read(image: Delivery.Image): ByteArray = withContext(Dispatchers.IO) {
+        readWechatExport(image, openExport)
+    }
+}
+
+private class DiscardedImageBatch : RuntimeException()
+
+/** Only explicit MediaStore exports can be sent. Verify the recorded size/hash before uploading any bytes. */
+internal suspend fun readWechatExport(image: Delivery.Image, open: (String) -> InputStream?): ByteArray {
+    val uri = try { URI(image.uri) } catch (_: Exception) { throw IOException("Invalid image export") }
+    if (uri.scheme != "content" || uri.authority != "media" || uri.query != null || uri.fragment != null)
+        throw IOException("Not a shared image export")
+    if (image.size <= 0 || image.size > WechatImages.MAX_BYTES) throw IOException("Image size limit exceeded")
+    val bytes = (open(image.uri) ?: throw IOException("Image export is unavailable")).use { input ->
+        val out = ByteArrayOutputStream()
+        val buffer = ByteArray(64 * 1024)
+        while (true) {
+            currentCoroutineContext().ensureActive()
+            val count = input.read(buffer)
+            if (count < 0) break
+            if (out.size().toLong() + count > image.size) throw IOException("Image export changed")
+            out.write(buffer, 0, count)
+        }
+        if (out.size().toLong() != image.size) throw IOException("Image export changed")
+        out.toByteArray()
+    }
+    image.sha256?.let { expected ->
+        val actual = MessageDigest.getInstance("SHA-256").digest(bytes).joinToString("") { "%02x".format(it) }
+        if (!actual.equals(expected, ignoreCase = true)) throw IOException("Image export changed")
+    }
+    WechatImages.validate(bytes)
+    return bytes
+}

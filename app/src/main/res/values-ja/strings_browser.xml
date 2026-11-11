@@ -1,6 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="browser_engine">Bing</string>
+    <string name="browser_engine_bing">Bing</string>
+    <string name="browser_engine_google">Google</string>
+    <string name="browser_engine_duckduckgo">DuckDuckGo</string>
+    <string name="browser_engine_baidu">Baidu</string>
+    <string name="browser_engine_choose">検索エンジン</string>
+    <string name="browser_engine_custom_add">カスタム検索エンジン</string>
+    <string name="browser_engine_custom_name">名前</string>
+    <string name="browser_engine_custom_url">検索 URL</string>
+    <string name="browser_engine_custom_hint" formatted="false">検索語の位置に %s を入れてください（例: https://example.com/search?q=%s）</string>
+    <string name="browser_engine_custom_invalid" formatted="false">名前と %s を 1 つ含む http(s) URL を入力してください</string>
+    <string name="browser_engine_custom_remove">%1$s を削除</string>
     <string name="browser_recent_source">最近開いたページ</string>
     <string name="browser_search_colon">検索: %1$s</string>
     <string name="browser_search_q">「%1$s」を検索</string>
@@ -14,6 +24,25 @@
     <string name="browser_external_link">このリンクは別のアプリを開くため、ブラウザでは開きません。</string>
     <string name="browser_bad_scheme">このアドレスは開けません。ブラウザで開けるのはウェブページ(http、https)だけです。</string>
     <string name="browser_blocked_app_link">別のアプリを開くリンクをブロックしました。</string>
+    <string name="browser_downloads">ダウンロード</string>
+    <string name="browser_download_started">%1$s をダウンロード中</string>
+    <string name="browser_download_failed_start">このファイルはダウンロードできません</string>
+    <string name="browser_download_empty">ダウンロードはまだありません</string>
+    <string name="browser_download_running">ダウンロード中…</string>
+    <string name="browser_download_done">ダウンロード済み</string>
+    <string name="browser_download_failed">ダウンロードに失敗しました</string>
+    <string name="browser_download_open">開く</string>
+    <string name="browser_download_cancel">ダウンロードをキャンセル</string>
+    <string name="browser_download_delete">削除</string>
+    <string name="browser_download_delete_q">このダウンロードを削除しますか？</string>
+    <string name="browser_download_open_failed">このファイルを開けるアプリがありません</string>
+    <string name="browser_permission_ask">このサイトが使用を求めています：</string>
+    <string name="browser_permission_camera">カメラ</string>
+    <string name="browser_permission_microphone">マイク</string>
+    <string name="browser_permission_camera_mic">カメラとマイク</string>
+    <string name="browser_permission_location">位置情報</string>
+    <string name="browser_permission_allow">許可</string>
+    <string name="browser_permission_block">ブロック</string>
     <string name="browser_no_download">ブラウザはまだファイルをダウンロードできません。</string>
     <string name="browser_crashed">ページで問題が発生したため閉じました。もう一度開けます。</string>
     <string name="browser_logged_in">ログインしました — Mika もタスクで使えます。</string>
@@ -50,8 +79,8 @@
     <string name="browser_leave_body">このページでの変更は保存されない可能性があります。</string>
     <string name="browser_leave">移動する</string>
     <string name="browser_search_hint">検索または URL を入力</string>
-    <string name="browser_engine_note">Bing で検索</string>
-    <string name="browser_typing_note">URL はそのまま開き、それ以外は Bing で検索します</string>
+    <string name="browser_engine_note">%1$s で検索</string>
+    <string name="browser_typing_note">URL はそのまま開き、それ以外は %1$s で検索します</string>
     <string name="browser_login_legend">ログイン済み — Mika がタスクでそのまま使えます</string>
     <string name="browser_add_hint">サイトを開き、「その他」の「お気に入りに追加」をタップしてください</string>
     <string name="browser_edit_favorites">お気に入りを編集</string>
@@ -59,6 +88,32 @@
     <string name="browser_long_press">サイトを長押しして編集することもできます</string>
     <string name="browser_favorites">お気に入り</string>
     <string name="browser_edit">編集</string>
+    <string name="browser_bookmarks">ブックマーク</string>
+    <string name="browser_all">すべて</string>
+    <string name="browser_bookmark_add">ブックマークに追加</string>
+    <string name="browser_bookmark_remove">ブックマークから削除</string>
+    <string name="browser_bookmarked">ブックマークに追加しました</string>
+    <string name="browser_unbookmarked">ブックマークから削除しました</string>
+    <string name="browser_bookmark_empty">ページを開いて「その他」の「ブックマークに追加」をタップしてください</string>
+    <string name="browser_bookmark_rename">ブックマーク名を変更</string>
+    <string name="browser_bookmark_name">タイトル</string>
+    <string name="browser_tabs">タブ</string>
+    <string name="browser_new_tab">新しいタブ</string>
+    <string name="browser_no_tabs">開いているタブはありません</string>
+    <string name="browser_close_tab">タブを閉じる</string>
+    <string name="browser_history">履歴</string>
+    <string name="browser_clear_history">履歴を消去</string>
+    <string name="browser_clear_history_q">すべての履歴を消去しますか？</string>
+    <string name="browser_find">ページ内を検索</string>
+    <string name="browser_find_prev">前を検索</string>
+    <string name="browser_find_next">次を検索</string>
+    <string name="browser_find_close">検索を閉じる</string>
+    <string name="browser_find_no_matches">一致なし</string>
+    <string name="browser_clear_data">閲覧データを消去</string>
+    <string name="browser_clear_site_data">Cookie とサイトデータ</string>
+    <string name="browser_clear_site_data_sub">すべてのサイトからログアウトします（Mika がタスクで使うサイトを含む）</string>
+    <string name="browser_clear_cache">キャッシュ</string>
+    <string name="browser_data_cleared">閲覧データを消去しました</string>
     <string name="browser_clear_input">クリア</string>
     <string name="browser_open_site">%1$s を開く</string>
     <string name="browser_remove_site">%1$s を削除</string>

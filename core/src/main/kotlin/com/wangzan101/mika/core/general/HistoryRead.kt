@@ -34,7 +34,7 @@ const val HISTORY_READ = "history_read"
 
 /**
  * 查这个对话之前几轮的记录:不带 turn 列出之前的轮次(新的在前:第几轮、用户说了什么、结局、时刻),
- * 带 turn 读那一轮记下的东西(完整结局、Mika 的进度说明、读到的原文),按条分页。
+ * 带 turn 读那一轮记下的东西(完整结局、验收与已确认进度、Mika 的进度说明、读到的原文),按条分页。
  * 只认本次运行开局带来的那几轮([com.wangzan101.mika.core.run.RunSpec.priorTurns],同一个对话),只读;
  * 原文取自运行记录(落盘时已脱敏、截短),不带截图。读到的原文作为观察交给核查,回答里可以引用。
  * 只在给了运行记录、而之前有记过运行的轮次时提供。
@@ -138,7 +138,7 @@ internal object HistoryRead : AgentTool {
         return ToolExecution(content, observations = observations)
     }
 
-    /** 记录里一条可读的东西:Mika 的进度说明(note,带了调用的回复里的字),或读到的原文(观察的种类)。 */
+    /** 记录里一条可读的东西:验收/进度、Mika 的进度说明(note),或读到的原文(观察的种类)。 */
     private class Item(val kind: String, val text: String, val where: String?, val untrusted: Boolean, val obsKind: ObsKind?)
 
     private fun items(events: List<RunEvent>): List<Item> {
@@ -152,8 +152,25 @@ internal object HistoryRead : AgentTool {
                     val o = e.observation()
                     Item(o.kind.wire, clip(it, ITEM_CHARS), o.title ?: o.place?.name, e.untrusted, o.kind)
                 }
+                is RunEvent.Criteria -> progress(e).takeIf { it.isNotEmpty() && seen.add(it) }
+                    ?.let { Item(PROGRESS, clip(it, ITEM_CHARS), null, false, null) }
                 else -> null
             }
+        }
+    }
+
+    private fun progress(e: RunEvent.Criteria): String = buildString {
+        if (e.criteria.isNotEmpty()) append("Acceptance: ").append(e.criteria.joinToString("; "))
+        e.progress?.let { p ->
+            if (isNotEmpty()) append('\n')
+            append("Confirmed progress: ").append(p.name)
+            if (p.done != null) append(' ').append(p.done)
+            if (p.total != null) append('/').append(p.total)
+            p.boundary?.takeIf(String::isNotBlank)?.let { append("; boundary: ").append(it) }
+        }
+        if (e.complete) {
+            if (isNotEmpty()) append('\n')
+            append("All acceptance criteria were reported met.")
         }
     }
 
@@ -166,5 +183,6 @@ internal object HistoryRead : AgentTool {
         try { read() } catch (e: CancellationException) { throw e } catch (e: Exception) { fallback }
 
     private const val NOTE = "note"
+    private const val PROGRESS = "progress"
     private const val SOURCE = "history"
 }

@@ -7,6 +7,7 @@
     <string name="tool_set_timer">Поставить таймер</string>
     <string name="tool_show_alarms">Показать будильники</string>
     <string name="tool_add_calendar_event">Добавить событие в календарь</string>
+    <string name="tool_calendar_bulk_insert">Добавить события в календарь пакетно</string>
     <string name="tool_set_wheel">Покрутить барабан выбора</string>
     <string name="tool_scroll_find">Прокрутить и найти</string>
     <string name="tool_wait_condition">Ждать условия на экране</string>

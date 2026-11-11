@@ -59,4 +59,11 @@
     <string name="diagnostics_share">Bagikan</string>
     <string name="diagnostics_copied">Disalin</string>
     <string name="diagnostics_loading">Mengumpulkan…</string>
+    <string name="about_auto_update">Pembaruan otomatis</string>
+    <string name="about_auto_update_detail">Unduh versi baru di latar belakang hanya melalui Wi-Fi dan minta konfirmasi sebelum memasang</string>
+    <string name="about_auto_update_disable">Matikan pembaruan otomatis</string>
+    <string name="about_auto_update_ready">Mika %1$s telah diunduh</string>
+    <string name="about_auto_update_confirm_title">Versi baru Mika siap</string>
+    <string name="about_auto_update_confirm_detail">Pasang %1$s sekarang atau matikan pembaruan otomatis dan periksa secara manual di Pengaturan.</string>
+    <string name="about_auto_update_now">Perbarui sekarang</string>
 </resources>

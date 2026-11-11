@@ -79,7 +79,9 @@ internal class PageDwell(
     suspend fun before(target: String? = null, port: WebPort? = null, gate: Boolean = true): Long {
         val site = target ?: synchronized(this) { lastUrl } ?: return 0
         val p = paceOf(site)
-        if (gate && siteKey(site) != outwardNow && pacing.capReached(site, p)) throw PageLimitReached(hostOf(site), pacing.pagesOn(site), pacing.capFor(p))
+        if (gate && siteKey(site) != outwardNow && pacing.capReached(site, p)) {
+            throw PageLimitReached(hostOf(site), pacing.pagesOn(site), pacing.capFor(p), PageLimitReached.Scope.WEB_PAGES)
+        }
         val wait = pacing.waitBefore(site, clock())
         if (wait <= 0) return 0
         if (port != null && idle != null) idleWait(port, idle, wait) else pause(wait)

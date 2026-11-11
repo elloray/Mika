@@ -10,7 +10,7 @@ import (
 
 func TestWebLanguagesAndCatalogCompleteness(t *testing.T) {
 	f := newFixture(t)
-	for header, want := range map[string]string{"": "en", "zh-CN": "zh-Hans", "zh-HK": "zh-Hant", "zh-Hans-TW": "zh-Hans", "fr, en;q=0.4,zh-TW;q=0.9": "zh-Hant", "zh;q=0,en;q=1": "en", "zh;q=NaN,en;q=0.1": "en"} {
+	for header, want := range map[string]string{"": "en", "fa-IR": "fa", "fa;q=0,en;q=1": "en", "zh-CN": "zh-Hans", "zh-HK": "zh-Hant", "zh-Hans-TW": "zh-Hans", "fr, en;q=0.4,zh-TW;q=0.9": "zh-Hant", "zh;q=0,en;q=1": "en", "zh;q=NaN,en;q=0.1": "en"} {
 		req, _ := http.NewRequest("GET", f.server.URL+"/", nil)
 		req.Header.Set("Accept-Language", header)
 		r, err := f.client.Do(req)
@@ -35,8 +35,11 @@ func TestWebLanguagesAndCatalogCompleteness(t *testing.T) {
 		req.AddCookie(&http.Cookie{Name: "mika_language", Value: lang})
 		w := httptest.NewRecorder()
 		f.g.ServeHTTP(w, req)
-		if !strings.Contains(w.Body.String(), `<html lang="`+lang+`">`) || !strings.Contains(w.Body.String(), `value="`+lang+`" selected`) {
+		if !strings.Contains(w.Body.String(), `<html lang="`+lang+`"`) || !strings.Contains(w.Body.String(), `value="`+lang+`" selected`) {
 			t.Fatal("language preference not reflected")
+		}
+		if lang == "fa" && !strings.Contains(w.Body.String(), `<html lang="fa" dir="rtl">`) {
+			t.Fatal("Persian page is not right-to-left")
 		}
 	}
 }

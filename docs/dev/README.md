@@ -28,6 +28,7 @@
 | [chatgpt-signin-check.md](chatgpt-signin-check.md) | 上手机之前，在电脑上用 App 同一套代码走一遍「用 ChatGPT 登录」 |
 | [remote-device-access-check.md](remote-device-access-check.md) | 远程亮屏与解锁的验证记录 |
 | [remote-mcp.md](remote-mcp.md) | 自托管远程 CLI / MCP 的部署、手机鉴权和断线语义 |
+| [teach-mika.md](teach-mika.md) | 人工示范怎样收成待确认的知识型技能 |
 
 ## 仓库里别处的开发文档
 

@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="teach_title">Научить Mika</string>
+    <string name="teach_menu">Научить Mika</string>
+    <string name="teach_goal_label">Цель</string>
+    <string name="teach_goal_hint">Что Mika должна запомнить? Одно предложение.</string>
+    <string name="teach_disclosure">Шаги остаются на этом телефоне и только после нажатия «Начать показ». Если модель настроена, при создании навыка ей отправляется краткое описание цели и шагов без паролей, кодов и платежных данных. Если модели нет, черновик пишется на телефоне и ничего не отправляется. Пока вы его не примете, он не используется и не был успешно проверен.</string>
+    <string name="teach_continue">Далее</string>
+    <string name="teach_ready_body">Mika только смотрит и не управляет телефоном. Можно поставить на паузу, закончить или отменить. До нажатия «Начать показ» ничего не записывается.</string>
+    <string name="teach_start">Начать показ</string>
+    <string name="teach_learning">Учится</string>
+    <string name="teach_paused">Пауза</string>
+    <string name="teach_pause">Пауза</string>
+    <string name="teach_resume">Продолжить показ</string>
+    <string name="teach_end">Закончить показ</string>
+    <string name="teach_discard">Отменить</string>
+    <string name="teach_discard_body">Отменить этот показ и удалить сохраненные шаги?</string>
+    <string name="teach_review">Проверить</string>
+    <string name="teach_correct">Исправить этот шаг</string>
+    <string name="teach_clarify">Что означал этот шаг?</string>
+    <string name="teach_remove">Удалить</string>
+    <string name="teach_generate">Создать черновик</string>
+    <string name="teach_busy">Задача уже выполняется. Дождитесь конца, прежде чем учить.</string>
+    <string name="teach_need_a11y">Сначала включите специальные возможности. Без них Mika не видит нажатия.</string>
+    <string name="teach_interrupted">Показ остановился: приложение перезапустилось или специальные возможности выключены. Запись не идет, пока вы не продолжите.</string>
+    <string name="teach_need_goal">Сначала напишите цель.</string>
+    <string name="teach_secret_goal">Эта цель похожа на пароль или код, поэтому она не сохранена.</string>
+    <string name="teach_draft_failed">Не удалось записать черновик. Шаги на месте.</string>
+    <string name="teach_draft_ready">Черновик ждет в «Память и навыки». Он не используется, пока вы его не примете, и не был успешно проверен.</string>
+    <string name="teach_open_drafts">Открыть черновики</string>
+    <string name="teach_no_steps">Шаги не сохранены.</string>
+    <string name="teach_blocked_task">Mika сейчас учится, поэтому эта задача не начата.</string>
+    <string name="teach_channel">Обучение</string>
+    <string name="teach_sensitive_note">Секретный ввод не сохранен.</string>
+    <string name="teach_insufficient_note">Недостаточно данных об интерфейсе. Это не действие по координатам.</string>
+    <string name="teach_notification">Mika не управляет телефоном.</string>
+    <string name="teach_no_visible">Полосу «Учится» не удалось показать, поэтому запись не началась. Разрешение на уведомления не нужно. Нужна видимая панель спецвозможностей с паузой и завершением.</string>
+    <string name="teach_watch_lost">Полоса «Учится» исчезла, поэтому показ остановлен. Больше ничего не записывается.</string>
+    <string name="teach_shelf_expand">Показать Научить Mika</string>
+    <string name="teach_shelf_collapse">Скрыть Научить Mika</string>
+</resources>

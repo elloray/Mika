@@ -141,6 +141,11 @@ class TaskCenter<R : Any>(
         record?.followUpId?.let(followUps::remove)
     }
 
+    /** 详细记录已经开出:账本只存它的编号,进程重启后可以读取事件生成交代。 */
+    @Synchronized fun markRecord(run: R, recordId: String) {
+        store.get(RunId(keyOf(run)))?.let { store.save(it.copy(recordId = recordId)) }
+    }
+
     @Synchronized fun markResult(run: R, reply: String?, deliveryId: String? = null, successful: Boolean? = null) {
         store.get(RunId(keyOf(run)))?.let { store.save(it.copy(phase = RunPhase.Aftercare, reply = reply,
             deliveryId = deliveryId, runSucceeded = successful)) }

@@ -1,0 +1,292 @@
+package com.wangzan101.mika.ui
+
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.widget.Toast
+import androidx.annotation.StringRes
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.text.selection.SelectionContainer
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
+import androidx.compose.ui.unit.dp
+import com.wangzan101.mika.R
+import com.wangzan101.mika.calls.CallActionResult
+import com.wangzan101.mika.calls.CallDirection
+import com.wangzan101.mika.calls.CallTaskBrief
+import com.wangzan101.mika.calls.CallRecord
+import com.wangzan101.mika.calls.CallTranscriptLine
+import com.wangzan101.mika.ui.components.*
+import com.wangzan101.mika.ui.theme.MikaIcons
+import com.wangzan101.mika.ui.theme.MikaTheme
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.launch
+import java.text.DateFormat
+import java.util.Date
+
+private enum class HistoryFilter(@StringRes val label: Int) {
+    ALL(R.string.calls_history_all), OPEN(R.string.calls_history_open), DONE(R.string.calls_history_done),
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+internal fun CallHistorySection(
+    history: List<CallRecord>,
+    historyWriteFailed: Boolean,
+    onMark: suspend (String, Boolean) -> CallActionResult,
+    onDelete: suspend (String) -> CallActionResult,
+    onReuseTask: ((String, CallTaskBrief) -> Unit)? = null,
+) {
+    var filter by rememberSaveable { mutableStateOf(HistoryFilter.ALL) }
+    var query by rememberSaveable { mutableStateOf("") }
+    var showAll by rememberSaveable { mutableStateOf(false) }
+    var expanded by rememberSaveable { mutableStateOf<String?>(null) }
+    var pendingDelete by rememberSaveable { mutableStateOf<String?>(null) }
+    var busy by remember { mutableStateOf(false) }
+    var feedback by remember { mutableStateOf<CallActionResult?>(null) }
+    val scope = rememberCoroutineScope()
+    val failure = stringResource(R.string.calls_action_failed)
+    val deleted = stringResource(R.string.calls_history_deleted)
+    val handled = stringResource(R.string.calls_history_done)
+    val unhandled = stringResource(R.string.calls_history_open)
+    val incoming = directionLabel(CallDirection.INCOMING)
+    val outgoing = directionLabel(CallDirection.OUTGOING)
+    val results = remember(history, filter, query, incoming, outgoing) {
+        val text = query.trim()
+        val digits = text.filter(Char::isDigit).takeIf {
+            it.isNotEmpty() && text.all { char -> char.isDigit() || char in "+ ().-" }
+        }
+        history.filter { record ->
+            val matchesFilter = when (filter) {
+                HistoryFilter.ALL -> true
+                HistoryFilter.OPEN -> !record.handled
+                HistoryFilter.DONE -> record.handled
+            }
+            val direction = if (record.direction == CallDirection.INCOMING) incoming else outgoing
+            matchesFilter && (text.isEmpty() || record.number.orEmpty().contains(text, ignoreCase = true) ||
+                (digits != null && record.number.orEmpty().filter(Char::isDigit).contains(digits)) ||
+                direction.contains(text, ignoreCase = true) || record.result.contains(text, ignoreCase = true) ||
+                record.transcript.any { it.text.contains(text, ignoreCase = true) } ||
+                record.task?.let { task ->
+                    (listOf(task.goal, task.context, task.constraints) + task.questions).any {
+                        it.contains(text, ignoreCase = true)
+                    }
+                } == true)
+        }
+    }
+
+    fun change(success: String, action: suspend () -> CallActionResult) {
+        if (busy) return
+        busy = true
+        feedback = null
+        scope.launch {
+            try {
+                val result = action()
+                feedback = if (result.ok) CallActionResult(true, success) else result
+            } catch (e: CancellationException) {
+                throw e
+            } catch (_: Exception) {
+                feedback = CallActionResult(false, failure)
+            } finally { busy = false }
+        }
+    }
+
+    GroupLabel(stringResource(R.string.calls_tab_history))
+    if (historyWriteFailed) FooterNote(
+        stringResource(R.string.calls_history_write_failed),
+        color = MaterialTheme.colorScheme.error,
+    )
+    feedback?.let { result ->
+        FooterNote(result.message, Modifier.semantics { liveRegion = LiveRegionMode.Polite },
+            color = if (result.ok) MikaTheme.colors.ink3 else MaterialTheme.colorScheme.error)
+    }
+    if (history.isEmpty()) {
+        GroupCard { ListRow(MikaIcons.Clock, stringResource(R.string.calls_history_empty), first = true) }
+    } else {
+        OutlinedTextField(
+            query, { query = it; showAll = false }, singleLine = true,
+            label = { Text(stringResource(R.string.calls_history_search)) },
+            leadingIcon = { Icon(MikaIcons.Search, contentDescription = null) },
+            modifier = Modifier.fillMaxWidth().testTag("call-history-search"),
+        )
+        FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            HistoryFilter.entries.forEach { choice ->
+                FilterChip(
+                    selected = filter == choice, onClick = { filter = choice; showAll = false },
+                    label = { Text(stringResource(choice.label)) },
+                    modifier = Modifier.testTag("call-history-filter-${choice.name.lowercase()}"),
+                )
+            }
+        }
+        if (results.isEmpty()) {
+            GroupCard { ListRow(MikaIcons.Search, stringResource(R.string.calls_history_no_match), first = true) }
+        } else GroupCard {
+            val visible = if (showAll) results else results.take(3)
+            visible.forEachIndexed { index, record ->
+                key(record.id) {
+                    CallHistoryItem(
+                        record, expanded == record.id, first = index == 0, busy = busy,
+                        onExpand = { expanded = if (expanded == record.id) null else record.id },
+                        onMark = {
+                            val next = !record.handled
+                            change(if (next) handled else unhandled) { onMark(record.id, next) }
+                        },
+                        onDelete = { pendingDelete = record.id },
+                        onReuse = if (record.number != null && record.task != null && onReuseTask != null) {
+                            { onReuseTask(record.number, record.task) }
+                        } else null,
+                    )
+                }
+            }
+            if (results.size > 3) {
+                TextButton(
+                    onClick = { showAll = !showAll },
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Text(if (showAll) stringResource(R.string.calls_history_less)
+                        else stringResource(R.string.calls_history_more, results.size))
+                }
+            }
+        }
+    }
+
+    val toDelete = history.firstOrNull { it.id == pendingDelete }
+    if (toDelete != null) AlertDialog(
+        onDismissRequest = { pendingDelete = null },
+        title = { Text(stringResource(R.string.calls_history_delete)) },
+        text = {
+            val locale = LocalContext.current.resources.configuration.locales[0]
+            val formatter = remember(locale) { DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT, locale) }
+            val whenCalled = remember(toDelete.startedAtMs, formatter) { formatter.format(Date(toDelete.startedAtMs)) }
+            val number = toDelete.number?.let { "\u2066$it\u2069" } ?: stringResource(R.string.calls_unknown_number)
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text("$number · $whenCalled", style = MaterialTheme.typography.bodyMedium)
+                Text(stringResource(R.string.calls_history_delete_confirm))
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = {
+                pendingDelete = null
+                change(deleted) { onDelete(toDelete.id) }
+            }, enabled = !busy, modifier = Modifier.testTag("call-history-delete-confirm")) {
+                Text(stringResource(R.string.calls_history_delete), color = MaterialTheme.colorScheme.error)
+            }
+        },
+        dismissButton = { TextButton(onClick = { pendingDelete = null }) { Text(stringResource(R.string.calls_cancel)) } },
+    )
+}
+
+@Composable
+private fun CallHistoryItem(
+    record: CallRecord, expanded: Boolean, first: Boolean, busy: Boolean,
+    onExpand: () -> Unit, onMark: () -> Unit, onDelete: () -> Unit, onReuse: (() -> Unit)?,
+) {
+    var showTask by rememberSaveable(record.id) { mutableStateOf(false) }
+    var showTranscript by rememberSaveable(record.id) { mutableStateOf(false) }
+    val context = LocalContext.current
+    val locale = context.resources.configuration.locales[0]
+    val formatter = remember(locale) { DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT, locale) }
+    val start = remember(record.startedAtMs, formatter) { formatter.format(Date(record.startedAtMs)) }
+    val end = remember(record.endedAtMs, formatter) { formatter.format(Date(record.endedAtMs)) }
+    val direction = directionLabel(record.direction)
+    val status = stringResource(if (record.handled) R.string.calls_history_done else R.string.calls_history_open)
+    val name = record.number?.let { "\u2066$it\u2069" } ?: stringResource(R.string.calls_unknown_number)
+    val expansion = stringResource(if (expanded) R.string.calls_collapse else R.string.calls_transcript)
+    Column(Modifier.fillMaxWidth().semantics { stateDescription = expansion }) {
+        ListRow(MikaIcons.Clock, record.task?.goal ?: name,
+            if (record.task != null) "$name · $direction · $start" else "$direction · $start",
+            first = first, detail = "$status · ${record.result}",
+            onClick = onExpand) { CallExpandIcon(expanded) }
+        if (expanded) {
+            Column(Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, bottom = 14.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                HorizontalDivider()
+                Text(stringResource(R.string.calls_history_period, start, end),
+                    style = MaterialTheme.typography.bodySmall, color = MikaTheme.colors.ink3)
+                record.task?.let { task ->
+                    Text(stringResource(R.string.calls_record_result_unconfirmed),
+                        style = MaterialTheme.typography.bodySmall, color = MikaTheme.colors.ink3)
+                    TextButton(onClick = { showTask = !showTask }, modifier = Modifier.fillMaxWidth().testTag("call-record-task-toggle")) {
+                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                            Text(stringResource(R.string.calls_record_brief))
+                            CallExpandIcon(showTask)
+                        }
+                    }
+                    if (showTask) SelectionContainer {
+                        Column(Modifier.fillMaxWidth().padding(horizontal = 8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Text(stringResource(R.string.calls_record_goal), style = MaterialTheme.typography.labelLarge)
+                            Text(task.goal)
+                            if (task.questions.isNotEmpty()) {
+                                Text(stringResource(R.string.calls_record_questions), style = MaterialTheme.typography.labelLarge)
+                                task.questions.forEachIndexed { index, question -> Text("${index + 1}. $question") }
+                            }
+                            if (task.context.isNotBlank()) {
+                                Text(stringResource(R.string.calls_record_context), style = MaterialTheme.typography.labelLarge)
+                                Text(task.context)
+                            }
+                            if (task.constraints.isNotBlank()) {
+                                Text(stringResource(R.string.calls_record_constraints), style = MaterialTheme.typography.labelLarge)
+                                Text(task.constraints)
+                            }
+                        }
+                    }
+                    if (onReuse != null) OutlinedButton(onClick = onReuse, modifier = Modifier.fillMaxWidth().testTag("call-record-reuse")) {
+                        Text(stringResource(R.string.calls_record_reuse))
+                    }
+                }
+                TextButton(onClick = { showTranscript = !showTranscript }, modifier = Modifier.fillMaxWidth().testTag("call-record-transcript-toggle")) {
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                        Text(stringResource(R.string.calls_original_transcript))
+                        CallExpandIcon(showTranscript)
+                    }
+                }
+                if (showTranscript) {
+                    if (record.transcript.isEmpty()) {
+                        Text(stringResource(R.string.calls_no_transcript), style = MaterialTheme.typography.bodySmall, color = MikaTheme.colors.ink3)
+                    } else SelectionContainer {
+                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            record.transcript.forEach { CallTranscriptText(it) }
+                        }
+                    }
+                }
+                record.audioReport?.let { report ->
+                    val label = stringResource(R.string.diagnostics_copy)
+                    val copied = stringResource(R.string.diagnostics_copied)
+                    TextButton(onClick = {
+                        val clipboard = context.getSystemService(ClipboardManager::class.java)
+                        if (clipboard != null) {
+                            clipboard.setPrimaryClip(ClipData.newPlainText(label, report.supportSummary()))
+                            Toast.makeText(context, copied, Toast.LENGTH_SHORT).show()
+                        }
+                    }, modifier = Modifier.testTag("call-record-diagnostics-copy")) { Text(label) }
+                }
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    TextButton(onClick = onMark, enabled = !busy, modifier = Modifier.weight(1f).testTag("call-history-mark")) {
+                        Text(stringResource(if (record.handled) R.string.calls_history_reopen else R.string.calls_history_mark_done))
+                    }
+                    TextButton(onClick = onDelete, enabled = !busy, modifier = Modifier.weight(1f).testTag("call-history-delete")) {
+                        Text(stringResource(R.string.calls_history_delete),
+                            color = if (busy) MikaTheme.colors.ink3 else MaterialTheme.colorScheme.error)
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+internal fun CallTranscriptText(line: CallTranscriptLine) {
+    Column {
+        Text(stringResource(if (line.role == "assistant") R.string.app_name else R.string.calls_caller),
+            style = MaterialTheme.typography.labelMedium, color = MikaTheme.colors.ink3)
+        Text(line.text, style = MaterialTheme.typography.bodyMedium)
+    }
+}

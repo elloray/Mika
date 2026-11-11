@@ -143,13 +143,15 @@ internal object MemoryEdit : AgentTool {
         val keywords = a.strList("keywords", 0, MemoryStore.MAX_KEYWORDS, itemMax = 30)
         if (op == "update" && content == null) throw ArgError("content", "required for update")
         val utterances = ctx.config.utterances!!
-        // 更新和删除没有跨轮放宽:本轮原话里还必须真有这个修改/删除请求
-        if (!utterances.contains(quote)) return fail("quote_not_from_user", Feedback["memory.edit_quote_not_from_user"], recoverable = false)
-        val requested = when (op) {
-            "update" -> UPDATE_REQUEST.containsMatchIn(quote) && !UPDATE_NEGATION.containsMatchIn(quote)
-            "delete" -> DELETE_REQUEST.containsMatchIn(quote) && !DELETE_NEGATION.containsMatchIn(quote)
+        // 用含引文的完整原话判断否定，避免模型只摘出「不要删除」里的「删除」。
+        val messages = utterances.matchingCurrentMessages(quote)
+        if (messages.isEmpty()) return fail("quote_not_from_user", Feedback["memory.edit_quote_not_from_user"], recoverable = false)
+        val (request, negation) = when (op) {
+            "update" -> UPDATE_REQUEST to UPDATE_NEGATION
+            "delete" -> DELETE_REQUEST to DELETE_NEGATION
             else -> throw ArgError("op", "must be update or delete")
         }
+        val requested = request.containsMatchIn(quote) && messages.none(negation::containsMatchIn)
         if (!requested) return fail("edit_not_requested", Feedback["memory.edit_not_requested"], recoverable = false)
         val candidates = ctx.memorySearchCandidates()
         if (candidates == null || id !in candidates) {

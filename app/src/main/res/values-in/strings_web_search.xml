@@ -1,10 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="web_search_title">Pencarian web</string>
+    <string name="web_search_provider">Layanan pencarian</string>
+    <string name="web_search_note_you">Tanpa kunci memakai API gratis (100 pencarian per hari); dengan kunci memakai API berbayar.</string>
+    <string name="web_search_searxng_url">URL instans</string>
+    <string name="web_search_note_jina">Perlu kunci API. Memakai pencarian Jina (s.jina.ai).</string>
+    <string name="web_search_note_exa">Perlu kunci API. Memakai pencarian Exa (api.exa.ai).</string>
+    <string name="web_search_note_searxng">Instans SearXNG milik Anda sendiri, tanpa kunci. Instans harus mengizinkan keluaran JSON (tambahkan json ke search.formats di settings.yml).</string>
+    <string name="web_search_api_key_required">Kunci API (wajib)</string>
+    <string name="web_search_missing_key">%1$s memerlukan kunci API agar bisa digunakan.</string>
+    <string name="web_search_get_key">Dapatkan kunci API</string>
+    <string name="web_search_privacy">Kunci disimpan terenkripsi di ponsel ini. Hasil pencarian diperlakukan sebagai konten yang tidak tepercaya.</string>
     <string name="web_search_row_sub">Layanan pencarian opsional; pencarian browser selalu tersedia</string>
-    <string name="web_search_hint">Nonaktif secara default. Mika mengirim parameter query dan count ke endpoint HTTP JSON Anda. Kunci opsional dikirim sebagai token Bearer dan disimpan terenkripsi di ponsel ini. Hasil pencarian diperlakukan sebagai konten yang tidak tepercaya.</string>
     <string name="web_search_enabled">Aktifkan pencarian web</string>
-    <string name="web_search_endpoint">URL endpoint pencarian</string>
     <string name="web_search_api_key">Kunci API (opsional)</string>
     <string name="web_search_invalid_endpoint">Masukkan URL HTTP atau HTTPS tanpa parameter kueri.</string>
     <string name="web_search_action">Cari di web</string>

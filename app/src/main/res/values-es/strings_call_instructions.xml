@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="call_instructions_title">Instrucciones para llamadas</string>
+    <string name="call_instructions_intro">Las instrucciones guardadas se aplican a futuras llamadas. Todas las activas se envían a Volcengine al preparar una llamada con IA, aunque no se conteste. Quien llama no puede modificarlas.</string>
+    <string name="call_instructions_add">Añadir instrucción</string>
+    <string name="call_instructions_empty">Indique qué puede decir el asistente y qué debe preguntar. Los cambios se aplican desde la próxima llamada.</string>
+    <string name="call_instructions_heading">Título</string>
+    <string name="call_instructions_situation">Cuándo se aplica</string>
+    <string name="call_instructions_response">Cómo responder</string>
+    <string name="call_instructions_save">Guardar instrucción</string>
+    <string name="call_instructions_cancel">Cancelar</string>
+    <string name="call_instructions_edit">Editar</string>
+    <string name="call_instructions_delete">Eliminar</string>
+    <string name="call_instructions_delete_confirm">¿Eliminar esta instrucción? Ya no se aplicará a futuras llamadas.</string>
+    <string name="call_instructions_expiry">Válida durante</string>
+    <string name="call_instructions_forever">Hasta que la cambie</string>
+    <string name="call_instructions_today">Hasta esta noche</string>
+    <string name="call_instructions_two_hours">Dos horas</string>
+    <string name="call_instructions_expired">Vencida</string>
+    <string name="call_instructions_saved">Guardada en este teléfono</string>
+    <string name="call_instructions_failed">No se pudo guardar. El borrador sigue aquí.</string>
+    <string name="call_instructions_presets">Empezar con un caso</string>
+    <string name="call_instructions_delivery">Entrega</string>
+    <string name="call_instructions_delivery_when">Llama una persona de mensajería o reparto</string>
+    <string name="call_instructions_delivery_reply">Pregunte dónde está el paquete y si hace falta devolver la llamada. No invente una dirección ni autorice el acceso.</string>
+    <string name="call_instructions_business">Consulta comercial</string>
+    <string name="call_instructions_business_when">Un cliente pregunta por un producto, servicio o cita</string>
+    <string name="call_instructions_business_reply">Pregunte qué necesita, cantidades u horarios preferidos y un medio de contacto. Tome nota sin comprometer un precio ni una cita.</string>
+    <string name="call_instructions_review_limit">Revise la respuesta y deje la instrucción en menos de 800 caracteres antes de guardarla.</string>
+</resources>

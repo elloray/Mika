@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<title>Mika Anywhere</title>
+<link rel="stylesheet" href="/console.css">
+</head>
+<body>
+<div id="login" class="login" hidden>
+  <form id="login-form" class="login-card">
+    <div class="brand"><span class="mark">M</span><h1>Mika</h1></div>
+    <p class="lead" id="login-lead">用「连接电脑」里的访问令牌连接你的手机。</p>
+    <label for="token" class="label" id="token-label">访问令牌</label>
+    <input id="token" name="token" type="password" autocomplete="off" spellcheck="false" required>
+    <button type="submit" id="connect" class="primary">连接</button>
+    <p id="login-error" class="error" hidden></p>
+    <p class="note" id="login-note">令牌只保存在网关内存里，不会写进浏览器存储；关掉网关即失效。</p>
+  </form>
+</div>
+<div id="app" class="app" hidden>
+  <header class="top">
+    <div class="brand"><span class="dot" id="online"></span><strong>Mika</strong><span id="top-sub" class="sub"></span></div>
+    <button id="logout" class="ghost" type="button">断开</button>
+  </header>
+  <main class="layout">
+    <section class="list" id="list-pane">
+      <h2 class="section-title"><span id="running-title">正在运行</span><span id="running-count" class="count"></span></h2>
+      <div id="running" class="running"></div>
+      <h2 class="section-title"><span id="conversations-title">对话</span></h2>
+      <div id="conversations" class="conversations"></div>
+    </section>
+    <section class="detail" id="detail-pane" hidden>
+      <div class="detail-top">
+        <button id="back" class="ghost" type="button">‹ 返回</button>
+        <h2 id="detail-title"></h2>
+      </div>
+      <div id="turns" class="turns"></div>
+      <button id="load-more" class="ghost wide" type="button" hidden>加载更早</button>
+    </section>
+  </main>
+</div>
+<script src="/console.js"></script>
+</body>
+</html>

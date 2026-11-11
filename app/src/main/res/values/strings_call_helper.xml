@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="calls_helper_setup_title">Mika audio helper</string>
+    <string name="calls_helper_setup_intro">Android handles regular calls. Mika uses the audio helper to hear and speak in AI calls. Wireless debugging lets this phone start or restore the helper without a computer. Join Wi-Fi for pairing; live AI voice also needs an internet connection.</string>
+    <string name="calls_helper_unavailable">The audio helper cannot be set up on this device.</string>
+    <string name="calls_helper_unavailable_reason">Android does not provide the settings needed to start the helper here. Regular calls still work through your phone app.</string>
+    <string name="calls_helper_ready">Audio helper connected</string>
+    <string name="calls_helper_usb_running">Audio helper running · started by USB</string>
+    <string name="calls_helper_usb_stopped">The audio helper started by USB has stopped.</string>
+    <string name="calls_helper_wireless_recovery">Pair once on this phone to start the helper again without a computer if it stops. Connect to Wi-Fi for setup.</string>
+    <string name="calls_helper_wireless_unavailable">Wireless debugging is unavailable on this phone.</string>
+    <string name="calls_helper_setup_wireless">Set up wireless recovery</string>
+    <string name="calls_helper_hide_usb">Hide computer fallback</string>
+    <string name="calls_helper_show_usb">Computer fallback</string>
+    <string name="calls_helper_usb_fallback">If wireless setup is unavailable and you have a computer, connect a USB cable and run this command on the computer. You may need to run it again after an update or restart.</string>
+    <string name="calls_helper_wireless_reconnect">If the helper stops, join Wi-Fi and turn on Wireless debugging if Android has switched it off. Pair again only if asked.</string>
+    <string name="calls_helper_wireless_debugging_body">Join Wi-Fi and turn on Wireless debugging in Developer options. Tap Allow if Android asks. Then return to Mika to continue to the pairing code step.</string>
+    <string name="calls_helper_usb_debugging_body">In Developer options, turn on USB debugging and confirm. You do not need to plug in a cable for wireless setup. Leave other settings alone.</string>
+    <string name="calls_helper_usb_debugging_brief">No cable needed for wireless setup</string>
+    <string name="calls_helper_connect_body">After pairing, Mika connects to the audio helper on this phone.</string>
+    <string name="calls_helper_wifi_needed">Join Wi-Fi to start or restore the audio helper through Wireless debugging.</string>
+    <string name="calls_helper_repair_needed">Pairing is unavailable. Pair again from this phone.</string>
+    <string name="calls_helper_name">Audio helper</string>
+    <string name="calls_helper_disconnected">Connect to enable two-way audio for AI calls</string>
+    <string name="calls_helper_manage">Manage</string>
+    <string name="calls_helper_set_up">Set up</string>
+    <string name="calls_helper_pairing_done">Audio helper connected. You can return to Mika.</string>
+    <string name="calls_helper_pairing_problem">Return to Mika to see how to reconnect.</string>
+</resources>

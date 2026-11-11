@@ -7,6 +7,7 @@
     <string name="tool_set_timer">设计时器</string>
     <string name="tool_show_alarms">查看闹钟</string>
     <string name="tool_add_calendar_event">添加日程</string>
+    <string name="tool_calendar_bulk_insert">批量添加日程</string>
     <string name="tool_set_wheel">拨滚轮</string>
     <string name="tool_scroll_find">滚动查找</string>
     <string name="tool_wait_condition">等待界面条件</string>

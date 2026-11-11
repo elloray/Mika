@@ -15,6 +15,7 @@ import com.wangzan101.mika.core.model.ToolSpec
 import com.wangzan101.mika.core.model.Usage
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.withContext
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertSame
@@ -43,10 +44,15 @@ class MeteredModelTest {
 
     private class Streaming(val reply: ModelReply) : StreamingChatModel {
         override val capabilities = Capabilities(toolCalls = true, vision = true, contextTokens = 8000, reasoning = true)
-        override suspend fun complete(system: String, messages: List<Message>, tools: List<ToolSpec>) = reply
+        var calls = 0
+        override suspend fun complete(system: String, messages: List<Message>, tools: List<ToolSpec>): ModelReply {
+            calls++
+            return reply
+        }
         override suspend fun completeStreaming(
             system: String, messages: List<Message>, tools: List<ToolSpec>, onText: (String) -> Unit,
         ): ModelReply {
+            calls++
             onText("一"); onText("一二")
             return reply
         }
@@ -99,6 +105,45 @@ class MeteredModelTest {
         assertEquals(listOf(0), attempts)
     }
 
+    @Test fun exhaustedTaskBudgetRejectsPlainAndStreamingBeforeCallingOrRecording() = runTest {
+        val tally = RunUsageTally(tokenBudget = 5)
+        tally.add(Usage(3, 2), httpAttempts = 1)
+        var plainCalls = 0
+        val plain = Plain { plainCalls++; reply(Usage(1, 1)) }.metered(source, sink)
+        val streamingInner = Streaming(reply(Usage(1, 1)))
+        val streaming = streamingInner.metered(source, sink) as StreamingChatModel
+        withContext(tally) {
+            try {
+                plain.complete("s", user, emptyList())
+                fail("普通调用应在预算检查处停止")
+            } catch (_: ModelError.TaskBudgetExceeded) {}
+            try {
+                streaming.completeStreaming("s", user, emptyList()) {}
+                fail("流式调用应在预算检查处停止")
+            } catch (_: ModelError.TaskBudgetExceeded) {}
+        }
+        assertEquals(0, plainCalls)
+        assertEquals(0, streamingInner.calls)
+        assertTrue("拒绝的调用不写总账", recorded.isEmpty())
+        assertTrue("拒绝的调用不增加实际请求", attempts.isEmpty())
+        assertEquals("拒绝的调用不增加逻辑调用", 1, tally.event(1).calls)
+        assertEquals(5L, tally.totalTokens())
+    }
+
+    @Test fun dailyBudgetGuardRunsBeforeTheDelegateAndLedger() = runTest {
+        var calls = 0
+        val model = Plain { calls++; reply(Usage(1, 1)) }.metered(source, sink) {
+            throw ModelError.DailyBudgetExceeded("服务商甲", 10_000, 10_000)
+        }
+        try {
+            model.complete("s", user, emptyList())
+            fail("每日预算应在请求前拒绝")
+        } catch (_: ModelError.DailyBudgetExceeded) {}
+        assertEquals(0, calls)
+        assertTrue(recorded.isEmpty())
+        assertTrue(attempts.isEmpty())
+    }
+
     @Test fun streamingStaysStreamingAndForwardsText() = runTest {
         val m = Streaming(reply(Usage(5, 6))).metered(source, sink)
         assertTrue(m is StreamingChatModel)
@@ -112,7 +157,7 @@ class MeteredModelTest {
 
     @Test fun brokenSinkDoesNotBreakTheCall() = runTest {
         val r = reply(Usage(1, 1))
-        val m = Plain { r }.metered(source) { _, _ -> error("disk full") }
+        val m = Plain { r }.metered(source, sink = { _, _ -> error("disk full") })
         assertSame(r, m.complete("s", user, emptyList()))
     }
 

@@ -1,0 +1,9 @@
+<resources>
+    <string name="calls_record_brief">Instruções da tarefa</string>
+    <string name="calls_record_goal">Resultado desejado</string>
+    <string name="calls_record_questions">Perguntas a fazer</string>
+    <string name="calls_record_context">Contexto</string>
+    <string name="calls_record_constraints">Limites para promessas e ações</string>
+    <string name="calls_record_reuse">Criar nova tarefa com estas instruções</string>
+    <string name="calls_record_result_unconfirmed">A chamada terminou. Confira a conversa para confirmar o resultado; marcar como tratada não significa que o objetivo foi alcançado.</string>
+</resources>

@@ -86,6 +86,8 @@ class MemoryViewModel(
     private val appDrafts: AppKnowledgeDraftStore? = null,
     /** 内置技能的名字:导入的技能不能用。 */
     private val builtinSkillNames: Set<String> = emptySet(),
+    /** 示范草稿收下、拒绝或删除后清掉本机轨迹。 */
+    private val onSkillRetired: (PersonalSkill) -> Unit = {},
 ) {
     private val local = MutableStateFlow(MemoryUi())
     private val skillsVersion = MutableStateFlow(0)
@@ -162,13 +164,19 @@ class MemoryViewModel(
             local.update { it.copy(message = SKILL_PROBLEMS[problem] ?: tr(R.string.skill_bad_format)) }
             return
         }
+        val before = p.drafts()[draftId]
         if (p.approve(draftId, edited) == null) {
             local.update { it.copy(message = tr(R.string.skill_changed)) }
-        }
+        } else before?.let(onSkillRetired)
         skillsChanged()
     }
 
-    fun rejectSkill(draftId: String) { skills?.reject(draftId); skillsChanged() }
+    fun rejectSkill(draftId: String) {
+        val before = skills?.drafts()?.get(draftId)
+        skills?.reject(draftId)
+        before?.let(onSkillRetired)
+        skillsChanged()
+    }
 
     /**
      * 导入别人分享的技能全文:过了校验放进「待确认」并切过去,返回 null;不过就返回原因,由导入框自己显示(框还开着,粘的字不丢)。
@@ -196,7 +204,12 @@ class MemoryViewModel(
         it.copy(status = it.restoredStatus(), outcomes = emptyList())
     }
 
-    fun deleteSkill(name: String) { skills?.remove(name); skillsChanged() }
+    fun deleteSkill(name: String) {
+        val before = skills?.get(name)
+        skills?.remove(name)
+        before?.let(onSkillRetired)
+        skillsChanged()
+    }
 
     fun restorePreviousSkill(name: String) {
         val p = skills ?: return

@@ -18,6 +18,8 @@ data class StoredRun(
     val userText: String? = null,
     /** 持久排队项的编号;恢复时据此防止已登记的运行被再次入队执行。 */
     val followUpId: String? = null,
+    /** 详细运行记录的编号;进程中断后只读它生成交代,不据此重放工具调用。 */
+    val recordId: String? = null,
 )
 
 interface RunStore {

@@ -65,7 +65,12 @@ import androidx.compose.ui.graphics.TileMode
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.layout.boundsInRoot
 import androidx.compose.ui.layout.layout
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
@@ -107,7 +112,7 @@ import kotlinx.coroutines.launch
 
 /**
  * 对话输入栏的按住说话:输入框上的手势([holdToTalk])、按住时整条变蓝的输入栏([VoiceBarCover])、
- * 输入栏上方的「在听」卡片和上滑取消提示、没听清之类的轻提示([VoiceFloat])、
+ * 输入栏上方的「在听」卡片和「上滑 发送/取消」提示、没听清之类的轻提示([VoiceFloat])、
  * 「还不能语音输入」和录音权限的说明([VoiceSheetHost])。状态都在 [HoldToTalk] 里,这里只管画和接线。
  */
 
@@ -121,8 +126,27 @@ private const val MIN_TOTAL_MS = 500L
 private const val MAX_MS = 60_000L
 private const val COUNTDOWN_MS = 10_000L
 
-/** 手指往上滑过这么多就是「松开取消」。 */
+/** 「在听」卡片还没排好版时:手指往上滑过这么多就是「松开取消」。 */
 private val CancelLift = 80.dp
+
+/** 手指要往上滑过这么多,停在「在听」卡片里才是「松开 发送」;拇指稍微一动不会就直接发出去。 */
+private val SendLift = 32.dp
+
+/** 松开时手指落在哪:取消、直接发送,或都不是(字填进输入框)。 */
+internal enum class VoiceAim { Fill, Send, Cancel }
+
+/**
+ * 按着说话时手指的落点。[finger] 和 [card](「在听」卡片)都是根布局坐标,[upPx] 是从按下处往上移了多少。
+ * 卡片还没排好版(空的)时照旧只看上滑距离:过了 [cancelLiftPx] 是取消。
+ * 排好版后:手指在卡片上沿以上是取消(「上滑 发送/取消」的小胶囊就在那里);在卡片里、且上滑过 [sendLiftPx] 是直接发送;
+ * 其余(还在输入栏上、或卡片和输入栏之间)是填进输入框。只看纵向,卡片本来就差不多和屏幕一样宽。
+ */
+internal fun voiceAim(finger: Offset, card: Rect, upPx: Float, cancelLiftPx: Float, sendLiftPx: Float): VoiceAim = when {
+    card.isEmpty -> if (upPx > cancelLiftPx) VoiceAim.Cancel else VoiceAim.Fill
+    finger.y < card.top -> VoiceAim.Cancel
+    finger.y <= card.bottom && upPx > sendLiftPx -> VoiceAim.Send
+    else -> VoiceAim.Fill
+}
 
 /** 底部弹层:哪种说明。 */
 internal sealed interface VoiceSheet {
@@ -132,11 +156,69 @@ internal sealed interface VoiceSheet {
     data class Unavailable(val why: SpeechEngineSpec.Why) : VoiceSheet
 }
 
+/**
+ * 按着时听到的字:定下的深色、还在变的浅色。放不下 [maxLines] 行时按 [VoiceCopy.fitHeard] 去掉前面说完的整句,
+ * 最新的字一直看得见。输入框和悬浮胶囊共用。
+ */
+@Composable
+internal fun HeardText(stable: String, tail: String, style: androidx.compose.ui.text.TextStyle, maxLines: Int, modifier: Modifier = Modifier) {
+    val c = MikaTheme.colors
+    val measurer = androidx.compose.ui.text.rememberTextMeasurer()
+    androidx.compose.foundation.layout.BoxWithConstraints(modifier) {
+        val width = constraints.maxWidth
+        val (shownStable, shownTail) = remember(stable, tail, width, style, maxLines) {
+            VoiceCopy.fitHeard(stable, tail) { st, tl ->
+                measurer.measure(
+                    androidx.compose.ui.text.AnnotatedString(st + tl), style,
+                    constraints = androidx.compose.ui.unit.Constraints(maxWidth = width.coerceAtLeast(1)),
+                ).lineCount <= maxLines
+            }
+        }
+        Text(
+            buildAnnotatedString {
+                withStyle(SpanStyle(color = c.ink)) { append(shownStable) }
+                withStyle(SpanStyle(color = c.ink2)) { append(shownTail) }
+            },
+            Modifier.fillMaxWidth(), style = style, maxLines = maxLines, overflow = TextOverflow.Ellipsis,
+        )
+    }
+}
+
 /** 按住说话时界面上要的文字;不碰界面,单测直接测。 */
 internal object VoiceCopy {
+    /** 一句说完的地方:这些标点之后断开。 */
+    private val sentenceEnd = setOf('。', '！', '？', '；', '!', '?', ';', '.', '…', '\n')
+
+    /**
+     * 按着时听到的字太多、卡片里放不下时:从前面去掉已经说完的整句([stable] 里句号、问号等之后断开),前面加「…」,
+     * 留下最近的几句和还在说的 [tail];只剩还在说的那句也放不下时,留它的末尾。[fits] 量一段字(定下的、还在变的)放不放得下。
+     * 只改显示,交出去的文字不变。
+     */
+    fun fitHeard(stable: String, tail: String, fits: (String, String) -> Boolean): Pair<String, String> {
+        if (fits(stable, tail)) return stable to tail
+        val cuts = stable.indices.filter { stable[it] in sentenceEnd && it + 1 < stable.length }.map { it + 1 }
+        for (cut in cuts) {
+            val rest = ELLIPSIS + stable.substring(cut).trimStart()
+            if (fits(rest, tail)) return rest to tail
+        }
+        if (fits(ELLIPSIS, tail)) return ELLIPSIS to tail
+        // 还在说的那句自己就放不下:找能放下的最长末尾
+        var lo = 0
+        var hi = tail.length
+        while (lo < hi) {
+            val mid = (lo + hi + 1) / 2
+            if (fits(ELLIPSIS, tail.takeLast(mid))) lo = mid else hi = mid - 1
+        }
+        return ELLIPSIS to tail.takeLast(lo)
+    }
+
+    private const val ELLIPSIS = "…"
+
     /** 卡片顶上的小标签:用的是哪个转文字。 */
     fun engine(spec: SpeechEngineSpec): String = when (spec) {
         is SpeechEngineSpec.Doubao -> tr(R.string.speech_doubao_model)
+        is SpeechEngineSpec.FunAsr -> tr(R.string.speech_funasr_model)
+        is SpeechEngineSpec.Bailian -> spec.model
         is SpeechEngineSpec.System -> tr(if (spec.onDevice) R.string.voice_engine_phone_offline else R.string.voice_engine_phone)
         is SpeechEngineSpec.Provider -> spec.model
         is SpeechEngineSpec.Unavailable -> ""
@@ -157,6 +239,7 @@ internal object VoiceCopy {
 
     fun unavailable(why: SpeechEngineSpec.Why): String = when (why) {
         SpeechEngineSpec.Why.DoubaoNotConfigured -> tr(R.string.speech_doubao_missing)
+        SpeechEngineSpec.Why.BailianNotConfigured -> tr(R.string.speech_bailian_missing)
         SpeechEngineSpec.Why.NoSystemNoModel -> tr(R.string.voice_unavailable_no_engine)
         SpeechEngineSpec.Why.SystemGone -> tr(R.string.voice_unavailable_system_gone)
         SpeechEngineSpec.Why.SystemNoResponse -> tr(R.string.voice_unavailable_system_silent)
@@ -206,6 +289,14 @@ internal class VoiceHold(private val voice: VoiceSource, private val scope: Coro
     private var collector: Job? = null
 
     /**
+     * 「在听」卡片在根布局里的位置,卡片排好版后报上来。松开后卡片还在(在等字)时照样留着:
+     * 这时再按住,卡片没动、不会再报一次。
+     */
+    internal var cardAt = Rect.Zero
+    /** 调用方能直接发出时才有「松开 发送」;不能时手指在卡片里也只是填进输入框。 */
+    internal var canSend = false
+
+    /**
      * 长按到时:先看能不能用、有没有权限,都行才开始听。
      * 上一段松开后还在转(服务商卡住、或自带识别在收尾)也可以重新按:上一段不要了,由 [HoldToTalk.press] 取消。
      */
@@ -228,11 +319,14 @@ internal class VoiceHold(private val voice: VoiceSource, private val scope: Coro
         collector = scope.launch { session.events.collect { hold.onEvent(it) } }
     }
 
-    fun drag(upPx: Float, thresholdPx: Float) {
-        if (holding) hold.drag(upPx, thresholdPx)
+    /** 手指移到了根布局里的 [finger],比按下处往上 [upPx]:算出落点告诉状态机。 */
+    fun move(finger: Offset, upPx: Float, cancelLiftPx: Float, sendLiftPx: Float) {
+        if (!holding) return
+        val aim = voiceAim(finger, cardAt, upPx, cancelLiftPx, sendLiftPx)
+        hold.aim(cancel = aim == VoiceAim.Cancel, send = aim == VoiceAim.Send && canSend)
     }
 
-    /** 手指离开:交给状态机(取消、太短、收尾)。 */
+    /** 手指离开:交给状态机(取消、直接发送、太短、收尾)。 */
     fun end() {
         if (!holding) return
         holding = false
@@ -252,10 +346,10 @@ private val IdleState = MutableStateFlow<HoldToTalk.State>(HoldToTalk.State.Idle
 
 /**
  * 输入栏要的那一份 [VoiceHold];没有 [voice] 或用户在设置里选了「不用」时为 null(输入框只能打字)。
- * 说完的字交给 [onText]。
+ * 说完的字交给 [onText];松开在「松开 发送」上时交给 [onSend],直接发出。没有 [onSend] 时没有「松开 发送」。
  */
 @Composable
-internal fun rememberVoiceHold(voice: VoiceSource?, onText: (String) -> Unit): VoiceHold? {
+internal fun rememberVoiceHold(voice: VoiceSource?, onText: (String) -> Unit, onSend: ((String) -> Unit)? = null): VoiceHold? {
     val off = remember(voice) {
         val spec = voice?.spec()
         voice == null || (spec is SpeechEngineSpec.Unavailable && spec.why == SpeechEngineSpec.Why.Off)
@@ -268,6 +362,7 @@ internal fun rememberVoiceHold(voice: VoiceSource?, onText: (String) -> Unit): V
         MicPermission.record(context, granted)
     }
     vh.haptic = { haptics.performHapticFeedback(HapticFeedbackType.LongPress) }
+    vh.canSend = onSend != null
     vh.ensureMic = {
         if (context.checkSelfPermission(Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) true
         else {
@@ -283,7 +378,7 @@ internal fun rememberVoiceHold(voice: VoiceSource?, onText: (String) -> Unit): V
     LaunchedEffect(state) {
         when (val s = state) {
             is HoldToTalk.State.Done -> {
-                onText(s.text)
+                if (s.send && onSend != null) onSend(s.text) else onText(s.text)
                 vh.hold.reset()
             }
             is HoldToTalk.State.Problem -> {
@@ -325,12 +420,16 @@ internal fun voiceState(vh: VoiceHold?): HoldToTalk.State = (vh?.hold?.state ?: 
 
 /**
  * 盖在没聚焦的输入框上的手势:点一下照旧打字([onTap] 聚焦弹键盘),按住约 0.3 秒开始听,
- * 按着往上滑过 [CancelLift] 是取消,松开交给状态机。
+ * 按着往上滑进「在听」卡片是直接发送、滑过卡片上沿是取消(见 [voiceAim]),松开交给状态机。
  */
 @Composable
 internal fun Modifier.holdToTalk(vh: VoiceHold, onTap: () -> Unit): Modifier {
-    val threshold = with(LocalDensity.current) { CancelLift.toPx() }
-    return pointerInput(vh, threshold) {
+    val density = LocalDensity.current
+    val cancelLift = with(density) { CancelLift.toPx() }
+    val sendLift = with(density) { SendLift.toPx() }
+    // 手势这块在根布局里的位置:手指的坐标是相对它的,卡片的是根布局的
+    val origin = remember { arrayOf(Offset.Zero) }
+    return onGloballyPositioned { origin[0] = it.positionInRoot() }.pointerInput(vh, cancelLift, sendLift) {
         awaitEachGesture {
             val down = awaitFirstDown()
             down.consume()
@@ -366,7 +465,7 @@ internal fun Modifier.holdToTalk(vh: VoiceHold, onTap: () -> Unit): Modifier {
                         break
                     }
                     ch.consume()
-                    vh.drag(down.position.y - ch.position.y, threshold)
+                    vh.move(origin[0] + ch.position, down.position.y - ch.position.y, cancelLift, sendLift)
                 }
             } finally {
                 if (!ended) vh.abort()
@@ -375,7 +474,7 @@ internal fun Modifier.holdToTalk(vh: VoiceHold, onTap: () -> Unit): Modifier {
     }
 }
 
-/** 按着时整条输入栏变蓝(上滑到取消时变红),中间波形和「松开 填入」;盖在玻璃输入栏上。 */
+/** 按着时整条输入栏变蓝(上滑到取消时变红、滑进卡片要直接发送时变绿),中间波形和「松开 填入」;盖在玻璃输入栏上。 */
 @Composable
 internal fun VoiceBarCover(vh: VoiceHold, state: HoldToTalk.State, reduceMotion: Boolean, modifier: Modifier = Modifier) {
     val s = state as? HoldToTalk.State.Listening
@@ -383,11 +482,12 @@ internal fun VoiceBarCover(vh: VoiceHold, state: HoldToTalk.State, reduceMotion:
     val c = MikaTheme.colors
     val label = when {
         s.cancelArmed -> stringResource(R.string.voice_release_cancel)
+        s.sendArmed -> stringResource(R.string.voice_release_send)
         s.live -> stringResource(R.string.voice_release_fill)
         else -> stringResource(R.string.voice_release_convert)
     }
     Row(
-        modifier.clip(CircleShape).background(if (s.cancelArmed) c.bad else c.accent).testTag("voice-bar"),
+        modifier.clip(CircleShape).background(aimTone(s, c.accent)).testTag("voice-bar"),
         horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterHorizontally),
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -417,7 +517,7 @@ private const val WAVE_BARS = 14
 
 /**
  * 输入栏上方浮起的那一层,不占布局(放在输入栏前面、高度算 0、往上画):
- * 按着时的「上滑取消」提示、「在听」卡片,以及没听清之类的轻提示。
+ * 按着时的「上滑 发送/取消」提示、「在听」卡片,以及没听清之类的轻提示。
  * [title] 是卡片顶上那句(平时「在听」,任务在跑时「插话给『…』」)。
  */
 @Composable
@@ -444,7 +544,7 @@ internal fun VoiceFloat(vh: VoiceHold, state: HoldToTalk.State, title: String, b
                     fadeIn(tween(200)) + slideInVertically(tween(200)) { it / 12 } + scaleIn(tween(200), initialScale = 0.98f),
                 exit = fadeOut(tween(if (reduceMotion) 0 else 150)),
             ) {
-                last[0]?.let { ListenCard(it, title, vh.engine, backdrop) }
+                last[0]?.let { ListenCard(it, title, vh.engine, backdrop) { at -> vh.cardAt = at } }
             }
             val toast = vh.toast
             if (toast != null && listening == null) VoiceToast(toast)
@@ -452,7 +552,7 @@ internal fun VoiceFloat(vh: VoiceHold, state: HoldToTalk.State, title: String, b
     }
 }
 
-/** 「上滑取消」的小胶囊;滑到了变红写「松开 取消」。 */
+/** 「上滑 发送/取消」的小胶囊:往上滑进卡片是发送、再滑过卡片到这里是取消;滑到这里变红写「松开 取消」。 */
 @Composable
 private fun CancelHint(armed: Boolean, modifier: Modifier = Modifier) {
     val c = MikaTheme.colors
@@ -465,26 +565,29 @@ private fun CancelHint(armed: Boolean, modifier: Modifier = Modifier) {
     ) {
         val fg = if (armed) c.onAccent else c.ink2
         Icon(MikaIcons.Up, null, Modifier.size(15.dp), tint = fg)
-        Text(stringResource(if (armed) R.string.voice_release_cancel else R.string.voice_slide_cancel), style = HintText, color = fg)
+        Text(stringResource(if (armed) R.string.voice_release_cancel else R.string.voice_slide_send_cancel), style = HintText, color = fg)
     }
 }
 
 /**
  * 「在听」卡片:顶上一个红点(在录)、说给谁、用的哪个转文字、用时;中间实时的字(末尾还可能变的几个字浅一些);
- * 底下说松开以后会怎样,最后十秒倒数。上滑到取消时字划掉、边框变红。
+ * 底下说松开以后会怎样,最后十秒倒数。上滑到取消时字划掉、边框变红;滑进卡片要直接发送时边框变绿。
+ * 排好版后把自己在根布局里的位置交给 [onPlaced](手指落在卡片里就是直接发送)。
  */
 @Composable
-private fun ListenCard(s: HoldToTalk.State.Listening, title: String, engine: String, backdrop: GlassBackdrop?) {
+private fun ListenCard(
+    s: HoldToTalk.State.Listening, title: String, engine: String, backdrop: GlassBackdrop?, onPlaced: (Rect) -> Unit,
+) {
     val c = MikaTheme.colors
     val shape = RoundedCornerShape(22.dp)
     GlassBar(
-        Modifier.fillMaxWidth().testTag("voice-listen")
-            .then(if (s.cancelArmed) Modifier.border(1.5.dp, c.bad, shape) else Modifier),
+        Modifier.fillMaxWidth().testTag("voice-listen").onGloballyPositioned { onPlaced(it.boundsInRoot()) }
+            .then(if (s.cancelArmed || s.sendArmed) Modifier.border(1.5.dp, aimTone(s, c.accent), shape) else Modifier),
         backdrop, shape,
     ) {
         Column(Modifier.weight(1f).padding(start = 10.dp, end = 10.dp, top = 8.dp, bottom = 6.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                RecDot(armed = s.cancelArmed)
+                RecDot(s)
                 Text(title, Modifier.weight(1f, fill = false), style = HeadText, color = c.ink2, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 if (engine.isNotEmpty()) {
                     Text(
@@ -496,44 +599,37 @@ private fun ListenCard(s: HoldToTalk.State.Listening, title: String, engine: Str
                 Text(ChatCopy.clock(s.elapsedMs), style = TimeText, color = c.ink3)
             }
             val heard = s.stable + s.tail
-            val words = if (heard.isEmpty()) {
-                buildAnnotatedString {
-                    withStyle(SpanStyle(color = c.ink3)) {
-                        append(stringResource(if (s.live) R.string.voice_say_now else R.string.voice_recording))
-                    }
-                }
+            val style = if (s.cancelArmed) ListenText.copy(textDecoration = TextDecoration.LineThrough) else ListenText
+            val modifier = Modifier.fillMaxWidth().padding(top = 10.dp).heightIn(min = 54.dp).alpha(if (s.cancelArmed) 0.4f else 1f)
+            if (heard.isEmpty()) {
+                Text(
+                    stringResource(if (s.live) R.string.voice_say_now else R.string.voice_recording), modifier,
+                    style = style, color = c.ink3, maxLines = 6, overflow = TextOverflow.Ellipsis,
+                )
             } else {
-                buildAnnotatedString {
-                    withStyle(SpanStyle(color = c.ink)) { append(s.stable) }
-                    withStyle(SpanStyle(color = c.ink2)) { append(s.tail) }
-                }
+                HeardText(s.stable, s.tail, style, maxLines = 6, modifier)
             }
-            Text(
-                words,
-                Modifier.fillMaxWidth().padding(top = 10.dp).heightIn(min = 54.dp).alpha(if (s.cancelArmed) 0.4f else 1f),
-                style = if (s.cancelArmed) ListenText.copy(textDecoration = TextDecoration.LineThrough) else ListenText,
-                maxLines = 6, overflow = TextOverflow.Ellipsis,
-            )
             Row(Modifier.fillMaxWidth().padding(top = 8.dp)) {
                 Text(
                     stringResource(if (s.live) R.string.voice_foot_live else R.string.voice_foot_convert),
                     Modifier.weight(1f), style = FootText, color = c.ink3, maxLines = 1, overflow = TextOverflow.Ellipsis,
                 )
-                VoiceCopy.countdown(s.elapsedMs)?.let { Text(it, style = FootText, color = c.warn) }
+                if (!s.unlimited) VoiceCopy.countdown(s.elapsedMs)?.let { Text(it, style = FootText, color = c.warn) }
             }
         }
     }
 }
 
-/** 卡片顶上那个点:在录时蓝色一圈一圈往外;要取消时变红、不动。 */
+/** 卡片顶上那个点:在录时蓝色一圈一圈往外;要取消时变红、要直接发送时变绿,都不动。 */
 @Composable
-private fun RecDot(armed: Boolean) {
+private fun RecDot(s: HoldToTalk.State.Listening) {
     val c = MikaTheme.colors
     val reduce = MikaTheme.reduceMotion
+    val armed = s.cancelArmed || s.sendArmed
     val halo = if (armed || reduce) 0f else rememberInfiniteTransition(label = "rec").animateFloat(
         0f, 1f, infiniteRepeatable(tween(600), RepeatMode.Reverse), label = "rec-halo",
     ).value
-    val dot = if (armed) c.bad else c.accent
+    val dot = aimTone(s, c.accent)
     val soft = c.accentSoft
     Box(
         Modifier.size(8.dp).drawBehind {
@@ -541,6 +637,17 @@ private fun RecDot(armed: Boolean) {
             drawCircle(dot)
         },
     )
+}
+
+/** 落点的颜色:取消红、直接发送绿,其余 [idle]。输入栏、卡片边框和卡片上的点共用,和取消一个样式。 */
+@Composable
+private fun aimTone(s: HoldToTalk.State.Listening, idle: Color): Color {
+    val c = MikaTheme.colors
+    return when {
+        s.cancelArmed -> c.bad
+        s.sendArmed -> c.ok
+        else -> idle
+    }
 }
 
 /** 输入栏上方的一句轻提示(没听清、识别服务忙……),一会儿自己消失。 */

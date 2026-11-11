@@ -1,0 +1,29 @@
+<resources>
+    <string name="call_instructions_title">接听交代</string>
+    <string name="call_instructions_intro">已保存的交代用于后续电话。准备 AI 通话时会将全部生效交代发给火山，即使电话最终未接起。来电者的话不能修改交代。</string>
+    <string name="call_instructions_add">新增交代</string>
+    <string name="call_instructions_empty">写下助理可以怎么回、还要问清什么。修改从下一通电话生效。</string>
+    <string name="call_instructions_heading">标题</string>
+    <string name="call_instructions_situation">适用场景</string>
+    <string name="call_instructions_response">处理方式</string>
+    <string name="call_instructions_save">保存交代</string>
+    <string name="call_instructions_cancel">取消</string>
+    <string name="call_instructions_edit">编辑</string>
+    <string name="call_instructions_delete">删除</string>
+    <string name="call_instructions_delete_confirm">删除这条交代？后续电话将不再使用。</string>
+    <string name="call_instructions_expiry">有效期</string>
+    <string name="call_instructions_forever">长期有效</string>
+    <string name="call_instructions_today">今天有效</string>
+    <string name="call_instructions_two_hours">两小时</string>
+    <string name="call_instructions_expired">已到期</string>
+    <string name="call_instructions_saved">已保存到本机</string>
+    <string name="call_instructions_failed">保存失败，草稿已保留。</string>
+    <string name="call_instructions_presets">从常见场景开始</string>
+    <string name="call_instructions_delivery">快递外卖</string>
+    <string name="call_instructions_delivery_when">快递员或外卖骑手来电</string>
+    <string name="call_instructions_delivery_reply">问清物品放在哪里、是否需要回电；未交代的地址和门禁不要猜，也不要代为授权。</string>
+    <string name="call_instructions_business">业务询问</string>
+    <string name="call_instructions_business_when">客户询问商品、服务或预约</string>
+    <string name="call_instructions_business_reply">问清需求、数量或期望时间以及联系办法，记下留言；不要自行承诺价格或预约成功。</string>
+    <string name="call_instructions_review_limit">请审阅回复，精简到 800 字内再保存。</string>
+</resources>

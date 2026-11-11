@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="calls_task_dial_now">現在撥出</string>
+    <string name="calls_task_dial_locked">鎖定後撥出</string>
+    <string name="calls_task_dial_locked_note">請在 45 秒內鎖定手機。Mika 會依照本次號碼、SIM 和任務嘗試撥出一次，可從通知取消。 僅熄屏、手機仍可直接進入時，不會撥出。</string>
+    <string name="calls_task_dial_locked_confirm">確認並等待鎖定</string>
+</resources>

@@ -1,5 +1,6 @@
 package com.wangzan101.mika.core.usage
 
+import com.wangzan101.mika.core.model.ModelError
 import com.wangzan101.mika.core.model.Usage
 import com.wangzan101.mika.core.record.RunEvent
 import java.util.concurrent.atomic.AtomicInteger
@@ -13,8 +14,10 @@ import kotlin.coroutines.CoroutineContext
  * 适配器内部的兼容重发增加实际请求数,但不增加逻辑调用数。不在这个上下文里的调用(交出回答后的结局判定、记忆提取)不算,
  * Token 用量页照样都记。只在内存里加,多线程安全。
  */
-class RunUsageTally : AbstractCoroutineContextElement(Key) {
+class RunUsageTally(val tokenBudget: Long? = null) : AbstractCoroutineContextElement(Key) {
     companion object Key : CoroutineContext.Key<RunUsageTally>
+
+    init { require(tokenBudget == null || tokenBudget > 0) }
 
     private val logicalCalls = AtomicInteger()
     private val calls = AtomicInteger()
@@ -35,6 +38,16 @@ class RunUsageTally : AbstractCoroutineContextElement(Key) {
         input.addAndGet(usage.inputTokens.toLong())
         output.addAndGet(usage.outputTokens.toLong())
         cached.addAndGet(usage.cachedInputTokens.toLong())
+    }
+
+    /** 已报告的输入加输出；缓存命中已包含在输入里，不能重复相加。 */
+    fun totalTokens(): Long = input.get() + output.get()
+
+    /** 在下一次实际请求前调用；达到预算时不允许收尾、重试或旁路调用继续消耗。 */
+    fun checkBudget() {
+        val limit = tokenBudget ?: return
+        val used = totalTokens()
+        if (used >= limit) throw ModelError.TaskBudgetExceeded(limit, used)
     }
 
     /** 此刻的合计,作为运行记录里的一条 [RunEvent.ModelCalls]。 */

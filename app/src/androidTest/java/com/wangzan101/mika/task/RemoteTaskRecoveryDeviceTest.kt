@@ -9,10 +9,12 @@ import com.wangzan101.mika.core.agent.FailKind
 import com.wangzan101.mika.core.agent.TaskState
 import com.wangzan101.mika.core.mcp.McpTaskTools
 import com.wangzan101.mika.core.remote.RemoteSteer
+import com.wangzan101.mika.core.remote.RemoteOwnership
 import com.wangzan101.mika.core.remote.RemoteTask
 import com.wangzan101.mika.core.remote.RemoteTaskError
 import com.wangzan101.mika.core.remote.RemoteTaskService
 import com.wangzan101.mika.mcp.McpServerState
+import com.wangzan101.mika.settings.McpUsbSettings
 import com.wangzan101.mika.ui.MainActivity
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.buildJsonObject
@@ -31,6 +33,29 @@ import java.util.concurrent.Executors
 class RemoteTaskRecoveryDeviceTest {
     @get:Rule val ui = createAndroidComposeRule<MainActivity>()
     private val app get() = ApplicationProvider.getApplicationContext<MikaApp>()
+
+    @Test fun rebootMigratesReceiptsOwnedByThePreviouslySavedUsbToken() {
+        val name = "receipts-usb-" + UUID.randomUUID()
+        val settings = File(app.cacheDir, name)
+        val previousOwner = RemoteOwnership.of(McpUsbSettings(settings, { "1" }, { null }).enable())
+        val networkOwner = RemoteOwnership.of("network-token")
+        val now = System.currentTimeMillis()
+        try {
+            RemoteTaskReceipts(app, name).use { store ->
+                store.insert(RemoteTask("usb-task", "mcp-usb", "usb", now, null, owner = previousOwner), true)
+                store.insert(RemoteTask("network-task", "mcp-network", "network", now, null, owner = networkOwner), true)
+                val restarted = McpUsbSettings(settings, { "2" }, { null }, migrateTaskOwner = store::migrateUsbOwner)
+                assertNull(restarted.token())
+                assertNotNull(store.find("usb-task", owner = RemoteOwnership.USB))
+                assertNull(store.find("usb-task", owner = networkOwner))
+                assertNotNull(store.find("network-task", owner = networkOwner))
+            }
+        } finally {
+            app.deleteDatabase(name)
+            File(settings, "mcp-usb.json").delete()
+            settings.delete()
+        }
+    }
 
     @Test fun versionOneReceiptsUpgradeWithoutLosingResultsOrSingleUseFileRequests() {
         val name = "receipts-migration-" + UUID.randomUUID()

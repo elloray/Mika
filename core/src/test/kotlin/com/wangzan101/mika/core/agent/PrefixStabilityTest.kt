@@ -151,7 +151,7 @@ class PrefixStabilityTest {
     private fun nameOf(tool: String) = Json.parseToJsonElement(tool).jsonObject["function"]!!.jsonObject.str("name")
 
     /** 收着时也给的入口工具:展开时第一个变的工具只能是它们之一(或排在最后的新工具)。 */
-    private val entries = setOf("phone_launch_app", "phone_list_apps", "phone_set_alarm", "phone_set_timer", "phone_add_calendar_event", "web_navigate", "web_read_page", "run_command")
+    private val entries = setOf("phone_launch_app", "phone_list_apps", "phone_set_alarm", "phone_set_timer", "phone_add_calendar_event", "phone_calendar_bulk_insert", "web_navigate", "web_read_page", "run_command")
 
     private val markers = listOf(HistoryPruner.OMITTED, HistoryPruner.OMITTED_READ, "(更早的画面已省略", HistoryPruner.OMITTED_IMAGE, ContextCompressor.HEADER)
 
@@ -238,8 +238,8 @@ class PrefixStabilityTest {
         val r = check(bodies, "compaction", appendOnly = false)
         assertTrue(bodies.any { ContextCompressor.HEADER in it.toString() })
         // 越过触发点的那一次压缩一次(改写一次),之后只追加,再长一个余量越过时才再压:30 步里改写两次
-        // (80K 窗口:提示词和展开的工具约 20K,触发点 47K,压到 30K 以下;增量估算不随普通文本的低用量向下校准)
-        assertEquals(listOf(12, 22), r.changed)
+        // (80K 窗口:提示词和展开的工具约 20K,触发点 47K,压到 30K 以下;新增工具说明会让后续越过触发点提前)
+        assertEquals(listOf(12, 21, 30), r.changed)
         assertTrue("${r.share}", r.share > 0.85)
     }
 

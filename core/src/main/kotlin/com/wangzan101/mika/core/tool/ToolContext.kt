@@ -46,6 +46,8 @@ internal class ToolConfig(
     val runRecords: com.wangzan101.mika.core.record.RunRecords? = null,
     /** 用户配置并启用的网页搜索;为空时不提供 web_search。 */
     val webSearch: com.wangzan101.mika.core.search.WebSearch? = null,
+    /** Save a captured PNG in this task's workspace; screen tools do not depend on the sandbox capability. */
+    val saveScreenshot: (suspend (String, ByteArray) -> String)? = null,
 )
 
 /**

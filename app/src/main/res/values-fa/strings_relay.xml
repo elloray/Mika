@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="relay_transport">از راه دور</string>
+    <string name="relay_pair_title">جفت‌سازی درگاه راه دور</string>
+    <string name="relay_pair_sub">در صفحهٔ وب درگاه یک کد جفت‌سازی بسازید، سپس نشانی و کد را در زیر وارد کنید.</string>
+    <string name="relay_gateway">درگاه</string>
+    <string name="relay_code">کد جفت‌سازی</string>
+    <string name="relay_code_hint">کد یک‌بارمصرف درگاه شما</string>
+    <string name="relay_pair">جفت‌سازی درگاه</string>
+    <string name="relay_busy">لطفاً صبر کنید…</string>
+    <string name="relay_enable">اجازهٔ دسترسی از راه دور</string>
+    <string name="relay_disabled">جفت شد. دسترسی از راه دور خاموش است</string>
+    <string name="relay_online">درگاه متصل است. در انتظار درخواست‌های CLI / MCP</string>
+    <string name="relay_connecting">در حال اتصال به درگاه راه دور…</string>
+    <string name="relay_offline">اتصال قطع شد. اتصال دوباره به‌صورت خودکار</string>
+    <string name="relay_unauthorized">جفت‌سازی منقضی یا لغو شده است. دوباره درگاه را جفت کنید</string>
+    <string name="relay_copy_address">کپی نشانی MCP</string>
+    <string name="relay_client_help">برای اتصال، تنظیمات را در کلاینت MCP رایانهٔ خود کپی کنید.</string>
+    <string name="relay_unpair">لغو جفت‌سازی درگاه</string>
+    <string name="relay_unpair_body">اتصال این گوشی به درگاه را قطع می‌کند. اتصال اینترنت لازم است. توکن دسترسی گوشی تغییر نمی‌کند.</string>
+    <string name="relay_failed">عملیات کامل نشد. نشانی درگاه، اتصال اینترنت و کد جفت‌سازی را بررسی کنید. اگر لغو جفت‌سازی ناموفق بود، دسترسی خاموش است؛ دوباره تلاش کنید یا دسترسی گوشی را در درگاه لغو کنید.</string>
+    <string name="relay_notif_body">دسترسی از راه دور فعال است. برای بررسی اتصال درگاه، میکا را باز کنید.</string>
+    <string name="relay_incompatible">میکا و درگاه را به نسخه‌های سازگار به‌روزرسانی کنید</string>
+    <string name="relay_copy_gateway">کپی نشانی درگاه</string>
+    <string name="relay_cli_help">توکن دسترسی را در فایلی روی رایانه ذخیره کنید، سپس دستور اتصال بالا را اجرا کنید.</string>
+    <string name="relay_intro">درگاه درخواست‌های CLI و MCP را که معمولاً از طریق Wi-Fi / LAN ارسال می‌شوند، برای دسترسی از راه دور به گوشی شما منتقل می‌کند. پیش از جفت‌سازی، آن را روی سرور عمومی خود راه‌اندازی کنید.</string>
+    <string name="relay_device_access">اجازهٔ روشن کردن صفحه و باز کردن قفل از طریق درگاه</string>
+    <string name="relay_device_access_sub">به‌طور پیش‌فرض خاموش است. به فعال بودن «اجازهٔ روشن کردن صفحه و باز کردن قفل از راه دور» در این صفحه نیز نیاز دارد. وقتی هر دو روشن باشند، هر کسی که توکن دسترسی را دارد می‌تواند از طریق اینترنت صفحهٔ گوشی را روشن و قفل آن را باز کند.</string>
+</resources>

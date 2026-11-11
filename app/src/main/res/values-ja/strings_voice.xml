@@ -13,8 +13,9 @@
     <string name="voice_foot_live">指を離す · 言葉が入力欄に入り、編集できます</string>
     <string name="voice_foot_convert">指を離す · テキストに変換して入力欄に入れます</string>
     <string name="voice_left">残り %1$d 秒</string>
-    <string name="voice_slide_cancel">上にスライドしてキャンセル</string>
+    <string name="voice_slide_send_cancel">上にスライドで送信/キャンセル</string>
     <string name="voice_release_cancel">指を離すとキャンセル</string>
+    <string name="voice_release_send">指を離すと送信</string>
     <string name="voice_release_fill">指を離すと入力</string>
     <string name="voice_release_convert">指を離すと変換</string>
     <string name="voice_converting">変換中…</string>

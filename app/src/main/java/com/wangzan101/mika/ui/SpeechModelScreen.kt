@@ -48,6 +48,14 @@ import com.wangzan101.mika.voice.SpeechOptions
 import com.wangzan101.mika.voice.SystemSpeech
 import com.wangzan101.mika.voice.DoubaoCredentials
 import com.wangzan101.mika.voice.DoubaoProtocol
+import com.wangzan101.mika.voice.BailianProtocol
+import com.wangzan101.mika.voice.BailianRegion
+import com.wangzan101.mika.voice.FunAsrProtocol
+import com.wangzan101.mika.voice.LiveAsrTransport
+import com.wangzan101.mika.voice.probeLiveAsr
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 /** 选择页上的动作。 */
 class SpeechPickActions(
@@ -62,6 +70,11 @@ class SpeechPickActions(
     /** 沿用已存的凭据,换成这种计费方式并选用。 */
     val useDoubao: (String) -> Unit = {},
     val clearDoubao: () -> Unit = {},
+    /** 进自建 Fun-ASR、百炼的设置页。 */
+    /** 进「Fun-ASR实时语音识别」的设置页(自建、百炼北京、百炼新加坡三个分页)。 */
+    val openFunAsr: () -> Unit = {},
+    /** 沿用上次那种(自建的地址,或百炼某个地域的模型),当场选用。 */
+    val useFunAsr: () -> Unit = {},
 )
 
 /**
@@ -76,6 +89,31 @@ fun SpeechModelScreen(store: ProviderStore, onBack: () -> Unit) {
     var doubaoConfigured by remember { mutableStateOf(settings?.hasDoubaoCredentials == true) }
     // 豆包的设置页叠在这一页上面;返回键先关它
     var doubaoOpen by remember { mutableStateOf(false) }
+    // 「Fun-ASR实时语音识别」三个分页的已存内容;存、删之后重读
+    fun funAsrSaved() = settings?.let { s ->
+        FunAsrSaved(
+            s.funAsrUrl, BailianRegion.entries.filter(s::hasBailianKey).toSet(),
+            BailianRegion.entries.associateWith(s::bailianModel), BailianRegion.entries.associateWith(s::bailianWorkspace),
+            s.funAsrLanguage, BailianRegion.entries.associateWith(s::bailianLanguage),
+        )
+    } ?: FunAsrSaved()
+    var funAsrSaved by remember { mutableStateOf(funAsrSaved()) }
+    var funAsrLast by remember { mutableStateOf(settings?.lastLive) }
+    var funAsrOpen by remember { mutableStateOf(false) }
+    var liveProbe by remember { mutableStateOf(LiveProbeUi()) }
+    // 先连一次走一遍开场和收尾,通了才存;失败留在设置页上说原因
+    fun probeThen(protocol: com.wangzan101.mika.voice.LiveAsrProtocol, url: String, headers: Map<String, String>, save: () -> Unit) {
+        if (liveProbe.testing) return
+        liveProbe = LiveProbeUi(testing = true)
+        scope.launch {
+            val error = withContext(Dispatchers.IO) {
+                runCatching { probeLiveAsr(protocol, { LiveAsrTransport().connect(url, headers) }) }.exceptionOrNull()
+            }
+            liveProbe = if (error == null) {
+                runCatching(save).exceptionOrNull()?.let { LiveProbeUi(error = tr(R.string.speech_doubao_save_failed)) } ?: LiveProbeUi()
+            } else LiveProbeUi(error = SpeechOptions.probeFailure(error))
+        }
+    }
     val vm = remember {
         ModelSetupViewModel(
             store, scope,
@@ -107,19 +145,58 @@ fun SpeechModelScreen(store: ProviderStore, onBack: () -> Unit) {
             settings?.let { vm.pickSpeech(it.choice.value) }
             doubaoOpen = false
         },
+        openFunAsr = { liveProbe = LiveProbeUi(); funAsrOpen = true },
+        // 沿用上次那种(自建或百炼的某个地域);用不了时进设置页
+        useFunAsr = {
+            when (val last = settings?.lastLive) {
+                is SpeechChoice.FunAsr -> { settings.saveFunAsr(last.url, last.language); vm.pickSpeech(settings.choice.value) }
+                is SpeechChoice.Bailian -> { settings.saveBailian("", last); vm.pickSpeech(settings.choice.value) }
+                else -> { liveProbe = LiveProbeUi(); funAsrOpen = true }
+            }
+        },
     )
-    if (doubaoOpen) {
-        BackHandler { doubaoOpen = false }
-        DoubaoSetupPage(ui.speech, doubaoConfigured, actions) { doubaoOpen = false }
-    } else {
-        SpeechModelContent(ui, probe, actions, onBack, doubaoConfigured)
+    fun funAsrDone() {
+        funAsrSaved = funAsrSaved(); funAsrLast = settings?.lastLive
+        settings?.let { vm.pickSpeech(it.choice.value) }
+    }
+    when {
+        doubaoOpen -> {
+            BackHandler { doubaoOpen = false }
+            DoubaoSetupPage(ui.speech, doubaoConfigured, actions) { doubaoOpen = false }
+        }
+        funAsrOpen -> {
+            BackHandler { funAsrOpen = false }
+            FunAsrSetupPage(
+                FunAsrTab.of(ui.speech.takeIf { it is SpeechChoice.FunAsr || it is SpeechChoice.Bailian } ?: funAsrLast), funAsrSaved, liveProbe,
+                onTab = { if (!liveProbe.testing) liveProbe = LiveProbeUi() },
+                onSaveLocal = { url, language ->
+                    probeThen(FunAsrProtocol(language), url, emptyMap()) {
+                        checkNotNull(settings).saveFunAsr(url, language)
+                        funAsrDone(); funAsrOpen = false
+                    }
+                },
+                onSaveBailian = { input ->
+                    val usable = input.key.ifBlank { settings?.bailianKey(input.region).orEmpty() }
+                    if (usable.isBlank()) liveProbe = LiveProbeUi(error = tr(R.string.speech_live_auth))
+                    else probeThen(BailianProtocol(input.model, input.language), input.region.endpoint(input.workspace), mapOf("Authorization" to "Bearer $usable")) {
+                        checkNotNull(settings).saveBailian(input.key, SpeechChoice.Bailian(input.model, input.region, input.workspace, input.language))
+                        funAsrDone(); funAsrOpen = false
+                    }
+                },
+                onClearBailian = { region -> settings?.clearBailian(region); funAsrDone() },
+            ) { funAsrOpen = false }
+        }
+        else -> SpeechModelContent(ui, probe, actions, onBack, doubaoConfigured, funAsrLast != null)
     }
 }
 
 /** 不带状态的选择页,便于测试:顶上一段说明,「手机自带」「不用」,下面按服务商分组单选。 */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun SpeechModelContent(ui: ModelSetupUi, probe: Map<String, String>, actions: SpeechPickActions, onBack: () -> Unit, doubaoConfigured: Boolean = false) {
+fun SpeechModelContent(
+    ui: ModelSetupUi, probe: Map<String, String>, actions: SpeechPickActions, onBack: () -> Unit, doubaoConfigured: Boolean = false,
+    funAsrConfigured: Boolean = false,
+) {
     val c = MikaTheme.colors
     val system = ui.systemSpeech
     val choice = ui.speech
@@ -155,7 +232,7 @@ fun SpeechModelContent(ui: ModelSetupUi, probe: Map<String, String>, actions: Sp
                 subtitle = tr(R.string.speech_off_note),
             )
         }
-        DoubaoRow(choice, doubaoConfigured, actions)
+        LiveRows(choice, doubaoConfigured, funAsrConfigured, actions)
         SpeechOptions.groups(ui.providers).forEach { g ->
             val p = g.provider
             val testing = ui.speechTesting == p.id
@@ -192,35 +269,31 @@ fun SpeechModelContent(ui: ModelSetupUi, probe: Map<String, String>, actions: Sp
 }
 
 /**
- * 「边说边转的语音服务」一组:只有一行。没存凭据时点它进设置页;存了以后点圆圈就用它,右边「设置」进去改凭据或删掉。
+ * 「边说边转的语音服务」一组:豆包和「Fun-ASR实时语音识别」(自建服务、百炼北京、百炼新加坡三选一,在它的设置页里分页)各一行。
+ * 没设置过时点行进设置页;设置过以后点圆圈就用它(Fun-ASR 沿用上次那种),右边「设置」进去改或删掉。
  * 凭据和聊天服务商分开存,不列模型、不试转。
  */
 @Composable
-private fun DoubaoRow(choice: SpeechChoice, configured: Boolean, actions: SpeechPickActions) {
-    val c = MikaTheme.colors
+private fun LiveRows(choice: SpeechChoice, doubao: Boolean, funAsr: Boolean, actions: SpeechPickActions) {
     GroupLabel(tr(R.string.speech_doubao_group))
     GroupCard {
-        val selected = configured && choice is SpeechChoice.Doubao
         val plan = (choice as? SpeechChoice.Doubao)?.resourceId ?: DoubaoProtocol.DURATION
-        RadioRow(
-            tr(R.string.speech_doubao_model), selected = selected, first = true,
-            onClick = { if (configured) actions.pick(SpeechChoice.Doubao(plan)) else actions.openDoubao() },
-            subtitle = if (configured && selected) tr(R.string.speech_doubao_configured, tr(planName(plan))) else tr(R.string.speech_doubao_note),
-            trailing = {
-                if (configured) {
-                    Row(
-                        Modifier.clip(MikaShapes.Pill).clickable(onClick = actions.openDoubao).padding(start = 8.dp, top = 6.dp, bottom = 6.dp)
-                            .testTag("speech-doubao-edit"),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Text(tr(R.string.speech_doubao_edit), style = MikaType.Value, color = c.ink2)
-                        RowChevron()
-                    }
-                } else {
-                    StatusPill(tr(R.string.settings_not_set), PillTone.Neutral)
-                    RowChevron()
-                }
-            },
+        val doubaoSelected = doubao && choice is SpeechChoice.Doubao
+        LiveServiceRow(
+            tr(R.string.speech_doubao_model),
+            if (doubaoSelected) tr(R.string.speech_doubao_configured, tr(planName(plan))) else tr(R.string.speech_doubao_note),
+            selected = doubaoSelected, configured = doubao, first = true, tag = "speech-doubao-edit",
+            onPick = { actions.pick(SpeechChoice.Doubao(plan)) }, onOpen = actions.openDoubao,
+        )
+        val using = when (choice) {
+            is SpeechChoice.FunAsr -> funAsrTabName(FunAsrTab.Local) + " · " + FunAsrProtocol.hostOf(choice.url)
+            is SpeechChoice.Bailian -> funAsrTabName(FunAsrTab.of(choice)) + " · " + choice.model
+            else -> null
+        }
+        LiveServiceRow(
+            tr(R.string.speech_funasr_service), using ?: tr(R.string.speech_funasr_choose_note),
+            selected = using != null, configured = funAsr, first = false, tag = "speech-funasr-edit",
+            onPick = actions.useFunAsr, onOpen = actions.openFunAsr,
         )
     }
 }

@@ -28,6 +28,7 @@ Start with [Use Mika from a computer](computer.en.md): pick CLI + Skill or MCP, 
 | --- | --- |
 | [CLI / Skill: install, update and remove](computer-install.en.md) | Installing the `mika` command or the Skill for your agent |
 | [CLI and Skill: connection and task commands](cli.en.md) | Commands to connect to the phone, submit tasks, check progress, answer questions and add instructions |
+| [Feishu bot](feishu.en.md) | QR creation, linking an existing app, private-message tasks and results |
 | [Computer access (MCP)](mcp.en.md) | Letting an MCP client hand tasks to Mika: USB, Wi-Fi / VPN, tools, security |
 | [Install with an AI agent on your computer](install-with-agent.en.md) | Installation steps written for an AI agent on your computer: with the phone on USB, hand it this doc and it sets things up for you |
 

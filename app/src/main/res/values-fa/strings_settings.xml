@@ -1,0 +1,191 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="language_title">زبان</string>
+    <string name="language_system">پیروی از زبان سیستم</string>
+    <string name="language_system_detail">اگر میکا از زبان سیستم پشتیبانی کند از آن استفاده می‌کند؛ در غیر این صورت انگلیسی نمایش داده می‌شود</string>
+
+
+
+
+
+
+
+
+
+
+
+    <string name="settings_basic">عمومی</string>
+    <string name="settings_language_appearance">زبان و ظاهر</string>
+    <string name="settings_model">مدل</string>
+    <string name="settings_model_sub">مدل‌ها، ارائه‌دهندگان و مصرف توکن</string>
+    <string name="settings_not_set">تنظیم نشده</string>
+    <string name="settings_phone_ops">کنترل گوشی</string>
+    <string name="settings_during_work">هنگام اجرای کار</string>
+    <string name="settings_during_work_sub">حالت خودکار، سرعت، محدودیت مراحل و صدا</string>
+    <string name="settings_notif_sub">زمان نمایش اعلان‌ها را در تنظیمات سیستم تغییر دهید</string>
+    <string name="settings_privacy">داده‌های من</string>
+    <string name="settings_memory_data">حافظه و داده‌ها</string>
+    <string name="settings_memory_sub">خاطره‌ها، مهارت‌ها، مسیرهای ذخیره‌شده و ورود به وب‌سایت‌ها</string>
+    <string name="settings_saved_data">داده‌های ذخیره‌شده</string>
+    <string name="settings_web_logins">ورود به وب‌سایت‌ها</string>
+    <plurals name="settings_count_sites">
+        <item quantity="one">%1$d سایت</item>
+        <item quantity="other">%1$d سایت</item>
+    </plurals>
+    <string name="settings_other">سایر</string>
+    <string name="settings_advanced">پیشرفته و سایر موارد</string>
+    <string name="settings_advanced_sub">پروکسی، پردازش، اتصال‌ها و تعمیر</string>
+    <string name="settings_connections">شبکه و اتصال‌ها</string>
+    <string name="settings_maintenance">نگهداری</string>
+    <string name="settings_sandbox">محیط فایل‌ها و پردازش</string>
+    <string name="settings_routes">مسیرهای ذخیره‌شده</string>
+    <plurals name="settings_count_routes">
+        <item quantity="one">%1$d مسیر</item>
+        <item quantity="other">%1$d مسیر</item>
+    </plurals>
+    <string name="settings_recovery">بازیابی و تعمیر</string>
+    <string name="settings_developer_group">توسعه‌دهنده</string>
+    <string name="settings_developer">گزینه‌های توسعه‌دهنده</string>
+    <string name="settings_about">دربارهٔ میکا</string>
+    <string name="pill_unsupported">پشتیبانی نمی‌شود</string>
+    <string name="pill_available">آماده</string>
+    <string name="pill_needs_attention">نیازمند توجه</string>
+    <string name="sandbox_ready">آماده</string>
+    <string name="sandbox_preparing">در حال آماده‌سازی</string>
+    <string name="sandbox_not_prepared">راه‌اندازی نشده</string>
+    <string name="settings_all_ready_detail">مدل تنظیم شده · کنترل گوشی آماده است</string>
+    <string name="settings_status">وضعیت</string>
+    <string name="settings_a11y">سرویس دسترس‌پذیری</string>
+    <string name="settings_a11y_sub">صفحهٔ مجازی میکا را می‌خواند و کنترل می‌کند</string>
+    <string name="settings_notif_progress_sub">اعلان‌های پیشرفت و موارد نیازمند توجه شما</string>
+    <string name="settings_system_version">نسخهٔ سیستم</string>
+    <string name="settings_android_focus">اندروید %1$s · در اندروید ۱۲ و ۱۳، کار پس‌زمینه ممکن است تمرکز صفحه را تغییر دهد؛ اندروید ۱۴ یا بالاتر توصیه می‌شود</string>
+    <string name="settings_android">اندروید %1$s</string>
+    <string name="settings_meets">پشتیبانی می‌شود</string>
+    <string name="settings_notif_master">همهٔ اعلان‌ها</string>
+    <string name="settings_allowed">مجاز</string>
+    <string name="settings_task_notifs">اعلان‌های کار</string>
+    <string name="settings_keep_on">روشن نگه داشتن صفحه</string>
+    <string name="settings_keep_on_sub">هنگام اجرای کار صفحه روشن می‌ماند (در صورت عدم استفاده ممکن است کم‌نور شود) و سپس به حالت عادی برمی‌گردد</string>
+    <string name="settings_mute">بی‌صدا کردن برنامهٔ در حال استفاده</string>
+    <string name="settings_mute_sub">برنامه‌هایی که میکا استفاده می‌کند بی‌صدا می‌مانند؛ وقتی کنترل را به دست بگیرید صدا برمی‌گردد</string>
+    <string name="settings_pace">سرعت انجام کار</string>
+    <string name="settings_pace_fast">سریع</string>
+    <string name="settings_pace_fast_detail">بدون مکث بین مراحل؛ متن یک‌جا وارد می‌شود</string>
+    <string name="settings_pace_standard">معمولی (پیش‌فرض)</string>
+    <string name="settings_pace_standard_detail">مانند انسان تایپ می‌کند و بین مراحل کمی مکث دارد؛ در برنامه‌هایی که استفادهٔ سریع را محدود می‌کنند کندتر است</string>
+    <string name="settings_pace_human">شبیه انسان</string>
+    <string name="settings_pace_human_detail">در همهٔ برنامه‌ها آهسته عمل می‌کند و پیش از ادامه هر صفحه را می‌خواند</string>
+    <string name="settings_pace_foot">بعضی برنامه‌ها هنگام استفادهٔ بیش از حد سریع شما را از حساب خارج می‌کنند یا تأیید می‌خواهند. سرعت کمتر باعث طولانی‌تر شدن کار می‌شود.</string>
+    <string name="settings_parallel">کارهای هم‌زمان</string>
+    <string name="settings_parallel_sub">کارهای گفتگوهای مختلف هر کدام صفحهٔ مجازی خود را دارند</string>
+    <plurals name="settings_count_tasks">
+        <item quantity="one">%1$d</item>
+        <item quantity="other">%1$d</item>
+    </plurals>
+    <string name="capsule_settings_title">کپسول شناور</string>
+    <string name="capsule_settings_sub">هنگام استفاده از برنامه‌های دیگر، پیشرفت کار را روی صفحه ببینید</string>
+    <string name="capsule_settings_foot">کپسول با سرویس دسترس‌پذیری فعال میکا نمایش داده می‌شود و به مجوز اضافی نیاز ندارد. اگر سرویس خاموش باشد یا نتواند کپسول را نمایش دهد، همچنان اعلان دریافت می‌کنید.</string>
+    <string name="capsule_settings_background">بعضی گوشی‌ها برنامه‌ها را در پس‌زمینه می‌بندند. اگر کپسول ناپدید شد، در تنظیمات سیستم اجازهٔ اجرا در پس‌زمینه و شروع خودکار را به میکا بدهید.</string>
+    <string name="capsule_mode_off">خاموش</string>
+    <string name="capsule_mode_tasks">هنگام انجام کار</string>
+    <string name="capsule_mode_always">همیشه</string>
+    <string name="capsule_mode_off_detail">فقط اعلان‌ها</string>
+    <string name="capsule_mode_tasks_detail">هنگام اجرای کار یا انتظار برای شما ظاهر می‌شود و چند ثانیه پس از آن ناپدید می‌شود</string>
+    <string name="capsule_mode_always_detail">حتی بدون کار، نماد میکا را روی صفحه نگه می‌دارد</string>
+    <string name="capsule_idle_opacity">میزان وضوح در حالت غیرفعال</string>
+    <string name="capsule_idle_opacity_detail">پس از چند ثانیه بدون لمس اعمال می‌شود؛ موارد نیازمند توجه شما کاملاً قابل مشاهده می‌مانند</string>
+    <string name="routes_saved">مسیرهای ذخیره‌شده</string>
+    <string name="loading">در حال بارگذاری</string>
+    <plurals name="routes_count">
+        <item quantity="one">%1$d مسیر · روش‌های موفق قبلی را سریع‌تر تکرار می‌کند</item>
+        <item quantity="other">%1$d مسیر · روش‌های موفق قبلی را سریع‌تر تکرار می‌کند</item>
+    </plurals>
+    <string name="routes_clear_all">پاک کردن همه</string>
+    <string name="routes_clear_title">همهٔ مسیرهای ذخیره‌شده پاک شوند؟</string>
+    <string name="routes_clear_body">پس از پاک کردن، میکا دفعهٔ بعد مراحل را دوباره قدم‌به‌قدم پیدا می‌کند. سایر تنظیمات تغییری نمی‌کنند.</string>
+    <string name="clear">پاک کردن</string>
+    <string name="sandbox_proxy_off">%1$s · پس از روشن شدن دسترسی شبکه استفاده می‌شود</string>
+    <string name="net_proxy">پروکسی شبکه</string>
+    <string name="net_proxy_row_sub">برای درخواست‌های مدل، به‌روزرسانی‌ها، مرورگر داخلی و دستورها</string>
+    <string name="net_proxy_hint">برای درخواست‌های مدل میکا (گفتگو، فهرست مدل‌ها و ورود به حساب)، دانلود به‌روزرسانی، مرورگر داخلی و دستورهای محیط فایل‌ها و پردازش، هنگامی که دسترسی شبکهٔ آن روشن است، استفاده می‌شود. نشانی‌های همین گوشی یا شبکهٔ محلی شما (localhost، ‎192.168.x.x، ‎10.x.x.x و نام‌های پایان‌یافته به ‎.local) همیشه مستقیم متصل می‌شوند تا مدل‌های محلی کار کنند. می‌تواند شامل user:password@ باشد که به‌صورت رمزگذاری‌شده در این گوشی ذخیره می‌شود. برای اتصال مستقیم خالی بگذارید.</string>
+    <string name="net_proxy_invalid">به شکل http://host:port وارد کنید (socks5، socks5h و https نیز پشتیبانی می‌شوند). در صورت نیاز می‌توانید user:password@ را پیش از نام میزبان قرار دهید.</string>
+    <string name="net_proxy_container_only">پروکسی‌های https:// فقط برای دستورهای محیط فایل‌ها و پردازش استفاده می‌شوند و اتصال‌های خود میکا مستقیم می‌مانند. برای پوشش همهٔ اتصال‌ها از http:// یا socks5:// استفاده کنید.</string>
+    <string name="net_proxy_browser_unsupported">WebView این گوشی نمی‌تواند از پروکسی جداگانه استفاده کند، بنابراین مرورگر داخلی مستقیم متصل می‌شود.</string>
+    <string name="net_proxy_browser_socks_auth">مرورگر داخلی نمی‌تواند از پروکسی SOCKS نیازمند نام کاربری و گذرواژه استفاده کند، بنابراین مستقیم متصل می‌شود.</string>
+    <string name="net_proxy_unreachable">اتصال به پروکسی شبکه ممکن نشد یا پروکسی درخواست را منتقل نکرد. بررسی کنید پروکسی فعال باشد و نشانی آن در تنظیمات › پروکسی شبکه درست باشد.</string>
+    <string name="net_proxy_auth_failed">پروکسی شبکه نام کاربری یا گذرواژه را رد کرد. آن‌ها را در تنظیمات › پروکسی شبکه بررسی کنید.</string>
+    <string name="sandbox_proxy_sub">تنظیم نشده: دستورها مستقیم متصل می‌شوند. آن را در تنظیمات › پروکسی شبکه تغییر دهید</string>
+    <string name="sandbox_proxy_on">%1$s · تغییر در تنظیمات › پروکسی شبکه</string>
+    <string name="sandbox_usage">فضای مصرف‌شده</string>
+    <string name="sandbox_usage_total">مجموع</string>
+    <string name="sandbox_usage_runtime">محیط اجرا</string>
+    <string name="sandbox_usage_skills">مهارت‌ها</string>
+    <string name="sandbox_usage_workspaces">فضاهای کاری گفتگو</string>
+    <string name="sandbox_usage_deleted_chat">گفتگوی حذف‌شده</string>
+    <string name="sandbox_usage_busy">کاری در این گفتگو در حال اجراست؛ اکنون نمی‌توان آن را پاک کرد</string>
+    <string name="sandbox_usage_clear">پاک کردن</string>
+    <string name="sandbox_usage_clear_title">فضای کاری این گفتگو پاک شود؟</string>
+    <string name="sandbox_usage_clear_body">فایل‌های فضای کاری «%1$s» حذف می‌شوند: پیوست‌های ارسالی شما، صفحه‌های به‌اشتراک‌گذاشته‌شده و فایل‌های ساخته‌شده توسط کارها. خود گفتگو باقی می‌ماند، اما این فایل‌ها دیگر باز نمی‌شوند.</string>
+    <string name="sandbox_usage_clear_all">پاک کردن همهٔ فضاهای کاری</string>
+    <string name="sandbox_usage_clear_all_title">فضای کاری همهٔ گفتگوها پاک شود؟</string>
+    <string name="sandbox_usage_clear_all_body">فایل‌های فضای کاری همهٔ گفتگوها حذف می‌شوند: پیوست‌ها، صفحه‌های به‌اشتراک‌گذاشته‌شده و فایل‌های ساخته‌شده توسط کارها. گفتگوها باقی می‌مانند. گفتگوهای دارای کار در حال اجرا نادیده گرفته می‌شوند.</string>
+    <string name="sandbox_usage_note">محیط اجرا و مهارت‌ها همراه برنامه هستند و از اینجا پاک نمی‌شوند؛ برای شروع دوباره از «بازنشانی محیط» در بالا استفاده کنید.</string>
+    <string name="appearance_title">زبان و ظاهر</string>
+    <string name="appearance_group">ظاهر</string>
+    <string name="appearance_system">پیروی از سیستم</string>
+    <string name="appearance_system_detail">روشن یا تیره، مطابق تنظیم گوشی</string>
+    <string name="appearance_light">همیشه روشن</string>
+    <string name="appearance_dark">همیشه تیره</string>
+    <string name="settings_self_config">اجازه به میکا برای تغییر تنظیمات خودش</string>
+    <string name="settings_self_config_sub">در حالت روشن، کارها یک ابزار برای خواندن و تغییر این ترجیحات دارند (سرعت، بی‌صدا کردن، کپسول، ظاهر و روشن ماندن صفحه). مدل‌ها، کلیدهای API، شبکهٔ محیط اجرا و موارد حذف داده هرگز شامل آن نیستند</string>
+    <string name="settings_step_limit">محدودیت مراحل هر کار</string>
+    <string name="settings_step_limit_sub">خاموش یعنی بدون محدودیت. با رسیدن به محدودیت، کار متوقف می‌شود و محل توقف را اعلام می‌کند.</string>
+    <string name="settings_step_limit_off">بدون محدودیت</string>
+    <string name="settings_step_limit_custom">دلخواه (۱ تا ۵۰۰)</string>
+    <string name="settings_step_limit_custom_apply">اعمال</string>
+    <string name="settings_step_limit_invalid">یک عدد صحیح از ۱ تا ۵۰۰ وارد کنید.</string>
+    <string name="mcp_servers_title">سرورهای MCP</string>
+    <string name="mcp_servers_empty">سرور MCP اضافه نشده است</string>
+    <string name="mcp_servers_empty_sub">یک سرور MCP خارجی اضافه کنید تا ابزارهای آن در اختیار میکا قرار گیرند.</string>
+    <string name="mcp_servers_add">افزودن سرور</string>
+    <string name="mcp_servers_edit">ویرایش سرور</string>
+    <string name="mcp_servers_name">نام</string>
+    <string name="mcp_servers_url">نشانی سرور</string>
+    <string name="mcp_servers_token">توکن دسترسی (اختیاری)</string>
+    <string name="mcp_servers_allow_local_http">اجازه به HTTP برای سرورهای محلی یا خصوصی</string>
+    <string name="mcp_servers_trust_annotations">اعتماد به برچسب‌های فقط‌خواندنی سرور</string>
+    <string name="mcp_servers_save">ذخیره</string>
+    <string name="mcp_servers_save_test">ذخیره و آزمون</string>
+    <string name="mcp_servers_testing">در حال آزمون…</string>
+    <string name="mcp_servers_count">%1$d سرور</string>
+    <string name="mcp_servers_help">درباره</string>
+    <string name="mcp_servers_help_text">سرورهای MCP خارجی از بخش «اتصال رایانه» جدا هستند. ابزارهای آن‌ها با منبع MCP در کارها نمایش داده می‌شوند. به‌طور پیش‌فرض فقط HTTPS مجاز است؛ HTTP محلی به انتخاب گزینه نیاز دارد. توکن‌ها در این گوشی می‌مانند.</string>
+    <string name="mcp_servers_delete">حذف</string>
+    <string name="mcp_servers_transport_http">HTTP</string>
+    <string name="mcp_servers_transport_sse">SSE</string>
+    <string name="mcp_servers_transport_stdio">فرایند محلی</string>
+    <string name="mcp_servers_command">دستور (فایل اجرایی و آرگومان‌ها)</string>
+    <string name="mcp_servers_stdio_help">در محیط لینوکس اجرا می‌شود. ابتدا سرور را در همان محیط نصب کنید.</string>
+    <string name="mcp_servers_legacy_sse">استفاده از روش قدیمی HTTP+SSE ‏(2024-11-05)</string>
+    <string name="mcp_servers_use_oauth">ورود با OAuth 2.1</string>
+    <string name="mcp_servers_sign_in">ورود</string>
+    <string name="mcp_servers_signing_in">در انتظار ورود در مرورگر…</string>
+    <string name="mcp_servers_sign_in_ok">ورود انجام شد. برای بررسی ابزارها از «ذخیره و آزمون» استفاده کنید.</string>
+    <string name="mcp_servers_sign_in_failed">ورود ناموفق بود: %1$s</string>
+    <string name="mcp_servers_run_failed">سرورهای MCP در دسترس نیستند: %1$s</string>
+    <string name="mcp_servers_status_ok">در دسترس · %1$d ابزار</string>
+    <string name="mcp_servers_status_fail">اتصال ناموفق بود: %1$s</string>
+    <string name="mcp_servers_refresh_all">آزمون همه</string>
+    <string name="mcp_servers_allowlist">ابزارهای مجاز (با ویرگول جدا کنید؛ خالی یعنی همه)</string>
+    <string name="quit_title">خروج کامل از میکا</string>
+    <string name="quit_row_sub">کارهای پس‌زمینه را متوقف و کپسول شناور را پنهان می‌کند</string>
+    <string name="quit_confirm_body">کارهای در حال اجرا متوقف می‌شوند و کپسول شناور و اعلان‌ها ناپدید می‌شوند. با باز کردن دوبارهٔ میکا همه‌چیز برمی‌گردد.</string>
+    <string name="quit_confirm_action">خروج</string>
+    <string name="settings_task_token_budget">سقف توکن برای هر کار</string>
+    <string name="settings_task_token_budget_sub">فقط توکن‌های ورودی و خروجی گزارش‌شده توسط ارائه‌دهنده حساب می‌شوند. با رسیدن به سقف، درخواست دیگری ارسال نمی‌شود. درخواست در حال اجرا ممکن است مصرف را از سقف بگذراند؛ تماس‌های بدون مصرف گزارش‌شده صفر حساب می‌شوند.</string>
+    <string name="settings_token_budget_apply">استفاده</string>
+    <string name="settings_token_budget_custom">سقف توکن دلخواه</string>
+    <string name="settings_token_budget_invalid">یک عدد صحیح از %1$s تا %2$s وارد کنید.</string>
+    <string name="settings_token_budget_unlimited">بدون محدودیت</string>
+</resources>

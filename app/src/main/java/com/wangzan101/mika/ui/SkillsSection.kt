@@ -24,6 +24,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import com.wangzan101.mika.core.knowledge.AppKnowledgeStage
+import com.wangzan101.mika.core.knowledge.FrontMatter
 import com.wangzan101.mika.core.skills.SkillImport
 import com.wangzan101.mika.ui.components.ActionSheet
 import com.wangzan101.mika.ui.components.ButtonKind
@@ -175,7 +176,9 @@ private fun AppKnowledgeItem(vm: MemoryViewModel, row: AppKnowledgeRow, first: B
     }
     Column {
         ListRow(null, row.name, stage, first = first, onClick = onToggle)
-        ChangesAndText(row.changedLines, row.markdown, expanded)
+        ChangesAndText(row.changedLines, expanded) {
+            Text(row.markdown, Modifier.padding(top = 6.dp), style = MikaType.Hint, color = MikaTheme.colors.ink2)
+        }
         RowActions {
             MikaButton(if (expanded) stringResource(R.string.skills_hide_full) else stringResource(R.string.skills_view_full), onToggle, kind = ButtonKind.Tonal, size = ButtonSize.Small)
             if (row.stage == AppKnowledgeStage.Draft) MikaButton(stringResource(R.string.skills_accept_try), { vm.approveAppDraft(row.id) }, size = ButtonSize.Small)
@@ -186,11 +189,20 @@ private fun AppKnowledgeItem(vm: MemoryViewModel, row: AppKnowledgeRow, first: B
 
 /** 技能行下面:更新草稿改了哪几行,展开时再加全文。 */
 @Composable
-private fun SkillBody(r: SkillRow, expanded: Boolean) = ChangesAndText(r.changedLines, r.markdown, expanded)
+private fun SkillBody(r: SkillRow, expanded: Boolean) = ChangesAndText(r.changedLines, expanded) {
+    val body = remember(r.markdown) { skillPreviewBody(r.markdown) }
+    SkillReadingView(body)
+}
+
+/** Strip only a recognized skill header; horizontal rules in ordinary Markdown are content. */
+internal fun skillPreviewBody(markdown: String): String {
+    val (metadata, body) = FrontMatter.parse(markdown)
+    return if (metadata["name"] is String && body.isNotBlank()) body else markdown
+}
 
 /** 一行下面:这份草稿改了哪几行([changed]),展开时再加全文。 */
 @Composable
-private fun ChangesAndText(changed: List<String>, markdown: String, expanded: Boolean) {
+private fun ChangesAndText(changed: List<String>, expanded: Boolean, content: @Composable () -> Unit) {
     val c = MikaTheme.colors
     if (changed.isEmpty() && !expanded) return
     Column(Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, bottom = 12.dp)) {
@@ -198,6 +210,6 @@ private fun ChangesAndText(changed: List<String>, markdown: String, expanded: Bo
             Text(stringResource(R.string.skills_changed_lines), style = MikaType.Hint, color = c.ink3)
             changed.forEach { Text(it, style = MikaType.Hint, color = if (it.startsWith("+")) c.ok else c.bad) }
         }
-        if (expanded) Text(markdown, Modifier.padding(top = 6.dp), style = MikaType.Hint, color = c.ink2)
+        if (expanded) content()
     }
 }

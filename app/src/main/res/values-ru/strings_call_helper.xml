@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="calls_helper_setup_title">Аудиопомощник Mika</string>
+    <string name="calls_helper_setup_intro">Обычные звонки обрабатывает Android. Mika использует аудиопомощник, чтобы слышать собеседника и отвечать в звонках с ИИ. Отладка по Wi-Fi позволяет запустить или восстановить помощник прямо на телефоне, без компьютера. Для сопряжения нужен Wi-Fi, а для голосового общения с ИИ — интернет.</string>
+    <string name="calls_helper_unavailable">На этом устройстве нельзя настроить аудиопомощник.</string>
+    <string name="calls_helper_unavailable_reason">В Android нет настроек, необходимых для запуска помощника. Обычные звонки по-прежнему доступны в приложении «Телефон».</string>
+    <string name="calls_helper_ready">Аудиопомощник подключён</string>
+    <string name="calls_helper_usb_running">Аудиопомощник работает · запущен по USB</string>
+    <string name="calls_helper_usb_stopped">Аудиопомощник, запущенный по USB, остановился.</string>
+    <string name="calls_helper_wireless_recovery">Выполните сопряжение на этом телефоне один раз. Если помощник остановится, его можно будет запустить без компьютера. Для настройки подключитесь к Wi-Fi.</string>
+    <string name="calls_helper_wireless_unavailable">На этом телефоне недоступна отладка по Wi-Fi.</string>
+    <string name="calls_helper_setup_wireless">Настроить восстановление по Wi-Fi</string>
+    <string name="calls_helper_hide_usb">Скрыть способ с компьютером</string>
+    <string name="calls_helper_show_usb">Способ с компьютером</string>
+    <string name="calls_helper_usb_fallback">Если отладка по Wi-Fi недоступна и у вас есть компьютер, подключите телефон кабелем USB и выполните эту команду на компьютере. После обновления или перезагрузки команду может понадобиться повторить.</string>
+    <string name="calls_helper_wireless_reconnect">Если помощник остановится, подключитесь к Wi-Fi и включите отладку по Wi-Fi, если Android её отключил. Выполните сопряжение снова, если появится соответствующий запрос.</string>
+    <string name="calls_helper_wireless_debugging_body">Подключитесь к Wi-Fi и включите отладку по Wi-Fi в разделе «Для разработчиков». Если Android запросит разрешение, нажмите «Разрешить». Затем вернитесь в Mika, чтобы перейти к шагу с кодом сопряжения.</string>
+    <string name="calls_helper_usb_debugging_body">В разделе «Для разработчиков» включите отладку по USB и подтвердите действие. Для беспроводной настройки кабель не нужен. Остальные настройки оставьте без изменений.</string>
+    <string name="calls_helper_usb_debugging_brief">Для беспроводной настройки кабель не нужен</string>
+    <string name="calls_helper_connect_body">После сопряжения Mika подключится к аудиопомощнику на этом телефоне.</string>
+    <string name="calls_helper_wifi_needed">Подключитесь к Wi-Fi, чтобы запустить или восстановить аудиопомощник через отладку по Wi-Fi.</string>
+    <string name="calls_helper_repair_needed">Сопряжение недоступно. Выполните его снова на этом телефоне.</string>
+    <string name="calls_helper_name">Аудиопомощник</string>
+    <string name="calls_helper_disconnected">Подключите, чтобы включить двустороннее аудио в звонках с ИИ</string>
+    <string name="calls_helper_manage">Управление</string>
+    <string name="calls_helper_set_up">Настроить</string>
+    <string name="calls_helper_pairing_done">Аудиопомощник подключён. Можно вернуться в Mika.</string>
+    <string name="calls_helper_pairing_problem">Вернитесь в Mika, чтобы узнать, как восстановить подключение.</string>
+</resources>

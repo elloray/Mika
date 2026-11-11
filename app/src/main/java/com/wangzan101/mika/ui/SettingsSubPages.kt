@@ -51,6 +51,7 @@ import com.wangzan101.mika.ui.theme.MikaIcons
 import com.wangzan101.mika.ui.theme.MikaTheme
 import com.wangzan101.mika.ui.theme.MikaType
 import com.wangzan101.mika.core.cap.phone.OperatingPace
+import com.wangzan101.mika.core.usage.TokenBudgetLimits
 import kotlin.math.roundToInt
 
 // ---------- 手机操作 ----------
@@ -196,9 +197,12 @@ fun DuringWorkScreen(
     operatingPace: OperatingPace = OperatingPace.DEFAULT, onOperatingPace: (OperatingPace) -> Unit = {},
     selfConfig: Boolean = false, onSelfConfig: (Boolean) -> Unit = {},
     stepLimit: Int? = null, onStepLimit: (Int?) -> Unit = {},
+    tokenBudget: Long? = null, onTokenBudget: (Long?) -> Unit = {},
 ) {
     var editingLimit by remember { mutableStateOf(false) }
     var customLimit by remember { mutableStateOf("") }
+    var editingTokenBudget by remember { mutableStateOf(false) }
+    var customTokenBudget by remember { mutableStateOf("") }
     PageScaffold(stringResource(R.string.settings_during_work), onBack) {
         GroupLabel(AutonomyCopy.GROUP)
         GroupCard {
@@ -220,6 +224,14 @@ fun DuringWorkScreen(
                 // 当前是自己填的数时,输入框里带着它
                 onClick = { customLimit = stepLimit?.takeIf { it !in STEP_LIMIT_PRESETS }?.toString().orEmpty(); editingLimit = true },
             )
+            ListRow(
+                MikaIcons.Clock, stringResource(R.string.settings_task_token_budget),
+                tokenBudget?.let(::tokenBudgetNumber) ?: stringResource(R.string.settings_token_budget_unlimited),
+                onClick = {
+                    customTokenBudget = tokenBudget?.takeIf { it !in TokenBudgetLimits.PRESETS }?.toString().orEmpty()
+                    editingTokenBudget = true
+                },
+            )
             parallel?.let { ParallelRow(it, onParallelMax) }
         }
         if (editingLimit) StepLimitDialog(
@@ -228,6 +240,15 @@ fun DuringWorkScreen(
             onCustom = { customLimit = it.filter(Char::isDigit).take(3) },
             onPick = { onStepLimit(it); editingLimit = false },
             onDismiss = { editingLimit = false },
+        )
+        if (editingTokenBudget) TokenBudgetDialog(
+            title = stringResource(R.string.settings_task_token_budget),
+            description = stringResource(R.string.settings_task_token_budget_sub),
+            current = tokenBudget,
+            custom = customTokenBudget,
+            onCustom = { customTokenBudget = it.filter(Char::isDigit).take(9) },
+            onPick = { onTokenBudget(it); editingTokenBudget = false },
+            onDismiss = { editingTokenBudget = false },
         )
         // 允许 Mika 改自己的设置:默认关,打开后任务里才有 settings_list、settings_set
         GroupCard {
@@ -445,6 +466,7 @@ fun languageLabel(l: AppLanguage): String = stringResource(
         AppLanguage.SimplifiedChinese -> R.string.language_simplified_chinese
         AppLanguage.TraditionalChinese -> R.string.language_traditional_chinese
         AppLanguage.Arabic -> R.string.language_arabic
+        AppLanguage.Persian -> R.string.language_persian
         AppLanguage.English -> R.string.language_english
         AppLanguage.Japanese -> R.string.language_japanese
         AppLanguage.Korean -> R.string.language_korean

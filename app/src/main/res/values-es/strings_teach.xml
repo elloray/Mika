@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="teach_title">Enseñar a Mika</string>
+    <string name="teach_menu">Enseñar a Mika</string>
+    <string name="teach_goal_label">Objetivo</string>
+    <string name="teach_goal_hint">¿Qué debe recordar Mika? Una frase.</string>
+    <string name="teach_disclosure">Los pasos se quedan en este teléfono y solo después de pulsar Empezar demostración. Si hay un modelo configurado, al crear la habilidad se envía un resumen sin datos sensibles del objetivo y de los pasos a ese modelo. Se omiten contraseñas, códigos y datos de pago. Si no hay modelo, el borrador se escribe en el teléfono y no se sube nada. No se usa hasta que lo aceptes y no se ha probado con éxito.</string>
+    <string name="teach_continue">Continuar</string>
+    <string name="teach_ready_body">Mika solo mira y no usa el teléfono. Puedes pausar, terminar o descartar. No se graba nada hasta pulsar Empezar demostración.</string>
+    <string name="teach_start">Empezar demostración</string>
+    <string name="teach_learning">Aprendiendo</string>
+    <string name="teach_paused">En pausa</string>
+    <string name="teach_pause">Pausar</string>
+    <string name="teach_resume">Seguir</string>
+    <string name="teach_end">Terminar demostración</string>
+    <string name="teach_discard">Descartar</string>
+    <string name="teach_discard_body">¿Descartar esta demostración y borrar los pasos guardados?</string>
+    <string name="teach_review">Revisar</string>
+    <string name="teach_correct">Corregir este paso</string>
+    <string name="teach_clarify">¿Qué significó este paso?</string>
+    <string name="teach_remove">Quitar</string>
+    <string name="teach_generate">Crear borrador</string>
+    <string name="teach_busy">Hay una tarea en curso. Espera a que termine antes de enseñar.</string>
+    <string name="teach_need_a11y">Activa la accesibilidad antes de demostrar. Sin ella Mika no ve los toques.</string>
+    <string name="teach_interrupted">La demostración se detuvo porque la app se reinició o se desactivó la accesibilidad. No se graba nada hasta que pulses Seguir.</string>
+    <string name="teach_need_goal">Escribe primero un objetivo.</string>
+    <string name="teach_secret_goal">Ese objetivo parece una contraseña o un código, así que no se guardó.</string>
+    <string name="teach_draft_failed">No se pudo escribir el borrador. Los pasos siguen aquí.</string>
+    <string name="teach_draft_ready">Hay un borrador en Memoria y habilidades. No se usa hasta que lo aceptes y no se ha probado con éxito.</string>
+    <string name="teach_open_drafts">Ver borradores</string>
+    <string name="teach_no_steps">No quedó ningún paso.</string>
+    <string name="teach_blocked_task">Mika está aprendiendo, así que esta tarea no se inició.</string>
+    <string name="teach_channel">Enseñar</string>
+    <string name="teach_sensitive_note">La entrada sensible no se guardó.</string>
+    <string name="teach_insufficient_note">No hay bastante información de la interfaz. No es una acción por coordenadas.</string>
+    <string name="teach_notification">Mika no está usando el teléfono.</string>
+    <string name="teach_no_visible">No se pudo mostrar la barra Aprendiendo, así que la grabación no empezó. No hace falta permiso de notificaciones. La superposición de accesibilidad tiene que verse, con Pausar y Terminar.</string>
+    <string name="teach_watch_lost">La barra Aprendiendo desapareció, así que la demostración se detuvo. Ya no se graba nada.</string>
+    <string name="teach_shelf_expand">Mostrar Enseñar a Mika</string>
+    <string name="teach_shelf_collapse">Ocultar Enseñar a Mika</string>
+</resources>

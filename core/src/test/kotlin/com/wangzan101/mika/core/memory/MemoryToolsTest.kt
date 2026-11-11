@@ -304,13 +304,16 @@ class MemoryToolsTest {
             add("不要忘记那条记忆")
         }
         val d = dispatcher(store, said)
+        d.search("浦东")
         val oldQuote = d.run("memory_edit", editArgs("delete", item.id, "嗯，好的，知微"))
         assertEquals("quote_not_from_user", oldQuote.s("error"))
         val noRequest = d.run("memory_edit", editArgs("update", item.id, "用户家住张江", "用户家住张江"))
         assertEquals("edit_not_requested", noRequest.s("error"))
         for ((op, quote) in listOf(
             "delete" to "不要删掉那条记忆",
+            "delete" to "删掉那条记忆",
             "update" to "不要修改那条记忆",
+            "update" to "修改那条记忆",
             "delete" to "不要忘记那条记忆",
         )) {
             val negated = d.run("memory_edit", editArgs(op, item.id, quote, if (op == "update") "用户家住张江" else null))

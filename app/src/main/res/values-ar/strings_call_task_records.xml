@@ -1,0 +1,9 @@
+<resources>
+    <string name="calls_record_brief">تعليمات هذه المهمة</string>
+    <string name="calls_record_goal">النتيجة المطلوبة</string>
+    <string name="calls_record_questions">الأسئلة المطلوبة</string>
+    <string name="calls_record_context">معلومات إضافية</string>
+    <string name="calls_record_constraints">حدود الوعود والإجراءات</string>
+    <string name="calls_record_reuse">إنشاء مهمة جديدة بهذه التعليمات</string>
+    <string name="calls_record_result_unconfirmed">انتهت المكالمة. راجع الحوار لتأكيد النتيجة؛ وضع علامة تمت المعالجة لا يعني تحقيق الهدف.</string>
+</resources>

@@ -33,6 +33,12 @@
     <string name="mcp_advanced_hide">Hide advanced settings</string>
     <string name="mcp_advanced_sub">Access switches, tokens and remote wake</string>
     <string name="mcp_port_detail">Port %1$d. USB access turns off after a phone restart.</string>
+    <string name="mcp_port_title">Listening port</string>
+    <string name="mcp_port_dialog_sub">Change it when the default port is taken by another service on this phone. Applies immediately; the computer reconnects on the new port.</string>
+    <string name="mcp_port_default">Default (%1$d)</string>
+    <string name="mcp_port_custom">Port</string>
+    <string name="mcp_port_invalid">Enter a whole number from 1024 to 65535.</string>
+    <string name="mcp_port_apply">Apply</string>
     <string name="mcp_network_scope">Allow access on Wi-Fi and private networks. Every request needs a token.</string>
     <string name="mcp_cli_install">1. Set up your computer</string>
     <string name="mcp_cli_install_sub">Send the install guide to your computer AI, or follow it on the computer yourself.</string>

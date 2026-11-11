@@ -36,23 +36,49 @@ class SharedDraftStoreTest {
         assertNull(store.read())
     }
 
-    @Test fun replacementAndCleanupNeverLeaveOrphanImages() {
+    @Test fun conversationsKeepTheirImagesUntilTheirOwnDraftIsCleared() {
         val dir = tmp.newFolder()
         val store = SharedDraftStore(dir)
         val one = image(store, "one.jpg", byteArrayOf(1))
         val two = image(store, "two.jpg", byteArrayOf(2))
         assertTrue(store.save(SharedDraft("one", "first", one)))
         assertTrue(store.save(SharedDraft("two", "second", two)))
-        assertFalse(store.imageFile("one.jpg")!!.exists())
+        assertTrue(store.imageFile("one.jpg")!!.exists())
         assertTrue(store.imageFile("two.jpg")!!.exists())
 
         store.imageFile("orphan.tmp")!!.writeText("partial")
         store.cleanup()
-        assertEquals(setOf("draft.json", "two.jpg"), dir.listFiles()?.map { it.name }?.toSet())
+        assertEquals(setOf("draft.json", "one.jpg", "two.jpg"), dir.listFiles()?.map { it.name }?.toSet())
+        assertEquals(listOf("one", "two"), SharedDraftStore(dir).readAll().map { it.conversationId })
         store.clear("one")
+        assertFalse(store.imageFile("one.jpg")!!.exists())
         assertTrue(store.imageFile("two.jpg")!!.exists())
         store.clear("two")
         assertTrue(dir.listFiles().orEmpty().isEmpty())
+    }
+
+    @Test fun editingAnOlderShareKeepsTheLatestShareAndOnlyReplacesItsOwnImage() {
+        val store = SharedDraftStore(tmp.newFolder())
+        val one = SharedDraft("one", "first", image(store, "one.jpg", byteArrayOf(1)))
+        val two = SharedDraft("two", "second", image(store, "two.jpg", byteArrayOf(2)))
+        assertTrue(store.save(one))
+        assertTrue(store.save(two))
+        val edited = one.copy(text = "edited", image = image(store, "replacement.jpg", byteArrayOf(3)))
+        assertTrue(store.save(edited))
+        assertEquals(listOf(edited, two), store.readAll())
+        assertEquals(two, store.read())
+        assertFalse(store.imageFile("one.jpg")!!.exists())
+        assertTrue(store.imageFile("two.jpg")!!.exists())
+        assertTrue(store.imageFile("replacement.jpg")!!.exists())
+    }
+
+    @Test fun legacySingleDraftFileIsPreservedWhenAnotherConversationIsAdded() {
+        val dir = tmp.newFolder()
+        File(dir, "draft.json").writeText("""{"conversation":"old","text":"keep me"}""")
+        val store = SharedDraftStore(dir)
+        assertEquals(SharedDraft("old", "keep me"), store.read())
+        assertTrue(store.save(SharedDraft("new", "second")))
+        assertEquals(listOf("keep me", "second"), SharedDraftStore(dir).readAll().map { it.text })
     }
 
     @Test fun blankOversizeAndForgedPathsAreRejectedWithoutChangingCurrentDraft() {
@@ -65,6 +91,33 @@ class SharedDraftStoreTest {
         assertFalse(store.save(SharedDraft("bad", "x", SharedDraftImage("missing.jpg", "x", 1))))
         assertFalse(store.save(SharedDraft("bad", "x".repeat(SharedDraftStore.MAX_TEXT_CHARS + 1))))
         assertEquals(draft, store.read())
+    }
+
+    @Test fun pendingDraftAndImportingImageAreProtectedAcrossCleanupAndOverwrite() {
+        val dir = tmp.newFolder()
+        val store = SharedDraftStore(dir)
+        val first = image(store, "first.jpg", byteArrayOf(1))
+        val pendingImg = image(store, "pending.jpg", byteArrayOf(2))
+
+        assertTrue(store.save(SharedDraft("c1", "first", first)))
+        assertTrue(store.savePending(SharedDraft("c1", "pending", pendingImg)))
+        store.cleanup()
+        assertTrue(store.imageFile("first.jpg")!!.exists())
+        assertTrue(store.imageFile("pending.jpg")!!.exists())
+        assertEquals(SharedDraft("c1", "pending", pendingImg), SharedDraftStore(dir).readPending())
+
+        // 正在导入中的图片在同会话覆盖保存时不会被提前删除,导入结束后才释放删除。
+        val nextImg = image(store, "next.jpg", byteArrayOf(3))
+        store.setImporting("first.jpg", true)
+        assertTrue(store.save(SharedDraft("c1", "next", nextImg)))
+        assertNull(store.readPending())
+        assertFalse(store.imageFile("pending.jpg")!!.exists())
+        assertTrue(store.imageFile("first.jpg")!!.exists())
+        assertTrue(store.imageFile("next.jpg")!!.exists())
+
+        store.setImporting("first.jpg", false)
+        assertFalse(store.imageFile("first.jpg")!!.exists())
+        assertTrue(store.imageFile("next.jpg")!!.exists())
     }
 
     @Test fun boundedCopyRejectsSizeAndLowStorageAndRemovesTemporaryFile() = runTest {

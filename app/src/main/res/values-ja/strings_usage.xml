@@ -34,4 +34,17 @@
     <string name="usage_input">入力</string>
     <string name="usage_output">出力</string>
     <string name="usage_calls">呼び出し</string>
+    <string name="usage_allowance_title">現在の利用枠</string>
+    <string name="usage_allowance_loading">利用枠を確認中…</string>
+    <string name="usage_allowance_unavailable">一時的に確認できません</string>
+    <string name="usage_allowance_balance">アカウント残高 %1$s</string>
+    <string name="usage_allowance_key_limit">キーの残り利用可能額 %1$s</string>
+    <string name="usage_allowance_no_key_limit">このキーに支出上限は設定されていません</string>
+    <string name="usage_allowance_view_balance">アカウント残高を表示</string>
+    <string name="usage_allowance_reset_daily">毎日リセット</string>
+    <string name="usage_allowance_reset_weekly">毎週リセット</string>
+    <string name="usage_allowance_reset_monthly">毎月リセット</string>
+    <string name="usage_allowance_updated">最終更新 %1$s</string>
+    <string name="usage_allowance_self_hosted">セルフホスト接続</string>
+    <string name="usage_allowance_unsupported">この接続では利用枠を確認できません</string>
 </resources>

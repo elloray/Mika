@@ -231,7 +231,7 @@ fun InputRow(
             if (value.isEmpty()) Text(placeholder, style = MikaType.Body, color = c.ink3, maxLines = 1)
             BasicTextField(
                 value, onChange, modifier.fillMaxWidth(), singleLine = true,
-                textStyle = MikaType.Body.copy(color = c.ink),
+                textStyle = MikaType.Body.copy(color = c.ink, textDirection = androidx.compose.ui.text.style.TextDirection.Content),
                 cursorBrush = SolidColor(c.accent),
                 keyboardOptions = KeyboardOptions(keyboardType = keyboard, autoCorrectEnabled = false),
                 visualTransformation = if (secret) PasswordVisualTransformation() else VisualTransformation.None,

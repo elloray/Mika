@@ -3,6 +3,8 @@ package com.wangzan101.mika.task
 import com.wangzan101.mika.i18n.ChineseTexts
 import com.wangzan101.mika.chat.ConversationStore
 import com.wangzan101.mika.core.agent.Turn
+import com.wangzan101.mika.core.record.RunEvent
+import com.wangzan101.mika.core.record.RunRecords
 import com.wangzan101.mika.core.run.Channel
 import com.wangzan101.mika.core.run.ChannelInputSink
 import com.wangzan101.mika.core.run.ChannelPeer
@@ -13,6 +15,10 @@ import com.wangzan101.mika.core.run.RunId
 import com.wangzan101.mika.core.run.RunPhase
 import com.wangzan101.mika.core.run.SendOutcome
 import com.wangzan101.mika.core.run.StoredRun
+import com.wangzan101.mika.core.run.DeliveryRecord
+import com.wangzan101.mika.core.run.DeliveryState
+import com.wangzan101.mika.core.run.MemoryOutboxStore
+import com.wangzan101.mika.chat.SharedFile
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
@@ -32,6 +38,7 @@ class RunRecoveryTest {
         val sent = mutableListOf<Delivery>()
         val peers = mutableListOf<ChannelPeer>()
         override val confirms = true
+        override val supportsImages get() = id == "wechat"
         override fun start(sink: ChannelInputSink) = AutoCloseable { }
         override suspend fun send(peer: ChannelPeer, delivery: Delivery): SendOutcome { peers += peer; sent += delivery; return SendOutcome.Delivered }
     }
@@ -42,15 +49,70 @@ class RunRecoveryTest {
         override fun actionFailed(key: String, reason: String) {}
     }
 
-    private inner class Rig(val scope: TestScope, channelId: String = LocalChannel.ID) {
+    private inner class Rig(val scope: TestScope, channelId: String = LocalChannel.ID, records: RunRecords? = null) {
         val store = MemoryRunStore()
         val channel = RecordingChannel(channelId)
-        val outbox = Outbox()
+        val outboxStore = MemoryOutboxStore()
+        val outbox = Outbox(outboxStore)
         val conversations = ConversationStore(tmp.newFolder())
-        val recovery = RunRecovery(store, outbox, { channel }, NoTriggers, conversations, scope)
+        val recovery = RunRecovery(store, outbox, { channel }, NoTriggers, conversations, scope, records)
     }
 
     private fun run(id: String, phase: RunPhase = RunPhase.Running) = StoredRun(RunId(id), "thread-$id", "目标 $id", phase)
+
+    @Test fun pendingImageSurvivesAnAlreadyDeliveredTextResult() = runTest(UnconfinedTestDispatcher()) {
+        val rig = Rig(this, "wechat")
+        val peer = ChannelPeer("wechat", "owner", "thread-a")
+        val result = Delivery.Result("result:a", peer.threadId, "截图")
+        rig.store.save(run("a", RunPhase.Finishing).copy(reply = result.text, deliveryId = result.id, channelPeer = peer))
+        ResultDelivery.prepare(rig.outbox, rig.channel, peer, result,
+            listOf(SharedFile("screen.png", 3L, "Download/Mika/screen.png", "content://downloads/1")))
+        rig.outbox.deliver(rig.channel, peer, result)
+        rig.channel.sent.clear()
+        rig.recovery.recover()
+        assertEquals(listOf("result:a:image:0"), rig.channel.sent.map { it.id })
+        assertEquals(RunPhase.Ended, rig.store.get(RunId("a"))?.phase)
+    }
+
+    @Test fun interruptedImageAttemptIsNotSentAgainOrReportedAsFullyDelivered() = runTest(UnconfinedTestDispatcher()) {
+        val rig = Rig(this, "wechat")
+        val peer = ChannelPeer("wechat", "owner", "thread-a")
+        val result = Delivery.Result("result:a", peer.threadId, "截图")
+        rig.store.save(run("a", RunPhase.Finishing).copy(reply = result.text, deliveryId = result.id, channelPeer = peer))
+        val image = Delivery.Image("result:a:image:0", peer.threadId, "content://downloads/1", "screen.png", 3L)
+        rig.outboxStore.saveAll(listOf(DeliveryRecord(peer, result, DeliveryState.Delivered),
+            DeliveryRecord(peer, image, DeliveryState.Attempting)))
+        rig.recovery.recover()
+        rig.recovery.settleInterrupted()
+        assertEquals(listOf("uncertain:result:a"), rig.channel.sent.map { it.id })
+        assertEquals(DeliveryState.Uncertain, rig.outbox.get(image.id)?.state)
+        assertEquals(RunPhase.Interrupted, rig.store.get(RunId("a"))?.phase)
+    }
+
+    @Test fun preparedBatchRecoversEvenIfProcessStoppedBeforeMarkResult() = runTest(UnconfinedTestDispatcher()) {
+        val rig = Rig(this, "wechat")
+        val peer = ChannelPeer("wechat", "owner", "thread-a")
+        rig.store.save(run("a").copy(channelPeer = peer))
+        val result = Delivery.Result("result:a", peer.threadId, "截图")
+        ResultDelivery.prepare(rig.outbox, rig.channel, peer, result,
+            listOf(SharedFile("screen.png", 3L, "Download/Mika/screen.png", "content://downloads/1")))
+        rig.recovery.recover()
+        assertEquals(listOf("result:a", "result:a:image:0"), rig.channel.sent.map { it.id })
+        assertEquals(RunPhase.Ended, rig.store.get(RunId("a"))?.phase)
+    }
+
+    @Test fun localRunWithoutItsSuccessMarkerKeepsTheExistingInterruptedSemantics() = runTest(UnconfinedTestDispatcher()) {
+        val rig = Rig(this)
+        val peer = ChannelPeer(LocalChannel.ID, "phone-owner", "thread-a")
+        rig.store.save(run("a").copy(triggerWindowKey = "trigger"))
+        val result = Delivery.Result("result:a", peer.threadId, "任务失败")
+        ResultDelivery.prepare(rig.outbox, rig.channel, peer, result, emptyList())
+        rig.recovery.recover()
+        // A prepared text receipt alone does not say whether a scheduled task succeeded.
+        assertEquals(listOf("interrupted:a"), rig.channel.sent.map { it.id })
+        assertEquals(RunPhase.Interrupted, rig.store.get(RunId("a"))?.phase)
+        assertEquals(DeliveryState.Pending, rig.outbox.get(result.id)?.state)
+    }
 
     // 进程被杀后 App 一启动(没有任何服务)就标中断并告知
     @Test fun appStartMarksUnfinishedRunsInterruptedAndTellsUser() = runTest(UnconfinedTestDispatcher()) {
@@ -161,6 +223,28 @@ class RunRecoveryTest {
         assertEquals("failed", turns.single().status)
         assertEquals("目标 a", turns.single().userText)
         assertEquals("任务中断了，可以重新发起。", turns.single().outcome)
+    }
+
+    @Test fun interruptionIncludesPersistedProgressButNotificationStaysShort() = runTest(UnconfinedTestDispatcher()) {
+        val events = listOf(
+            RunEvent.Activity(1, 1, "act", "phone_calendar_bulk_insert", "日历"),
+            RunEvent.Criteria(2, listOf("36 条日程都已保存"), emptyList(),
+                progress = RunEvent.Progress("已加日程", 12, 36, "第 12 条")),
+        )
+        val records = object : RunRecords {
+            override suspend fun summary(runId: String) = null
+            override suspend fun events(runId: String) = events
+        }
+        val rig = Rig(this, records = records)
+        rig.store.save(run("a").copy(recordId = "detail-a"))
+
+        rig.recovery.recover()
+
+        val outcome = rig.conversations.turns("thread-a").single().outcome
+        assertTrue(outcome, outcome.startsWith("任务中断了，可以重新发起。"))
+        assertTrue(outcome, "已确认进度:已加日程 · 12/36 · 第 12 条" in outcome)
+        assertEquals("任务中断了，可以重新发起。", rig.conversations.turns("thread-a").single().outcome.lineSequence().first())
+        assertTrue((rig.channel.sent.single() as Delivery.Notice).text.length < 100)
     }
 
     // 条件检查运行的目标带着网页来的基准:中断时对话里记用户写的条件,不记生成的检查目标

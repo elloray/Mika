@@ -32,6 +32,37 @@ class StartPageModelTest {
     }
 
     @Test
+    fun recentSearchesShowWhichEngineWasUsed() {
+        val rows = StartPageModel.recentRows(
+            listOf(
+                RecentPage(SearchEngine.Google.searchUrl("天气"), "", 2_000),
+                RecentPage(SearchEngine.Bing.searchUrl("天气"), "", 1_000),
+            ),
+            name,
+        )
+        assertEquals(listOf("谷歌", "必应"), rows.map { it.subtitle })
+        assertTrue(rows.all { it.search })
+    }
+
+    @Test
+    fun suggestionsUseTheChosenEngine() {
+        val s = StartPageModel.suggestions("周末", emptyList(), SearchEngine.Baidu)
+        assertEquals(SearchEngine.Baidu.searchUrl("周末"), s[0].url)
+        assertEquals("百度", s[0].subtitle)
+    }
+
+    @Test
+    fun customEngineRowsAndSuggestionsUseItsName() {
+        val custom = CustomSearchEngine.create("站内搜", "https://s.example.com/?q=%s")!!
+        val engines = SearchEngine.entries + custom
+        val rows = StartPageModel.recentRows(listOf(RecentPage(custom.searchUrl("天气"), "", 1_000)), name, engines)
+        assertEquals(listOf("站内搜"), rows.map { it.subtitle })
+        val s = StartPageModel.suggestions("天气", rows, custom)
+        assertEquals(custom.searchUrl("天气"), s[0].url)
+        assertEquals("站内搜", s[0].subtitle)
+    }
+
+    @Test
     fun recentRowsKeepOnlyTheNewestOfTheSameAddress() {
         val rows = StartPageModel.recentRows(
             listOf(

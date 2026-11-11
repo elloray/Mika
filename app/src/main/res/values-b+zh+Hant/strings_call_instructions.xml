@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="call_instructions_title">接聽交代</string>
+    <string name="call_instructions_intro">已儲存的交代用於後續電話。準備 AI 通話時會將全部生效交代傳給火山，即使電話最後未接起。來電者的話不能修改交代。</string>
+    <string name="call_instructions_add">新增交代</string>
+    <string name="call_instructions_empty">寫下助理可以怎麼回、需要問清什麼。修改從下一通電話生效。</string>
+    <string name="call_instructions_heading">標題</string>
+    <string name="call_instructions_situation">適用情境</string>
+    <string name="call_instructions_response">處理方式</string>
+    <string name="call_instructions_save">儲存交代</string>
+    <string name="call_instructions_cancel">取消</string>
+    <string name="call_instructions_edit">編輯</string>
+    <string name="call_instructions_delete">刪除</string>
+    <string name="call_instructions_delete_confirm">要刪除這則交代嗎？後續電話將不再使用。</string>
+    <string name="call_instructions_expiry">有效期</string>
+    <string name="call_instructions_forever">直到我變更</string>
+    <string name="call_instructions_today">到今天結束</string>
+    <string name="call_instructions_two_hours">兩小時</string>
+    <string name="call_instructions_expired">已到期</string>
+    <string name="call_instructions_saved">已儲存到本機</string>
+    <string name="call_instructions_failed">儲存失敗，草稿仍在。</string>
+    <string name="call_instructions_presets">從常見情境開始</string>
+    <string name="call_instructions_delivery">快遞外送</string>
+    <string name="call_instructions_delivery_when">快遞員或外送員來電</string>
+    <string name="call_instructions_delivery_reply">問清物品放在哪裡、是否需要回電；不要猜測地址，也不要代為授權進入。</string>
+    <string name="call_instructions_business">業務詢問</string>
+    <string name="call_instructions_business_when">客戶詢問商品、服務或預約</string>
+    <string name="call_instructions_business_reply">問清需求、數量或希望的時間以及聯絡方式，記下留言；不要自行承諾價格或預約成功。</string>
+    <string name="call_instructions_review_limit">請檢閱回覆，精簡到 800 字內再儲存。</string>
+</resources>

@@ -39,4 +39,17 @@
     <string name="usage_input">الإدخال</string>
     <string name="usage_output">الإخراج</string>
     <string name="usage_calls">الاستدعاءات</string>
+    <string name="usage_allowance_title">الحصة الحالية</string>
+    <string name="usage_allowance_loading">جارٍ التحقق من الحصة…</string>
+    <string name="usage_allowance_unavailable">غير متاح مؤقتًا</string>
+    <string name="usage_allowance_balance">رصيد الحساب: %1$s</string>
+    <string name="usage_allowance_key_limit">المبلغ المتبقي من حد إنفاق المفتاح: %1$s</string>
+    <string name="usage_allowance_no_key_limit">لم يُضبط حد إنفاق لهذا المفتاح</string>
+    <string name="usage_allowance_view_balance">عرض رصيد الحساب</string>
+    <string name="usage_allowance_reset_daily">يتجدد يوميًا</string>
+    <string name="usage_allowance_reset_weekly">يتجدد أسبوعيًا</string>
+    <string name="usage_allowance_reset_monthly">يتجدد شهريًا</string>
+    <string name="usage_allowance_updated">آخر تحديث: %1$s</string>
+    <string name="usage_allowance_self_hosted">اتصال مستضاف ذاتيًا</string>
+    <string name="usage_allowance_unsupported">الاستعلام عن الحصة غير متاح لهذا الاتصال</string>
 </resources>

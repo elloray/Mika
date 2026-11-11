@@ -66,8 +66,10 @@ class NavStackTest {
 
     @Test fun openingAConversationDoesNotReopenTheDrawer() {
         val nav = NavStack()
+        val initialReset = nav.resetSerial
         nav.pushFromDrawer(Route.Plans)
         nav.reset()
+        assertEquals(initialReset + 1, nav.resetSerial)
         assertFalse(nav.reopenDrawer)
         nav.push(Route.Settings)
         nav.back()

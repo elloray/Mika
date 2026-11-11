@@ -21,6 +21,7 @@ class StringResourcesTest {
         Other("values-ja", Locale.JAPANESE, setOf("other")),
         Other("values-ko", Locale.KOREAN, setOf("other")),
         Other("values-ar", Locale.forLanguageTag("ar"), setOf("zero", "one", "two", "few", "many", "other")),
+        Other("values-fa", Locale.forLanguageTag("fa"), setOf("one", "other")),
         Other("values-es", Locale.forLanguageTag("es"), setOf("one", "many", "other")),
         Other("values-pt", Locale.forLanguageTag("pt"), setOf("one", "many", "other")),
         Other("values-ru", Locale.forLanguageTag("ru"), setOf("one", "few", "many", "other")),
@@ -143,6 +144,7 @@ class StringResourcesTest {
         assertEquals(AppLanguage.English, of("fr-FR"))
         assertEquals(AppLanguage.Arabic, of("ar"))
         assertEquals(AppLanguage.Arabic, of("ar-MA"))
+        assertEquals(AppLanguage.Persian, of("fa-IR"))
         // 其他语言只看语言代码,地区不管
         assertEquals(AppLanguage.Japanese, of("ja-JP"))
         assertEquals(AppLanguage.Portuguese, of("pt-PT"))

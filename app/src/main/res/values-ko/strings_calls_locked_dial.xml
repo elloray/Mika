@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="calls_task_dial_now">지금 전화 걸기</string>
+    <string name="calls_task_dial_locked">잠근 후 전화 걸기</string>
+    <string name="calls_task_dial_locked_note">45초 안에 휴대전화를 잠그세요. 이 번호, SIM 및 작업으로 한 번만 통화를 시도합니다. 알림에서 취소할 수 있습니다. 화면만 꺼지고 휴대전화가 잠기지 않으면 전화하지 않습니다.</string>
+    <string name="calls_task_dial_locked_confirm">확인 후 잠금 대기</string>
+</resources>

@@ -37,6 +37,27 @@ class PlanEditorDialogTest {
         }
     }
 
+    @Test fun multipleDailyClocksShowThreeOccurrencesAndSurviveEditing() {
+        val original = TriggerDefinition("multi", "owner", "每天提醒", System.currentTimeMillis() + 3_600_000,
+            calendarTime = "08:00", calendarZone = "Asia/Shanghai", reminderText = "每天提醒")
+        val saved = mutableListOf<TriggerDefinition>()
+        show(original, saved)
+        compose.onNodeWithTag("plan-editor-clock").performScrollTo().performTextClearance()
+        compose.onNodeWithTag("plan-editor-clock").performTextInput("08:00, 12:30, 20:00")
+        compose.onNodeWithTag("plan-editor-preview-2").performScrollTo().assertIsDisplayed()
+        compose.waitForIdle()
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        val image = InstrumentationRegistry.getInstrumentation().uiAutomation.takeScreenshot()
+        java.io.File(context.getExternalFilesDir(null), "schedule357-preview.png").outputStream().use {
+            image.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, it)
+        }
+        image.recycle()
+        compose.onNodeWithTag("plan-editor-save").performSemanticsAction(SemanticsActions.OnClick)
+        assertEquals("multi", saved.single().id)
+        assertEquals("owner", saved.single().threadId)
+        assertEquals(listOf("08:00", "12:30", "20:00"), saved.single().calendarClocks())
+    }
+
     @Test fun createsFromVisibleFormWithThreePreviewTimes() {
         val saved = mutableListOf<TriggerDefinition>()
         show(saved = saved)

@@ -76,6 +76,15 @@ class TypeAtPointTest {
         assertFalse(s.calls.any { it.startsWith("key") })
     }
 
+    @Test fun hiddenEditorStopsBeforeEnterAndExplainsRecovery() = runTest {
+        val screen = PointScreen(typed = ActionResult.Failed("editor_not_visible"))
+        val result = d(screen).execute(call("phone_type_text", """{"text":"Draft","x":500,"y":900,"pressEnter":true}""")).content
+        assertEquals("false", result.s("ok"))
+        assertEquals("editor_not_visible", result.s("error"))
+        assertTrue("hand_to_user" in result.s("message"))
+        assertEquals(listOf("typeAt 540,2161 Draft"), screen.calls)
+    }
+
     @Test fun visionRefTypesAtTheFoundPoint() = runTest {
         val s = PointScreen()
         val d = d(s)

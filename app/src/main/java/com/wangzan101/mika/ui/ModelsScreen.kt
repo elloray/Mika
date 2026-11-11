@@ -3,6 +3,7 @@ package com.wangzan101.mika.ui
 import com.wangzan101.mika.R
 import com.wangzan101.mika.core.oauth.AccountSignInException
 import com.wangzan101.mika.core.oauth.AccountSignInFailure
+import com.wangzan101.mika.core.usage.TokenBudgetLimits
 import com.wangzan101.mika.i18n.tr
 import com.wangzan101.mika.i18n.trPlural
 import androidx.compose.ui.res.stringResource
@@ -294,6 +295,8 @@ class ProviderDetailActions(
     val signIn: () -> Unit = {},
     val signOut: () -> Unit = {},
     val manageUsage: () -> Unit = {},
+    /** 这家所有模型、用途合计的本地每日 Token 预算。 */
+    val setDailyBudget: (Long?) -> Boolean = { false },
     /** 把这家默认的模型设为主模型(账号登录的详情里那一行)。 */
     val useAsMain: () -> Unit = {},
 )
@@ -307,6 +310,9 @@ fun ProviderDetailContent(ui: ModelSetupUi, p: Provider, actions: ProviderDetail
     val c = MikaTheme.colors
     var changingKey by remember { mutableStateOf(false) }
     var confirmDelete by remember { mutableStateOf(false) }
+    var editingBudget by remember { mutableStateOf(false) }
+    var customBudget by remember { mutableStateOf("") }
+    var budgetSaveFailed by remember { mutableStateOf(false) }
     var using by remember { mutableStateOf<ModelOption?>(null) }
     val state = ui.listing[p.id]
     val list = ui.sortedOptions(p)
@@ -334,6 +340,19 @@ fun ProviderDetailContent(ui: ModelSetupUi, p: Provider, actions: ProviderDetail
             }
         }
         (state as? ListState.Failed)?.let { FooterNote(ModelSetupCopy.failed(it.message), color = c.bad) }
+
+        GroupCard {
+            ListRow(
+                MikaIcons.Clock, stringResource(R.string.models_daily_token_budget),
+                p.dailyTokenBudget?.let(::tokenBudgetNumber) ?: stringResource(R.string.settings_token_budget_unlimited),
+                first = true,
+                onClick = {
+                    customBudget = p.dailyTokenBudget?.takeIf { it !in TokenBudgetLimits.PRESETS }?.toString().orEmpty()
+                    budgetSaveFailed = false
+                    editingBudget = true
+                },
+            )
+        }
 
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             GroupLabel(ModelsCopy.MODELS, Modifier.weight(1f))
@@ -377,6 +396,18 @@ fun ProviderDetailContent(ui: ModelSetupUi, p: Provider, actions: ProviderDetail
         }
     }
 
+    if (editingBudget) TokenBudgetDialog(
+        title = stringResource(R.string.models_daily_token_budget),
+        description = stringResource(R.string.models_daily_token_budget_sub),
+        current = p.dailyTokenBudget,
+        custom = customBudget,
+        onCustom = { customBudget = it.filter(Char::isDigit).take(9); budgetSaveFailed = false },
+        onPick = {
+            if (actions.setDailyBudget(it)) editingBudget = false else budgetSaveFailed = true
+        },
+        onDismiss = { editingBudget = false },
+        saveError = if (budgetSaveFailed) stringResource(R.string.models_daily_token_budget_save_failed) else null,
+    )
     using?.let { o -> UseAsSheet(ui, p, o.id, onUse = { role -> actions.use(role, o.id) }, onVision = { actions.setVision(o.id, it) }, onDismiss = { using = null }) }
     if (changingKey) {
         var key by remember { mutableStateOf("") }
@@ -812,7 +843,7 @@ object ModelsCopy {
     fun speechLine(ui: ModelSetupUi): RoleLine {
         val s = SpeechOptions.summary(ui.speech, ui.systemSpeech, ui.providers)
         val unset = s.title == UNSET
-        return RoleLine(s.title, s.sub.orEmpty(), isModel = !unset && (ui.speech is SpeechChoice.Provider || ui.speech is SpeechChoice.Doubao), unset = unset, subtitleOk = s.subOk)
+        return RoleLine(s.title, s.sub.orEmpty(), isModel = !unset && (ui.speech is SpeechChoice.Provider || ui.speech is SpeechChoice.Doubao || ui.speech is SpeechChoice.FunAsr || ui.speech is SpeechChoice.Bailian), unset = unset, subtitleOk = s.subOk)
     }
 
     fun roleIcon(role: ModelRole): ImageVector = when (role) {

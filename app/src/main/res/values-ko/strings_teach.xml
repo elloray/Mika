@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="teach_title">Mika에게 가르치기</string>
+    <string name="teach_menu">Mika에게 가르치기</string>
+    <string name="teach_goal_label">목표</string>
+    <string name="teach_goal_hint">Mika가 기억할 내용을 한 문장으로 적으세요.</string>
+    <string name="teach_disclosure">시범 시작을 누른 뒤에야 단계가 이 기기에만 저장됩니다. 모델이 설정되어 있으면 기술 초안을 만들 때 목표와 단계의 요약이 그 모델로 전송됩니다. 비밀번호, 인증 코드, 결제 내용은 빠집니다. 모델이 없으면 기기에서만 정리하고 업로드하지 않습니다. 수락하기 전에는 쓰이지 않으며 시험 실행에 성공한 것이 아닙니다.</string>
+    <string name="teach_continue">계속</string>
+    <string name="teach_ready_body">Mika는 보기만 하고 기기를 조작하지 않습니다. 일시 중지, 끝내기, 버리기를 할 수 있습니다. 시범 시작 전에는 기록하지 않습니다.</string>
+    <string name="teach_start">시범 시작</string>
+    <string name="teach_learning">학습 중</string>
+    <string name="teach_paused">일시 중지됨</string>
+    <string name="teach_pause">일시 중지</string>
+    <string name="teach_resume">시범 계속</string>
+    <string name="teach_end">시범 끝내기</string>
+    <string name="teach_discard">버리기</string>
+    <string name="teach_discard_body">이번 시범을 버리고 저장된 단계를 삭제할까요?</string>
+    <string name="teach_review">다시 보기</string>
+    <string name="teach_correct">이 단계 고치기</string>
+    <string name="teach_clarify">이 단계는 무슨 의미인가요?</string>
+    <string name="teach_remove">삭제</string>
+    <string name="teach_generate">기술 초안 만들기</string>
+    <string name="teach_busy">작업이 진행 중입니다. 끝난 뒤에 가르치세요.</string>
+    <string name="teach_need_a11y">먼저 접근성을 켜세요. 꺼져 있으면 탭을 볼 수 없습니다.</string>
+    <string name="teach_interrupted">앱이 다시 시작되었거나 접근성이 꺼져 시범이 멈췄습니다. 계속을 누르기 전에는 기록하지 않습니다.</string>
+    <string name="teach_need_goal">먼저 목표를 입력하세요.</string>
+    <string name="teach_secret_goal">목표가 비밀번호나 코드로 보여 저장하지 않았습니다.</string>
+    <string name="teach_draft_failed">초안을 쓰지 못했습니다. 단계는 남아 있습니다.</string>
+    <string name="teach_draft_ready">초안이 기억 및 기술의 확인 대기에 있습니다. 수락 전에는 쓰이지 않으며 시험 실행에 성공한 것이 아닙니다.</string>
+    <string name="teach_open_drafts">초안 보기</string>
+    <string name="teach_no_steps">남은 단계가 없습니다.</string>
+    <string name="teach_blocked_task">학습 중이라 이 작업은 시작하지 않았습니다.</string>
+    <string name="teach_channel">가르치기</string>
+    <string name="teach_sensitive_note">민감한 입력은 저장하지 않았습니다.</string>
+    <string name="teach_insufficient_note">화면 정보가 부족합니다. 좌표 동작이 아닙니다.</string>
+    <string name="teach_notification">Mika가 기기를 조작하고 있지 않습니다.</string>
+    <string name="teach_no_visible">학습 중 막대를 띄울 수 없어 기록을 시작하지 않았습니다. 알림 권한은 필요 없습니다. 접근성 오버레이가 보여야 하고, 거기에서 일시 중지하거나 끝낼 수 있어야 합니다.</string>
+    <string name="teach_watch_lost">학습 중 막대가 사라져 시범을 멈췄습니다. 더 이상 기록하지 않습니다.</string>
+    <string name="teach_shelf_expand">Mika에게 가르치기 펼치기</string>
+    <string name="teach_shelf_collapse">Mika에게 가르치기 접기</string>
+</resources>

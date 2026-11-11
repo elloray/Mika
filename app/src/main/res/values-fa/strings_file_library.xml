@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="file_library_title">فایل‌ها</string>
+    <string name="file_library_search">جستجوی نام فایل‌ها</string>
+    <string name="file_library_all">همهٔ گفتگوها</string>
+    <string name="file_library_current">گفتگوی فعلی</string>
+    <string name="file_library_sources">همهٔ منابع</string>
+    <string name="file_library_input">پیوست‌ها</string>
+    <string name="file_library_output">فایل‌های ایجادشده</string>
+    <string name="file_library_loading">در حال بارگذاری فایل‌ها…</string>
+    <string name="file_library_empty">فایلی یافت نشد</string>
+    <string name="file_library_missing">در دسترس نیست</string>
+    <string name="file_library_available">در دسترس</string>
+    <string name="file_library_open">باز کردن</string>
+    <string name="file_library_share">اشتراک‌گذاری</string>
+    <string name="file_library_add">افزودن به پیش‌نویس</string>
+    <string name="file_library_choose">یک گفتگو انتخاب کنید</string>
+    <string name="file_library_new">گفتگوی جدید</string>
+    <string name="file_library_error">دسترسی به این فایل ممکن نشد</string>
+    <string name="file_library_retry">تلاش دوباره</string>
+    <string name="file_library_partial">برخی گفتگوها خوانده نشدند.</string>
+    <string name="file_library_unknown_time">زمان نامشخص</string>
+    <string name="file_library_draft_saved">به پیش‌نویس گفتگوی انتخاب‌شده افزوده شد. وقتی در دسترس بود به آن گفتگو بروید.</string>
+    <string name="file_library_load_failed">بارگذاری فایل‌ها ممکن نشد.</string>
+</resources>

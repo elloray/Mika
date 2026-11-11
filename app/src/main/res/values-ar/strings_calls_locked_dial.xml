@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="calls_task_dial_now">اتصل الآن</string>
+    <string name="calls_task_dial_locked">اتصل بعد قفل الهاتف</string>
+    <string name="calls_task_dial_locked_note">اقفل الهاتف خلال 45 ثانية. ستتم محاولة واحدة بهذا الرقم والشريحة والمهمة. يمكنك الإلغاء من الإشعار. لن يبدأ الاتصال إذا انطفأت الشاشة من دون قفل الهاتف فعليًا.</string>
+    <string name="calls_task_dial_locked_confirm">تأكيد وانتظار القفل</string>
+</resources>

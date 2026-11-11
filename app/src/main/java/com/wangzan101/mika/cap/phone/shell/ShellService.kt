@@ -21,6 +21,7 @@ import android.os.Binder
 import android.os.Build
 import android.os.Bundle
 import android.os.Handler
+import android.os.IBinder
 import android.os.Looper
 import android.os.Parcel
 import android.os.ParcelFileDescriptor
@@ -68,6 +69,10 @@ class ShellService(
     private val requestedOrientations = ConcurrentHashMap<Int, Int>()
     /** 被静音的包 → 静音前的 PLAY_AUDIO 模式("default" 表示原先未设置),落在 [stateDir] 里,进程被杀后下次启动接着恢复。 */
     private val muted = AudioMuteLedger(File(stateDir, "mika_audio_mute_$allowedUid"))
+    private val callAudio = ShellCallAudio(context)
+    // Bundle 将嵌套的 PFD 复制到 reply，但不会关掉服务端原件。写完 reply 后关闭，
+    // 否则客户端关掉管道时，音频线程永远收不到 EOF。
+    private val returnedCallPipes = ThreadLocal<List<ParcelFileDescriptor>>()
     /** Mika 所在的用户:本来那份 App 装在这里;别的用户里的是另一份(分身、工作资料)。 */
     private val myUser = allowedUid / PER_USER_RANGE
 
@@ -1455,7 +1460,37 @@ class ShellService(
         ) {
             throw SecurityException("caller ${Binder.getCallingUid()} is not allowed")
         }
-        return super.onTransact(code, data, reply, flags)
+        try {
+            return super.onTransact(code, data, reply, flags)
+        } finally {
+            returnedCallPipes.get()?.let { pipes ->
+                returnedCallPipes.remove()
+                pipes.forEach { runCatching { it.close() } }
+            }
+        }
+    }
+
+    override fun probeCallAudio(mode: Int): Bundle = asCallAudioShell { callAudio.probe(mode) }
+
+    override fun openCallAudio(mode: Int, owner: IBinder): Bundle = asCallAudioShell {
+        callAudio.open(mode, owner).also { result ->
+            if (result.getBoolean("ready")) {
+                val down = result.getParcelable<ParcelFileDescriptor>("downlink")
+                val up = result.getParcelable<ParcelFileDescriptor>("uplink")
+                returnedCallPipes.set(listOfNotNull(down, up))
+            }
+        }
+    }
+
+    override fun stopCallAudio(owner: IBinder) = asCallAudioShell { callAudio.stop(owner) }
+
+    override fun flushCallAudio(owner: IBinder): Boolean = asCallAudioShell { callAudio.flush(owner) }
+
+    override fun callAudioStats(owner: IBinder): Bundle = asCallAudioShell { callAudio.stats(owner) }
+
+    private inline fun <T> asCallAudioShell(block: () -> T): T {
+        val identity = Binder.clearCallingIdentity()
+        return try { block() } finally { Binder.restoreCallingIdentity(identity) }
     }
 
     override fun identity(): IntArray = intArrayOf(Process.myUid(), Process.myPid())
@@ -1482,7 +1517,8 @@ class ShellService(
     override fun wakeDevice(): Boolean = deviceUnlock.wake()
     override fun dismissDeviceKeyguard(): Boolean = deviceUnlock.dismiss()
     override fun revealDeviceCredential(): Boolean = deviceUnlock.reveal()
-    override fun enterDeviceCredential(kind: Int, credential: ByteArray): Boolean = deviceUnlock.enter(kind, credential)
+    override fun revealDeviceCredentialTap(x: Int, y: Int): Boolean = deviceUnlock.tap(x, y)
+    override fun enterDeviceCredential(kind: Int, credential: ByteArray, clear: Int): Boolean = deviceUnlock.enter(kind, credential, clear)
 
     private fun commandResult(code: Int, output: String) = Bundle().apply { putInt("exitCode", code); putString("output", output) }
 
@@ -1538,6 +1574,7 @@ class ShellService(
     }
 
     override fun releaseAll() {
+        asCallAudioShell { callAudio.stopAll() }
         restoreClip()
         synchronized(muted) { muted.packages() }.forEach { key ->
             AppAudioKey.parse(key)?.let { (pkg, user) -> audioMuted(pkg, user, false) } ?: synchronized(muted) { muted.remove(key) }

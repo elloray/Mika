@@ -1,0 +1,9 @@
+<resources>
+    <string name="calls_record_brief">今回のタスク指示</string>
+    <string name="calls_record_goal">達成したいこと</string>
+    <string name="calls_record_questions">確認すべき質問</string>
+    <string name="calls_record_context">補足情報</string>
+    <string name="calls_record_constraints">約束や実行の制限</string>
+    <string name="calls_record_reuse">この指示で新しいタスクを作成</string>
+    <string name="calls_record_result_unconfirmed">通話は終了しました。目的を達成したか会話を確認してください。対応済みの印は目標達成を意味しません。</string>
+</resources>

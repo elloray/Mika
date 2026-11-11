@@ -168,6 +168,34 @@ class TranslationCliTest(unittest.TestCase):
         self.assertEqual(2, result.returncode)
         self.assertIn("values", result.stderr)
 
+    def test_escaped_percent_is_not_counted_as_a_format_argument(self):
+        self.write_resources(
+            "values",
+            '<string name="plain">Saved 100%% of the batch</string>'
+            '<string name="mixed">Saved %1$d files, 100%% of the batch</string>',
+        )
+        self.write_resources(
+            "values-zh",
+            '<string name="plain">已保存这批的 100%%</string>'
+            '<string name="mixed">已保存 %1$d 个文件，占这批的 100%%</string>',
+        )
+        result = self.run_cli("check")
+        self.assertEqual(0, result.returncode, result.stdout + result.stderr)
+
+    def test_escaped_percent_does_not_hide_a_dropped_argument(self):
+        self.write_resources(
+            "values", '<string name="saved">Saved %1$s, 100%% of the batch</string>'
+        )
+        self.write_resources(
+            "values-zh", '<string name="saved">已保存这批的 100%%</string>'
+        )
+        result = self.run_cli("check")
+        self.assertEqual(1, result.returncode, result.stderr)
+        self.assertIn(
+            "values-zh: placeholder count string/saved: default=1, translation=0",
+            result.stdout,
+        )
+
     def test_csv_export_preserves_context_markup_rtl_text_and_plural_rows(self):
         self.write_resources(
             "values",

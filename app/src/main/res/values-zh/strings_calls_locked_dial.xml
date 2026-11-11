@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="calls_task_dial_now">现在拨出</string>
+    <string name="calls_task_dial_locked">锁屏后拨出</string>
+    <string name="calls_task_dial_locked_note">请在 45 秒内锁屏。Mika 会按本次号码、SIM 和任务尝试拨出一次，可从通知取消。 仅熄屏、手机仍可直接进入时，不会拨出。</string>
+    <string name="calls_task_dial_locked_confirm">确认并等待锁屏</string>
+</resources>

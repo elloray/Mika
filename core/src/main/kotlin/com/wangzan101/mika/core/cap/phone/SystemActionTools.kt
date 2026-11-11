@@ -33,6 +33,7 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.OffsetDateTime
 import java.time.ZoneId
+import java.time.ZoneOffset
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 
@@ -172,21 +173,15 @@ internal object AddCalendarEvent : PhoneTool {
     ), listOf("title", "start"))
 
     override suspend fun execute(a: Args, ctx: ToolContext): ToolExecution {
-        val title = a.str("title", max = 200)!!
-        val allDay = a.bool("allDay", false)
-        val zone = ZoneId.systemDefault()
-        val begin = CalendarTime.parse(a.str("start")!!, allDay, zone) ?: throw ArgError("start", "must look like 2026-11-02T14:30 (or 2026-11-02 with allDay=true)")
-        val end = a.str("end")?.let { CalendarTime.parse(it, allDay, zone) ?: throw ArgError("end", "must use the same format as start") }
-        if (end != null && end < begin) throw ArgError("end", "must not be before start")
+        val event = calendarEvent(a, ZoneId.systemDefault(), utcAllDay = false)
         ctx.refusedPay = null
-        val res = ctx.phone.screen.systemAction(SystemAction.AddCalendarEvent(
-            title, begin, end ?: CalendarTime.defaultEnd(begin, allDay), allDay, a.str("location", max = 200), a.str("description", max = 2000),
-        ))
+        val res = ctx.phone.screen.systemAction(event)
         if (res.result is ActionResult.Ok) ctx.appOpened = true
         return systemResult(ctx, res) {
             put("requested", buildJsonObject {
-                put("title", title); put("start", local(begin)); end?.let { put("end", local(it)) }
-                if (allDay) put("allDay", true)
+                put("title", event.title); put("start", local(event.beginMs))
+                event.endMs?.let { put("end", local(it)) }
+                if (event.allDay) put("allDay", true)
             })
             hint(this, Feedback["calendar.opened"], res, silent = false)
         }
@@ -199,6 +194,93 @@ internal object AddCalendarEvent : PhoneTool {
         val by = (r.content["handledBy"] as? JsonPrimitive)?.contentOrNull ?: return emptyList()
         return listOf(Observation(ObsKind.Fact, "$name 打开了 $by 的新日程页(还没保存)", source = PHONE))
     }
+}
+
+/**
+ * 一次经日历提供方写入 1–100 条日程。整批先解析完才碰手机；全天按 UTC 日期边界，
+ * 避免本地午夜在批量提供方那里被挪到另一天。这里不弹权限框，也不操作日历界面。
+ */
+internal object BulkAddCalendarEvents : PhoneTool {
+    override val verb = Verb.BulkAddCalendarEvents
+    override val label = "批量添加日程"
+    override val risk = Risk.Write
+    override val entry = Entry.Alone
+    override val offScreen = true
+    override val logged = true
+    override val def = ToolDef("phone_calendar_bulk_insert", Prompts.tool("phone_calendar_bulk_insert"), mapOf(
+        "events" to buildJsonObject {
+            put("type", "array")
+            put("description", "Events to insert, 1-100 items. All items are validated before anything is written.")
+            put("minItems", 1)
+            put("maxItems", 100)
+            put("items", buildJsonObject {
+                put("type", "object")
+                put("properties", JsonObject(AddCalendarEvent.def.props))
+                put("required", JsonArray(AddCalendarEvent.def.required.map(::JsonPrimitive)))
+                put("additionalProperties", false)
+            })
+        },
+    ), listOf("events"))
+
+    override suspend fun execute(a: Args, ctx: ToolContext): ToolExecution {
+        val raw = a.o["events"] as? JsonArray ?: throw ArgError("events", "must be an array")
+        if (raw.size !in 1..100) throw ArgError("events", "must have 1-100 items")
+        val zone = ZoneId.systemDefault()
+        val events = raw.mapIndexed { i, item ->
+            val o = item as? JsonObject ?: throw ArgError("events[$i]", "must be an object")
+            try {
+                calendarEvent(Args(AddCalendarEvent.def, o), zone, utcAllDay = true)
+            } catch (e: ArgError) {
+                throw ArgError("events[$i]", e.message ?: "invalid event")
+            }
+        }
+        ctx.refusedPay = null
+        var res = ctx.phone.screen.bulkCalendarInsert(events)
+        if (res.result is ActionResult.Ok &&
+            (res.eventUris.size != events.size || res.eventUris.any { eventId(it) == null })
+        ) {
+            // 提供方已开始写入后才拿到的坏结果不能当成“没写”，也不能自动重试。
+            res = SystemActionResult(ActionResult.Failed("calendar_write_unconfirmed"))
+        }
+        return systemResult(ctx, res) {
+            put("inserted", events.size)
+            put("eventIds", JsonArray(res.eventUris.mapNotNull(::eventId).map(::JsonPrimitive)))
+        }
+    }
+
+    override fun logTarget(o: JsonObject, r: ToolExecution, ctx: ToolContext): String? {
+        val events = o["events"] as? JsonArray ?: return null
+        val first = (events.firstOrNull() as? JsonObject)?.get("title")?.let {
+            (it as? JsonPrimitive)?.contentOrNull
+        }
+        return listOfNotNull("${events.size} 条", first).joinToString(" · ")
+    }
+
+    override fun observations(o: JsonObject, r: ToolExecution, log: EvidenceLog): List<Observation> {
+        if (r.content["ok"] != JsonPrimitive(true)) return emptyList()
+        val count = (r.content["inserted"] as? JsonPrimitive)?.contentOrNull ?: return emptyList()
+        return listOf(Observation(ObsKind.Fact, "日历提供方已确认保存 $count 条日程", source = PHONE))
+    }
+
+    private fun eventId(uri: String): String? =
+        uri.takeIf { it.startsWith("content://") }?.substringAfterLast('/')
+            ?.takeIf { it.toLongOrNull()?.let { id -> id > 0 } == true }
+}
+
+/** 单条界面预填和批量直写共用字段校验；批量全天用 UTC，单条界面保持原来的本地日期行为。 */
+private fun calendarEvent(a: Args, zone: ZoneId, utcAllDay: Boolean): SystemAction.AddCalendarEvent {
+    val title = a.str("title", max = 200)!!
+    val allDay = a.bool("allDay", false)
+    val begin = CalendarTime.parse(a.str("start")!!, allDay, zone, utcAllDay)
+        ?: throw ArgError("start", "must look like 2026-11-02T14:30 (or 2026-11-02 with allDay=true)")
+    val end = a.str("end")?.let {
+        CalendarTime.parse(it, allDay, zone, utcAllDay) ?: throw ArgError("end", "must use the same format as start")
+    }
+    if (end != null && end < begin) throw ArgError("end", "must not be before start")
+    return SystemAction.AddCalendarEvent(
+        title, begin, end ?: CalendarTime.defaultEnd(begin, allDay), allDay,
+        a.str("location", max = 200), a.str("description", max = 2000),
+    )
 }
 
 /** 结果:端口的动作结果照常转(失败按错误码给说明),成功时加上接手的 App 和 [more]。 */
@@ -255,12 +337,14 @@ internal object AlarmCheck {
 
 /** 日程的时间:本地日期时间(或只有日期的全天),带时区偏移的也认。 */
 internal object CalendarTime {
-    fun parse(s: String, allDay: Boolean, zone: ZoneId): Long? {
+    fun parse(s: String, allDay: Boolean, zone: ZoneId, utcAllDay: Boolean = false): Long? {
         val t = s.trim()
         runCatching { return OffsetDateTime.parse(t).toInstant().toEpochMilli() }
         runCatching { return LocalDateTime.parse(t).atZone(zone).toInstant().toEpochMilli() }
         runCatching { return LocalDateTime.parse("${t}:00").atZone(zone).toInstant().toEpochMilli() }
-        if (allDay) runCatching { return LocalDate.parse(t).atStartOfDay(zone).toInstant().toEpochMilli() }
+        if (allDay) runCatching {
+            return LocalDate.parse(t).atStartOfDay(if (utcAllDay) ZoneOffset.UTC else zone).toInstant().toEpochMilli()
+        }
         return null
     }
 

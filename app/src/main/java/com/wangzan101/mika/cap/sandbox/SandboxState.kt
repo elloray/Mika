@@ -44,9 +44,9 @@ class SandboxState internal constructor(
     private val _status = MutableStateFlow(read())
     val status: StateFlow<SandboxStatus> = _status.asStateFlow()
 
-    /** 「允许沙箱联网」,默认关。 */
+    /** 「允许沙箱联网」,默认开(本地定制:开箱即可联网,无需去设置里手动开)。 */
     var networkAllowed: Boolean
-        get() = settings()["networkAllowed"]?.jsonPrimitive?.booleanOrNull ?: false
+        get() = settings()["networkAllowed"]?.jsonPrimitive?.booleanOrNull ?: true
         set(value) { putSetting("networkAllowed", JsonPrimitive(value)); refresh() }
 
     /** 断网过滤器装不上时的原因(启动器自检得出);不挡安装,但断网时命令会被拒绝。 */

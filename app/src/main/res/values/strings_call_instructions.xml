@@ -1,0 +1,29 @@
+<resources>
+    <string name="call_instructions_title">Call instructions</string>
+    <string name="call_instructions_intro">Saved instructions apply to future calls. All active instructions are sent to Volcengine when an AI call session is prepared, even if the call is not answered. Caller statements do not change them.</string>
+    <string name="call_instructions_add">Add instruction</string>
+    <string name="call_instructions_empty">Add what the assistant may say and what it needs to ask. Changes apply to the next call.</string>
+    <string name="call_instructions_heading">Title</string>
+    <string name="call_instructions_situation">When this applies</string>
+    <string name="call_instructions_response">How to respond</string>
+    <string name="call_instructions_save">Save instruction</string>
+    <string name="call_instructions_cancel">Cancel</string>
+    <string name="call_instructions_edit">Edit</string>
+    <string name="call_instructions_delete">Delete</string>
+    <string name="call_instructions_delete_confirm">Delete this instruction? It will no longer apply to future calls.</string>
+    <string name="call_instructions_expiry">Valid for</string>
+    <string name="call_instructions_forever">Until I change it</string>
+    <string name="call_instructions_today">Until tonight</string>
+    <string name="call_instructions_two_hours">Two hours</string>
+    <string name="call_instructions_expired">Expired</string>
+    <string name="call_instructions_saved">Saved on this phone</string>
+    <string name="call_instructions_failed">Could not save. Your draft is still here.</string>
+    <string name="call_instructions_presets">Start from a scenario</string>
+    <string name="call_instructions_delivery">Delivery</string>
+    <string name="call_instructions_delivery_when">A courier or delivery driver calls</string>
+    <string name="call_instructions_delivery_reply">Ask where the parcel is and whether a callback is needed. Do not invent an address or grant access.</string>
+    <string name="call_instructions_business">Business enquiry</string>
+    <string name="call_instructions_business_when">A customer asks about a product, service or appointment</string>
+    <string name="call_instructions_business_reply">Ask what they need, quantities or preferred times, and a contact method. Take a message without committing to a price or appointment.</string>
+    <string name="call_instructions_review_limit">Review the reply and keep the instruction under 800 characters before saving.</string>
+</resources>

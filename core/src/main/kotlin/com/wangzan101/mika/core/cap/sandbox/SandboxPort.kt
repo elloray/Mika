@@ -8,6 +8,8 @@ import com.wangzan101.mika.core.knowledge.ScriptEntry
 import com.wangzan101.mika.core.workspace.SandboxError
 import com.wangzan101.mika.core.workspace.WorkspaceFileGate
 import com.wangzan101.mika.core.workspace.SandboxTree
+import kotlinx.coroutines.Deferred
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.serialization.json.JsonObject
 
 /** 沙箱命令请求手机工具时,交回本任务的动作执行入口。 */
@@ -42,6 +44,13 @@ interface SandboxPort {
      */
     suspend fun openProcess(workspace: String, argv: List<String>, cwd: String? = null): SandboxProcess =
         throw SandboxError("sandbox_stdio_unsupported", "This device cannot run stdio MCP servers.", recoverable = true)
+
+    /**
+     * 用户自己打开的终端:在 [workspace] 里起一个带伪终端的 shell。它不属于任何任务,不经过模型,
+     * 也不写运行记录;和 [run] 一样按当时的联网设置执行。默认不支持。
+     */
+    suspend fun openShell(workspace: String, cols: Int = 80, rows: Int = 24): SandboxShell =
+        throw SandboxError("sandbox_shell_unsupported", "This device cannot open a terminal.", recoverable = true)
 
     /** 当前任务提供手机工具入口时，命令可通过桥接调用；旧实现仍可只实现 [run]。 */
     suspend fun runWithPhone(workspace: String, argv: List<String>, cwd: String?, timeoutMs: Long,
@@ -89,4 +98,22 @@ interface SandboxProcess : Closeable {
     val stdin: OutputStream
     val stdout: InputStream
     val stderr: InputStream
+}
+
+/**
+ * 用户终端的会话:[input] 写进 shell 的 stdin,[output] 是 stdout 和 stderr 合并后的输出。
+ * 关闭时整棵进程树结束;树锁被重置/清理收回时 [revoked] 变为 true。
+ */
+interface SandboxShell : Closeable {
+    val input: OutputStream
+    val output: InputStream
+
+    /** shell 退出时的退出码;被信号杀死是 128 + 信号。 */
+    val exited: Deferred<Int>
+
+    /** 被 [SandboxTree] 的独占许可收回(重置、清工作区)后为 true。 */
+    val revoked: StateFlow<Boolean>
+
+    /** 改窗口大小;实现不支持时什么也不做。 */
+    fun resize(cols: Int, rows: Int) {}
 }

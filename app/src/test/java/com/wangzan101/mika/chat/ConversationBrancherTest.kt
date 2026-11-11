@@ -1,5 +1,6 @@
 package com.wangzan101.mika.chat
 
+import com.wangzan101.mika.cap.sandbox.JVM_GATE
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -82,6 +83,63 @@ class ConversationBrancherTest {
 
         assertEquals(BranchCopyResult(copied = 0, skipped = 1), copyInboxTree(source, target, maxBytes = 1024))
         assertEquals("旧的", File(target, "inbox/a.txt").readText())
+    }
+
+    @Test fun retryCopiesRequestedFirstAndContinuesAfterLimitAndMissing() {
+        assumeTrue("JVM gate requires Unix file attributes", File(tmp.root.path).toPath().fileSystem.supportedFileAttributeViews().contains("unix"))
+        val source = tmp.newFolder("source")
+        val target = tmp.newFolder("target")
+        File(source, "inbox").mkdirs()
+        File(source, "inbox/a-history").writeText("HH")
+        File(source, "inbox/b-large").writeText("12345")
+        File(source, "inbox/c-request").writeText("abc")
+        val prefix = "/workspace/inbox/"
+        val paths = listOf(prefix + "c-request", prefix + "b-large", prefix + "missing")
+        assertEquals(listOf(
+            RetryAttachmentResult(paths[0], RetryAttachmentStatus.COPIED, 3),
+            RetryAttachmentResult(paths[1], RetryAttachmentStatus.OVER_LIMIT),
+            RetryAttachmentResult(paths[2], RetryAttachmentStatus.MISSING),
+        ), copyRetryAttachments(source, target, paths, 5, JVM_GATE))
+        assertEquals("HH", File(target, "inbox/a-history").readText())
+        assertFalse(File(target, "inbox/b-large").exists())
+        assertEquals(listOf(
+            RetryAttachmentResult(paths[0], RetryAttachmentStatus.COPIED, 3),
+            RetryAttachmentResult(paths[1], RetryAttachmentStatus.MISSING),
+        ), checkRetryAttachments(target, paths.take(2), JVM_GATE))
+    }
+
+    @Test fun retryDoesNotAcceptExistingSameNameOrUnsafePaths() {
+        assumeTrue("JVM gate requires Unix file attributes", tmp.root.toPath().fileSystem.supportedFileAttributeViews().contains("unix"))
+        val source = tmp.newFolder("source")
+        val target = tmp.newFolder("target")
+        File(source, "inbox").mkdirs()
+        File(target, "inbox").mkdirs()
+        File(source, "inbox/a").writeText("new")
+        File(target, "inbox/a").writeText("old")
+        val paths = listOf("/workspace/inbox/a", "/workspace/inbox/../secret")
+        assertEquals(paths.map { RetryAttachmentResult(it, RetryAttachmentStatus.FAILED) },
+            copyRetryAttachments(source, target, paths, 100, JVM_GATE))
+        assertEquals("old", File(target, "inbox/a").readText())
+        assertEquals(RetryAttachmentStatus.FAILED, checkRetryAttachments(target, paths, JVM_GATE)[1].status)
+    }
+
+    @Test fun retryRejectsSymlinksInSourceAndTarget() {
+        assumeTrue("JVM gate requires Unix file attributes", tmp.root.toPath().fileSystem.supportedFileAttributeViews().contains("unix"))
+        val source = tmp.newFolder("source")
+        val target = tmp.newFolder("target")
+        val outside = tmp.newFile("outside").apply { writeText("secret") }
+        File(source, "inbox").mkdirs()
+        File(target, "inbox").mkdirs()
+        val sourceLink = File(source, "inbox/link").toPath()
+        val targetLink = File(target, "inbox/link").toPath()
+        assumeTrue(runCatching {
+            Files.createSymbolicLink(sourceLink, outside.toPath())
+            Files.createSymbolicLink(targetLink, outside.toPath())
+        }.isSuccess)
+        val paths = listOf("/workspace/inbox/link")
+        assertTrue(copyRetryAttachments(source, target, paths, 100, JVM_GATE).single().status != RetryAttachmentStatus.COPIED)
+        assertTrue(checkRetryAttachments(target, paths, JVM_GATE).single().status != RetryAttachmentStatus.COPIED)
+        assertEquals("secret", outside.readText())
     }
 
     @Test fun createsAnEmptyInboxForAnEmptySourceInbox() {

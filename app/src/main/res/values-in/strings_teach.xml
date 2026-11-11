@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="teach_title">Ajari Mika</string>
+    <string name="teach_menu">Ajari Mika</string>
+    <string name="teach_goal_label">Tujuan</string>
+    <string name="teach_goal_hint">Apa yang harus diingat Mika? Satu kalimat.</string>
+    <string name="teach_disclosure">Langkah hanya disimpan di ponsel ini, dan hanya setelah Anda mengetuk Mulai demonstrasi. Jika model sudah diatur, membuat keterampilan mengirim ringkasan tujuan dan langkah yang sudah disensor ke model itu. Kata sandi, kode, dan detail pembayaran tidak ikut. Jika tidak ada model, draf ditulis di ponsel dan tidak ada yang diunggah. Draf tidak dipakai sebelum diterima, dan belum berhasil diuji coba.</string>
+    <string name="teach_continue">Lanjut</string>
+    <string name="teach_ready_body">Mika hanya melihat dan tidak mengoperasikan ponsel. Anda bisa menjeda, mengakhiri, atau membuang. Tidak ada yang direkam sebelum mengetuk Mulai demonstrasi.</string>
+    <string name="teach_start">Mulai demonstrasi</string>
+    <string name="teach_learning">Sedang belajar</string>
+    <string name="teach_paused">Dijeda</string>
+    <string name="teach_pause">Jeda</string>
+    <string name="teach_resume">Lanjutkan</string>
+    <string name="teach_end">Akhiri demonstrasi</string>
+    <string name="teach_discard">Buang</string>
+    <string name="teach_discard_body">Buang demonstrasi ini dan hapus langkah yang tersimpan?</string>
+    <string name="teach_review">Tinjau</string>
+    <string name="teach_correct">Perbaiki langkah ini</string>
+    <string name="teach_clarify">Apa arti langkah ini?</string>
+    <string name="teach_remove">Hapus</string>
+    <string name="teach_generate">Buat draf keterampilan</string>
+    <string name="teach_busy">Ada tugas yang berjalan. Tunggu selesai sebelum mengajar.</string>
+    <string name="teach_need_a11y">Nyalakan aksesibilitas sebelum demonstrasi. Tanpa itu Mika tidak melihat ketukan.</string>
+    <string name="teach_interrupted">Demonstrasi berhenti karena aplikasi dimulai ulang atau aksesibilitas dimatikan. Tidak ada yang direkam sampai Anda melanjutkan.</string>
+    <string name="teach_need_goal">Tulis tujuan dulu.</string>
+    <string name="teach_secret_goal">Tujuan itu tampak seperti sandi atau kode, jadi tidak disimpan.</string>
+    <string name="teach_draft_failed">Draf tidak bisa ditulis. Langkahnya masih ada.</string>
+    <string name="teach_draft_ready">Draf menunggu di Memori dan keterampilan. Draf tidak dipakai sebelum diterima, dan belum berhasil diuji coba.</string>
+    <string name="teach_open_drafts">Lihat draf</string>
+    <string name="teach_no_steps">Tidak ada langkah yang tersisa.</string>
+    <string name="teach_blocked_task">Mika sedang belajar, jadi tugas ini tidak dimulai.</string>
+    <string name="teach_channel">Mengajar</string>
+    <string name="teach_sensitive_note">Masukan sensitif tidak disimpan.</string>
+    <string name="teach_insufficient_note">Informasi antarmuka tidak cukup. Ini bukan tindakan berbasis koordinat.</string>
+    <string name="teach_notification">Mika tidak mengoperasikan ponsel.</string>
+    <string name="teach_no_visible">Bilah Sedang belajar tidak bisa ditampilkan, jadi perekaman tidak dimulai. Izin notifikasi tidak diperlukan. Lapisan aksesibilitas harus terlihat, dengan Jeda dan Akhiri.</string>
+    <string name="teach_watch_lost">Bilah Sedang belajar hilang, jadi demonstrasi dihentikan. Tidak ada yang direkam lagi.</string>
+    <string name="teach_shelf_expand">Tampilkan Ajari Mika</string>
+    <string name="teach_shelf_collapse">Sembunyikan Ajari Mika</string>
+</resources>

@@ -1,10 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="web_search_title">بحث الويب</string>
+    <string name="web_search_provider">خدمة البحث</string>
+    <string name="web_search_note_you">بدون مفتاح تُستخدم الواجهة المجانية (100 عملية بحث يوميًا)، ومع المفتاح تُستخدم الواجهة المدفوعة.</string>
+    <string name="web_search_searxng_url">عنوان المثيل</string>
+    <string name="web_search_note_jina">يتطلب مفتاح API. يستخدم بحث Jina ‏(s.jina.ai).</string>
+    <string name="web_search_note_exa">يتطلب مفتاح API. يستخدم بحث Exa ‏(api.exa.ai).</string>
+    <string name="web_search_note_searxng">مثيل SearXNG خاص بك، بلا مفتاح. يجب أن يسمح المثيل بإخراج JSON (أضف json إلى search.formats في settings.yml).</string>
+    <string name="web_search_api_key_required">مفتاح API (مطلوب)</string>
+    <string name="web_search_missing_key">يحتاج %1$s إلى مفتاح API ليعمل.</string>
+    <string name="web_search_get_key">احصل على مفتاح API</string>
+    <string name="web_search_privacy">يُخزَّن المفتاح مشفرًا على هذا الهاتف. تُعامل نتائج البحث كمحتوى غير موثوق.</string>
     <string name="web_search_row_sub">خدمة بحث اختيارية؛ يظل البحث في المتصفح متاحًا دائمًا</string>
-    <string name="web_search_hint">متوقف افتراضيًا. ترسل Mika المعاملين query وcount إلى نقطة نهاية HTTP JSON التي تحددها. يُرسل المفتاح الاختياري كرمز Bearer ويُخزَّن مشفرًا على هذا الهاتف. تُعامل نتائج البحث كمحتوى غير موثوق.</string>
     <string name="web_search_enabled">تفعيل بحث الويب</string>
-    <string name="web_search_endpoint">عنوان URL لنقطة نهاية البحث</string>
     <string name="web_search_api_key">مفتاح API (اختياري)</string>
     <string name="web_search_invalid_endpoint">أدخل عنوان URL باستخدام HTTP أو HTTPS من دون معاملات استعلام.</string>
     <string name="web_search_action">البحث في الويب</string>

@@ -1,0 +1,24 @@
+<resources>
+    <string name="file_library_title">파일</string>
+    <string name="file_library_search">파일 이름 검색</string>
+    <string name="file_library_all">모든 대화</string>
+    <string name="file_library_current">현재 대화</string>
+    <string name="file_library_sources">모든 출처</string>
+    <string name="file_library_input">첨부 파일</string>
+    <string name="file_library_output">생성된 파일</string>
+    <string name="file_library_loading">파일을 불러오는 중…</string>
+    <string name="file_library_empty">파일을 찾을 수 없음</string>
+    <string name="file_library_missing">사용할 수 없음</string>
+    <string name="file_library_available">사용 가능</string>
+    <string name="file_library_open">열기</string>
+    <string name="file_library_share">공유</string>
+    <string name="file_library_add">초안에 추가</string>
+    <string name="file_library_choose">대화 선택</string>
+    <string name="file_library_new">새 대화</string>
+    <string name="file_library_error">이 파일에 접근할 수 없음</string>
+    <string name="file_library_retry">다시 시도</string>
+    <string name="file_library_partial">일부 대화를 불러올 수 없습니다.</string>
+    <string name="file_library_unknown_time">시간 알 수 없음</string>
+    <string name="file_library_draft_saved">선택한 대화의 초안에 추가했습니다. 전환할 수 있을 때 해당 대화를 확인하세요.</string>
+    <string name="file_library_load_failed">파일을 불러올 수 없습니다.</string>
+</resources>

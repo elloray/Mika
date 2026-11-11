@@ -34,4 +34,17 @@
     <string name="usage_input">输入</string>
     <string name="usage_output">输出</string>
     <string name="usage_calls">调用</string>
+    <string name="usage_allowance_title">当前额度</string>
+    <string name="usage_allowance_loading">正在查询额度…</string>
+    <string name="usage_allowance_unavailable">暂不可查</string>
+    <string name="usage_allowance_balance">账户余额 %1$s</string>
+    <string name="usage_allowance_key_limit">Key 剩余可支出 %1$s</string>
+    <string name="usage_allowance_no_key_limit">未设置 Key 支出上限</string>
+    <string name="usage_allowance_view_balance">查看账户余额</string>
+    <string name="usage_allowance_reset_daily">每天重置</string>
+    <string name="usage_allowance_reset_weekly">每周重置</string>
+    <string name="usage_allowance_reset_monthly">每月重置</string>
+    <string name="usage_allowance_updated">上次更新 %1$s</string>
+    <string name="usage_allowance_self_hosted">自托管连接</string>
+    <string name="usage_allowance_unsupported">未接入额度查询</string>
 </resources>

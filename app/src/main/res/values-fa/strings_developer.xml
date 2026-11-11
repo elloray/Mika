@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="dev_adaptive">ابتدا خواندن عناصر، استفاده از تصویر در صورت نیاز</string>
+    <string name="dev_adaptive_sub">وقتی درخت رابط کافی باشد، تصویر ارسال نمی‌کند؛ در غیر این صورت تصویر اضافه می‌کند</string>
+    <string name="dev_inline">دریافت تغییرات صفحه پس از اقدامات</string>
+    <string name="dev_inline_sub">پس از هر اقدام نگاهی به صفحه می‌اندازد تا به خواندن جداگانه نیاز نباشد</string>
+    <string name="dev_batch">انجام چند مرحله در صورت اطمینان</string>
+    <string name="dev_batch_sub">برخی مراحل را یک‌جا و بدون توقف برای پرسیدن از مدل انجام می‌دهد</string>
+    <string name="dev_deep_links">باز کردن مستقیم صفحهٔ مقصد</string>
+    <string name="dev_deep_links_sub">به‌جای پیمودن مراحل با لمس، از پیوندها برای رفتن مستقیم به صفحات برنامه‌ها استفاده می‌کند</string>
+    <string name="dev_light">سپردن مراحل ساده به مدل سبک</string>
+    <string name="dev_light_sub">مدل سبک و سریع‌تر مراحل ساده را انجام می‌دهد؛ مراحل دشوار به مدل اصلی سپرده می‌شوند</string>
+    <string name="dev_replay">تکرار روشی که دفعهٔ قبل موفق بود</string>
+    <string name="dev_replay_sub">مسیرهای ذخیره‌شدهٔ کارهای قبلی را تکرار می‌کند؛ اگر مطابقت نداشته باشند، کار را به مدل برمی‌گرداند</string>
+    <string name="dev_parallel">اجرای هم‌زمان گفتگوها</string>
+    <string name="dev_parallel_sub">کارهای گفتگوهای مختلف هر کدام صفحهٔ مجازی خود را دارند و هم‌زمان اجرا می‌شوند</string>
+    <string name="dev_compaction">خلاصه‌های ساختاریافته برای کارهای طولانی</string>
+    <string name="dev_compaction_sub">هنگام خلاصه کردن مراحل زیاد، هدف، اطلاعات، پیشرفت و مرحلهٔ بعدی را ثبت می‌کند</string>
+    <string name="dev_group">نحوهٔ کار میکا</string>
+    <string name="dev_autonomy">حالت خودکار</string>
+    <string name="dev_autonomy_sub">وقتی روشن باشد، میکا حتی پیش از پرداخت هم سؤال نمی‌کند و کار را تمام می‌کند؛ وقتی خاموش باشد، فقط پیش از پرداخت می‌پرسد</string>
+    <string name="dev_note">این گزینه‌ها بر نحوه و سرعت کار میکا تأثیر دارند. معمولاً بهتر است آن‌ها را در حالت پیش‌فرض نگه دارید.</string>
+    <string name="dev_grounding">مکان‌یابی تصویری تأیید شده است</string>
+    <string name="dev_grounding_sub">پس از آزمایش دقت مدل تصویری %1$s در مکان‌یابی، این گزینه را روشن کنید؛ در حالت خاموش، میکا پیش از لمس نقاط مشخص‌شده به شواهد دیگری نیاز دارد.</string>
+    <string name="dev_speed">سرعت</string>
+    <string name="dev_experiments">آزمایش‌ها</string>
+    <string name="dev_run_log">سوابق اجرا</string>
+</resources>

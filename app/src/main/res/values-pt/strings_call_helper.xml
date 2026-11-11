@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="calls_helper_setup_title">Assistente de áudio do Mika</string>
+    <string name="calls_helper_setup_intro">O Android gerencia as chamadas comuns. O Mika usa o assistente de áudio para ouvir e falar nas chamadas com IA. A depuração sem fio permite iniciar ou recuperar o assistente pelo celular, sem computador. Conecte-se a uma rede Wi-Fi para parear; a voz da IA em tempo real também precisa de internet.</string>
+    <string name="calls_helper_unavailable">Não é possível configurar o assistente de áudio neste dispositivo.</string>
+    <string name="calls_helper_unavailable_reason">O Android não oferece os ajustes necessários para iniciar o assistente neste dispositivo. As chamadas comuns continuam funcionando no app Telefone.</string>
+    <string name="calls_helper_ready">Assistente de áudio conectado</string>
+    <string name="calls_helper_usb_running">Assistente de áudio em execução · iniciado por USB</string>
+    <string name="calls_helper_usb_stopped">O assistente de áudio iniciado por USB parou.</string>
+    <string name="calls_helper_wireless_recovery">Faça o pareamento uma vez neste celular para poder reiniciar o assistente sem computador se ele parar. Conecte-se a uma rede Wi-Fi para configurar.</string>
+    <string name="calls_helper_wireless_unavailable">A depuração sem fio não está disponível neste celular.</string>
+    <string name="calls_helper_setup_wireless">Configurar recuperação sem fio</string>
+    <string name="calls_helper_hide_usb">Ocultar alternativa pelo computador</string>
+    <string name="calls_helper_show_usb">Alternativa pelo computador</string>
+    <string name="calls_helper_usb_fallback">Se não puder configurar a conexão sem fio e tiver um computador, conecte o celular por um cabo USB e execute este comando no computador. Talvez seja preciso repetir o comando após uma atualização ou reinicialização.</string>
+    <string name="calls_helper_wireless_reconnect">Se o assistente parar, conecte-se a uma rede Wi-Fi e ative a depuração sem fio se o Android a tiver desativado. Pareie novamente apenas se solicitado.</string>
+    <string name="calls_helper_wireless_debugging_body">Conecte-se ao Wi-Fi e ative a depuração sem fio nas Opções do desenvolvedor. Toque em Permitir se o Android solicitar. Depois, volte ao Mika para continuar na etapa do código de pareamento.</string>
+    <string name="calls_helper_usb_debugging_body">Ative a depuração USB nas Opções do desenvolvedor e confirme. Não é preciso conectar um cabo para configurar a conexão sem fio. Mantenha os outros ajustes como estão.</string>
+    <string name="calls_helper_usb_debugging_brief">A configuração sem fio não exige cabo</string>
+    <string name="calls_helper_connect_body">Após o pareamento, o Mika se conecta ao assistente de áudio deste celular.</string>
+    <string name="calls_helper_wifi_needed">Conecte-se a uma rede Wi-Fi para iniciar ou recuperar o assistente de áudio pela depuração sem fio.</string>
+    <string name="calls_helper_repair_needed">O pareamento não está disponível. Pareie novamente neste celular.</string>
+    <string name="calls_helper_name">Assistente de áudio</string>
+    <string name="calls_helper_disconnected">Conecte para habilitar o áudio nos dois sentidos nas chamadas com IA</string>
+    <string name="calls_helper_manage">Gerenciar</string>
+    <string name="calls_helper_set_up">Configurar</string>
+    <string name="calls_helper_pairing_done">Assistente de áudio conectado. Você pode voltar ao Mika.</string>
+    <string name="calls_helper_pairing_problem">Volte ao Mika para ver como reconectar.</string>
+</resources>

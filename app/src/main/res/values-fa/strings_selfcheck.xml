@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="selfcheck_title">بررسی سازگاری</string>
+    <string name="selfcheck_row_sub">ببینید چه قابلیت‌هایی در این گوشی کار می‌کنند و نتیجه را گزارش کنید</string>
+    <string name="selfcheck_intro">حدود یک دقیقه طول می‌کشد. به برنامه‌های دیگر شما دست نمی‌زند، تنظیمات را تغییر نمی‌دهد و از شبکه استفاده نمی‌کند. لطفاً هنگام اجرا در همین صفحه بمانید.</string>
+    <string name="selfcheck_start">شروع</string>
+    <string name="selfcheck_again">اجرای دوباره</string>
+    <string name="selfcheck_cancel">انصراف</string>
+    <string name="selfcheck_task_running">کاری در حال اجراست. پس از پایان آن بررسی سازگاری را شروع کنید.</string>
+    <string name="selfcheck_checks">بررسی‌ها</string>
+    <string name="selfcheck_report">گزارش</string>
+    <string name="selfcheck_copy">کپی گزارش</string>
+    <string name="selfcheck_github">گزارش در GitHub</string>
+    <string name="selfcheck_copied">گزارش کپی شد</string>
+    <string name="selfcheck_github_copied">گزارش کپی شد. آن را در بخش «Self-check report» صفحه‌ای که باز می‌شود جای‌گذاری کنید.</string>
+    <string name="selfcheck_report_note">گزارش فقط شامل مدل گوشی، نسخهٔ سیستم و نتیجهٔ هر بررسی است و حساب‌ها، فهرست برنامه‌ها یا محتوای شما را ندارد. می‌توانید پیش از ارسال آن را بخوانید.</string>
+
+    <string name="selfcheck_check_device">دستگاه</string>
+    <string name="selfcheck_check_permissions">مجوزها</string>
+    <string name="selfcheck_check_helper">برنامهٔ کمکی داخلی</string>
+    <string name="selfcheck_check_display">صفحهٔ مجازی</string>
+    <string name="selfcheck_check_launch">باز کردن برنامه‌ها</string>
+    <string name="selfcheck_check_reading">خواندن صفحه</string>
+    <string name="selfcheck_check_actions">لمس و تایپ</string>
+    <string name="selfcheck_check_alive">ادامهٔ اجرا</string>
+    <string name="selfcheck_check_main">عدم اختلال در صفحهٔ شما</string>
+    <string name="selfcheck_check_browser">مرورگر داخلی</string>
+    <string name="selfcheck_check_sandbox">محیط اجرا</string>
+    <string name="selfcheck_check_copies">نسخه‌های برنامه</string>
+
+    <string name="selfcheck_status_pending">در انتظار</string>
+    <string name="selfcheck_status_running">در حال بررسی</string>
+    <string name="selfcheck_status_pass">موفق</string>
+    <string name="selfcheck_status_partial">نیمه‌موفق</string>
+    <string name="selfcheck_status_fail">ناموفق</string>
+    <string name="selfcheck_status_skipped">رد شد</string>
+
+    <string name="selfcheck_line_pending">هنوز شروع نشده</string>
+    <string name="selfcheck_line_running">در حال بررسی…</string>
+    <string name="selfcheck_line_pass">کار می‌کند</string>
+    <string name="selfcheck_line_needs">رد شد: ابتدا «%1$s» باید موفق شود</string>
+    <string name="selfcheck_line_other">موفق نشد. برای جزئیات به گزارش مراجعه کنید.</string>
+
+    <string name="selfcheck_advice_too_old">نسخهٔ سیستم قدیمی‌تر از اندروید ۱۲ است، بنابراین کنترل گوشی در دسترس نیست. گفتگو، وب و محیط اجرا همچنان کار می‌کنند.</string>
+    <string name="selfcheck_advice_no_wireless">این سیستم اشکال‌زدایی بی‌سیم ندارد. می‌توانید کنترل گوشی را به‌جای آن از طریق USB و با رایانه شروع کنید.</string>
+    <string name="selfcheck_advice_phone_unavailable">این محیط نمی‌تواند برنامه‌های گوشی شما را کنترل کند (گزینه‌های توسعه‌دهنده یا اشکال‌زدایی بی‌سیم موجود نیست)؛ گفتگو، وب، فایل‌ها و محاسبات طبق معمول کار می‌کنند.</string>
+    <string name="selfcheck_advice_a11y_off">دسترس‌پذیری خاموش است. دسترس‌پذیری میکا را در تنظیمات › کنترل گوشی روشن کنید.</string>
+    <string name="selfcheck_advice_a11y_restart">دسترس‌پذیری روشن است اما اجرا نمی‌شود. دسترس‌پذیری میکا را در تنظیمات سیستم خاموش و دوباره روشن کنید.</string>
+    <string name="selfcheck_advice_notifications">اعلان‌ها مسدود هستند؛ بنابراین پیشرفت کار یا اعلان‌های نیازمند توجه را نمی‌بینید.</string>
+    <string name="selfcheck_advice_battery">مصرف باتری محدود شده است، بنابراین ممکن است میکا در پس‌زمینه متوقف شود. می‌توانید این محدودیت را در بخش بازیابی و تعمیر بردارید.</string>
+    <string name="selfcheck_advice_setup">برنامهٔ کمکی داخلی در حال اجرا نیست. راه‌اندازی را در تنظیمات › کنترل گوشی کامل کنید و این بررسی را دوباره اجرا کنید.</string>
+    <string name="selfcheck_advice_display">ساخت صفحهٔ مجازی میکا ممکن نشد. برنامهٔ کمکی را دوباره متصل کنید و تلاش کنید؛ اگر مشکل ادامه دارد آن را گزارش کنید.</string>
+    <string name="selfcheck_advice_focus">صفحهٔ مجازی میکا تمرکز ورودی مستقل ندارد، بنابراین ممکن است هنگام کار میکا تمرکز ورودی صفحهٔ شما برای لحظه‌ای از بین برود. سایر قابلیت‌ها همچنان کار می‌کنند.</string>
+    <string name="selfcheck_advice_launch">صفحه‌ای در صفحهٔ مجازی میکا باز نشد. لطفاً این مورد را گزارش کنید.</string>
+    <string name="selfcheck_advice_on_main">تنظیمات سیستم به‌جای صفحهٔ مجازی میکا روی صفحهٔ شما باز شد. لطفاً این مورد را گزارش کنید.</string>
+    <string name="selfcheck_advice_settings_in_use">تنظیمات سیستم روی صفحهٔ شما باز است، بنابراین در این مرحله دوباره باز نشد. آن را ببندید و بررسی را دوباره اجرا کنید.</string>
+    <string name="selfcheck_advice_read">کنترل‌های صفحه خوانده نشدند. دسترس‌پذیری میکا را خاموش و دوباره روشن کنید، سپس بررسی را تکرار کنید.</string>
+    <string name="selfcheck_advice_blank">تصویر صفحهٔ مجازی کاملاً سیاه یا خالی است. لطفاً این مورد را گزارش کنید.</string>
+    <string name="selfcheck_advice_action">برخی اقدام‌ها اعمال نشدند (گزارش را ببینید). لطفاً این مورد را گزارش کنید.</string>
+    <string name="selfcheck_advice_frames">صفحهٔ مجازی پس از مدتی دیگر به‌روزرسانی نمی‌شود، بنابراین ممکن است کارها متوقف شوند. لطفاً این مورد را گزارش کنید.</string>
+    <string name="selfcheck_advice_main">صفحهٔ شما در طول بررسی تغییر کرد. اگر در همین صفحه مانده بودید، لطفاً این مورد را گزارش کنید.</string>
+    <string name="selfcheck_advice_no_webview">WebView قابل استفاده در این سیستم وجود ندارد و مرورگر داخلی کار نمی‌کند. مؤلفهٔ WebView سیستم را نصب یا به‌روزرسانی کنید.</string>
+    <string name="selfcheck_advice_web">مرورگر داخلی نتوانست صفحهٔ آزمایشی محلی را بخواند یا در آن لمس کند. لطفاً این مورد را گزارش کنید.</string>
+    <string name="selfcheck_advice_sandbox_unsupported">محیط اجرا فقط در گوشی‌های ARM شصت‌وچهار بیتی در دسترس است.</string>
+    <string name="selfcheck_advice_sandbox_not_prepared">محیط اجرا هنوز آماده نشده است. اولین بار که کاری از آن استفاده کند آماده می‌شود؛ سپس این بررسی را دوباره اجرا کنید.</string>
+    <string name="selfcheck_advice_sandbox_failed">دستورهای محیط اجرا نتیجهٔ مورد انتظار را ندادند. می‌توانید محیط را در بخش «محیط فایل‌ها و پردازش» بازنشانی کنید و دوباره تلاش کنید.</string>
+    <string name="selfcheck_advice_timeout">این بررسی بیش از حد طول کشید. دوباره اجرا کنید؛ اگر همچنان زمان آن تمام می‌شود، لطفاً گزارش دهید.</string>
+    <string name="selfcheck_advice_error">این بررسی با خطا روبه‌رو شد. لطفاً آن را گزارش کنید.</string>
+    <string name="selfcheck_advice_out_of_time">زمان بررسی سازگاری پیش از رسیدن به این مرحله تمام شد.</string>
+    <string name="selfcheck_advice_cancelled">لغو شد.</string>
+
+    <string name="selfcheck_target_title">صفحهٔ بررسی میکا</string>
+    <string name="selfcheck_target_note">این صفحهٔ آزمایشی خود میکاست. بررسی سازگاری در اینجا لمس و تایپ می‌کند و به برنامه‌های دیگر شما دست نمی‌زند.</string>
+    <string name="selfcheck_target_taps">تعداد لمس‌ها: %1$d</string>
+    <string name="selfcheck_target_button">اینجا بزنید</string>
+    <string name="selfcheck_target_input">اینجا بنویسید</string>
+    <string name="selfcheck_target_tick">تیک %1$d</string>
+    <string name="selfcheck_target_row">ردیف %1$d</string>
+</resources>

@@ -96,6 +96,14 @@ Doing the task
   chat history. Judge progress from the content, page state and task result.
   If the state and content remain unchanged after several attempts, try a
   different method or report the actual blocker.
+- When the user explicitly continues an interrupted or failed task, start a
+  fresh run: the previous live state and tool resources are gone. Read the
+  interruption summary and previously confirmed count and boundary, then check
+  current state before continuing. Do not repeat an irreversible action that is
+  confirmed done, and do not claim the previous live state was restored.
+- When the user explicitly restarts a task, do not inherit the previous run's
+  completion claims; work from the original request and reassess its criteria.
+  Still check current state before repeating irreversible or outward actions.
 - When a step genuinely requires the user's hands and the tools cannot do it,
   hand over at that step.
 - When part of the request cannot be done here, decide whether it is a

@@ -15,9 +15,14 @@ import java.time.ZoneId
 class ChatCopyTest {
     @get:Rule val texts = ChineseTexts()
 
-    @Test fun sixDistinctNonBlankExamples() {
-        assertEquals(6, ChatCopy.examples.size)
-        assertEquals(6, ChatCopy.examples.map { it.text }.filter { it.isNotBlank() }.toSet().size)
+    @Test fun fourDistinctNonBlankExamplesStartWithGithubStar() {
+        val examples = ChatCopy.examples
+        assertEquals(4, examples.size)
+        assertEquals(4, examples.map { it.text }.filter { it.isNotBlank() }.toSet().size)
+        assertEquals(ChatCopy.ExampleKind.Web, examples.first().kind)
+        assertTrue(examples.first().text.contains("https://github.com/wangzan101/mika"))
+        assertEquals(ChatCopy.examples.map { it.text }, ChatCopy.recommendationSeeds().map { it.first })
+        assertEquals(ChatCopy.examples.map { it.text }, ChatCopy.recommendationSeeds().map { it.second })
     }
 
     /** 分支标题:源标题后面加后缀,总长不超过 24 字;截的是源标题,后缀留着,emoji 不截半个。 */

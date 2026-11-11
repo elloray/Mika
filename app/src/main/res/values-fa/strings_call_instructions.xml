@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="call_instructions_title">دستورالعمل‌های تماس</string>
+    <string name="call_instructions_intro">دستورالعمل‌های ذخیره‌شده برای تماس‌های آینده اعمال می‌شوند. هنگام آماده‌سازی یک نشست تماس هوش مصنوعی، همه دستورالعمل‌های فعال به Volcengine ارسال می‌شوند، حتی اگر به تماس پاسخ داده نشود. گفته‌های تماس‌گیرنده آن‌ها را تغییر نمی‌دهد.</string>
+    <string name="call_instructions_add">افزودن دستورالعمل</string>
+    <string name="call_instructions_empty">آنچه دستیار می‌تواند بگوید و آنچه باید بپرسد را اضافه کنید. تغییرات برای تماس بعدی اعمال می‌شوند.</string>
+    <string name="call_instructions_heading">عنوان</string>
+    <string name="call_instructions_situation">زمان اعمال این دستورالعمل</string>
+    <string name="call_instructions_response">نحوه پاسخ دادن</string>
+    <string name="call_instructions_save">ذخیره دستورالعمل</string>
+    <string name="call_instructions_cancel">لغو</string>
+    <string name="call_instructions_edit">ویرایش</string>
+    <string name="call_instructions_delete">حذف</string>
+    <string name="call_instructions_delete_confirm">این دستورالعمل حذف شود؟ دیگر برای تماس‌های آینده اعمال نخواهد شد.</string>
+    <string name="call_instructions_expiry">اعتبار تا</string>
+    <string name="call_instructions_forever">تا وقتی که آن را تغییر دهم</string>
+    <string name="call_instructions_today">تا امشب</string>
+    <string name="call_instructions_two_hours">دو ساعت</string>
+    <string name="call_instructions_expired">منقضی‌شده</string>
+    <string name="call_instructions_saved">روی این گوشی ذخیره شد</string>
+    <string name="call_instructions_failed">ذخیره نشد. پیش‌نویس شما همچنان اینجاست.</string>
+    <string name="call_instructions_presets">شروع از یک سناریو</string>
+    <string name="call_instructions_delivery">تحویل مرسوله</string>
+    <string name="call_instructions_delivery_when">وقتی پیک یا راننده تحویل مرسوله تماس می‌گیرد</string>
+    <string name="call_instructions_delivery_reply">بپرسید مرسوله کجاست و آیا تماس مجدد لازم است. آدرسی نسازید و اجازه دسترسی ندهید.</string>
+    <string name="call_instructions_business">پرس‌وجوی تجاری</string>
+    <string name="call_instructions_business_when">وقتی مشتری درباره محصول، خدمات یا نوبت می‌پرسد</string>
+    <string name="call_instructions_business_reply">بپرسید چه چیزی نیاز دارند، چه مقداری و چه زمانی ترجیح می‌دهند، و روش تماس. پیام را بدون تعهد به قیمت یا نوبت ثبت کنید.</string>
+    <string name="call_instructions_review_limit">پاسخ را بررسی کنید و پیش از ذخیره، دستورالعمل را زیر ۸۰۰ نویسه نگه دارید.</string>
+</resources>

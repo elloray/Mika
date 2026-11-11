@@ -14,9 +14,11 @@ python3 -m unittest discover -s tools/i18n -v
 
 `check` compares `string`, `plurals` and `string-array` entries in `strings*.xml` with the default English `values/` folder. It reports missing and extra keys by resource type, allows entries to move between files, and excludes default entries marked `translatable="false"`. It also detects malformed XML, duplicate resources, invalid plural quantities, a missing plural `other` item, array length differences and dropped format arguments.
 
-The placeholder check is intentionally lightweight: it compares the **number** of substitutions in strings, array items and the plural `other` form. It does not require a particular argument order and does not compare every plural form. Languages may use different plural categories; for example, Arabic uses six categories and its `one` and `two` forms may omit a numeric argument. Array lengths must match, but plural category sets need not match English.
+The placeholder check is intentionally lightweight: it compares the **number** of substitutions in strings, array items and the plural `other` form. A literal percent written as `%%` is text rather than a substitution and is not counted. It does not require a particular argument order and does not compare every plural form. Languages may use different plural categories; for example, Arabic uses six categories and its `one` and `two` forms may omit a numeric argument. Array lengths must match, but plural category sets need not match English.
 
-Language folders are discovered automatically, including legacy Android language codes and BCP 47 folders such as `values-b+zh+Hant`. Configuration overlays such as `values-night` and `values-zh-v31` are ignored. The current repository has **10 UI languages**, including Arabic with right-to-left text; `check` reports the number it actually discovers.
+The Persian catalog has received an initial linguistic review. Review it in context on a device before release, especially security, privacy, payments and irreversible actions.
+
+Language folders are discovered automatically, including legacy Android language codes and BCP 47 folders such as `values-b+zh+Hant`. Configuration overlays such as `values-night` and `values-zh-v31` are ignored. The current repository has **11 UI languages**, including Arabic and Persian with right-to-left text; `check` reports the number it actually discovers.
 
 Exit codes are **0** for success, **1** for reported translation differences and **2** for invalid resources or I/O errors. The `cli (Python)` job in [`.github/workflows/ci.yml`](../../.github/workflows/ci.yml) runs these tests and this check on Python 3.12.
 
@@ -28,9 +30,9 @@ This tool does **not** replace `app/src/test/.../StringResourcesTest.kt`. The JV
 
 `check` 以英文 `values/` 为基准，对比各语言 `strings*.xml` 中的字符串、复数和字符串数组，按资源类型报告缺失和多余 key。条目可以跨文件移动；英文里标为 `translatable="false"` 的条目不参与对比。工具还检查 XML 语法、重复资源、非法复数数量词、缺少 `other`、数组长度差异和格式参数遗漏。
 
-占位符检查只做**数量对比**：覆盖普通字符串、数组项和复数的 `other` 项，不要求参数顺序一致，也不逐项强求所有复数形式一致。不同语言可以使用不同复数类别，例如 Arabic 有六类，`one`、`two` 形式可以不写数字参数。数组长度必须一致，复数类别集合则不要求与英文一致。
+占位符检查只做**数量对比**：覆盖普通字符串、数组项和复数的 `other` 项，写作文本的字面百分号（`%%`）不计入替换参数，不要求参数顺序一致，也不逐项强求所有复数形式一致。不同语言可以使用不同复数类别，例如 Arabic 有六类，`one`、`two` 形式可以不写数字参数。数组长度必须一致，复数类别集合则不要求与英文一致。
 
-工具自动发现语言目录，支持安卓旧语言代码及 `values-b+zh+Hant` 这样的 BCP 47 目录，忽略 `values-night`、`values-zh-v31` 等配置覆盖目录。当前仓库共有 **10 种 UI 语言**，包含从右向左书写的 Arabic；`check` 会报告实际发现的语种数。
+工具自动发现语言目录，支持安卓旧语言代码及 `values-b+zh+Hant` 这样的 BCP 47 目录，忽略 `values-night`、`values-zh-v31` 等配置覆盖目录。当前仓库共有 **11 种 UI 语言**，包含从右向左书写的 Arabic 和 Persian；`check` 会报告实际发现的语种数。
 
 返回码：**0** 为通过，**1** 为发现译文差异，**2** 为资源无效或文件读写错误。现有 [`.github/workflows/ci.yml`](../../.github/workflows/ci.yml) 的 `cli (Python)` job 会在 Python 3.12 下运行工具测试和资源检查。
 

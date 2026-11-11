@@ -554,7 +554,7 @@ private fun AskField(chat: PageChat, hint: String, stop: (() -> Unit)?) {
             BasicTextField(
                 chat.draft, { chat.draft = it },
                 Modifier.fillMaxWidth().focusRequester(focus).testTag("page-ask-field").semantics { contentDescription = hint },
-                textStyle = MikaType.Body.copy(fontSize = 14.5.sp, color = c.ink), maxLines = 4, cursorBrush = SolidColor(c.accent),
+                textStyle = MikaType.Body.copy(fontSize = 14.5.sp, color = c.ink, textDirection = androidx.compose.ui.text.style.TextDirection.Content), maxLines = 4, cursorBrush = SolidColor(c.accent),
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Send),
                 keyboardActions = KeyboardActions(onSend = { if (canSend) chat.send() }),
             )

@@ -20,10 +20,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.wangzan101.mika.MikaApp
 import com.wangzan101.mika.R
 import com.wangzan101.mika.about.ApkDownloadState
 import com.wangzan101.mika.about.ApkRejected
-import com.wangzan101.mika.about.ApkUpdater
 import com.wangzan101.mika.about.DownloadPhase
 import com.wangzan101.mika.about.ReleaseInfo
 import com.wangzan101.mika.ui.components.ButtonKind
@@ -39,7 +39,8 @@ import kotlinx.coroutines.withContext
 @Composable
 internal fun UpdateDownloadControls(release: ReleaseInfo) {
     val context = LocalContext.current
-    val updater = remember { ApkUpdater(context.applicationContext) }
+    val app = context.applicationContext as MikaApp
+    val updater = app.apkUpdater
     val scope = rememberCoroutineScope()
     var state by remember(release.apkUrl) { mutableStateOf(ApkDownloadState()) }
     var busy by remember { mutableStateOf(false) }
@@ -56,6 +57,7 @@ internal fun UpdateDownloadControls(release: ReleaseInfo) {
             } catch (e: CancellationException) {
                 throw e
             } catch (e: ApkRejected) {
+                app.automaticUpdates.dismiss(release)
                 error = when (e.reason) {
                     ApkRejected.Reason.Corrupt -> R.string.about_update_bad_file
                     ApkRejected.Reason.NotNewer -> R.string.about_update_not_newer
@@ -95,7 +97,12 @@ internal fun UpdateDownloadControls(release: ReleaseInfo) {
 
     UpdateDownloadActions(state, busy, error,
         onDownload = { run { withContext(Dispatchers.IO) { updater.download(release) } } },
-        onCancel = { run { withContext(Dispatchers.IO) { updater.cancel() } } },
+        onCancel = {
+            run {
+                withContext(Dispatchers.IO) { updater.cancel() }
+                app.automaticUpdates.dismiss(release)
+            }
+        },
         onInstall = {
             if (context.packageManager.canRequestPackageInstalls()) install()
             else run {

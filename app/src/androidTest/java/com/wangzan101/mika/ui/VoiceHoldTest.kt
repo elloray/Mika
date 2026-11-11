@@ -13,6 +13,7 @@ import androidx.compose.ui.test.assertIsFocused
 import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTouchInput
@@ -66,7 +67,10 @@ class VoiceHoldTest {
         inst.uiAutomation.grantRuntimePermission(inst.targetContext.packageName, Manifest.permission.RECORD_AUDIO)
     }
 
-    private fun composer(text: String = "") = compose.setContent {
+    /** 「松开 发送」发出的字;[composer] 带上 sendVoice = true 时才有这条路。 */
+    private val voiceSent = mutableListOf<String>()
+
+    private fun composer(text: String = "", sendVoice: Boolean = false) = compose.setContent {
         MikaTheme {
             var t by remember { mutableStateOf(text) }
             Box(Modifier.fillMaxSize()) {
@@ -74,6 +78,7 @@ class VoiceHoldTest {
                     Modifier, t, { t = it }, ComposerMode.Idle, hasHistory = false, onSend = {}, onStop = {},
                     voice = voice,
                     onVoiceText = { t = com.wangzan101.mika.voice.HoldToTalk.join(t, it) },
+                    onVoiceSend = if (sendVoice) ({ voiceSent += com.wangzan101.mika.voice.HoldToTalk.join(t, it); t = "" }) else null,
                 )
             }
         }
@@ -81,6 +86,13 @@ class VoiceHoldTest {
 
     private fun waitTag(tag: String) = compose.waitUntil(5_000) { compose.onAllNodesWithTag(tag).fetchSemanticsNodes().isNotEmpty() }
     private fun waitNoTag(tag: String) = compose.waitUntil(5_000) { compose.onAllNodesWithTag(tag).fetchSemanticsNodes().isEmpty() }
+
+    /** 按在输入框中间的手指要往上移多少,才到「在听」卡片里 y = 卡片上沿 + [intoCard](负数是卡片上沿以上)。 */
+    private fun liftTo(intoCard: Float): Float {
+        val card = compose.onNodeWithTag("voice-listen").fetchSemanticsNode().boundsInRoot
+        val field = compose.onNodeWithTag("composer-field").fetchSemanticsNode().boundsInRoot
+        return (card.top + intoCard) - field.center.y
+    }
 
     @Test fun holdShowsTheListenCardAndReleaseFillsTheField() {
         composer("帮我")
@@ -155,12 +167,53 @@ class VoiceHoldTest {
         waitTag("voice-listen")
         val session = voice.sessions.single()
         Thread.sleep(700)
-        compose.onNodeWithTag("composer-field").performTouchInput { moveBy(androidx.compose.ui.geometry.Offset(0f, -400f)) }
-        waitTag("voice-cancel-hint")
+        // 滑过卡片上沿才是取消(滑进卡片里是直接发送)
+        val dy = liftTo(-40f)
+        compose.onNodeWithTag("composer-field").performTouchInput { moveBy(androidx.compose.ui.geometry.Offset(0f, dy)) }
+        // 输入栏和上面的小胶囊都写「松开 取消」
+        compose.waitUntil(5_000) { compose.onAllNodesWithText("松开 取消", useUnmergedTree = true).fetchSemanticsNodes().size == 2 }
         compose.onNodeWithTag("composer-field").performTouchInput { up() }
         compose.waitUntil(5_000) { session.cancelled == 1 }
         assertEquals(0, session.released)
         waitNoTag("voice-listen")
         compose.onNodeWithTag("composer-field").assertTextEquals("")
+    }
+
+    @Test fun slidingIntoTheCardSendsWithWhatWasTyped() {
+        composer("帮我", sendVoice = true)
+        compose.onNodeWithTag("composer-field").performTouchInput { down(center) }
+        waitTag("voice-listen")
+        val session = voice.sessions.single()
+        session.out.trySend(SpeechEvent.Partial("订明天", "的票"))
+        Thread.sleep(700)
+        val card = compose.onNodeWithTag("voice-listen").fetchSemanticsNode().boundsInRoot
+        val dy = liftTo(card.height / 2)
+        compose.onNodeWithTag("composer-field").performTouchInput { moveBy(androidx.compose.ui.geometry.Offset(0f, dy)) }
+        compose.onNodeWithText("松开 发送", useUnmergedTree = true).assertExists()
+        compose.onNodeWithTag("composer-field").performTouchInput { up() }
+        compose.waitUntil(5_000) { session.released == 1 }
+        session.out.trySend(SpeechEvent.Final("订明天的票"))
+        session.out.close()
+        compose.waitUntil(5_000) { voiceSent.isNotEmpty() }
+        assertEquals(listOf("帮我订明天的票"), voiceSent)
+        compose.onNodeWithTag("composer-field").assertTextEquals("")
+    }
+
+    @Test fun withoutASendPathTheCardOnlyFills() {
+        composer()
+        compose.onNodeWithTag("composer-field").performTouchInput { down(center) }
+        waitTag("voice-listen")
+        val session = voice.sessions.single()
+        Thread.sleep(700)
+        val card = compose.onNodeWithTag("voice-listen").fetchSemanticsNode().boundsInRoot
+        val dy = liftTo(card.height / 2)
+        compose.onNodeWithTag("composer-field").performTouchInput { moveBy(androidx.compose.ui.geometry.Offset(0f, dy)) }
+        compose.onNodeWithText("松开 填入", useUnmergedTree = true).assertExists()
+        compose.onNodeWithTag("composer-field").performTouchInput { up() }
+        compose.waitUntil(5_000) { session.released == 1 }
+        session.out.trySend(SpeechEvent.Final("订明天的票"))
+        session.out.close()
+        waitNoTag("voice-listen")
+        compose.onNodeWithTag("composer-field").assertTextEquals("订明天的票")
     }
 }

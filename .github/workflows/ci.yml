@@ -95,8 +95,9 @@ jobs:
         with:
           cache-provider: basic
       # assembleDebug 验证单测碰不到的打包路径：31MB 的 rootfs、jniLibs 旧式解压、AIDL、Compose。
-      - name: Unit tests and debug build
-        run: ./gradlew :app:testDebugUnitTest :app:assembleDebug --stacktrace
+      # 编译设备测试以检查设置交互等回归用例；这里没有连接设备，不执行 instrumentation。
+      - name: Unit tests, debug build, and device test compilation
+        run: ./gradlew :app:testDebugUnitTest :app:assembleDebug :app:compileDebugAndroidTestKotlin --stacktrace
       - name: Upload test reports
         if: failure()
         uses: actions/upload-artifact@v7

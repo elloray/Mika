@@ -4,6 +4,7 @@ import android.app.PendingIntent;
 import android.content.Intent;
 import android.os.ParcelFileDescriptor;
 import android.os.Bundle;
+import android.os.IBinder;
 import android.view.Surface;
 
 // 运行在 shell 身份(uid 2000)进程里的常驻服务:经无线调试拉起的内置助手。
@@ -98,7 +99,8 @@ interface IMikaShell {
     // 主屏设备准备,与虚拟屏按键白名单分开;凭据只经 Binder 传入,不经 shell 命令行。
     boolean wakeDevice() = 41;
     boolean dismissDeviceKeyguard() = 42;
-    boolean enterDeviceCredential(int kind, in byte[] credential) = 43;
+    // clear=输入前要回删的已有字符数(空框为 0,避免在部分系统上空框 DEL 关掉密码页)
+    boolean enterDeviceCredential(int kind, in byte[] credential, int clear) = 43;
 
     // 同 getAudioMode / setAudioMuted / setAudioMode,作用在 userId 那份用户里的那份(分身、工作资料);
     // userId 是 Mika 自己的用户时等同原来的几个。PLAY_AUDIO 按包 + 用户分开设,两份互不影响
@@ -119,8 +121,19 @@ interface IMikaShell {
     // 0=未发送 1=全部事件已投递 2=投递不确定(可能只输入了前缀)
     int injectAsciiText(int displayId, int taskId, String packageName, String text) = 50;
 
+    // 对 SystemUI 做一次定向点击,用于生物识别优先锁屏页上「用密码解锁」这类回退按钮;不含凭据。
+    boolean revealDeviceCredentialTap(int x, int y) = 51;
+
+    // 通话音频独立于通话控制。0=自动,1=直连运营商音频,2=Android PSTN 重定向。
+    Bundle probeCallAudio(int mode) = 52;
+    // 仅 ACTIVE 运营商通话；owner 每通独立，死亡时停止。下行可读/上行可写的匿名管道均为单声道 PCM16LE。
+    Bundle openCallAudio(int mode, IBinder owner) = 53;
+    void stopCallAudio(IBinder owner) = 54;
+    boolean flushCallAudio(IBinder owner) = 55;
+    Bundle callAudioStats(IBinder owner) = 56;
+
     // 原地改变 Mika 虚拟屏尺寸并替换接收画面的 Surface，保留屏上的任务。
-    boolean resizeDisplay(int displayId, in Surface surface, int width, int height, int dpi) = 51;
+    boolean resizeDisplay(int displayId, in Surface surface, int width, int height, int dpi) = 57;
 
     // 沿用早先定下的销毁事务号;AIDL 要求要么全部方法编号要么都不编号
     void destroy() = 16777114;

@@ -1,0 +1,9 @@
+<resources>
+    <string name="calls_record_brief">Указания для задачи</string>
+    <string name="calls_record_goal">Желаемый результат</string>
+    <string name="calls_record_questions">Что спросить</string>
+    <string name="calls_record_context">Контекст</string>
+    <string name="calls_record_constraints">Ограничения обещаний и действий</string>
+    <string name="calls_record_reuse">Создать новую задачу с этими указаниями</string>
+    <string name="calls_record_result_unconfirmed">Звонок завершён. Проверьте диалог, чтобы подтвердить результат. Отметка об обработке не означает достижения цели.</string>
+</resources>

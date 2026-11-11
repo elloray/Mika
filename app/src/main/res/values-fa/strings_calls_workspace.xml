@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="calls_default_sim_settings">سیم‌کارت پیش‌فرض تماس خروجی</string>
+    <string name="calls_device_and_permissions">دستگاه و مجوزها</string>
+    <string name="calls_edit_rule">ویرایش</string>
+    <string name="calls_nav_receive">پاسخ دادن</string>
+    <string name="calls_nav_task">وظیفه تماس</string>
+    <string name="calls_pause_enable_first">برای توقف موقت، ابتدا پاسخ خودکار را روشن کنید.</string>
+    <string name="calls_rule_delay_summary">تأخیر پاسخ: %1$d ثانیه</string>
+    <string name="calls_rule_pause">توقف موقت</string>
+    <string name="calls_rule_scope">چه کسانی را هوش مصنوعی پاسخ می‌دهد</string>
+    <string name="calls_sim_ask_each_time">بدون سیم‌کارت ترجیحی</string>
+    <string name="calls_task_back_to_edit">بازگشت به ویرایش</string>
+    <string name="calls_task_confirm_dial">تأیید و شماره‌گیری</string>
+    <string name="calls_task_confirm_note">Mika از این خلاصه برای این تماس استفاده می‌کند. شماره‌گیری از سیم‌کارت انتخاب‌شده استفاده می‌کند و ممکن است هزینه اپراتور و صدای بلادرنگ را به همراه داشته باشد.</string>
+    <string name="calls_task_constraints">آنچه نباید وعده داده شود</string>
+    <string name="calls_task_context">زمینه اضافی</string>
+    <string name="calls_task_filled">اضافه شد</string>
+    <string name="calls_task_goal">این تماس باید به چه نتیجه‌ای برسد؟ (الزامی)</string>
+    <string name="calls_task_goal_example">برای مثال، موجود بودن در روز جمعه را تأیید کنید و قیمت را یادداشت کنید.</string>
+    <string name="calls_task_limit">%1$d / %2$d نویسه</string>
+    <string name="calls_task_number_hint">یک شماره تلفن معمولی با ۷–۱۵ رقم وارد کنید.</string>
+    <string name="calls_task_one_off">این خلاصه فقط برای همین تماس اعمال می‌شود. تماس و خلاصه آن را در تاریخچه پیدا کنید.</string>
+    <string name="calls_task_optional">اختیاری</string>
+    <string name="calls_task_pick_sim">برای این تماس یک سیم‌کارت انتخاب کنید</string>
+    <string name="calls_task_questions">سؤالاتی که باید پرسید</string>
+    <string name="calls_task_questions_hint">در هر خط یک سؤال</string>
+    <string name="calls_task_questions_limit">حداکثر %1$d سؤال، هر کدام %2$d نویسه.</string>
+    <string name="calls_task_replace_action">جایگزینی پیش‌نویس</string>
+    <string name="calls_task_replace_note">این کار پیش‌نویس تماس فعلی را با وظیفه‌ای از تاریخچه جایگزین می‌کند. شماره‌گیری نمی‌کند.</string>
+    <string name="calls_task_replace_title">این پیش‌نویس جایگزین شود؟</string>
+    <string name="calls_task_review">بررسی وظیفه تماس</string>
+    <string name="calls_task_review_blocked">برای شماره‌گیری، گوشی باید آماده و بدون کار باشد و سیم‌کارتی انتخاب شده باشد.</string>
+    <string name="calls_task_sim_override_summary">این تماس: %1$s · ترجیحی: %2$s</string>
+    <string name="calls_voice_settings">صدا</string>
+</resources>

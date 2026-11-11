@@ -98,4 +98,6 @@
     <string name="timeline_running">Em execução</string>
     <string name="timeline_step_limit">Passos</string>
     <string name="timeline_step_limit_value">%1$d / %2$d</string>
+    <string name="timeline_token_budget">Orçamento de tokens</string>
+    <string name="timeline_token_budget_value">%1$s / %2$s</string>
 </resources>

@@ -101,6 +101,8 @@ enum class FailKind {
     /** 操作保护触发,安全停止。 */
     Guard,
     StepLimit,
+    /** 每任务或每服务商的 Token 预算用完；不再发收尾请求。 */
+    TokenLimit,
     /** 运行环境不满足或出错(手机操作助手、无障碍、没配模型、虚拟屏断开等)。 */
     Environment,
     /**

@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="calls_device_allow_notifications">允许通知</string>
+    <string name="calls_device_allow_phone">允许电话权限</string>
+    <string name="calls_device_helper">内置助手</string>
+    <string name="calls_device_helper_connected">已连接</string>
+    <string name="calls_device_notifications">电话通知</string>
+    <string name="calls_device_notifications_app_off">应用通知已关闭</string>
+    <string name="calls_device_notifications_calls_off">AI 电话通知频道已关闭</string>
+    <string name="calls_device_notifications_permission_missing">尚未授予通知权限</string>
+    <string name="calls_device_notifications_standby_off">后台待命通知频道已关闭</string>
+    <string name="calls_device_notifications_unknown">无法读取通知状态</string>
+    <string name="calls_device_open_app_settings">打开应用权限设置</string>
+    <string name="calls_device_pair_helper">连接内置助手</string>
+    <string name="calls_device_permission_granted">已允许</string>
+    <string name="calls_device_phone_permissions">电话权限</string>
+    <string name="calls_device_phone_permissions_note">需要允许读取通话状态和拨打电话</string>
+    <string name="calls_device_ready_to_test">可手动验证双向音频</string>
+    <string name="calls_device_system_settings_failed">无法打开系统设置。请从 Android 设置进入本应用的详情页。</string>
+    <string name="calls_background_auto_off">自动接听已关闭</string>
+    <string name="calls_background_battery">电池与后台活动</string>
+    <string name="calls_background_battery_managed">Android 正在应用电池优化</string>
+    <string name="calls_background_battery_restricted">Android 显示后台活动受限</string>
+    <string name="calls_background_battery_unknown">无法读取电池策略</string>
+    <string name="calls_background_battery_unrestricted">Android 显示已豁免电池优化</string>
+    <string name="calls_background_lock_screen_note">如需锁屏时自动接听，请允许电话通知在锁屏显示。如果后台待命经常停止，请检查电池和后台限制。服务运行中仍需单独验证锁屏接听。</string>
+    <string name="calls_background_not_running">未运行 · 仅应用可见且解锁时可自动接听</string>
+    <string name="calls_background_open_battery">打开电池设置</string>
+    <string name="calls_background_running">正在运行</string>
+    <string name="calls_background_service">来电后台待命</string>
+    <string name="calls_background_settings">后台与锁屏</string>
+    <string name="calls_background_start">启动后台待命</string>
+    <string name="calls_background_starting">正在启动…</string>
+    <string name="calls_device_locked_dial_pending">锁屏拨号待命</string>
+    <string name="calls_device_locked_dial_remaining">请在 %1$d 秒内锁屏</string>
+    <string name="calls_device_locked_dial_preparing">正在准备锁屏拨号</string>
+    <string name="calls_device_locked_dial_cancel">取消</string>
+</resources>

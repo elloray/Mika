@@ -13,6 +13,7 @@ import com.wangzan101.mika.core.verify.Verifier
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.async
 import kotlinx.coroutines.test.TestScope
+import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.Json
@@ -108,6 +109,21 @@ class AgentLoopTakeoverTest {
         val verifierPrompt = checker.requests.first().joinToString("\n") { m -> m.parts.filterIsInstance<Part.Text>().joinToString { it.text } }
         assertTrue(verifierPrompt, "hand_to_user(payment) 接管被跳过" in verifierPrompt)
         assertTrue(end.toString(), end is TaskState.Succeeded && !end.verified && end.unconfirmed.isNotEmpty())
+    }
+
+    @Test fun waitingPastTheOldTimeoutKeepsTheSameRunAlive() = runTest {
+        val main = FakeModel(tools(takeover()), finish())
+        val l = AgentLoop(main, toolDispatcher(FakeScreen()), "BASE")
+        val run = async { l.run("t") }
+        advanceUntilIdle()
+        val waiting = l.state.value
+        advanceTimeBy(16 * 60_000L)
+        assertTrue(run.isActive)
+        assertEquals(waiting, l.state.value)
+        assertTrue(main.requests.size == 1)
+        l.resumeAfterTakeover(HandBack(HandBackOutcome.complete))
+        com.wangzan101.mika.core.testing.assertAnswered(ANSWER, run.await())
+        assertEquals("complete", main.takeoverResult().s("outcome"))
     }
 
     @Test fun timeoutResultShape() = runTest {

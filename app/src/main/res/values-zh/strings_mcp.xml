@@ -33,6 +33,12 @@
     <string name="mcp_advanced_hide">收起高级设置</string>
     <string name="mcp_advanced_sub">访问开关、令牌与远程唤醒</string>
     <string name="mcp_port_detail">端口 %1$d。手机重启后 USB 访问会关闭。</string>
+    <string name="mcp_port_title">监听端口</string>
+    <string name="mcp_port_dialog_sub">默认端口被手机上其他服务占用时换一个。改完立即生效，电脑按新端口重新连接。</string>
+    <string name="mcp_port_default">默认（%1$d）</string>
+    <string name="mcp_port_custom">端口</string>
+    <string name="mcp_port_invalid">请输入 1024 到 65535 的整数。</string>
+    <string name="mcp_port_apply">应用</string>
     <string name="mcp_network_scope">允许 Wi-Fi 和私有网络访问，每次请求都需要令牌。</string>
     <string name="mcp_cli_install">1. 准备电脑端工具</string>
     <string name="mcp_cli_install_sub">把安装指引发给电脑上的 AI 助手，或在电脑按指南手动安装。</string>

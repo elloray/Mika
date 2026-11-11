@@ -6,15 +6,41 @@
     <string name="chat_greeting_evening">Good evening</string>
     <string name="chat_greeting_night">Up late</string>
     <string name="chat_empty_prompt">What should Mika do?</string>
+    <string name="chat_example_github_star">Open https://github.com/wangzan101/mika and star the project.</string>
     <string name="chat_example_follow">Open X, search for Wang Zan (@wangzan101), and follow the account.</string>
     <string name="chat_example_group_summary">Open WhatsApp and summarize today\'s unread messages, highlighting anything that needs my reply.</string>
-    <string name="chat_example_jobs">Open LinkedIn, find five remote AI product manager jobs, and compare their requirements.</string>
-    <string name="chat_example_multi_step">Find three highly rated wireless earbuds under $100 on Amazon and compare their pros and cons.</string>
     <string name="chat_example_alarms">Set alarms for 9:40, 9:50 and 10:00 tomorrow morning.</string>
-    <string name="chat_example_ai_apps">Find the AI apps installed on my phone, ask each one what it does best, and compare their answers.</string>
+    <string name="chat_example_replace_title">Replace current draft?</string>
+    <string name="chat_example_replace_body">This recommendation will replace what you’ve already typed.</string>
+    <string name="chat_example_replace_action">Replace draft</string>
+    <string name="recommendations_title">Recommended tasks</string>
+    <string name="recommendations_drag">Drag to reorder</string>
+    <string name="recommendations_drag_hint">Drag the handle to change the order.</string>
+    <string name="recommendations_move_up">Move up</string>
+    <string name="recommendations_move_down">Move down</string>
+    <string name="recommendations_sub">Manage the tasks and prompts on the home screen</string>
+    <string name="recommendations_add">Add recommended task</string>
+    <string name="recommendations_edit">Edit recommended task</string>
+    <string name="recommendations_empty">No recommended tasks</string>
+    <string name="recommendations_empty_sub">Added tasks appear on a new chat</string>
+    <string name="recommendations_title_label">Title</string>
+    <string name="recommendations_prompt_label">Prompt</string>
+    <string name="recommendations_delete">Delete</string>
+    <string name="recommendations_delete_title">Delete this recommended task?</string>
+    <string name="recommendations_delete_body">It will no longer appear on the home screen.</string>
+    <string name="recommendations_save_failed">Could not save. Try again.</string>
+    <string name="recommendations_title_required">Enter a title</string>
+    <string name="recommendations_prompt_required">Enter a prompt</string>
+    <string name="recommendations_too_long">The title or prompt is too long</string>
+    <string name="recommendations_too_many">You can save up to %1$d recommended tasks</string>
+    <string name="recommendations_unreadable">Saved recommended tasks could not be read, so they cannot be changed yet.</string>
+    <string name="recommendations_reset">Clear and start over</string>
+    <string name="recommendations_reset_body">The unreadable file will be replaced with an empty list.</string>
+    <string name="recommendations_footer">On a new chat, tap a task to put its prompt in the input. It is not sent automatically.</string>
+    <string name="share_draft_replace_body">This shared content will replace your current draft.</string>
     <string name="chat_working_on">Working in %1$s</string>
     <string name="chat_working">Working</string>
-    <string name="share_draft_failed">Couldn’t add this share to a new conversation</string>
+    <string name="share_draft_failed">Couldn’t add this share to the conversation</string>
     <string name="chat_wait_previous_task">Starts after the previous task finishes</string>
     <string name="chat_wait_unlock">Waiting for you to unlock</string>
     <string name="chat_waiting_for_you">Waiting for you</string>
@@ -43,6 +69,10 @@
     <string name="chat_continue">Continue</string>
     <string name="chat_not_done">Not finished</string>
     <string name="chat_stopped">Stopped.</string>
+    <string name="chat_resume_checkpoint">Resume from checkpoint</string>
+    <string name="chat_restart_task">Start over</string>
+    <string name="chat_resume_request">Continue from the checkpoint: %1$s</string>
+    <string name="chat_restart_request">Restart from the beginning: %1$s</string>
     <string name="chat_view_source">View source</string>
     <string name="chat_open">Open</string>
     <string name="chat_attach_rejected">Couldn’t add: %1$s (each file must be under 200 MB)</string>
@@ -65,11 +95,47 @@
         <item quantity="one">%1$d scheduled task in this chat will be kept.</item>
         <item quantity="other">%1$d scheduled tasks in this chat will be kept.</item>
     </plurals>
+    <string name="drawer_select">Select</string>
+    <string name="drawer_selected_count">%1$d selected</string>
+    <string name="drawer_select_all">Select all</string>
+    <string name="drawer_select_none">Clear</string>
+    <string name="drawer_delete_many_title">Delete selected chats?</string>
+    <plurals name="drawer_delete_many_body">
+        <item quantity="one">Will delete %1$d chat and the files in it.</item>
+        <item quantity="other">Will delete %1$d chats and the files in them.</item>
+    </plurals>
+    <plurals name="drawer_delete_many_running">
+        <item quantity="one">%1$d running task will be stopped.</item>
+        <item quantity="other">%1$d running tasks will be stopped.</item>
+    </plurals>
+    <plurals name="drawer_delete_many_schedules">
+        <item quantity="one">%1$d scheduled task in them will be kept.</item>
+        <item quantity="other">%1$d scheduled tasks in them will be kept.</item>
+    </plurals>
+    <plurals name="drawer_delete_progress">
+        <item quantity="one">Deleting %1$d chat…</item>
+        <item quantity="other">Deleting %1$d chats…</item>
+    </plurals>
+    <plurals name="drawer_delete_done">
+        <item quantity="one">Deleted %1$d chat.</item>
+        <item quantity="other">Deleted %1$d chats.</item>
+    </plurals>
+    <plurals name="drawer_delete_partial">
+        <item quantity="one">Deleted %1$d chat, %2$d failed.</item>
+        <item quantity="other">Deleted %1$d chats, %2$d failed.</item>
+    </plurals>
     <string name="drawer_actions">Chat options</string>
     <string name="drawer_rename">Rename</string>
     <string name="drawer_rename_title">Rename chat</string>
     <string name="drawer_pinned">Pinned</string>
     <string name="drawer_pinned_mark">Pinned</string>
+    <string name="drawer_search_hint">Search chats</string>
+    <string name="drawer_search_results">Search results</string>
+    <string name="drawer_search_empty">No chats match “%1$s”</string>
+    <string name="drawer_search_empty_hint">Searches titles and chat text</string>
+    <string name="drawer_searching">Searching…</string>
+    <string name="drawer_search_clear">Clear search</string>
+    <string name="drawer_search_truncated">Showing the first %1$d results</string>
     <string name="settings_title">Settings</string>
     <string name="chat_unconfirmed">Couldn’t confirm: %1$s</string>
     <string name="chat_unverified">Done, but couldn’t verify</string>
@@ -96,6 +162,7 @@
     </plurals>
     <string name="attach_add">Add attachment</string>
     <string name="attach_close">Close attachment panel</string>
+    <string name="attach_blocked_running">Can’t add attachments while a task is running — switch to queue mode to attach first</string>
     <string name="attach_camera">Camera</string>
     <string name="attach_album">Photos</string>
     <string name="attach_files">Files</string>
@@ -147,6 +214,10 @@
     <string name="chat_branch_attachments_skipped">Not all attachments were copied</string>
     <string name="chat_branch_retry">Ask again from here</string>
     <string name="chat_branch_attachments_readd">Re-add the attachments you want to include</string>
+    <string name="chat_attach_unavailable">Couldn’t add: %1$s. Check that the files are available and within the size limit.</string>
+    <string name="chat_retry_missing">%1$s: file missing</string>
+    <string name="chat_retry_limit">%1$s: copy limit reached</string>
+    <string name="chat_retry_failed">%1$s: could not copy</string>
     <string name="chat_select_hint">Press and hold the text to select it</string>
     <string name="chat_quote_remove">Remove quote</string>
     <string name="chat_quoting_mika">Quoting Mika: %1$s</string>

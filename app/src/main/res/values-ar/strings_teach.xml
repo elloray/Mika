@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="teach_title">علّم Mika</string>
+    <string name="teach_menu">علّم Mika</string>
+    <string name="teach_goal_label">الهدف</string>
+    <string name="teach_goal_hint">ماذا يجب أن تتذكر Mika؟ جملة واحدة.</string>
+    <string name="teach_disclosure">تبقى الخطوات على هذا الهاتف وفقط بعد الضغط على بدء العرض. إذا كان هناك نموذج مضبوط، فإن إنشاء المهارة يرسل ملخصا منزوع الحساسية للهدف والخطوات إلى ذلك النموذج. كلمات السر والرموز وبيانات الدفع لا تُرسل. إذا لم يوجد نموذج، يُكتب المسودة على الهاتف ولا يُرفع شيء. لا تُستخدم قبل أن تقبلها، ولم يُثبت نجاح تجربة تشغيل.</string>
+    <string name="teach_continue">متابعة</string>
+    <string name="teach_ready_body">Mika تشاهد فقط ولا تشغّل الهاتف. يمكنك الإيقاف المؤقت أو الإنهاء أو التجاهل. لا يُسجل شيء قبل الضغط على بدء العرض.</string>
+    <string name="teach_start">بدء العرض</string>
+    <string name="teach_learning">تتعلم الآن</string>
+    <string name="teach_paused">متوقف مؤقتا</string>
+    <string name="teach_pause">إيقاف مؤقت</string>
+    <string name="teach_resume">متابعة العرض</string>
+    <string name="teach_end">إنهاء العرض</string>
+    <string name="teach_discard">تجاهل</string>
+    <string name="teach_discard_body">تجاهل هذا العرض وحذف الخطوات المحفوظة؟</string>
+    <string name="teach_review">مراجعة</string>
+    <string name="teach_correct">تصحيح هذه الخطوة</string>
+    <string name="teach_clarify">ماذا تعني هذه الخطوة؟</string>
+    <string name="teach_remove">حذف</string>
+    <string name="teach_generate">إنشاء مسودة</string>
+    <string name="teach_busy">هناك مهمة قيد التشغيل. انتظر حتى تنتهي قبل التعليم.</string>
+    <string name="teach_need_a11y">فعّل إمكانية الوصول قبل العرض. بدونها لا ترى Mika اللمسات.</string>
+    <string name="teach_interrupted">توقف العرض لأن التطبيق أعيد تشغيله أو أُغلقت إمكانية الوصول. لا يُسجل شيء حتى تتابع.</string>
+    <string name="teach_need_goal">اكتب الهدف أولا.</string>
+    <string name="teach_secret_goal">يبدو هذا الهدف كلمة سر أو رمزا، لذلك لم يُحفظ.</string>
+    <string name="teach_draft_failed">تعذر كتابة المسودة. الخطوات ما زالت هنا.</string>
+    <string name="teach_draft_ready">مسودة بانتظارك في الذاكرة والمهارات. لا تُستخدم قبل القبول، ولم يُثبت نجاح تجربة تشغيل.</string>
+    <string name="teach_open_drafts">عرض المسودات</string>
+    <string name="teach_no_steps">لم تُحفظ أي خطوة.</string>
+    <string name="teach_blocked_task">Mika تتعلم الآن، لذلك لم تبدأ هذه المهمة.</string>
+    <string name="teach_channel">تعليم</string>
+    <string name="teach_sensitive_note">لم يُحفظ الإدخال الحساس.</string>
+    <string name="teach_insufficient_note">معلومات الواجهة غير كافية. هذا ليس إجراء بالإحداثيات.</string>
+    <string name="teach_notification">Mika لا تشغّل الهاتف.</string>
+    <string name="teach_no_visible">تعذر إظهار شريط التعلم، لذلك لم يبدأ التسجيل. إذن الإشعارات غير مطلوب. يجب أن تظهر طبقة إمكانية الوصول وفيها إيقاف مؤقت وإنهاء.</string>
+    <string name="teach_watch_lost">اختفى شريط التعلم، لذلك توقف العرض. لم يعد يُسجل شيء.</string>
+    <string name="teach_shelf_expand">إظهار علّم Mika</string>
+    <string name="teach_shelf_collapse">إخفاء علّم Mika</string>
+</resources>

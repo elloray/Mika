@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="teach_title">教 Mika</string>
+    <string name="teach_menu">教 Mika</string>
+    <string name="teach_goal_label">目標</string>
+    <string name="teach_goal_hint">希望 Mika 記住什麼？一句話。</string>
+    <string name="teach_disclosure">點「開始示範」之後，步驟只留在這台手機上。如果已經配置了模型，生成技能時會把目標和步驟的脫敏摘要發給當前模型，不含密碼、驗證碼和支付內容。沒有配置模型時，草稿只在手機上按步驟整理，不會上傳。草稿在收下之前不會被調用，也還沒有試跑成功。</string>
+    <string name="teach_continue">繼續</string>
+    <string name="teach_ready_body">Mika 只會看，不會操作手機。可以暫停、結束或放棄。點「開始示範」之前不會記錄。</string>
+    <string name="teach_start">開始示範</string>
+    <string name="teach_learning">正在學習</string>
+    <string name="teach_paused">已暫停</string>
+    <string name="teach_pause">暫停</string>
+    <string name="teach_resume">繼續示範</string>
+    <string name="teach_end">結束示範</string>
+    <string name="teach_discard">放棄</string>
+    <string name="teach_discard_body">放棄這次示範，並刪除已經留下的步驟？</string>
+    <string name="teach_review">覆盤</string>
+    <string name="teach_correct">改正這一步</string>
+    <string name="teach_clarify">這一步是什麼意思？</string>
+    <string name="teach_remove">刪除</string>
+    <string name="teach_generate">生成待確認技能</string>
+    <string name="teach_busy">有任務在進行。等它結束再教。</string>
+    <string name="teach_need_a11y">先打開無障礙，否則 Mika 看不到你的操作。</string>
+    <string name="teach_interrupted">示範已停下（應用重啟或無障礙已關）。點「繼續示範」之前不會記錄。</string>
+    <string name="teach_need_goal">先寫一句目標。</string>
+    <string name="teach_secret_goal">這句話像密碼或驗證碼，沒有保存。</string>
+    <string name="teach_draft_failed">沒能寫成草稿。步驟還在。</string>
+    <string name="teach_draft_ready">草稿在「記憶與技能」的待確認裡。收下之前不會被調用，也還沒有試跑成功。</string>
+    <string name="teach_open_drafts">去查看草稿</string>
+    <string name="teach_no_steps">沒有留下步驟。</string>
+    <string name="teach_blocked_task">正在跟你學習，這次任務沒有開始。</string>
+    <string name="teach_channel">教 Mika</string>
+    <string name="teach_sensitive_note">敏感輸入沒有保存。</string>
+    <string name="teach_insufficient_note">介面資訊不足，這不是座標操作。</string>
+    <string name="teach_notification">Mika 沒有在操作手機。</string>
+    <string name="teach_no_visible">螢幕上加不上「正在學習」，所以沒有開始記錄。不需要通知權限，但無障礙浮層必須能顯示，並且能暫停或結束。</string>
+    <string name="teach_watch_lost">「正在學習」的浮層不見了，示範已停下，不再記錄。</string>
+    <string name="teach_shelf_expand">展開教 Mika</string>
+    <string name="teach_shelf_collapse">收起教 Mika</string>
+</resources>

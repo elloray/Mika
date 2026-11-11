@@ -4,6 +4,7 @@ import com.wangzan101.mika.core.workspace.SandboxTree
 import android.content.Context
 import android.net.Uri
 import android.provider.OpenableColumns
+import android.util.Log
 import com.wangzan101.mika.core.workspace.GatedFile
 import com.wangzan101.mika.core.workspace.SandboxPaths
 import com.wangzan101.mika.core.workspace.WorkspaceFileGate
@@ -27,6 +28,7 @@ object Attachments {
     const val WORKSPACE_MAX = 4L shl 30
     private const val CHECK_EVERY = 16L shl 20
     private const val MAX_NAME = 120
+    private const val TAG = "MikaAttachments"
 
     /** 去掉路径分隔符、控制字符和格式字符,保留中文与空格,不超过 120 字;什么都不剩时叫 attachment。 */
     fun safeName(display: String): String {
@@ -66,7 +68,11 @@ object Attachments {
                 copyOne(workspace, gate, base, { roomLeft(freeBytes, workspaceBytes) }) {
                     context.contentResolver.openInputStream(uri) ?: throw IOException("Cannot open attachment")
                 }.use { it.entry() }
-            } catch (e: CancellationException) { throw e } catch (e: Exception) { null }
+            } catch (e: CancellationException) { throw e } catch (e: Exception) {
+                // 之前这里把异常吞掉、只记名字,上传失败的原因用户和日志都看不到;记下来好定位是哪一步(读不到/超限/空间不足)。
+                Log.w(TAG, "Attachment import failed for \"$base\" (${e.javaClass.simpleName}: ${e.message})")
+                null
+            }
             if (result == null) rejected += base else added += result
         }
         ImportResult(added, rejected)

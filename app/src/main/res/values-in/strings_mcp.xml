@@ -33,6 +33,12 @@
     <string name="mcp_advanced_hide">Sembunyikan pengaturan lanjutan</string>
     <string name="mcp_advanced_sub">Sakelar akses, token, dan bangun jarak jauh</string>
     <string name="mcp_port_detail">Port %1$d. Akses USB mati setelah ponsel dimulai ulang.</string>
+    <string name="mcp_port_title">Port pendengaran</string>
+    <string name="mcp_port_dialog_sub">Ubah jika port bawaan dipakai layanan lain di ponsel ini. Berlaku langsung; komputer tersambung ulang lewat port baru.</string>
+    <string name="mcp_port_default">Bawaan (%1$d)</string>
+    <string name="mcp_port_custom">Port</string>
+    <string name="mcp_port_invalid">Masukkan angka bulat dari 1024 sampai 65535.</string>
+    <string name="mcp_port_apply">Terapkan</string>
     <string name="mcp_network_scope">Izinkan akses pada Wi-Fi dan jaringan pribadi. Setiap permintaan memerlukan token.</string>
     <string name="mcp_cli_install">1. Siapkan komputer Anda</string>
     <string name="mcp_cli_install_sub">Kirim panduan instalasi ke AI di komputer Anda, atau ikuti sendiri di komputer.</string>

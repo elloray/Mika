@@ -528,6 +528,11 @@ class CapsuleController(
      * Mika 问你时作为回答,办完后在同一个对话里接着说,空闲时接着最近的对话或开新对话;后两种之后卡片跟着那个对话的任务看回答。
      */
     private fun send() {
+        val app = context.applicationContext as? com.wangzan101.mika.MikaApp
+        if (app != null && app.teachReady && app.teach.blocksTasks()) {
+            android.widget.Toast.makeText(context, com.wangzan101.mika.i18n.tr(com.wangzan101.mika.R.string.teach_blocked_task), android.widget.Toast.LENGTH_LONG).show()
+            return
+        }
         val text = inputUi.draft.trim()
         val shot = inputUi.screen?.shot
         val c = card ?: return
@@ -673,6 +678,11 @@ class CapsuleController(
         TaskService.start(context, text, conversationId)
         follow = conversationId
         idle = idle?.let { CardView.Chat(conversationId, title = if (it.target == conversationId) it.title else ScreenCopy.plain(text)) }
+    }
+
+    /** 示范开始后收起卡片，免得盖住用户要指的地方。 */
+    fun yieldToTeaching() {
+        if (expanded) collapse()
     }
 
     /** 点开空闲图标:先读用户此刻在哪个对话([loadIdle]),再展开(来回由 [updateThread] 读)。 */
@@ -1306,6 +1316,14 @@ class CapsuleController(
         }
         override fun closeKeptPage() {
             keeper.close(KeptPageClose.User)
+            collapse()
+        }
+        override fun teach() {
+            val hint = inputUi.draft.trim().takeIf { it.isNotEmpty() }
+            val intent = com.wangzan101.mika.task.TaskService.openAppIntent(context)
+                .putExtra(com.wangzan101.mika.ui.MainActivity.EXTRA_OPEN_TEACH, true)
+            if (hint != null) intent.putExtra(com.wangzan101.mika.ui.MainActivity.EXTRA_TEACH_GOAL, hint)
+            runCatching { context.startActivity(intent) }
             collapse()
         }
         override fun hideCapsule() {

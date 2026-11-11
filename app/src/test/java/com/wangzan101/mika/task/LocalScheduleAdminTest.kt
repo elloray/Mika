@@ -18,6 +18,8 @@ class LocalScheduleAdminTest {
         delete = { id -> calls += "delete:$id" },
         changeTime = { id, atMs -> calls += "time:$id:$atMs" },
         executeNow = { id -> calls += "run:$id" },
+        editPlan = { thread, id, change -> calls += "edit:$thread:$id";
+            com.wangzan101.mika.core.trigger.EditedSchedule(change(plans.single { it.id == id }), com.wangzan101.mika.core.trigger.Scheduled(true)) },
     )
 
     @Test fun listsOnlyPlansFromTheCurrentConversation() {
@@ -64,5 +66,12 @@ class LocalScheduleAdminTest {
         assertTrue(calls.isEmpty())
         assertTrue(admin.remove("thread-b", first.id))
         assertEquals(listOf("delete:plan-a"), calls)
+    }
+
+    @Test fun editDoesNotReachTheRuntimeForAForeignPlan() {
+        assertEquals(null, admin.edit("thread-a", second.id) { error("must not edit a foreign plan") })
+        assertTrue(calls.isEmpty())
+        assertEquals(true, admin.edit("thread-a", first.id) { it.copy(goal = "changed") }?.scheduled?.onTime)
+        assertEquals(listOf("edit:thread-a:plan-a"), calls)
     }
 }

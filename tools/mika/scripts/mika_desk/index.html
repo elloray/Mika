@@ -7,6 +7,7 @@
     <title>Mika task desk</title>
     <link rel="icon" href="/mika-logo.png" />
     <link rel="stylesheet" href="/desk.css" />
+    <script defer src="/notifications.js"></script>
     <script defer src="/desk.js"></script>
   </head>
   <body>
@@ -83,6 +84,11 @@
                 <option value="en" lang="en">English</option>
               </select>
             </div>
+            <label class="notification-setting" for="notifications">
+              <span data-i18n="desktopAlerts">Desktop notifications</span>
+              <input type="checkbox" id="notifications" aria-describedby="notification-hint" />
+            </label>
+            <p id="notification-hint" role="status"></p>
             <div class="device-actions">
               <span id="updated"></span>
               <button id="refresh" type="button" data-i18n="refreshNow">Update now</button>

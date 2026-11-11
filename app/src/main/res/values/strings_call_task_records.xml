@@ -1,0 +1,9 @@
+<resources>
+    <string name="calls_record_brief">Task brief</string>
+    <string name="calls_record_goal">Desired outcome</string>
+    <string name="calls_record_questions">Questions to ask</string>
+    <string name="calls_record_context">Background</string>
+    <string name="calls_record_constraints">Limits on promises and actions</string>
+    <string name="calls_record_reuse">Use as a new task</string>
+    <string name="calls_record_result_unconfirmed">The call ended. Check the transcript to confirm the outcome; marking it handled does not mean the goal was achieved.</string>
+</resources>

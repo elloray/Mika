@@ -103,14 +103,28 @@ class AgentLoopLightTest {
         assertTrue((sink.list.filterIsInstance<RunEvent.ToolResult>().first { it.tool == "phone_tap" }).resultJson.contains("confirmation_required"))
     }
 
-    @Test fun permanentLightErrorTurnsRoutingOff() = runTest {
-        val main = Named("main", FakeModel(*Array(6) { tools(call("phone_observe")) }, finish()))
-        val light = Named("light", FakeModel(com.wangzan101.mika.core.model.ModelError.Auth()))
-        val sink = Events()
-        val r = loop(main, light, sink, SendScreen()).run("t")
-        assertTrue(r is TaskState.Succeeded)
+    @Test fun permanentLightErrorsTurnRoutingOffIncludingTheDailyBudget() = runTest {
+        for (error in listOf(
+            com.wangzan101.mika.core.model.ModelError.Auth(),
+            com.wangzan101.mika.core.model.ModelError.DailyBudgetExceeded("轻量服务商", 10_000, 10_000),
+        )) {
+            val main = Named("main", FakeModel(*Array(6) { tools(call("phone_observe")) }, finish()))
+            val light = Named("light", FakeModel(error))
+            val sink = Events()
+            val r = loop(main, light, sink, SendScreen()).run("t")
+            assertTrue("$error: $r", r is TaskState.Succeeded)
+            assertEquals(1, light.requests.size)
+            assertEquals(1, sink.list.filterIsInstance<RunEvent.ModelReply>().count { it.role == "light_rejected" })
+        }
+    }
+
+    @Test fun taskBudgetExhaustionDoesNotFallBackFromLightToMain() = runTest {
+        val main = Named("main", FakeModel(tools(call("phone_observe")), tools(call("phone_observe")), finish()))
+        val light = Named("light", FakeModel(com.wangzan101.mika.core.model.ModelError.TaskBudgetExceeded(5, 5)))
+        val end = loop(main, light).run("t")
+        assertTrue("$end", end is TaskState.Failed && end.kind == FailKind.TokenLimit)
         assertEquals(1, light.requests.size)
-        assertEquals(1, sink.list.filterIsInstance<RunEvent.ModelReply>().count { it.role == "light_rejected" })
+        assertEquals("不能用主模型继续消耗同一任务预算", 2, main.requests.size)
     }
 
     @Test fun otherModelsThinkingAndOpaqueAreNotSentAcross() = runTest {

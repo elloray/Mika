@@ -25,6 +25,7 @@ enum class AppLanguage(val tag: String?, val speechTag: String?) {
     SimplifiedChinese("zh-Hans", "zh-CN"),
     TraditionalChinese("zh-Hant", "zh-TW"),
     Arabic("ar", "ar-MA"),
+    Persian("fa", "fa-IR"),
     English("en", "en-US"),
     Japanese("ja", "ja-JP"),
     Korean("ko", "ko-KR"),

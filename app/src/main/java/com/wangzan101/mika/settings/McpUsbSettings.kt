@@ -1,6 +1,7 @@
 package com.wangzan101.mika.settings
 
 import com.wangzan101.mika.core.mcp.McpUsb
+import com.wangzan101.mika.core.remote.RemoteOwnership
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -30,6 +31,7 @@ class McpUsbSettings(
     private val bootId: () -> String,
     private val infoFile: () -> File?,
     private val random: SecureRandom = SecureRandom(),
+    migrateTaskOwner: (String) -> Unit = {},
 ) {
     private val file = File(dir, "mcp-usb.json")
     private val _enabled = MutableStateFlow(false)
@@ -40,8 +42,10 @@ class McpUsbSettings(
     init {
         val o = runCatching { Json.parseToJsonElement(file.readText()) as? JsonObject }.getOrNull()
         val boot = (o?.get("boot") as? JsonPrimitive)?.content
-        val t = (o?.get("token") as? JsonPrimitive)?.content
-        if (boot != null && boot == bootId() && t != null && t.length >= MIN_TOKEN) {
+        val t = (o?.get("token") as? JsonPrimitive)?.content?.takeIf { it.length >= MIN_TOKEN }
+        // 旧版用令牌摘要作为归属，在清除上次开机的令牌前先迁移它的任务。
+        if (t != null) migrateTaskOwner(RemoteOwnership.of(t))
+        if (boot != null && boot == bootId() && t != null) {
             token = t
             _enabled.value = true
         } else {

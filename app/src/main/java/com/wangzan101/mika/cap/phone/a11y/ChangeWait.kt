@@ -11,6 +11,8 @@ import com.wangzan101.mika.cap.phone.display.FrameMath
  * - 判「没变」要事件安静且画面稳定,在此之前一直等到 [CAP_MS]。
  * - 到 [CAP_MS] 时不管事件是否还在来、画面是否还在动,都按当时的状态下结论:
  *   控件树或画面与动作前不同就是变了。事件一直不停的页面(进度条、计时器)也不会让动作卡住超过上限。
+ * - 给了备用动作 [fallback] 时:若到 [PROBE_MS] 仍无树或画面变化、且事件安静画面稳定(第一条通道没引起反应),
+ *   就执行一次 [fallback];若它成功发出则从此刻起重新按 [CAP_MS] 等变化,否则继续等完原来的窗口。
  *
  * 只差事件安静时按剩余的安静时间睡,普通页面在最后一个事件之后约 [QUIET_MS] 就能返回。
  * 时钟、等待、取帧都由调用方注入,便于在 JVM 上测。
@@ -18,6 +20,7 @@ import com.wangzan101.mika.cap.phone.display.FrameMath
 internal object ChangeWait {
     const val POLL_MS = 150L
     const val QUIET_MS = 400L
+    const val PROBE_MS = 550L
     const val CAP_MS = 2_500L
     private const val MIN_SLEEP_MS = 10L
 
@@ -26,6 +29,7 @@ internal object ChangeWait {
      * @param quietForMs 距最近一次界面事件过了多久
      * @param treeChanged 控件树指纹是否与动作前不同
      * @param beforeFrame 动作前的亮度格子
+     * @param fallback 第一条通道在 [PROBE_MS] 后仍安静无变化时尝试一次的备用通道;返回 true 表示已发出备用动作
      */
     suspend fun awaitStableChange(
         now: () -> Long,
@@ -34,20 +38,36 @@ internal object ChangeWait {
         quietForMs: () -> Long,
         treeChanged: () -> Boolean,
         beforeFrame: IntArray?,
+        fallback: (suspend () -> Boolean)? = null,
     ): Boolean {
-        val deadline = now() + CAP_MS
+        val start = now()
+        var deadline = start + CAP_MS
+        val probeDeadline = start + PROBE_MS
+        var probePending = fallback != null
         var prev = frame()
         var wait = POLL_MS
         while (true) {
-            sleep(minOf(wait, (deadline - now()).coerceAtLeast(0)))
+            val wake = if (probePending) minOf(deadline, probeDeadline) else deadline
+            sleep(minOf(wait, (wake - now()).coerceAtLeast(0)))
             val cur = frame()
             val quietFor = quietForMs()
             val quiet = quietFor >= QUIET_MS
-            if (quiet && treeChanged()) return true
+            val treeDiff = treeChanged()
+            if (quiet && treeDiff) return true
             val stable = if (prev == null || cur == null) prev == null && cur == null else !FrameMath.differs(prev, cur)
             val frameChanged = FrameMath.differs(beforeFrame, cur)
             if (quiet && stable && frameChanged) return true
-            if (now() >= deadline) return frameChanged || treeChanged()
+            if (treeDiff || frameChanged) probePending = false
+            if (probePending && now() >= probeDeadline) {
+                probePending = false
+                if (quiet && stable && fallback != null && fallback()) {
+                    deadline = now() + CAP_MS
+                    prev = frame()
+                    wait = POLL_MS
+                    continue
+                }
+            }
+            if (now() >= deadline) return frameChanged || treeDiff
             wait = if (quiet) POLL_MS else minOf(POLL_MS, QUIET_MS - quietFor).coerceAtLeast(MIN_SLEEP_MS)
             prev = cur
         }

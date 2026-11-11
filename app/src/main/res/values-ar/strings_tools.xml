@@ -7,6 +7,7 @@
     <string name="tool_set_timer">ضبط مؤقّت</string>
     <string name="tool_show_alarms">عرض المنبّهات</string>
     <string name="tool_add_calendar_event">إضافة حدث إلى التقويم</string>
+    <string name="tool_calendar_bulk_insert">إضافة أحداث إلى التقويم دفعة واحدة</string>
     <string name="tool_set_wheel">تدوير عجلة الاختيار</string>
     <string name="tool_scroll_find">التمرير للعثور على عنصر</string>
     <string name="tool_wait_condition">انتظار تحقق شرط على الشاشة</string>

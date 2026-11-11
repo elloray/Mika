@@ -22,6 +22,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import com.wangzan101.mika.core.trigger.CONDITION_COOLDOWN
 import com.wangzan101.mika.core.trigger.CONDITION_NOT_MET
+import com.wangzan101.mika.core.trigger.CONDITION_PLAN_EDITED
 import com.wangzan101.mika.core.trigger.ConditionNotify
 import com.wangzan101.mika.core.trigger.TriggerDefinition
 import com.wangzan101.mika.core.trigger.TriggerWindow
@@ -148,7 +149,7 @@ fun PlansScreen(context: Context, onBack: () -> Unit, onOpenConversation: (Strin
             newThreadId = plan.threadId,
             onDismiss = { editing = null },
             onSave = { updated ->
-                if (act { TriggerRuntime.schedule(context, updated) }) editing = null
+                if (act { TriggerRuntime.schedule(context, updated, replaceExisting = true) }) editing = null
             },
         )
     }
@@ -177,7 +178,7 @@ private fun PlanRow(plan: TriggerDefinition, last: TriggerWindow?, first: Boolea
             val days = if (plan.calendarDays.isEmpty()) tr(R.string.plans_every_day) else plan.calendarDays.joinToString(tr(R.string.list_sep)) {
                 if (it in 1..7) java.time.DayOfWeek.of(it).getDisplayName(java.time.format.TextStyle.SHORT, uiLocale()) else "?"
             }
-            "$days ${plan.calendarTime} (${plan.calendarZone})"
+            "$days ${plan.calendarClocks().joinToString(tr(R.string.list_sep))} (${plan.calendarZone})"
         }
         plan.intervalMs != null -> trPlural(R.plurals.plans_every_minutes, (plan.intervalMs!! / 60_000).toInt())
         else -> tr(R.string.plans_once)
@@ -212,6 +213,7 @@ private fun windowLabel(w: TriggerWindow): String = when (w.state) {
     TriggerWindowState.Skipped -> when (w.reason) {
         CONDITION_NOT_MET -> tr(R.string.plans_not_met)
         CONDITION_COOLDOWN -> tr(R.string.plans_cooldown)
+        CONDITION_PLAN_EDITED -> tr(R.string.trace_cancelled)
         else -> tr(R.string.plans_unchanged)
     }
     TriggerWindowState.Failed -> tr(R.string.plans_check_failed)

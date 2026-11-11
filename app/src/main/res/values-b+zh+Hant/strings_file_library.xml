@@ -1,0 +1,24 @@
+<resources>
+    <string name="file_library_title">檔案</string>
+    <string name="file_library_search">搜尋檔案名稱</string>
+    <string name="file_library_all">所有對話</string>
+    <string name="file_library_current">目前對話</string>
+    <string name="file_library_sources">所有來源</string>
+    <string name="file_library_input">使用者附件</string>
+    <string name="file_library_output">對話產出</string>
+    <string name="file_library_loading">正在載入檔案…</string>
+    <string name="file_library_empty">找不到檔案</string>
+    <string name="file_library_missing">無法使用</string>
+    <string name="file_library_available">可使用</string>
+    <string name="file_library_open">開啟</string>
+    <string name="file_library_share">分享</string>
+    <string name="file_library_add">加入待傳送欄</string>
+    <string name="file_library_choose">選擇對話</string>
+    <string name="file_library_new">新增對話</string>
+    <string name="file_library_error">無法存取此檔案</string>
+    <string name="file_library_retry">重試</string>
+    <string name="file_library_partial">部分對話無法讀取。</string>
+    <string name="file_library_unknown_time">時間未知</string>
+    <string name="file_library_draft_saved">已加入所選對話的草稿。可以切換時，請切到該對話查看。</string>
+    <string name="file_library_load_failed">無法載入檔案。</string>
+</resources>

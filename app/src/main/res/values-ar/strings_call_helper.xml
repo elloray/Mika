@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="calls_helper_setup_title">مساعد الصوت في Mika</string>
+    <string name="calls_helper_setup_intro">يتولى Android المكالمات العادية. ويستخدم Mika مساعد الصوت للاستماع والتحدث في مكالمات الذكاء الاصطناعي. يتيح تصحيح الأخطاء اللاسلكي تشغيل المساعد أو استعادته من هذا الهاتف دون كمبيوتر. اتصل بشبكة Wi-Fi للإقران؛ ويتطلب الصوت الفوري للذكاء الاصطناعي أيضًا اتصالًا بالإنترنت.</string>
+    <string name="calls_helper_unavailable">لا يمكن إعداد مساعد الصوت على هذا الجهاز.</string>
+    <string name="calls_helper_unavailable_reason">لا يوفر Android الإعدادات اللازمة لتشغيل المساعد هنا. تظل المكالمات العادية متاحة عبر تطبيق الهاتف.</string>
+    <string name="calls_helper_ready">مساعد الصوت متصل</string>
+    <string name="calls_helper_usb_running">مساعد الصوت يعمل · بدأ عبر USB</string>
+    <string name="calls_helper_usb_stopped">توقف مساعد الصوت الذي بدأ عبر USB.</string>
+    <string name="calls_helper_wireless_recovery">أقرنه مرة واحدة على هذا الهاتف لتتمكن من إعادة تشغيله دون كمبيوتر إذا توقف. اتصل بشبكة Wi-Fi للإعداد.</string>
+    <string name="calls_helper_wireless_unavailable">تصحيح الأخطاء اللاسلكي غير متاح على هذا الهاتف.</string>
+    <string name="calls_helper_setup_wireless">إعداد الاستعادة اللاسلكية</string>
+    <string name="calls_helper_hide_usb">إخفاء البديل باستخدام الكمبيوتر</string>
+    <string name="calls_helper_show_usb">البديل باستخدام الكمبيوتر</string>
+    <string name="calls_helper_usb_fallback">إذا تعذر الإعداد اللاسلكي وكان لديك كمبيوتر، فصِل الهاتف بكابل USB ونفّذ هذا الأمر على الكمبيوتر. قد تحتاج إلى تكراره بعد التحديث أو إعادة التشغيل.</string>
+    <string name="calls_helper_wireless_reconnect">إذا توقف المساعد، فاتصل بشبكة Wi-Fi وفعّل تصحيح الأخطاء اللاسلكي إذا كان Android قد أوقفه. أعد الإقران فقط إذا طُلب منك ذلك.</string>
+    <string name="calls_helper_wireless_debugging_body">اتصل بشبكة Wi-Fi وفعّل تصحيح الأخطاء اللاسلكي في خيارات المطوّر. اضغط على «سماح» إذا طلب Android ذلك. ثم ارجع إلى Mika للمتابعة إلى خطوة رمز الإقران.</string>
+    <string name="calls_helper_usb_debugging_body">فعّل تصحيح أخطاء USB في خيارات المطوّر وأكّد ذلك. لا تحتاج إلى كابل للإعداد اللاسلكي. اترك بقية الإعدادات كما هي.</string>
+    <string name="calls_helper_usb_debugging_brief">لا يلزم كابل للإعداد اللاسلكي</string>
+    <string name="calls_helper_connect_body">بعد الإقران، يتصل Mika بمساعد الصوت على هذا الهاتف.</string>
+    <string name="calls_helper_wifi_needed">اتصل بشبكة Wi-Fi لتشغيل مساعد الصوت أو استعادته من خلال تصحيح الأخطاء اللاسلكي.</string>
+    <string name="calls_helper_repair_needed">الإقران غير متاح. أعد الإقران من هذا الهاتف.</string>
+    <string name="calls_helper_name">مساعد الصوت</string>
+    <string name="calls_helper_disconnected">اتصل لتمكين الصوت ثنائي الاتجاه في مكالمات الذكاء الاصطناعي</string>
+    <string name="calls_helper_manage">إدارة</string>
+    <string name="calls_helper_set_up">إعداد</string>
+    <string name="calls_helper_pairing_done">مساعد الصوت متصل. يمكنك العودة إلى Mika.</string>
+    <string name="calls_helper_pairing_problem">عُد إلى Mika لمعرفة طريقة إعادة الاتصال.</string>
+</resources>

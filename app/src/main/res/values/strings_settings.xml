@@ -13,6 +13,7 @@
     <string name="language_russian" translatable="false">Русский</string>
     <string name="language_indonesian" translatable="false">Bahasa Indonesia</string>
     <string name="language_arabic" translatable="false">العربية</string>
+    <string name="language_persian" translatable="false">فارسی</string>
     <string name="settings_basic">Common</string>
     <string name="settings_language_appearance">Language &amp; appearance</string>
     <string name="settings_model">Model</string>
@@ -181,4 +182,10 @@
     <string name="quit_row_sub">Stops background tasks and hides the floating capsule</string>
     <string name="quit_confirm_body">Tasks that are running will stop, and the floating capsule and notifications will go away. Open Mika again and everything comes back.</string>
     <string name="quit_confirm_action">Quit</string>
+    <string name="settings_task_token_budget">Token budget per task</string>
+    <string name="settings_task_token_budget_sub">Only provider-reported input and output tokens count. Once the budget is reached, no further requests are made. An in-flight request may take usage past the budget; calls without reported usage count as 0.</string>
+    <string name="settings_token_budget_unlimited">No limit</string>
+    <string name="settings_token_budget_custom">Custom token budget</string>
+    <string name="settings_token_budget_apply">Use</string>
+    <string name="settings_token_budget_invalid">Enter a whole number from %1$s to %2$s.</string>
 </resources>

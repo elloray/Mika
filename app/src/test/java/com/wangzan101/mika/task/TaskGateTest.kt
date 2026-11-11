@@ -1,7 +1,9 @@
 package com.wangzan101.mika.task
 
 import org.junit.Rule
+import com.wangzan101.mika.R
 import com.wangzan101.mika.i18n.ChineseTexts
+import com.wangzan101.mika.i18n.tr
 import com.wangzan101.mika.core.agent.TaskState
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -97,6 +99,24 @@ class TaskGateTest {
         assertEquals("unsupported_keyguard", (error as UnattendedLockException).status)
         assertTrue(error.message.orEmpty().endsWith("[unsupported_keyguard]"))
         assertEquals(TaskState.Held(TaskGate.LOCKED), reported.last())
+    }
+
+    @Test
+    fun channelUnlockFailureUsesItsOwnGuidanceAndDoesNotRetry() = runTest {
+        locked.value = true
+        var unlocks = 0
+        val channel = TaskGate(locked, shellUp,
+            unattendedUnlock = { unlocks++; "disabled" },
+            unlockFailureMessage = { tr(R.string.wechat_unlock_failed) }) { true }
+
+        val result = withTimeoutOrNull(1_000) { runCatching { channel.pass { reported += it } } }
+
+        val error = result?.exceptionOrNull()
+        assertTrue(error is UnattendedLockException)
+        assertEquals("${tr(R.string.wechat_unlock_failed)} [disabled]", error?.message)
+        assertEquals(1, unlocks)
+        assertTrue(locked.value)
+        assertEquals(listOf(TaskState.Held(TaskGate.LOCKED)), reported)
     }
 
     @Test

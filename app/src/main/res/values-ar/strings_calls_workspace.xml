@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="calls_default_sim_settings">بطاقة SIM الافتراضية للاتصال</string>
+    <string name="calls_device_and_permissions">الجهاز والأذونات</string>
+    <string name="calls_edit_rule">تعديل</string>
+    <string name="calls_nav_receive">الرد</string>
+    <string name="calls_nav_task">مهمة</string>
+    <string name="calls_pause_enable_first">فعّل الرد التلقائي لتتمكن من إيقافه مؤقتًا.</string>
+    <string name="calls_rule_delay_summary">مهلة الرد: %1$d ث</string>
+    <string name="calls_rule_pause">إيقاف مؤقت</string>
+    <string name="calls_rule_scope">من يردّ عليه الذكاء الاصطناعي</string>
+    <string name="calls_sim_ask_each_time">بلا بطاقة SIM مفضلة</string>
+    <string name="calls_task_back_to_edit">العودة إلى التحرير</string>
+    <string name="calls_task_confirm_dial">تأكيد والاتصال</string>
+    <string name="calls_task_confirm_note">يستخدم Mika هذه المهمة لهذه المكالمة. يتم الاتصال ببطاقة SIM المختارة وقد تُطبق رسوم شركة الاتصالات والصوت الفوري.</string>
+    <string name="calls_task_constraints">ما لا يجوز الوعد به</string>
+    <string name="calls_task_context">سياق إضافي</string>
+    <string name="calls_task_filled">تمت الإضافة</string>
+    <string name="calls_task_goal">ما الهدف المطلوب من هذه المكالمة؟ (إلزامي)</string>
+    <string name="calls_task_goal_example">مثلًا: تأكد من وجود مكان يوم الجمعة وسجّل السعر.</string>
+    <string name="calls_task_limit">%1$d / %2$d حرفًا</string>
+    <string name="calls_task_number_hint">أدخل رقم هاتف عاديًا من 7 إلى 15 رقمًا.</string>
+    <string name="calls_task_one_off">تنطبق المهمة على هذه المكالمة فقط. تجد المكالمة ومهمتها في السجل.</string>
+    <string name="calls_task_optional">اختياري</string>
+    <string name="calls_task_pick_sim">اختر بطاقة SIM لهذه المكالمة</string>
+    <string name="calls_task_questions">الأسئلة المطلوب طرحها</string>
+    <string name="calls_task_questions_hint">سؤال واحد في كل سطر</string>
+    <string name="calls_task_questions_limit">حتى %1$d أسئلة، بحد %2$d حرفًا لكل سؤال.</string>
+    <string name="calls_task_replace_action">استبدال المسودة</string>
+    <string name="calls_task_replace_note">يستبدل مسودة المكالمة الحالية بمهمة من السجل. لن يتم الاتصال.</string>
+    <string name="calls_task_replace_title">هل تريد استبدال هذه المسودة؟</string>
+    <string name="calls_task_review">مراجعة مهمة المكالمة</string>
+    <string name="calls_task_review_blocked">للاتصال، يجب أن يكون الهاتف جاهزًا ومن دون مكالمة جارية، مع اختيار بطاقة SIM.</string>
+    <string name="calls_task_sim_override_summary">هذه المكالمة: %1$s · المفضلة: %2$s</string>
+    <string name="calls_voice_settings">الصوت</string>
+</resources>

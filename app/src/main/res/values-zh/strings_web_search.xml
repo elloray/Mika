@@ -1,10 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="web_search_title">网页搜索</string>
+    <string name="web_search_provider">搜索服务</string>
+    <string name="web_search_note_you">不填密钥用免费接口（每天 100 次），填了走付费接口。</string>
+    <string name="web_search_searxng_url">实例地址</string>
+    <string name="web_search_note_jina">需要 API 密钥，使用 Jina 搜索（s.jina.ai）。</string>
+    <string name="web_search_note_exa">需要 API 密钥，使用 Exa 搜索（api.exa.ai）。</string>
+    <string name="web_search_note_searxng">填你自建的 SearXNG 实例，不需要密钥。实例要打开 JSON 输出（在 settings.yml 的 search.formats 里加上 json）。</string>
+    <string name="web_search_api_key_required">API 密钥（必填）</string>
+    <string name="web_search_missing_key">%1$s 需要 API 密钥才能使用。</string>
+    <string name="web_search_get_key">获取 API 密钥</string>
+    <string name="web_search_privacy">密钥会加密保存在本机。搜索结果按不可信内容处理。</string>
     <string name="web_search_row_sub">可选搜索服务；始终可以使用浏览器搜索</string>
-    <string name="web_search_hint">默认关闭。Mika 会向你的 HTTP JSON 端点发送 query 和 count 参数。可选密钥会作为 Bearer 令牌发送，并加密保存在本机。搜索结果按不可信内容处理。</string>
     <string name="web_search_enabled">启用网页搜索</string>
-    <string name="web_search_endpoint">搜索端点网址</string>
     <string name="web_search_api_key">API 密钥（可选）</string>
     <string name="web_search_invalid_endpoint">请输入不带查询参数的 HTTP 或 HTTPS 网址。</string>
     <string name="web_search_action">搜索网页</string>

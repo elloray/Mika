@@ -2,6 +2,8 @@ package com.wangzan101.mika.core.tool
 
 import com.wangzan101.mika.core.gate.gateTargetOf
 import com.wangzan101.mika.core.risk.GateTarget
+import com.wangzan101.mika.core.calls.PhoneCallPort
+import com.wangzan101.mika.core.calls.PhoneCallTask
 import com.wangzan101.mika.core.model.Part
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.JsonObject
@@ -44,11 +46,18 @@ class ToolRiskTest {
 
     @Test fun readCallsRefuseWhatTheOldListsRefused() = runTest {
         val refused = oldWriting + oldSandbox + WEB_SCRIPT_TOOL +
-            setOf("phone_find", "phone_collect", "phone_dialog", "phone_run", "phone_system_command", "schedule_task", "spawn_agent", "settings_set", "root_run_command", "web_search")
+            setOf("phone_find", "phone_collect", "phone_dialog", "phone_run", "phone_system_command", "phone_calendar_bulk_insert", "schedule_task", "spawn_agent", "settings_set", "root_run_command", "web_search",
+                "phone_call_state", "phone_call_dial", "phone_call_answer", "phone_call_hangup", "phone_call_takeover")
         assertEquals(refused, allTools().filter { !it.readOnly }.map { it.name }.toSet())
-        // root 命令只在给了端口时登记:给一个,所有工具都在
+        // root 命令、通话工具都只在给了端口时登记:各给一个,所有工具都在
         val d = toolDispatcher(FakeScreen(), root = object : com.wangzan101.mika.core.cap.root.RootPort {
             override suspend fun run(command: String, timeoutMs: Long) = com.wangzan101.mika.core.cap.root.RootRun.Unavailable
+        }, phoneCalls = object : PhoneCallPort {
+            override suspend fun state() = JsonObject(emptyMap())
+            override suspend fun dial(number: String, simId: String?, task: PhoneCallTask?) = JsonObject(emptyMap())
+            override suspend fun answer(callId: String) = JsonObject(emptyMap())
+            override suspend fun hangup(callId: String) = JsonObject(emptyMap())
+            override suspend fun takeover() = JsonObject(emptyMap())
         })
         for (name in names) {
             val r = d.executeRead(Part.ToolCall("c", name, "{}")).content

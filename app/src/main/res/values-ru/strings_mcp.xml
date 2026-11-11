@@ -33,6 +33,12 @@
     <string name="mcp_advanced_hide">Скрыть расширенные настройки</string>
     <string name="mcp_advanced_sub">Переключатели доступа, токены и удалённое пробуждение</string>
     <string name="mcp_port_detail">Порт %1$d. Доступ по USB выключается после перезагрузки телефона.</string>
+    <string name="mcp_port_title">Порт прослушивания</string>
+    <string name="mcp_port_dialog_sub">Смените, если порт по умолчанию занят другим сервисом на этом телефоне. Применяется сразу; компьютер переподключается по новому порту.</string>
+    <string name="mcp_port_default">По умолчанию (%1$d)</string>
+    <string name="mcp_port_custom">Порт</string>
+    <string name="mcp_port_invalid">Введите целое число от 1024 до 65535.</string>
+    <string name="mcp_port_apply">Применить</string>
     <string name="mcp_network_scope">Разрешить доступ в Wi-Fi и частных сетях. Каждый запрос требует токен.</string>
     <string name="mcp_cli_install">1. Подготовьте компьютер</string>
     <string name="mcp_cli_install_sub">Отправьте инструкцию по установке ИИ на компьютере или выполните её сами.</string>

@@ -156,6 +156,7 @@ class AppAccessScreenPort(
 
     // ---------- 不碰任何 App 界面的:原样转交 ----------
     override suspend fun systemCommand(command: String) = inner.systemCommand(command)
+    override suspend fun bulkCalendarInsert(events: List<SystemAction.AddCalendarEvent>) = inner.bulkCalendarInsert(events)
     override suspend fun listApps() = inner.listApps()
     override suspend fun otherProfiles() = inner.otherProfiles()
     override suspend fun appCopies() = inner.appCopies()

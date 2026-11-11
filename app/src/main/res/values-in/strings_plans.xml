@@ -33,7 +33,7 @@
     <string name="plans_repeat_interval">Interval</string>
     <string name="plans_repeat_weekly">Mingguan</string>
     <string name="plans_interval_minutes">Ulangi setiap (menit)</string>
-    <string name="plans_clock">Waktu setempat: HH:mm</string>
+    <string name="plans_clock">Waktu setempat (pisahkan dengan koma)</string>
     <string name="plans_zone">ID zona waktu</string>
     <string name="plans_condition_optional">Kondisi (opsional)</string>
     <string name="plans_notify_change">Saat berubah</string>
@@ -47,7 +47,7 @@
     <string name="plans_error_reminder_condition">Pengingat tetap tidak dapat memiliki kondisi</string>
     <string name="plans_error_time">Masukkan tanggal dan waktu yang valid</string>
     <string name="plans_error_interval">Masukkan interval 1 hingga 525.600 menit</string>
-    <string name="plans_error_clock">Masukkan waktu yang valid dalam format HH:mm</string>
+    <string name="plans_error_clock">Masukkan waktu HH:mm yang valid, dipisahkan dengan koma</string>
     <string name="plans_error_zone">Masukkan ID zona waktu yang valid</string>
     <string name="plans_error_weekdays">Pilih setidaknya satu hari</string>
     <string name="plans_error_cooldown">Masukkan interval minimum 1 hingga 525.600 menit</string>

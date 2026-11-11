@@ -10,6 +10,8 @@ import java.io.File
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
+import java.time.Instant
+import java.time.ZoneId
 
 class UsageLedgerTest {
     @get:Rule val tmp = TemporaryFolder()
@@ -61,12 +63,47 @@ class UsageLedgerTest {
         assertEquals(mapOf("p1" to "服务商甲", "p2" to "服务商乙"), l.snapshot().providerNames)
     }
 
+    @Test fun providerBudgetTotalsAllModelsAndPurposesOnTheLocalCalendarDay() {
+        val utc = ZoneId.of("UTC")
+        clock = Instant.parse("2026-11-09T12:00:00Z").toEpochMilli()
+        val l = UsageLedger(file, now = { clock }, zone = utc)
+        l.record(main, Usage(100, 20, cachedInputTokens = 60))
+        l.record(light.copy(model = "m2"), Usage(50, 5))
+        l.record(other, Usage(999, 999))
+        assertEquals("同一家跨模型、跨用途相加，缓存输入不重复计", 175L, l.providerTokensToday("p1"))
+        assertEquals(1_998L, l.providerTokensToday("p2"))
+        assertEquals(0L, l.providerTokensToday("missing"))
+
+        clock = Instant.parse("2026-11-09T23:59:59Z").toEpochMilli()
+        assertEquals(175L, l.providerTokensToday("p1"))
+        clock = Instant.parse("2026-11-10T00:00:00Z").toEpochMilli()
+        assertEquals("本地日期变更后重新计数", 0L, l.providerTokensToday("p1"))
+        l.record(light, Usage(7, 3))
+        assertEquals(10L, l.providerTokensToday("p1"))
+    }
+
     @Test fun versionMovesOnEveryRecord() {
         val l = ledger()
         val v = l.version.value
         l.record(main, null)
         l.record(main, null)
         assertEquals(v + 2, l.version.value)
+    }
+
+    @Test fun localMidnightSplitsAnHourForTheBudgetButNotForTheChart() {
+        val zone = ZoneId.of("Asia/Kolkata")
+        clock = Instant.parse("2026-11-10T18:25:00Z").toEpochMilli()
+        val l = UsageLedger(file, now = { clock }, zone = zone, flushDelayMs = 60_000)
+        l.record(main, Usage(100, 10))
+        clock = Instant.parse("2026-11-10T18:40:00Z").toEpochMilli()
+        assertEquals(0L, l.providerTokensToday("p1"))
+        l.record(main, Usage(10_000, 10))
+        assertEquals(10_010L, l.providerTokensToday("p1"))
+        assertEquals(10_120L, l.snapshot().rows.single().counts.let { it.input + it.output })
+        l.flush()
+        val reopened = UsageLedger(file, now = { clock }, zone = zone)
+        assertEquals(10_010L, reopened.providerTokensToday("p1"))
+        assertEquals(l.snapshot().rows, reopened.snapshot().rows)
     }
 
     @Test fun persistsAcrossInstances() {

@@ -137,6 +137,7 @@ fun PlanEditorDialog(
                         PlanField(
                             draft.clock, { draft = draft.copy(clock = it) },
                             tr(R.string.plans_clock), "plan-editor-clock",
+                            placeholder = "08:00, 12:30, 20:00",
                         )
                         Spacer(Modifier.height(10.dp))
                     }
@@ -238,12 +239,14 @@ private fun PlanField(
     tag: String,
     keyboardType: KeyboardType = KeyboardType.Text,
     singleLine: Boolean = true,
+    placeholder: String? = null,
 ) {
     OutlinedTextField(
         value,
         onValueChange,
         Modifier.fillMaxWidth().testTag(tag).keepsKeyboard(),
         label = { Text(label) },
+        placeholder = placeholder?.let { { Text(it) } },
         singleLine = singleLine,
         minLines = if (singleLine) 1 else 2,
         maxLines = if (singleLine) 1 else 5,

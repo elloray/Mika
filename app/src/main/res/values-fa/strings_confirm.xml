@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="confirm_note">هر اقدامی که هزینه‌ای داشته باشد، هر بار به تأیید شما نیاز دارد.</string>
+    <string name="confirm_pay">پرداخت</string>
+    <string name="confirm_delete">حذف</string>
+    <string name="confirm_order">ثبت سفارش</string>
+    <string name="confirm_submit">ارسال</string>
+    <string name="confirm_other">اقدام دیگر</string>
+    <string name="confirm_root">دستور روت</string>
+    <string name="confirm_root_where">کل گوشی (روت)</string>
+    <string name="confirm_title">نیاز به تأیید شما: %1$s</string>
+    <string name="confirm_in_app">در %1$s</string>
+    <string name="confirm_target">به: %1$s</string>
+    <string name="confirm_content">محتوا: %1$s</string>
+</resources>

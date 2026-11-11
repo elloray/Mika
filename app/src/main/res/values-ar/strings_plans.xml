@@ -33,7 +33,7 @@
     <string name="plans_repeat_interval">فترة</string>
     <string name="plans_repeat_weekly">أسبوعيًا</string>
     <string name="plans_interval_minutes">التكرار كل (بالدقائق)</string>
-    <string name="plans_clock">التوقيت المحلي: HH:mm</string>
+    <string name="plans_clock">الأوقات المحلية (مفصولة بفواصل)</string>
     <string name="plans_zone">معرّف المنطقة الزمنية</string>
     <string name="plans_condition_optional">الشرط (اختياري)</string>
     <string name="plans_notify_change">عند التغيّر</string>
@@ -47,7 +47,7 @@
     <string name="plans_error_reminder_condition">لا يمكن أن يكون للتذكير الثابت شرط</string>
     <string name="plans_error_time">أدخل تاريخًا ووقتًا صالحين</string>
     <string name="plans_error_interval">أدخل فترة من 1 إلى 525,600 دقيقة</string>
-    <string name="plans_error_clock">أدخل وقتًا صالحًا بصيغة HH:mm</string>
+    <string name="plans_error_clock">أدخل أوقاتًا صالحة بصيغة HH:mm، وافصل بينها بفواصل</string>
     <string name="plans_error_zone">أدخل معرّف منطقة زمنية صالحًا</string>
     <string name="plans_error_weekdays">اختر يومًا واحدًا على الأقل</string>
     <string name="plans_error_cooldown">أدخل حدًا أدنى للفترة من 1 إلى 525,600 دقيقة</string>

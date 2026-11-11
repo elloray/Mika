@@ -211,7 +211,7 @@ internal object ScreenReader {
 
     private fun roleOf(n: AccessibilityNodeInfo) = n.className?.toString()?.substringAfterLast('.')?.ifEmpty { null } ?: "View"
 
-    private fun labelOf(n: AccessibilityNodeInfo, own: String?) = own ?: if (n.isClickable) descendantLabel(n) else ""
+    fun labelOf(n: AccessibilityNodeInfo, own: String? = ownLabel(n)) = own ?: if (n.isClickable) descendantLabel(n) else ""
 
     /** 只算界面指纹,不建元素表(动作前后比对用)。 */
     fun hash(windows: List<AccessibilityWindowInfo>): Long {

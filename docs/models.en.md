@@ -30,6 +30,12 @@ At the top of "Add provider" is the group "Sign in with an account · no key nee
 
 Signing out only clears the sign-in on this phone.
 
+## Check current allowance
+
+Open **Settings › Models › Token usage**. The top section shows the current allowance for each configured provider. Use the date filters below to review the token usage recorded on this device.
+
+DeepSeek, Kimi, and SiliconFlow show the account balance. OpenRouter shows how much the current key can still spend. Tap the row to see the account balance on OpenRouter. For providers such as ChatGPT, **Manage usage** opens the official site. Tap **Refresh** to check current allowances again.
+
 ## Reasoning effort
 
 Models on ChatGPT sign-in, xAI sign-in, and the Responses API can adjust **Reasoning effort** below each role card; OpenAI-compatible, Anthropic Messages, and Gemini models can too when the provider's model list states the levels for that model. The default leaves the choice to the provider. "Use main model" inherits its effort; explicitly picking the same model lets each role use a different effort. Options come from the provider's model list when available (the Anthropic model list states each model's levels; models that only take a thinking budget get none). Without listed levels, only Responses models get generic manual options, subject to server support; OpenAI-compatible, Anthropic, and Gemini models are not guessed. Higher effort usually takes longer and uses more tokens.
@@ -48,7 +54,7 @@ When adding a provider choose "Custom" (自定义); the base URL may start with 
 
 If you need a proxy to reach a model service but don't want a system-wide VPN, enter an address in **Settings › Network proxy**: `http://host:port` or `socks5://host:port` (`socks5h` works too; host names are resolved by the proxy). For a proxy that needs a login, write `http://user:password@host:port`. The address is stored encrypted on the phone; the screen only shows the scheme, host and port.
 
-- Goes through the proxy: model requests (chat, speech to text, connection tests), model lists, token exchange when you sign in with an account, in-app update downloads, the in-app browser, and commands in Files & computing environment (while network access is on there).
+- Goes through the proxy: model requests (chat, speech to text, connection tests), model lists, provider allowance checks, token exchange when you sign in with an account, in-app update downloads, the in-app browser, and commands in Files & computing environment (while network access is on there).
 - Always direct: addresses on this phone or your LAN (localhost, 127.x, 10.x, 172.16–31.x, 192.168.x, 100.64–127.x, names ending in `.local` or `.lan`, and single-word machine names), so local models such as Ollama or LM Studio keep working.
 - If the proxy can't be reached or rejects the user name or password, Mika says so instead of blaming your key or model.
 - `https://` proxies (an encrypted connection to the proxy itself) are only used by commands in Files & computing environment; Mika's own connections stay direct. Use `http://` or `socks5://` to cover everything.

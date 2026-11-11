@@ -69,6 +69,7 @@ internal fun WechatEntryStatus(state: WechatConnectionState, bound: Boolean) {
 @Composable
 fun WechatSettingsScreen(runtime: WechatRuntime, onBack: () -> Unit) {
     val state by runtime.state.collectAsState()
+    val allowUnlock by runtime.allowUnlock.collectAsState()
     val scope = rememberCoroutineScope()
     var bound by remember { mutableStateOf(runtime.store.account() != null) }
     var loginContent by remember { mutableStateOf<String?>(null) }
@@ -82,6 +83,23 @@ fun WechatSettingsScreen(runtime: WechatRuntime, onBack: () -> Unit) {
     val loginFailedText = stringResource(R.string.wechat_login_failed)
     val expiredText = stringResource(R.string.wechat_qr_expired)
     val actionFailedText = stringResource(R.string.wechat_action_failed)
+
+    fun changeUnlockAllowed(allowed: Boolean) {
+        if (actionBusy || loginBusy) return
+        actionBusy = true
+        actionError = null
+        scope.launch {
+            try {
+                withContext(Dispatchers.IO) { runtime.setUnlockAllowed(allowed) }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (_: Exception) {
+                actionError = actionFailedText
+            } finally {
+                actionBusy = false
+            }
+        }
+    }
 
     // 服务端确认和本地取消可能同时发生；最终以已经持久化的账号为准。
     LaunchedEffect(state) { bound = runtime.store.account() != null }
@@ -212,6 +230,15 @@ fun WechatSettingsScreen(runtime: WechatRuntime, onBack: () -> Unit) {
                 ) {
                     MikaSwitch(receiving, null, Modifier.testTag("wechat-enabled"), enabled = !actionBusy)
                 }
+                ListRow(
+                    MikaIcons.Key, stringResource(R.string.wechat_allow_unlock),
+                    stringResource(R.string.wechat_allow_unlock_sub),
+                ) {
+                    MikaSwitch(
+                        allowUnlock, ::changeUnlockAllowed, Modifier.testTag("wechat-allow-unlock"),
+                        enabled = !actionBusy && !loginBusy,
+                    )
+                }
                 ListRow(MikaIcons.Chats, stringResource(R.string.wechat_bound_account)) {
                     RowValue(stringResource(R.string.wechat_current_account))
                 }
@@ -219,6 +246,12 @@ fun WechatSettingsScreen(runtime: WechatRuntime, onBack: () -> Unit) {
                     RowValue(stringResource(R.string.wechat_owner_private))
                 }
             }
+            FooterNote(stringResource(
+                R.string.wechat_allow_unlock_foot,
+                stringResource(R.string.mcp_title),
+                stringResource(R.string.mcp_advanced),
+                stringResource(R.string.device_access_title),
+            ))
             MikaButton(
                 stringResource(R.string.wechat_rebind), ::startLogin, Modifier.fillMaxWidth(),
                 kind = ButtonKind.Secondary, enabled = !loginBusy && !actionBusy,

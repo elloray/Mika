@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="calls_task_dial_now">شماره‌گیری اکنون</string>
+    <string name="calls_task_dial_locked">شماره‌گیری پس از قفل</string>
+    <string name="calls_task_dial_locked_note">این گوشی را ظرف ۴۵ ثانیه قفل کنید. Mika یک بار با این شماره، سیم‌کارت و وظیفه تلاش می‌کند. می‌توانید از طریق اعلان لغو کنید. خاموش کردن صفحه بدون قفل واقعی گوشی، شماره‌گیری نمی‌کند.</string>
+    <string name="calls_task_dial_locked_confirm">تأیید و انتظار برای قفل</string>
+</resources>

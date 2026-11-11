@@ -9,7 +9,7 @@ import org.junit.Test
 
 class HoldToTalkTest {
     /** 假会话:只记松开、取消各被调了几次;事件由测试直接喂给 [HoldToTalk.onEvent]。 */
-    private class FakeSession(override val live: Boolean = true) : SpeechSession {
+    private class FakeSession(override val live: Boolean = true, override val unlimited: Boolean = false) : SpeechSession {
         override val events: Flow<SpeechEvent> = emptyFlow()
         var released = 0
         var cancelled = 0
@@ -115,6 +115,19 @@ class HoldToTalkTest {
         // 到点以后再 tick 不重复收尾
         now = 61_000
         hold.tick()
+        assertEquals(1, session.released)
+    }
+
+    // 流式识别不封顶:过了 60 秒照样听,不收尾,松开才收尾
+    @Test
+    fun unlimitedSessionKeepsListeningPastTheCap() {
+        val session = FakeSession(unlimited = true).also { hold.press(it) }
+        assertTrue((hold.state.value as HoldToTalk.State.Listening).unlimited)
+        now = 180_000
+        hold.tick()
+        assertEquals(0, session.released)
+        assertEquals(180_000L, (hold.state.value as HoldToTalk.State.Listening).elapsedMs)
+        hold.release()
         assertEquals(1, session.released)
     }
 
@@ -291,5 +304,90 @@ class HoldToTalkTest {
         assertEquals("好的，订票", HoldToTalk.join("好的，", "订票"))
         assertEquals("book ", HoldToTalk.join("book ", ""))
         assertEquals("book a", HoldToTalk.join("book ", "a"))
+    }
+
+    @Test
+    fun sendArmedGivesDoneToSend() {
+        val session = pressed()
+        now = 2_000
+        hold.aim(cancel = false, send = true)
+        assertTrue((hold.state.value as HoldToTalk.State.Listening).sendArmed)
+        hold.release()
+        assertEquals(1, session.released)
+        hold.onEvent(SpeechEvent.Final("帮我订票"))
+        assertEquals(HoldToTalk.State.Done("帮我订票", send = true), hold.state.value)
+    }
+
+    @Test
+    fun sendDisarmedFillsAsBefore() {
+        pressed()
+        now = 2_000
+        hold.aim(cancel = false, send = true)
+        hold.aim(cancel = false, send = false)
+        hold.release()
+        hold.onEvent(SpeechEvent.Final("帮我订票"))
+        assertEquals(HoldToTalk.State.Done("帮我订票", send = false), hold.state.value)
+    }
+
+    @Test
+    fun sendArmedKeepsPendingResultAndSendsOnRelease() {
+        pressed()
+        now = 2_000
+        // 手还按着时会话先结束了:留着,松开在「松开 发送」上才直接发出
+        hold.onEvent(SpeechEvent.Final("帮我订票"))
+        hold.aim(cancel = false, send = true)
+        hold.release()
+        assertEquals(HoldToTalk.State.Done("帮我订票", send = true), hold.state.value)
+    }
+
+    @Test
+    fun sendArmedConvertsThenSends() {
+        val session = pressed(live = false)
+        now = 2_000
+        hold.aim(cancel = false, send = true)
+        hold.release()
+        assertEquals(HoldToTalk.State.Converting, hold.state.value)
+        assertEquals(1, session.released)
+        hold.onEvent(SpeechEvent.Final("帮我订票"))
+        assertEquals(HoldToTalk.State.Done("帮我订票", send = true), hold.state.value)
+    }
+
+    @Test
+    fun sendArmedButTooShortIsNoMatch() {
+        val session = pressed()
+        now = 300
+        hold.aim(cancel = false, send = true)
+        hold.release()
+        assertEquals(HoldToTalk.State.Problem(null), hold.state.value)
+        assertEquals(0, session.released)
+    }
+
+    @Test
+    fun cancelWinsOverSend() {
+        val session = pressed()
+        now = 2_000
+        hold.aim(cancel = true, send = true)
+        val s = hold.state.value as HoldToTalk.State.Listening
+        assertTrue(s.cancelArmed)
+        assertFalse(s.sendArmed)
+        hold.release()
+        assertEquals(HoldToTalk.State.Idle, hold.state.value)
+        assertEquals(1, session.cancelled)
+    }
+
+    @Test
+    fun nextPressStartsWithoutSend() {
+        pressed()
+        now = 2_000
+        hold.aim(cancel = false, send = true)
+        hold.release()
+        hold.onEvent(SpeechEvent.Final("帮我订票"))
+        hold.reset()
+        // 上一段松开在「松开 发送」上,不影响下一段
+        pressed()
+        now = 4_000
+        hold.release()
+        hold.onEvent(SpeechEvent.Final("再订一张"))
+        assertEquals(HoldToTalk.State.Done("再订一张", send = false), hold.state.value)
     }
 }

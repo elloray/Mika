@@ -73,9 +73,7 @@ class UpdateChecker(
     private var loaded = false
 
     /** 每次打开 App 时调:到期就在后台查一次,失败不吭声。 */
-    fun autoCheckInBackground() {
-        scope.launch { autoCheck() }
-    }
+    fun autoCheckInBackground() = scope.launch { autoCheck() }
 
     /** 用户点了「检查更新」。 */
     fun checkInBackground() {

@@ -9,6 +9,9 @@ import kotlin.random.Random
 import com.wangzan101.mika.core.uistate.IdleScroll
 import com.wangzan101.mika.core.uistate.PageLimitReached
 import com.wangzan101.mika.core.uistate.PlacePace
+import com.wangzan101.mika.core.uistate.dwellStopped
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
 
 /** 一页一页看的节奏:第一页不等、停够了不等、换网站不等,停留有上下限且随看过的页数变长。 */
 class PagePacingTest {
@@ -199,6 +202,14 @@ class PagePacingTest {
         for (i in 1..3) { d.seen("https://shop.example.com/p$i"); now += 60_000; d.before(gate = false) }
         val e = runCatching { d.before() }.exceptionOrNull()
         assertTrue("$e", e is PageLimitReached && e.pages == 3 && e.cap == 3 && e.site == "shop.example.com")
+        val result = dwellStopped(e as PageLimitReached).content
+        assertEquals(JsonPrimitive("page_limit"), result["error"])
+        assertTrue(result["message"].toString().contains("Mika reached its per-task web page budget"))
+        val budget = result["navigationBudget"] as JsonObject
+        assertEquals(JsonPrimitive("web_pages"), budget["scope"])
+        assertEquals(JsonPrimitive("shop.example.com"), budget["target"])
+        assertEquals(JsonPrimitive(3), budget["used"])
+        assertEquals(JsonPrimitive(3), budget["limit"])
         assertTrue(runCatching { d.before("https://shop.example.com/p4") }.exceptionOrNull() is PageLimitReached)
         // 往下滚(不看上限)和别的网站照常
         assertEquals(0, d.before(gate = false))

@@ -3,5 +3,7 @@
 <paths>
     <cache-path name="camera" path="attach/camera/" />
     <cache-path name="viewing" path="attach/viewing/" />
+    <files-path name="library" path="library-attachments/" />
+    <cache-path name="library-viewing" path="library-viewing/" />
     <files-path name="shared" path="shared-drafts/" />
 </paths>

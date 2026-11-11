@@ -1,0 +1,9 @@
+<resources>
+    <string name="calls_record_brief">本次任务交代</string>
+    <string name="calls_record_goal">希望办成什么</string>
+    <string name="calls_record_questions">必须问清什么</string>
+    <string name="calls_record_context">补充情况</string>
+    <string name="calls_record_constraints">不能承诺或执行的事</string>
+    <string name="calls_record_reuse">用这份交代新建任务</string>
+    <string name="calls_record_result_unconfirmed">通话已经结束，目标是否达成请核对问答；标记已处理不代表目标已完成。</string>
+</resources>

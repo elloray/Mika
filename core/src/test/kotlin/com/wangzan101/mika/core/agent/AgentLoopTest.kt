@@ -12,8 +12,15 @@ import com.wangzan101.mika.core.model.Role
 import com.wangzan101.mika.core.model.StopReason
 import com.wangzan101.mika.core.model.StreamingChatModel
 import com.wangzan101.mika.core.model.ToolSpec
+import com.wangzan101.mika.core.model.Usage
 import com.wangzan101.mika.core.record.RunEvent
 import com.wangzan101.mika.core.record.RunSink
+import com.wangzan101.mika.core.run.RunId
+import com.wangzan101.mika.core.run.RunInbox
+import com.wangzan101.mika.core.run.RunSpec
+import com.wangzan101.mika.core.usage.UsagePurpose
+import com.wangzan101.mika.core.usage.UsageSource
+import com.wangzan101.mika.core.usage.metered
 import com.wangzan101.mika.core.uistate.ActionResult
 import com.wangzan101.mika.core.uistate.ScreenPort
 import com.wangzan101.mika.core.uistate.ScreenSnapshot
@@ -299,6 +306,31 @@ class AgentLoopTest {
         // 3 步 + 最后一轮收尾(模型还想 wait,不算数)
         assertEquals(4, m.requests.size)
     }
+
+    @Test fun tokenBudgetExhaustionEndsAsTokenLimitEvenDuringCloseout() = runTest {
+        val raw = FakeModel(tools(call("wait", """{"seconds":0.2}""")).copy(usage = Usage(3, 2)), finish())
+        val model = raw.metered(UsageSource("p", "P", "m", UsagePurpose.Main), sink = { _, _ -> })
+        val events = mutableListOf<RunEvent>()
+        val end = loop(model, maxSteps = 1, sink = object : RunSink {
+            override fun event(e: RunEvent) { events += e }
+        }).run(RunSpec(RunId("budget"), "t", "test", tokenBudget = 5), RunInbox())
+        assertTrue("$end", end is TaskState.Failed && end.kind == FailKind.TokenLimit)
+        assertTrue(end is TaskState.Failed && "5" in end.reason)
+        assertEquals("达到预算后不能另发收尾请求", 1, raw.requests.size)
+        assertEquals(5L, (events.first() as RunEvent.TaskStarted).tokenBudget)
+    }
+
+    @Test fun dailyBudgetExhaustionEndsAsTokenLimitWithoutARequestOrCloseout() = runTest {
+        val raw = FakeModel(finish())
+        val model = raw.metered(UsageSource("p", "服务商甲", "m", UsagePurpose.Main), { _, _ -> }) {
+            throw ModelError.DailyBudgetExceeded("服务商甲", 10_000, 10_000)
+        }
+        val end = loop(model).run("t")
+        assertTrue("$end", end is TaskState.Failed && end.kind == FailKind.TokenLimit)
+        assertTrue(end is TaskState.Failed && "服务商甲" in end.reason)
+        assertEquals(0, raw.requests.size)
+    }
+
 
     private fun waits(n: Int) = (1..n).map { tools(call("wait", """{"seconds":${1 + it / 10.0}}""")) }.toTypedArray()
 

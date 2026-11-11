@@ -6,7 +6,7 @@ import com.wangzan101.mika.core.observation.Place
 import com.wangzan101.mika.core.observation.Trust
 import com.wangzan101.mika.core.observation.Untrusted
 import com.wangzan101.mika.core.prompt.Prompts
-import com.wangzan101.mika.core.search.HttpWebSearch
+import com.wangzan101.mika.core.search.WebSearch
 import com.wangzan101.mika.core.search.WebSearchResult
 import com.wangzan101.mika.core.tool.AgentTool
 import com.wangzan101.mika.core.tool.Args
@@ -30,10 +30,10 @@ internal object WebSearchTool : AgentTool {
     override val offScreen = true
     override val concurrency = Concurrency.ParallelSafe
     override val def = ToolDef(
-        "web_search", Prompts.tool("web_search", "maxCount" to HttpWebSearch.MAX_COUNT),
+        "web_search", Prompts.tool("web_search", "maxCount" to WebSearch.MAX_COUNT),
         mapOf(
             "query" to str("Words to search for, 1-500 characters."),
-            "count" to int("Optional result count, 1-${HttpWebSearch.MAX_COUNT} (default 5).", 1, HttpWebSearch.MAX_COUNT),
+            "count" to int("Optional result count, 1-${WebSearch.MAX_COUNT} (default 5).", 1, WebSearch.MAX_COUNT),
         ),
         listOf("query"),
     )
@@ -42,7 +42,7 @@ internal object WebSearchTool : AgentTool {
 
     override suspend fun execute(a: Args, ctx: ToolContext): ToolExecution {
         val query = a.str("query", max = 500)!!
-        val count = (a.int("count", 1, HttpWebSearch.MAX_COUNT) ?: 5).coerceIn(1, HttpWebSearch.MAX_COUNT)
+        val count = (a.int("count", 1, WebSearch.MAX_COUNT) ?: 5).coerceIn(1, WebSearch.MAX_COUNT)
         return when (val result = checkNotNull(ctx.config.webSearch).search(query, count)) {
             is WebSearchResult.Success -> {
                 ToolExecution(

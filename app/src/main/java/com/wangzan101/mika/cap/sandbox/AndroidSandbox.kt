@@ -12,6 +12,7 @@ import com.wangzan101.mika.core.workspace.SandboxPaths
 import com.wangzan101.mika.settings.NetProxyStore
 import com.wangzan101.mika.core.cap.sandbox.SandboxPort
 import com.wangzan101.mika.core.cap.sandbox.SandboxProcess
+import com.wangzan101.mika.core.cap.sandbox.SandboxShell
 import com.wangzan101.mika.core.cap.sandbox.PhoneCommandHandler
 import com.wangzan101.mika.core.cap.sandbox.SandboxStatus
 import com.wangzan101.mika.core.knowledge.ScriptEntry
@@ -19,11 +20,16 @@ import com.wangzan101.mika.core.knowledge.ScriptManifest
 import com.wangzan101.mika.core.cap.sandbox.ShareRules
 import com.wangzan101.mika.core.workspace.WorkspacePathCheck
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.asCoroutineDispatcher
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.runInterruptible
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
@@ -56,6 +62,8 @@ internal val FALLBACK_DNS = listOf("1.1.1.1", "8.8.8.8")
 private const val TAG = "AndroidSandbox"
 internal const val SHARE_MAX_FILES = 20
 internal const val SHARE_MAX_BYTES = 500L shl 20
+/** 打开用户终端前要求的最低剩余空间(和 run_command 一致)。 */
+private const val MIN_FREE_BYTES = 500L shl 20
 
 /**
  * 一个任务(一个 AndroidSandbox)的导出额度,share_file 与 `mika share` 共用。
@@ -243,6 +251,71 @@ class AndroidSandbox internal constructor(
         } catch (e: Throwable) {
             started.get()?.let(::stopNow)
             lease.close()
+            throw e
+        }
+    }
+
+    /**
+     * 用户自己打开的终端:在 [workspace] 里起一个带伪终端的 `/bin/sh`。和一次性命令同一套启动器、
+     * 同一份工作区、同一个联网状态;不接手机桥,不设时限,由用户关掉或树锁收回结束。
+     */
+    override suspend fun openShell(workspace: String, cols: Int, rows: Int): SandboxShell {
+        val ready = status() as? SandboxStatus.Ready
+            ?: throw SandboxError("sandbox_unavailable", "The Linux environment is not ready yet.", recoverable = true)
+        if (freeBytes() < MIN_FREE_BYTES) {
+            throw SandboxError("storage_low", "The phone has less than 500 MB free, so the terminal cannot open.", recoverable = false)
+        }
+        val network = ready.network
+        val c = cols.coerceIn(1, 1000)
+        val r = rows.coerceIn(1, 1000)
+        prepare()
+        val sizeFile = File(dirs.tmp, "pty-${java.util.UUID.randomUUID()}.size")
+        val started = java.util.concurrent.atomic.AtomicReference<Process?>(null)
+        val revoked = MutableStateFlow(false)
+        val exited = CompletableDeferred<Int>()
+        val lease = tree.lease(onRevoke = {
+            revoked.value = true
+            started.get()?.let(::stopNow)
+        })
+        try {
+            val process = tree.shared {
+                val ws = withContext(Dispatchers.IO) {
+                    sizeFile.parentFile?.mkdirs()
+                    sizeFile.writeText("$c $r")
+                    dirs.workspace(workspace).also {
+                        dirs.ensureBindSources(it)
+                        syncClientScript()
+                        if (network) writeResolvConf()
+                    }
+                }
+                val cmd = ProcRunner.argv(
+                    dirs, ws, "", 0, network, standIns(), listOf("/bin/sh"),
+                    pty = true, ptyCols = c, ptyRows = r, ptySizePath = sizeFile,
+                )
+                val env = ProcRunner.env(dirs, null, null, workspace, if (network) proxy() else "", pty = true)
+                val p = withContext(launcherThread + NonCancellable) {
+                    ProcessBuilder(cmd).redirectErrorStream(true).apply {
+                        environment().clear()
+                        environment().putAll(env)
+                    }.start().also(started::set)
+                }
+                if (lease.revoked) {
+                    stopNow(p)
+                    throw SandboxError("sandbox_busy", "The sandbox is being reset; try again later.", recoverable = true)
+                }
+                p
+            }
+            thread(isDaemon = true, name = "mika-terminal-wait") {
+                val code = runCatching { process.waitFor() }.getOrDefault(-1)
+                lease.close()
+                synchronized(sizeFile) { runCatching { sizeFile.delete() } }
+                exited.complete(code)
+            }
+            return SandboxShellHandle(process, exited, revoked.asStateFlow(), sizeFile)
+        } catch (e: Throwable) {
+            started.get()?.let(::stopNow)
+            lease.close()
+            runCatching { sizeFile.delete() }
             throw e
         }
     }
@@ -520,5 +593,32 @@ private class SandboxProcessHandle(
         }
         runCatching { process.inputStream.close() }
         runCatching { process.errorStream.close() }
+    }
+}
+
+/** 关闭时先 SIGTERM 启动器，再兜底 SIGKILL。等待线程在进程退出后交还租约。 */
+private class SandboxShellHandle(
+    private val process: Process,
+    override val exited: Deferred<Int>,
+    override val revoked: StateFlow<Boolean>,
+    private val sizeFile: File,
+) : SandboxShell {
+    override val input: java.io.OutputStream get() = process.outputStream
+    override val output: java.io.InputStream get() = process.inputStream
+
+    override fun resize(cols: Int, rows: Int) {
+        if (cols !in 1..1000 || rows !in 1..1000) return
+        synchronized(sizeFile) {
+            if (process.isAlive) runCatching { sizeFile.writeText("$cols $rows") }
+        }
+    }
+
+    override fun close() {
+        runCatching { process.outputStream.close() }
+        runCatching { process.destroy() }
+        thread(isDaemon = true, name = "mika-terminal-reaper") {
+            if (!process.waitFor(DESTROY_GRACE_MS, TimeUnit.MILLISECONDS)) process.destroyForcibly()
+        }
+        runCatching { process.inputStream.close() }
     }
 }

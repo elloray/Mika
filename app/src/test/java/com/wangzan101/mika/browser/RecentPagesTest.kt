@@ -1,6 +1,7 @@
 package com.wangzan101.mika.browser
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
@@ -46,11 +47,22 @@ class RecentPagesTest {
     }
 
     @Test
-    fun defaultLimitIsTen() {
+    fun defaultLimitIsHistorySize() {
         val r = store()
-        (1..12).forEach { r.add("https://s$it.example.com/", "S$it") }
-        assertEquals(10, r.entries.value.size)
-        assertEquals("S12", r.entries.value.first().title)
+        val n = RecentPages.LIMIT + 2
+        (1..n).forEach { r.add("https://s$it.example.com/", "S$it") }
+        assertEquals(RecentPages.LIMIT, r.entries.value.size)
+        assertEquals("S$n", r.entries.value.first().title)
+    }
+
+    @Test
+    fun removeDeletesOnlyThatAddress() {
+        val r = store()
+        r.add("https://a.example.com/x", "A")
+        r.add("https://b.example.com/", "B")
+        assertTrue(r.remove("https://a.example.com/x#top"))
+        assertEquals(listOf("https://b.example.com/"), r.entries.value.map { it.url })
+        assertFalse(r.remove("https://a.example.com/x"))
     }
 
     @Test

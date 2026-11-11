@@ -92,14 +92,15 @@ class TakeoverQueue {
  * 接管的状态机:Agent 请求接管 → 等待 →「我来处理」把虚拟屏最上面的任务挪到主屏 →
  * 「处理好了」/「我自己做完了」挪回并交还 Agent;「跳过」不处理直接交还(App 在主屏就先挪回);
  * 任何时候都可「取消任务」,取消时 App 留在原处。
- * 没人点「我来处理」时等 [TAKEOVER_WAIT_TIMEOUT_MS] 后交还超时,App 不挪动;接手之后不再计时。
- * 计时跑在 [scope] 上,[now] 量接手时长;测试换成虚拟时间。
+ * 没人点「我来处理」时保留任务和现场,每隔 [TAKEOVER_WAIT_TIMEOUT_MS] 提醒一次,不把等待变成失败;
+ * 接手之后不再计时。计时跑在 [scope] 上,[now] 量接手时长;测试换成虚拟时间。
  * 给了 [queue] 时和其他任务的接管排队,排在后面的不能「我来处理」。
  */
 class Takeover(
     private val port: TakeoverPort,
     private val scope: CoroutineScope,
     private val queue: TakeoverQueue? = null,
+    private val remind: () -> Unit = {},
     private val now: () -> Long = System::currentTimeMillis,
 ) {
     enum class Stage { None, Waiting, HandedOver }
@@ -222,7 +223,7 @@ class Takeover(
 
     /**
      * 网页接管界面上按了系统返回键 =「先放着」:标签放回后台,任务回到等待接管(通知还在,可以再点「我来处理」),
-     * 等待照常计时。只在已经接手时有效。
+     * 等待会重新按间隔提醒。只在已经接手时有效。
      */
     suspend fun putAside(key: Int? = null): Boolean = mutex.withLock {
         if (_stage.value != Stage.HandedOver || !handedWeb || !keyMatches(key)) return false
@@ -294,7 +295,7 @@ class Takeover(
         return true
     }
 
-    /** 前面的接管处理完,轮到这一个:从现在起计等待时限。 */
+    /** 前面的接管处理完,轮到这一个:从现在起按间隔提醒。 */
     internal fun reachedFront() {
         val waiting = current
         if (_stage.value == Stage.Waiting && waiting != null && timer == null) armTimer(waiting)
@@ -303,13 +304,14 @@ class Takeover(
     private fun armTimer(state: TaskState.WaitingTakeover) {
         timer?.cancel()
         timer = scope.launch {
-            delay(TAKEOVER_WAIT_TIMEOUT_MS)
-            mutex.withLock {
-                // 挪到主屏失败退回等待时也照常超时;已经接手或换成了下一次等待就不算
-                if (_stage.value == Stage.Waiting && current === state) {
-                    timer = null // 交还时不能把正在交还的自己取消掉
-                    giveBackLocked(HandBack(HandBackOutcome.timeout))
+            while (true) {
+                delay(TAKEOVER_WAIT_TIMEOUT_MS)
+                val waiting = mutex.withLock {
+                    // 已经接手、交还或换成了下一次等待时不再提醒。
+                    _stage.value == Stage.Waiting && current === state
                 }
+                if (!waiting) break
+                remind()
             }
         }
     }
@@ -321,7 +323,7 @@ class Takeover(
 
     companion object {
         private const val MAIN_DISPLAY = 0
-        /** 等用户点「我来处理」的时限;接手之后不计时。 */
+        /** 还没点「我来处理」时重复提醒的间隔;接手之后不提醒,任务不会因等待而失败。 */
         const val TAKEOVER_WAIT_TIMEOUT_MS = 15 * 60_000L
     }
 }

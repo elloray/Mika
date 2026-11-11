@@ -1,0 +1,24 @@
+<resources>
+    <string name="file_library_title">文件</string>
+    <string name="file_library_search">搜索文件名</string>
+    <string name="file_library_all">全部会话</string>
+    <string name="file_library_current">当前会话</string>
+    <string name="file_library_sources">全部来源</string>
+    <string name="file_library_input">用户附件</string>
+    <string name="file_library_output">对话产物</string>
+    <string name="file_library_loading">正在加载文件…</string>
+    <string name="file_library_empty">没有找到文件</string>
+    <string name="file_library_missing">不可用</string>
+    <string name="file_library_available">可用</string>
+    <string name="file_library_open">打开</string>
+    <string name="file_library_share">分享</string>
+    <string name="file_library_add">加入待发栏</string>
+    <string name="file_library_choose">选择会话</string>
+    <string name="file_library_new">新建会话</string>
+    <string name="file_library_error">无法访问此文件</string>
+    <string name="file_library_retry">重试</string>
+    <string name="file_library_partial">部分会话无法读取。</string>
+    <string name="file_library_unknown_time">时间未知</string>
+    <string name="file_library_draft_saved">已加入所选会话的草稿。可以切换时，请切到该会话查看。</string>
+    <string name="file_library_load_failed">无法加载文件。</string>
+</resources>

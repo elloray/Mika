@@ -33,7 +33,7 @@
     <string name="plans_repeat_interval">Intervalo</string>
     <string name="plans_repeat_weekly">Semanal</string>
     <string name="plans_interval_minutes">Repetir cada (minutos)</string>
-    <string name="plans_clock">Hora local: HH:mm</string>
+    <string name="plans_clock">Horas locales (separadas por comas)</string>
     <string name="plans_zone">ID de zona horaria</string>
     <string name="plans_condition_optional">Condición (opcional)</string>
     <string name="plans_notify_change">Al cambiar</string>
@@ -47,7 +47,7 @@
     <string name="plans_error_reminder_condition">Un recordatorio fijo no puede tener una condición</string>
     <string name="plans_error_time">Introduce una fecha y una hora válidas</string>
     <string name="plans_error_interval">Introduce un intervalo de 1 a 525.600 minutos</string>
-    <string name="plans_error_clock">Introduce una hora válida en formato HH:mm</string>
+    <string name="plans_error_clock">Introduce horas válidas en formato HH:mm, separadas por comas</string>
     <string name="plans_error_zone">Introduce un ID de zona horaria válido</string>
     <string name="plans_error_weekdays">Selecciona al menos un día</string>
     <string name="plans_error_cooldown">Introduce un intervalo mínimo de 1 a 525.600 minutos</string>

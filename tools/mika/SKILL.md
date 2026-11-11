@@ -23,6 +23,12 @@ Notes:
 
 ## Common failures
 
+For missing app notifications, `mika notification-doctor --device SERIAL --package com.example.app --json`
+reads configuration through ADB without a running Mika server. Optional `--dependency com.example.push`
+checks a related package and `--listener com.example.agent/.Listener` checks listener access and binding.
+Use `--user ID` for another Android profile. This command does not launch apps, change settings, or return
+notification contents. A clear report does not prove delivery; test with a real incoming notification afterward.
+
 | Symptom | Action |
 | --- | --- |
 | Device shows `unauthorized` | Ask the user to accept the USB debugging prompt on the phone, then rerun `devices`. |

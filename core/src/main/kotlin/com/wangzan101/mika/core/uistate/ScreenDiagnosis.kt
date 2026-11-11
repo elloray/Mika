@@ -97,7 +97,11 @@ object ScreenDiagnosis {
             )
         }
         human?.let { (reason, cause) -> return human(reason, cause) }
-        if (f.changing) return ScreenCheck(ScreenState.LOADING, f.currentApp, false, cause = "screen keeps changing")
+        // Event activity alone is not evidence that usable content is still loading:
+        // animations, timers and video can keep emitting events indefinitely.
+        if (f.changing && (!f.hasWindow || f.readableElements == 0)) {
+            return ScreenCheck(ScreenState.LOADING, f.currentApp, false, cause = "screen keeps changing without readable content")
+        }
         if (!f.hasWindow || f.readableElements == 0) {
             val cause = when {
                 f.hasWindow -> "no readable elements"

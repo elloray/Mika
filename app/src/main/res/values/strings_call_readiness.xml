@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="calls_device_allow_notifications">Allow notifications</string>
+    <string name="calls_device_allow_phone">Allow phone permissions</string>
+    <string name="calls_device_helper">Built-in helper</string>
+    <string name="calls_device_helper_connected">Connected</string>
+    <string name="calls_device_notifications">Call notifications</string>
+    <string name="calls_device_notifications_app_off">App notifications are off</string>
+    <string name="calls_device_notifications_calls_off">The AI calls channel is off</string>
+    <string name="calls_device_notifications_permission_missing">Notification permission has not been granted</string>
+    <string name="calls_device_notifications_standby_off">The standby channel is off</string>
+    <string name="calls_device_notifications_unknown">Notification state could not be checked</string>
+    <string name="calls_device_open_app_settings">Open app permission settings</string>
+    <string name="calls_device_pair_helper">Connect helper</string>
+    <string name="calls_device_permission_granted">Allowed</string>
+    <string name="calls_device_phone_permissions">Phone permissions</string>
+    <string name="calls_device_phone_permissions_note">Allow reading call status and placing calls</string>
+    <string name="calls_device_ready_to_test">Ready for a manual audio test</string>
+    <string name="calls_device_system_settings_failed">Could not open system settings. Open the app info page in Android Settings.</string>
+    <string name="calls_background_auto_off">Auto-answer is off</string>
+    <string name="calls_background_battery">Battery and background activity</string>
+    <string name="calls_background_battery_managed">Android applies battery optimization</string>
+    <string name="calls_background_battery_restricted">Android reports background activity is restricted</string>
+    <string name="calls_background_battery_unknown">Battery policy could not be checked</string>
+    <string name="calls_background_battery_unrestricted">Android reports an exemption from battery optimization</string>
+    <string name="calls_background_lock_screen_note">For incoming calls, allow call notifications on the lock screen. If standby keeps stopping, check battery and background settings. A running service does not confirm that calls can be answered while locked.</string>
+    <string name="calls_background_not_running">Stopped · auto-answer works only while the app is visible and unlocked</string>
+    <string name="calls_background_open_battery">Open battery settings</string>
+    <string name="calls_background_running">Running now</string>
+    <string name="calls_background_service">Incoming call standby</string>
+    <string name="calls_background_settings">Background and lock screen</string>
+    <string name="calls_background_start">Start background standby</string>
+    <string name="calls_background_starting">Starting…</string>
+    <string name="calls_device_locked_dial_pending">Dial after locking</string>
+    <string name="calls_device_locked_dial_remaining">Lock the phone within %1$d s</string>
+    <string name="calls_device_locked_dial_preparing">Preparing the locked-screen call</string>
+    <string name="calls_device_locked_dial_cancel">Cancel</string>
+</resources>

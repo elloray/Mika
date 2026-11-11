@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="calls_device_allow_notifications">알림 허용</string>
+    <string name="calls_device_allow_phone">전화 권한 허용</string>
+    <string name="calls_device_helper">내장 도우미</string>
+    <string name="calls_device_helper_connected">연결됨</string>
+    <string name="calls_device_notifications">통화 알림</string>
+    <string name="calls_device_notifications_app_off">앱 알림이 꺼져 있습니다</string>
+    <string name="calls_device_notifications_calls_off">AI 통화 알림 채널이 꺼져 있습니다</string>
+    <string name="calls_device_notifications_permission_missing">알림 권한이 허용되지 않았습니다</string>
+    <string name="calls_device_notifications_standby_off">백그라운드 대기 알림 채널이 꺼져 있습니다</string>
+    <string name="calls_device_notifications_unknown">알림 상태를 확인할 수 없습니다</string>
+    <string name="calls_device_open_app_settings">앱 권한 설정 열기</string>
+    <string name="calls_device_pair_helper">도우미 연결</string>
+    <string name="calls_device_permission_granted">허용됨</string>
+    <string name="calls_device_phone_permissions">전화 권한</string>
+    <string name="calls_device_phone_permissions_note">통화 상태 확인과 전화 걸기를 허용하세요</string>
+    <string name="calls_device_ready_to_test">통화 오디오를 직접 테스트할 수 있습니다</string>
+    <string name="calls_device_system_settings_failed">시스템 설정을 열 수 없습니다. Android 설정에서 앱 정보 페이지를 여세요.</string>
+    <string name="calls_background_auto_off">자동 응답이 꺼져 있습니다</string>
+    <string name="calls_background_battery">배터리 및 백그라운드 활동</string>
+    <string name="calls_background_battery_managed">Android 배터리 최적화가 적용됩니다</string>
+    <string name="calls_background_battery_restricted">Android에서 백그라운드 활동이 제한되어 있습니다</string>
+    <string name="calls_background_battery_unknown">배터리 정책을 확인할 수 없습니다</string>
+    <string name="calls_background_battery_unrestricted">Android에서 배터리 최적화 예외가 적용됩니다</string>
+    <string name="calls_background_lock_screen_note">수신 전화에 대비해 잠금 화면의 통화 알림을 허용하세요. 대기가 자주 중단되면 배터리 및 백그라운드 설정을 확인하세요. 서비스가 실행 중이어도 잠금 상태에서 응답이 되는지는 별도로 확인해야 합니다.</string>
+    <string name="calls_background_not_running">중지됨 · 앱이 화면에 표시되고 잠금이 해제된 상태에서만 자동 응답</string>
+    <string name="calls_background_open_battery">배터리 설정 열기</string>
+    <string name="calls_background_running">실행 중</string>
+    <string name="calls_background_service">수신 전화 대기</string>
+    <string name="calls_background_settings">백그라운드 및 잠금 화면</string>
+    <string name="calls_background_start">백그라운드 대기 시작</string>
+    <string name="calls_background_starting">시작 중…</string>
+    <string name="calls_device_locked_dial_pending">잠근 후 전화 걸기</string>
+    <string name="calls_device_locked_dial_remaining">%1$d초 이내에 휴대전화를 잠그세요</string>
+    <string name="calls_device_locked_dial_preparing">잠금 화면에서 걸 전화를 준비 중</string>
+    <string name="calls_device_locked_dial_cancel">취소</string>
+</resources>

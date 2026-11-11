@@ -43,6 +43,7 @@ import com.wangzan101.mika.core.shell.PhoneSetupFlow
 import com.wangzan101.mika.core.uistate.ActionResult
 import com.wangzan101.mika.core.uistate.ScreenSnapshot
 import com.wangzan101.mika.core.uistate.UiElement
+import com.wangzan101.mika.core.uistate.UiTreeNode
 import com.wangzan101.mika.settings.AccessibilityState
 import com.wangzan101.mika.settings.SystemStatus
 import com.wangzan101.mika.shell.IMikaShell
@@ -233,18 +234,30 @@ class AndroidSelfCheck(context: Context, private val status: () -> SystemStatus)
 
     private suspend fun screenReading(): CheckOutcome {
         val s = screen ?: return CheckOutcome.fail("no screen", Advice.LaunchFailed)
+        val sh = shell ?: return CheckOutcome.fail("no helper", Advice.SetUpPhoneControl)
         val d = display ?: return CheckOutcome.fail("no display", Advice.DisplayFailed)
         s.waitStable(SETTLE_MS)
-        // 页面刚开出来时树可能还没齐:等到最上面是 Mika、要的控件都在,最多等一会儿
+        // 页面刚开出来时树可能还没齐:只认 Mika 自己窗口里的控件,最多等一会儿。
+        // 系统覆盖窗口不属于新任务;完整系统应用则会成为最上层任务,不能一并容忍。
+        suspend fun inspect(source: ScreenSnapshot) = readSelfCheckWindow(
+            source, app.packageName, withContext(Dispatchers.IO) { topPackage(sh, d.displayId) }, EXPECTED, ::systemPackage,
+        ) { key -> find(key) }
         var snap = s.snapshot()
+        var inspected = inspect(snap)
         poll(PAGE_WAIT_MS) {
             snap = s.snapshot()
-            snap.packageName == app.packageName && EXPECTED.all { snap.find(it) != null }
+            inspected = inspect(snap)
+            inspected.ready
         }
-        val missing = EXPECTED.filter { snap.find(it) == null }
-        if (snap.packageName != app.packageName || missing.isNotEmpty()) {
-            return CheckOutcome.fail("missing ${missing.joinToString().ifEmpty { "none" }}; ${seen(snap)}", Advice.ReadFailed)
+        val result = inspected
+        if (!result.ready) {
+            val wrongApp = if (result.wrongAppOnTop) "; another app is above Mika" else ""
+            return CheckOutcome.fail(
+                "missing ${result.missing.joinToString().ifEmpty { "none" }}; ${seen(result.content ?: snap)}$wrongApp",
+                Advice.ReadFailed,
+            )
         }
+        val content = result.content ?: return CheckOutcome.fail("Mika's window is not readable", Advice.ReadFailed)
         val frame = awaitFrame(d) ?: return CheckOutcome.fail("tree ok; no screenshot from the display", Advice.BlankFrames)
         val blank = try {
             val grid = FrameMath.lumaGrid(frame.width, frame.height, frame::getPixel)
@@ -253,7 +266,7 @@ class AndroidSelfCheck(context: Context, private val status: () -> SystemStatus)
             frame.recycle()
         }
         if (blank) return CheckOutcome.fail("tree ok; screenshot is blank or black", Advice.BlankFrames)
-        return CheckOutcome.pass("${snap.elements.size} elements, all expected found; screenshot not blank")
+        return CheckOutcome.pass("${content.elements.size} Mika-window elements, all expected found; screenshot not blank")
     }
 
     // ---------- 7 动作 ----------
@@ -265,29 +278,31 @@ class AndroidSelfCheck(context: Context, private val status: () -> SystemStatus)
         val ok = mutableListOf<String>()
         val bad = mutableListOf<String>()
         fun mark(name: String, passed: Boolean) { if (passed) ok += name else bad += name }
+        // 系统覆盖窗口存在时也只对 Mika 的控件做动作;编号仍属于原始快照,可直接交给动作端口。
+        fun own(source: ScreenSnapshot) = ownContent(source) ?: source.copy(elements = emptyList(), windows = emptyList())
 
         // 点按:计数加一
-        var snap = s.snapshot()
+        var snap = own(s.snapshot())
         val before = snap.find(COUNT)?.number()
         val button = snap.find(BUTTON)
         if (button != null && before != null) {
             s.tapRef(button.ref, snap.snapshotId)
-            mark("tap", poll { s.peek().find(COUNT)?.number() == before + 1 })
+            mark("tap", poll { own(s.peek()).find(COUNT)?.number() == before + 1 })
         } else mark("tap", false)
 
         // 打字:英文和中文各打一次,回读输入框
-        snap = s.snapshot()
+        snap = own(s.snapshot())
         mark("type ASCII", snap.find(INPUT)?.let { typed(s, it, snap, ASCII) } == true)
-        snap = s.snapshot()
+        snap = own(s.snapshot())
         mark("type Chinese", snap.find(INPUT)?.let { typed(s, it, snap, CHINESE) } == true)
 
         // 滚动:看得见的行换了
-        snap = s.snapshot()
+        snap = own(s.snapshot())
         val rowsBefore = snap.rows()
         val list = snap.find(LIST)
         if (list != null && rowsBefore.isNotEmpty()) {
             s.scroll(list.ref, snap.snapshotId, down = true)
-            mark("scroll", poll { s.peek().rows().let { it.isNotEmpty() && it.first() != rowsBefore.first() } })
+            mark("scroll", poll { own(s.peek()).rows().let { it.isNotEmpty() && it.first() != rowsBefore.first() } })
         } else mark("scroll", false)
 
         // 返回:自检页离开 Mika 屏的最上面。刚打完字输入法多半还弹着,那几下是收起输入法(安卓本来如此),不算在次数里
@@ -311,10 +326,10 @@ class AndroidSelfCheck(context: Context, private val status: () -> SystemStatus)
 
     private suspend fun typed(s: AndroidScreen, field: UiElement, snap: ScreenSnapshot, text: String): Boolean {
         s.clearText(field.ref, snap.snapshotId)
-        val fresh = s.snapshot()
+        val fresh = ownContent(s.snapshot()) ?: return false
         val f = fresh.find(INPUT) ?: return false
         s.typeText(f.ref, fresh.snapshotId, text)
-        return poll { s.peek().find(INPUT)?.name?.let { SelfCheckText.contains(it, text) } == true }
+        return poll { ownContent(s.peek())?.find(INPUT)?.name?.let { SelfCheckText.contains(it, text) } == true }
     }
 
     // ---------- 8 一直在动 ----------
@@ -513,6 +528,8 @@ class AndroidSelfCheck(context: Context, private val status: () -> SystemStatus)
         return block()
     }
 
+    private fun ownContent(source: ScreenSnapshot): ScreenSnapshot? = selfCheckWindowContent(source, app.packageName)
+
     /**
      * 自检页上的一个控件:先按资源 id(读屏给的是短名,也认完整写法的结尾),再按页面上的文字(有字的控件读屏时不带资源 id)。
      * 文字和自检页一样按 App 语言取;比的时候不分大小写、不计较空白(见 [SelfCheckText])。
@@ -614,4 +631,57 @@ class AndroidSelfCheck(context: Context, private val status: () -> SystemStatus)
         const val WEB_CLICKED = "Clicked 1"
         const val WEB_CLICKED_AR = "عدد النقرات: 1"
     }
+}
+
+internal data class SelfCheckWindowRead(
+    val content: ScreenSnapshot?,
+    val missing: List<String>,
+    val wrongAppOnTop: Boolean,
+) {
+    val ready: Boolean get() = content != null && missing.isEmpty() && !wrongAppOnTop
+}
+
+/**
+ * 把合并读屏结果收窄到 Mika 自己的应用窗口,再检查控件。只有 Mika 仍是最上层任务时,
+ * 系统应用的覆盖窗口才不影响自检;完整系统应用有自己的顶层任务,仍算切走。
+ */
+internal fun readSelfCheckWindow(
+    screen: ScreenSnapshot,
+    packageName: String,
+    topTaskPackage: String?,
+    expected: List<String>,
+    isSystemPackage: (String) -> Boolean,
+    find: ScreenSnapshot.(String) -> UiElement?,
+): SelfCheckWindowRead {
+    val content = selfCheckWindowContent(screen, packageName)
+    val missing = expected.filter { key -> content?.let { it.find(key) } == null }
+    val top = screen.packageName
+    val wrongApp = when {
+        topTaskPackage != null && topTaskPackage != packageName -> true
+        top == null || top == packageName -> false
+        !isSystemPackage(top) -> true
+        // 任务归属读不到时不能把系统窗口认定为覆盖层,保持失败。
+        else -> topTaskPackage != packageName
+    }
+    return SelfCheckWindowRead(content, missing, wrongApp)
+}
+
+/** 原始快照的编号不变,只把元素和窗口树收窄到指定 App 的应用窗口。 */
+internal fun selfCheckWindowContent(screen: ScreenSnapshot, packageName: String): ScreenSnapshot? {
+    val ownWindows = screen.windows.filter { it.type == "application" && it.packageName == packageName }
+    if (ownWindows.isEmpty()) return null
+    val refs = buildSet {
+        fun visit(nodes: List<UiTreeNode>) {
+            for (node in nodes) {
+                node.ref?.let(::add)
+                visit(node.children)
+            }
+        }
+        ownWindows.forEach { visit(it.nodes) }
+    }
+    return screen.copy(
+        packageName = packageName,
+        elements = screen.elements.filter { it.ref in refs },
+        windows = ownWindows,
+    )
 }

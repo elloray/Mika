@@ -16,8 +16,8 @@
     <string name="sandbox_incomplete">Los archivos del entorno están incompletos; puedes restablecerlo en Ajustes → Avanzado</string>
     <string name="sandbox_not_finished">La configuración no terminó; puedes reintentarlo</string>
     <string name="sandbox_network">Permitir que los scripts se conecten a internet</string>
-    <string name="sandbox_network_sub">Desactivado por defecto</string>
-    <string name="sandbox_network_explain">Por defecto Mika trabaja con archivos y ejecuta scripts sin conexión. Con esto activado, los scripts pueden usar la red (por ejemplo, para buscar artículos o mapas) y también podrían enviar al exterior archivos del chat.</string>
+    <string name="sandbox_network_sub">Activado por defecto</string>
+    <string name="sandbox_network_explain">Por defecto Mika trabaja con archivos y ejecuta scripts con conexión. Con esto activado, los scripts pueden usar la red (por ejemplo, para buscar artículos o mapas) y también podrían enviar al exterior archivos del chat.</string>
     <string name="sandbox_isolation_unavailable">Este dispositivo no puede mantener los scripts sin conexión: Mika solo puede trabajar con archivos y ejecutar scripts si “Permitir que los scripts se conecten a internet” está activado</string>
     <string name="sandbox_reset_title">¿Restablecer el entorno?</string>
     <string name="sandbox_reset_body">Elimina el entorno que Mika usa para archivos y scripts, además de los archivos creados en cada chat (incluidos los que adjuntaste), y lo vuelve a configurar automáticamente. Los chats y los ajustes no se ven afectados.</string>

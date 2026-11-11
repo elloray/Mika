@@ -1,1 +1,1 @@
-Save a file from /workspace to the phone's Download/Mika folder (at most 100 MB) and show it to the user as a file card. Use it to hand results to the user.
+Save a file from /workspace to the phone's Download/Mika folder (at most 100 MB) and show it to the user as a file card. Use it to hand results to the user. For a task received through an image-capable messaging channel, exported PNG, JPEG, GIF and WebP images are also sent back to that conversation when the task finishes. Screenshots that you only inspect are not sent; save and share the intended image explicitly.

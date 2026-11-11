@@ -56,7 +56,7 @@ class RootfsInstallerTest {
         val steps = mutableListOf<InstallStep>()
         installer().install { s, _ -> steps += s }
         assertEquals(listOf(InstallStep.Check, InstallStep.Extract, InstallStep.Configure, InstallStep.Skills, InstallStep.Done), steps)
-        assertEquals(SandboxStatus.Ready(network = false), state.status.value)
+        assertEquals(SandboxStatus.Ready(network = true), state.status.value)
         assertEquals("v1", state.installedVersion)
         assertEquals("one\n", File(dirs.rootfs, "etc/marker").readText())
         assertEquals("127.0.0.1 localhost\n::1 localhost\n", File(dirs.rootfs, "etc/hosts").readText())
@@ -94,7 +94,7 @@ class RootfsInstallerTest {
         installer().install { s, _ -> steps += s }
         assertEquals(InstallStep.Configure, steps.first())
         assertEquals(1, opens)
-        assertEquals(SandboxStatus.Ready(network = false), state.status.value)
+        assertEquals(SandboxStatus.Ready(network = true), state.status.value)
     }
 
     @Test
@@ -105,7 +105,7 @@ class RootfsInstallerTest {
         File(dirs.root, "rootfs.new/half").apply { parentFile?.mkdirs() }.writeText("x")
         installer().install { _, _ -> }
         assertFalse(File(dirs.root, "rootfs.new").exists())
-        assertEquals(SandboxStatus.Ready(network = false), state.status.value)
+        assertEquals(SandboxStatus.Ready(network = true), state.status.value)
     }
 
     @Test
@@ -127,7 +127,7 @@ class RootfsInstallerTest {
         assertEquals("two\n", File(dirs.rootfs, "etc/marker").readText())
         assertFalse("files of the old runtime are gone", File(dirs.rootfs, "usr/lib/stale").exists())
         assertEquals("keep", ws.readText())
-        assertEquals(SandboxStatus.Ready(network = false), state.status.value)
+        assertEquals(SandboxStatus.Ready(network = true), state.status.value)
     }
 
     @Test

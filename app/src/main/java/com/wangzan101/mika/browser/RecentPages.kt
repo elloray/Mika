@@ -17,8 +17,9 @@ import java.io.File
 data class RecentPage(val url: String, val title: String, val openedAtMs: Long)
 
 /**
- * 浏览器页「最近打开」:用户在 Mika 的浏览器页里打开过的网页,最近的在前,至多 [limit] 条。
+ * 浏览器页的历史记录:用户在 Mika 的浏览器页里打开过的网页,最近的在前,至多 [limit] 条。
  * 同一网址(不计 # 后面的部分)只留一条,再打开时挪到最前、标题换成新的。
+ * 起始页只列最近 [START_LIMIT] 条,历史页列全部。
  * 存在 App 私有目录的一个 JSON 文件里;文件坏了就从空表重新开始。
  */
 class RecentPages(dir: File, private val limit: Int = LIMIT, private val clock: () -> Long = System::currentTimeMillis) {
@@ -44,6 +45,16 @@ class RecentPages(dir: File, private val limit: Int = LIMIT, private val clock: 
         val t = title.trim()
         if (t.isEmpty() || _entries.value.none { key(it.url) == key && it.title != t }) return
         save(_entries.value.map { if (key(it.url) == key) it.copy(title = t) else it })
+    }
+
+    /** 删掉一条;没有这一条时为 false。 */
+    @Synchronized
+    fun remove(url: String): Boolean {
+        val key = key(url)
+        val rest = _entries.value.filter { key(it.url) != key }
+        if (rest.size == _entries.value.size) return false
+        save(rest)
+        return true
     }
 
     @Synchronized
@@ -80,7 +91,10 @@ class RecentPages(dir: File, private val limit: Int = LIMIT, private val clock: 
     }
 
     companion object {
-        const val LIMIT = 10
+        /** 历史记录最多留这么多条。 */
+        const val LIMIT = 500
+        /** 起始页「最近打开」只列这么多条。 */
+        const val START_LIMIT = 10
         private const val FILE = "browser_recent.json"
     }
 }

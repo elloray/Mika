@@ -426,7 +426,7 @@ object IrreversibleDetector {
 
     private fun top(e: UiElement) = if (e.bounds.size == 4) e.bounds[1] else 0
 
-    private fun matchResource(id: String): IrrevAction? = resourceWords(id).firstNotNullOfOrNull { RESOURCE_WORDS[it] }
+    internal fun matchResource(id: String): IrrevAction? = resourceWords(id).firstNotNullOfOrNull { RESOURCE_WORDS[it] }
 
     /** 资源 ID 按 _ - . 和驼峰拆成的单词。 */
     private fun resourceWords(id: String): List<String> =
@@ -438,6 +438,7 @@ object IrreversibleDetector {
      */
     internal fun editsField(e: UiElement, s: ScreenSnapshot): Boolean {
         if (e.editable) return true
+        if (NumericKeypadEditing.edits(e, s)) return true
         if (e.bounds.size != 4) return false
         val fields = s.elements.filter { it.editable && it.bounds.size == 4 && it !== e }
         val n = Hant.fold(e.name).filterNot(Char::isWhitespace).lowercase()

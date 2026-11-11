@@ -16,8 +16,8 @@
     <string name="sandbox_incomplete">환경 파일이 불완전해요. 설정 → 고급에서 초기화할 수 있어요</string>
     <string name="sandbox_not_finished">설정이 끝나지 않았어요. 다시 시도할 수 있어요</string>
     <string name="sandbox_network">스크립트의 인터넷 사용 허용</string>
-    <string name="sandbox_network_sub">기본적으로 꺼져 있어요</string>
-    <string name="sandbox_network_explain">기본적으로 Mika는 오프라인으로 파일을 다루고 스크립트를 실행해요. 이 기능을 켜면 스크립트가 네트워크를 쓸 수 있어요(예: 논문이나 지도 조회). 대신 채팅의 파일을 밖으로 보낼 수도 있어요.</string>
+    <string name="sandbox_network_sub">기본적으로 켜져 있어요</string>
+    <string name="sandbox_network_explain">기본적으로 Mika는 온라인으로 파일을 다루고 스크립트를 실행해요. 이 기능을 켜면 스크립트가 네트워크를 쓸 수 있어요(예: 논문이나 지도 조회). 대신 채팅의 파일을 밖으로 보낼 수도 있어요.</string>
     <string name="sandbox_isolation_unavailable">이 기기에서는 스크립트를 오프라인으로 유지할 수 없어요. “스크립트의 인터넷 사용 허용”을 켜야만 Mika가 파일을 다루고 스크립트를 실행할 수 있어요</string>
     <string name="sandbox_reset_title">환경을 초기화할까요?</string>
     <string name="sandbox_reset_body">Mika가 파일과 스크립트에 쓰는 환경과, 각 채팅에서 만든 파일(첨부한 파일 포함)을 삭제한 뒤 자동으로 다시 설정해요. 채팅과 설정은 그대로예요.</string>

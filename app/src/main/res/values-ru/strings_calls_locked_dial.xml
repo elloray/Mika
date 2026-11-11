@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="calls_task_dial_now">Позвонить сейчас</string>
+    <string name="calls_task_dial_locked">Позвонить после блокировки</string>
+    <string name="calls_task_dial_locked_note">Заблокируйте телефон в течение 45 секунд. Будет одна попытка с этим номером, SIM и задачей. Отмена доступна в уведомлении. Если только выключить экран, не заблокировав телефон, звонка не будет.</string>
+    <string name="calls_task_dial_locked_confirm">Подтвердить и ждать блокировки</string>
+</resources>

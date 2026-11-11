@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="teach_title">Teach Mika</string>
+    <string name="teach_menu">Teach Mika</string>
+    <string name="teach_goal_label">Goal</string>
+    <string name="teach_goal_hint">What should Mika learn? One sentence.</string>
+    <string name="teach_disclosure">Steps stay on this phone, and only after you tap Start demonstration. If a model is set up, generating a skill sends a redacted summary of the goal and steps to that model. Passwords, verification codes and payment details are left out. If no model is set up, the draft is written on this phone and nothing is uploaded. The draft is not used until you accept it, and it has not been trial-run.</string>
+    <string name="teach_continue">Continue</string>
+    <string name="teach_ready_body">Mika will watch and will not operate the phone. You can pause, finish or discard. Nothing is recorded until you tap Start demonstration.</string>
+    <string name="teach_start">Start demonstration</string>
+    <string name="teach_learning">Learning</string>
+    <string name="teach_paused">Paused</string>
+    <string name="teach_pause">Pause</string>
+    <string name="teach_resume">Resume</string>
+    <string name="teach_end">Finish demonstration</string>
+    <string name="teach_discard">Discard</string>
+    <string name="teach_discard_body">Discard this demonstration and delete the saved steps?</string>
+    <string name="teach_review">Review</string>
+    <string name="teach_correct">Correct this step</string>
+    <string name="teach_clarify">What did this step mean?</string>
+    <string name="teach_remove">Remove</string>
+    <string name="teach_generate">Generate skill draft</string>
+    <string name="teach_busy">A task is running. Wait until it finishes before teaching.</string>
+    <string name="teach_need_a11y">Turn on accessibility before demonstrating. Mika cannot see taps without it.</string>
+    <string name="teach_interrupted">Demonstration stopped because the app restarted or accessibility turned off. Nothing is recorded until you tap Resume.</string>
+    <string name="teach_need_goal">Enter a goal first.</string>
+    <string name="teach_secret_goal">That goal looks like a password or code, so it was not saved.</string>
+    <string name="teach_draft_failed">Could not write the draft. The steps are still here.</string>
+    <string name="teach_draft_ready">A draft is waiting in Memory and skills. It is not used until you accept it, and it has not been trial-run.</string>
+    <string name="teach_open_drafts">Review drafts</string>
+    <string name="teach_no_steps">No steps were kept.</string>
+    <string name="teach_blocked_task">Mika is learning from you, so this task was not started.</string>
+    <string name="teach_channel">Teaching</string>
+    <string name="teach_sensitive_note">Sensitive input was left out.</string>
+    <string name="teach_insufficient_note">Not enough interface information. This is not a coordinate action.</string>
+    <string name="teach_notification">Mika is not operating the phone.</string>
+    <string name="teach_no_visible">The Learning bar could not be shown, so recording did not start. Notification permission is not required. The accessibility overlay has to be visible, with Pause and Finish on it.</string>
+    <string name="teach_watch_lost">The Learning bar disappeared, so the demonstration stopped. Nothing more is being recorded.</string>
+    <string name="teach_shelf_expand">Show Teach Mika</string>
+    <string name="teach_shelf_collapse">Hide Teach Mika</string>
+</resources>

@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="calls_default_sim_settings">기본 발신 SIM</string>
+    <string name="calls_device_and_permissions">기기 및 권한</string>
+    <string name="calls_edit_rule">편집</string>
+    <string name="calls_nav_receive">수신</string>
+    <string name="calls_nav_task">통화 작업</string>
+    <string name="calls_pause_enable_first">자동 받기를 켜면 일시 정지할 수 있습니다.</string>
+    <string name="calls_rule_delay_summary">받기 지연: %1$d초</string>
+    <string name="calls_rule_pause">일시 정지</string>
+    <string name="calls_rule_scope">AI가 받을 번호</string>
+    <string name="calls_sim_ask_each_time">선호 SIM 없음</string>
+    <string name="calls_task_back_to_edit">편집으로 돌아가기</string>
+    <string name="calls_task_confirm_dial">확인 후 전화</string>
+    <string name="calls_task_confirm_note">Mika는 이 통화에만 요청을 사용합니다. 선택한 SIM으로 발신하며 통신사 및 실시간 음성 요금이 발생할 수 있습니다.</string>
+    <string name="calls_task_constraints">약속하면 안 되는 사항</string>
+    <string name="calls_task_context">추가 배경</string>
+    <string name="calls_task_filled">입력됨</string>
+    <string name="calls_task_goal">이번 전화의 목표는 무엇인가요? (필수)</string>
+    <string name="calls_task_goal_example">예: 금요일에 자리가 있는지 확인하고 가격을 기록하기.</string>
+    <string name="calls_task_limit">%1$d / %2$d자</string>
+    <string name="calls_task_number_hint">7~15자리 일반 전화번호를 입력하세요.</string>
+    <string name="calls_task_one_off">이 요청은 이번 통화에만 적용됩니다. 기록에서 통화와 요청을 확인할 수 있습니다.</string>
+    <string name="calls_task_optional">선택</string>
+    <string name="calls_task_pick_sim">이번 통화에 사용할 SIM 선택</string>
+    <string name="calls_task_questions">확인할 질문</string>
+    <string name="calls_task_questions_hint">한 줄에 질문 하나</string>
+    <string name="calls_task_questions_limit">최대 %1$d개 질문, 각 %2$d자까지.</string>
+    <string name="calls_task_replace_action">초안 바꾸기</string>
+    <string name="calls_task_replace_note">현재 초안을 기록의 통화 작업으로 바꿉니다. 전화를 걸지는 않습니다.</string>
+    <string name="calls_task_replace_title">이 초안을 바꿀까요?</string>
+    <string name="calls_task_review">통화 작업 확인</string>
+    <string name="calls_task_review_blocked">발신하려면 기기가 준비되어 있고 통화 중이 아니며 SIM이 선택되어야 합니다.</string>
+    <string name="calls_task_sim_override_summary">이번 통화: %1$s · 기본: %2$s</string>
+    <string name="calls_voice_settings">음성</string>
+</resources>

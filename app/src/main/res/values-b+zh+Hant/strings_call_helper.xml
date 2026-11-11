@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="calls_helper_setup_title">Mika 音訊助手</string>
+    <string name="calls_helper_setup_intro">一般接打電話由系統處理。Mika 的 AI 要在通話中聽見對方並說話，需要音訊助手。「無線偵錯」可在手機上啟動或恢復音訊助手，不必連電腦。配對時需連接 Wi-Fi；AI 即時語音也需要網路。</string>
+    <string name="calls_helper_unavailable">這台裝置無法設定音訊助手</string>
+    <string name="calls_helper_unavailable_reason">系統未提供啟動音訊助手所需的設定。一般電話仍可透過系統電話使用。</string>
+    <string name="calls_helper_ready">音訊助手已連線</string>
+    <string name="calls_helper_usb_running">音訊助手執行中 · 由 USB 啟動</string>
+    <string name="calls_helper_usb_stopped">先前透過 USB 啟動的音訊助手已停止</string>
+    <string name="calls_helper_wireless_recovery">連上 Wi-Fi，在這台手機配對一次。之後若助手停止，可從手機恢復，不必找電腦。</string>
+    <string name="calls_helper_wireless_unavailable">這台手機沒有可用的無線偵錯。</string>
+    <string name="calls_helper_setup_wireless">設定無線恢復</string>
+    <string name="calls_helper_hide_usb">收合電腦備用方式</string>
+    <string name="calls_helper_show_usb">電腦備用方式</string>
+    <string name="calls_helper_usb_fallback">若無法使用無線設定且手邊有電腦，可用傳輸線連接手機，然後在電腦執行這條指令。更新或重新啟動後可能需要再執行一次。</string>
+    <string name="calls_helper_wireless_reconnect">若助手停止，請連上 Wi-Fi；若系統已關閉「無線偵錯」，請重新開啟。系統提示時再重新配對。</string>
+    <string name="calls_helper_wireless_debugging_body">連上 Wi-Fi，在「開發人員選項」開啟「無線偵錯」。系統詢問時按「允許」。開啟後，回到 Mika，繼續配對碼這一步。</string>
+    <string name="calls_helper_usb_debugging_body">在「開發人員選項」開啟「USB 偵錯」，出現提示時按「確定」。無線設定不用插線；請保持其他選項不變。</string>
+    <string name="calls_helper_usb_debugging_brief">無線設定不用插線</string>
+    <string name="calls_helper_connect_body">配對後，Mika 會連線至這台手機上的音訊助手。</string>
+    <string name="calls_helper_wifi_needed">連上 Wi-Fi，才能透過「無線偵錯」啟動或恢復音訊助手。</string>
+    <string name="calls_helper_repair_needed">配對資訊無法使用，請在這台手機上重新配對。</string>
+    <string name="calls_helper_name">音訊助手</string>
+    <string name="calls_helper_disconnected">連線後，AI 才能在通話中聽和說</string>
+    <string name="calls_helper_manage">管理</string>
+    <string name="calls_helper_set_up">設定</string>
+    <string name="calls_helper_pairing_done">音訊助手已連線，可以回到 Mika。</string>
+    <string name="calls_helper_pairing_problem">回到 Mika 查看如何重新連線。</string>
+</resources>

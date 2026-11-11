@@ -1,6 +1,5 @@
 package com.wangzan101.mika.core.wechat
 
-import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -11,8 +10,6 @@ import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonPrimitive
-import okhttp3.Call
-import okhttp3.Callback
 import okhttp3.HttpUrl.Companion.toHttpUrl
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
@@ -21,8 +18,6 @@ import okhttp3.RequestBody.Companion.toRequestBody
 import okhttp3.Response
 import java.io.IOException
 import java.util.Base64
-import kotlin.coroutines.resume
-import kotlin.coroutines.resumeWithException
 import kotlin.random.Random
 
 private const val DEFAULT_BASE_URL = "https://ilinkai.weixin.qq.com"
@@ -79,7 +74,11 @@ data class WechatText(val text: String = "")
 data class WechatItem(
     val type: Int = 0,
     @SerialName("text_item") val textItem: WechatText? = null,
+    @SerialName("image_item") val imageItem: WechatImage? = null,
 )
+
+@Serializable
+data class WechatUserContent(val text: String, val images: List<WechatImage> = emptyList())
 
 @Serializable
 data class WechatMessage(
@@ -93,11 +92,24 @@ data class WechatMessage(
     @SerialName("message_state") val messageState: Int = 0,
     @SerialName("item_list") val items: List<WechatItem> = emptyList(),
     @SerialName("context_token") val contextToken: String? = null,
+    @SerialName("group_id") val groupId: String? = null,
 ) {
-    /** 第一版只收用户私聊文本；其他消息不进入任务系统。 */
+    private fun isUserPrivateMessage() = messageType == 1 && !messageId.isNullOrBlank() &&
+        !fromUserId.isNullOrBlank() && groupId.isNullOrBlank()
+
+    /** Kept for text-only callers. Image-aware channels use [userContent]. */
     fun userText(): String? {
-        if (messageType != 1 || messageId.isNullOrBlank() || fromUserId.isNullOrBlank()) return null
+        if (!isUserPrivateMessage()) return null
         return items.firstOrNull { it.type == 1 }?.textItem?.text?.takeIf { it.isNotBlank() }
+    }
+
+    /** Preserve every image item, including malformed ones, so the channel can report a failed attachment. */
+    fun userContent(): WechatUserContent? {
+        if (!isUserPrivateMessage()) return null
+        val text = items.filter { it.type == 1 }.mapNotNull { it.textItem?.text?.takeIf(String::isNotBlank) }
+            .joinToString("\n")
+        val images = items.filter { it.type == 2 }.map { it.imageItem ?: WechatImage() }
+        return WechatUserContent(text, images).takeIf { text.isNotBlank() || images.isNotEmpty() }
     }
 }
 
@@ -129,7 +141,13 @@ class WechatApi(
     private val client: OkHttpClient,
     private val channelVersion: String,
     private val defaultBaseUrl: String = DEFAULT_BASE_URL,
+    cdnBaseUrl: String = WechatImages.CDN_BASE_URL,
 ) {
+    // Media redirects are never followed, including requests that carry the Bot token.
+    private val mediaClient = client.newBuilder().followRedirects(false).followSslRedirects(false).retryOnConnectionFailure(false)
+        .callTimeout(60, java.util.concurrent.TimeUnit.SECONDS).build()
+    private val images = WechatImageTransfer(mediaClient, cdnBaseUrl)
+
     fun startLogin(): WechatQrStart {
         val url = endpoint(defaultBaseUrl, "get_bot_qrcode").newBuilder()
             .addQueryParameter("bot_type", "3").build()
@@ -164,6 +182,31 @@ class WechatApi(
         post(account, "sendmessage", body, SendRequest.serializer(), WechatQrStart.serializer())
     }
 
+    suspend fun downloadImage(image: WechatImage): WechatDownloadedImage = images.download(image)
+
+    /** Uploading bytes does not send a chat message; the caller can recheck its binding before [sendImage]. */
+    suspend fun uploadImage(account: WechatAccount, peerId: String, bytes: ByteArray): WechatUploadedImage {
+        val prepared = WechatImages.prepare(bytes)
+        val body = WechatUploadRequest(prepared.fileKey, 1, peerId, prepared.plainSize,
+            prepared.md5, prepared.encrypted.size, true, prepared.keyHex, WechatBaseInfo(channelVersion))
+        val request = Request.Builder().url(endpoint(account.baseUrl, "getuploadurl")).headers(headers(account.token))
+            .post(json.encodeToString(WechatUploadRequest.serializer(), body).toRequestBody(jsonBody)).build()
+        val upload = executeCancellable(request, WechatUploadResponse.serializer(), mediaClient)
+        return images.upload(prepared, upload)
+    }
+
+    /** One image per message, with a stable delivery ID; captions are separate text deliveries. */
+    suspend fun sendImage(account: WechatAccount, peerId: String, clientId: String,
+        uploaded: WechatUploadedImage, contextToken: String?) {
+        val message = WechatMessage(fromUserId = "", toUserId = peerId, clientId = clientId,
+            messageType = 2, messageState = 2, items = listOf(WechatItem(type = 2, imageItem = uploaded.image)),
+            contextToken = contextToken)
+        val body = SendRequest(message, WechatBaseInfo(channelVersion))
+        val request = Request.Builder().url(endpoint(account.baseUrl, "sendmessage")).headers(headers(account.token))
+            .post(json.encodeToString(SendRequest.serializer(), body).toRequestBody(jsonBody)).build()
+        executeCancellable(request, WechatQrStart.serializer(), mediaClient)
+    }
+
     private inline fun <reified T, reified R> post(account: WechatAccount, path: String, body: T,
         bodySerializer: kotlinx.serialization.SerializationStrategy<T>, responseSerializer: kotlinx.serialization.DeserializationStrategy<R>): R {
         val payload = json.encodeToString(bodySerializer, body).toRequestBody(jsonBody)
@@ -175,26 +218,8 @@ class WechatApi(
         client.newCall(request).execute().use { response -> decode(response, serializer) }
 
     private suspend fun <T> executeCancellable(request: Request,
-        serializer: kotlinx.serialization.DeserializationStrategy<T>): T = suspendCancellableCoroutine { continuation ->
-        val call = client.newCall(request)
-        continuation.invokeOnCancellation { call.cancel() }
-        call.enqueue(object : Callback {
-            override fun onFailure(call: Call, e: IOException) {
-                if (continuation.isActive) continuation.resumeWithException(e)
-            }
-
-            override fun onResponse(call: Call, response: Response) {
-                response.use {
-                    try {
-                        val result = decode(it, serializer)
-                        if (continuation.isActive) continuation.resume(result)
-                    } catch (e: Exception) {
-                        if (continuation.isActive) continuation.resumeWithException(e)
-                    }
-                }
-            }
-        })
-    }
+        serializer: kotlinx.serialization.DeserializationStrategy<T>, http: OkHttpClient = client): T =
+        awaitWechatResponse(http, request) { decode(it, serializer) }
 
     private fun <T> decode(response: Response, serializer: kotlinx.serialization.DeserializationStrategy<T>): T {
         val text = response.body?.string().orEmpty()
@@ -205,6 +230,7 @@ class WechatApi(
             is WechatQrStart -> result.ret to result.errmsg
             is WechatQrStatus -> result.ret to result.errmsg
             is WechatUpdates -> result.ret to result.errmsg
+            is WechatUploadResponse -> result.ret to result.errmsg
             else -> 0 to null
         }
         if (code != 0) throw WechatApiException(code, message ?: "WeChat API error $code")

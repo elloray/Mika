@@ -5,12 +5,14 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageInfo
 import android.content.pm.PackageManager
+import android.net.Network
 import android.net.Uri
 import android.os.Environment
 import androidx.core.content.FileProvider
 import com.wangzan101.mika.core.net.NetProxy
 import okhttp3.OkHttpClient
 import java.io.File
+import java.net.Proxy
 import java.util.UUID
 import java.util.concurrent.TimeUnit
 
@@ -25,9 +27,9 @@ data class ApkDownloadState(
 }
 
 /**
- * 系统负责后台下载;只保存任务编号,进程重启后仍能查询、取消或安装。方法在 IO 线程调用。
+ * 手动直连下载交给系统;保存任务编号,进程重启后仍能查询、取消或安装。方法在 IO 线程调用。
  * 文件放在本应用的外部专属目录(别的 App 读写不到),同一时间只留一个;换版本、删除、装好后都清掉。
- * 设了网络代理(设置 › 网络代理)时系统下载服务不走它,改由 Mika 自己经代理在进程里下([ProxiedApkDownload])。
+ * 自动下载和经代理的手动下载由 Mika 在进程里执行,以便绑定 Wi-Fi 或使用应用代理([ProxiedApkDownload])。
  */
 class ApkUpdater(private val context: Context, private val net: NetProxy = NetProxy.shared) {
     private val manager = context.getSystemService(DownloadManager::class.java)
@@ -35,9 +37,10 @@ class ApkUpdater(private val context: Context, private val net: NetProxy = NetPr
     private val directory: File get() = File(context.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS)
         ?: error("external files unavailable"), "updates")
     private val file: File? get() = prefs.getString("file", null)?.let { File(directory, it) }
-    /** 这一份是 Mika 自己经代理下的(不是系统下载服务)。 */
+    /** 这一份由 Mika 自己下载。 */
     private val viaApp: Boolean get() = prefs.getBoolean("viaApp", false)
 
+    @Synchronized
     fun state(release: ReleaseInfo): ApkDownloadState =
         if (prefs.getString("url", null) != release.apkUrl) ApkDownloadState() else recorded()
 
@@ -60,9 +63,14 @@ class ApkUpdater(private val context: Context, private val net: NetProxy = NetPr
         return ApkDownloadState(DownloadPhase.Failed)
     }
 
-    fun download(release: ReleaseInfo) {
+    @Synchronized
+    /** 自动下载传入当前 Wi-Fi，手动下载沿用系统默认网络。 */
+    fun download(release: ReleaseInfo, wifi: Network? = null) {
         val url = requireNotNull(release.apkUrl)
         ApkIntegrity.requireOfficialUrl(url)
+        val proxy = net.proxyFor(Uri.parse(url).host.orEmpty())
+        // OkHttp creates SOCKS sockets outside the configured Wi-Fi socket factory.
+        if (wifi != null && proxy?.socks == true) return
         if (prefs.getString("url", null) == url && state(release).phase in
             listOf(DownloadPhase.Downloading, DownloadPhase.Paused, DownloadPhase.Ready)) return
         cancel()
@@ -72,9 +80,9 @@ class ApkUpdater(private val context: Context, private val net: NetProxy = NetPr
         folder.listFiles()?.forEach { it.delete() }
         // remove 的后台清理可能晚于下一次下载,不能复用旧任务的文件名。
         val target = File(folder, "update-${UUID.randomUUID()}.apk")
-        if (net.proxyFor(Uri.parse(url).host.orEmpty()) != null) {
+        if (wifi != null || proxy != null) {
             check(prefs.edit().putBoolean("viaApp", true).putString("url", url).putString("file", target.name).commit()) { "could not save download" }
-            proxied.start(url, target)
+            proxied.start(url, target, wifi, proxy?.javaProxy() ?: Proxy.NO_PROXY)
             return
         }
         val request = DownloadManager.Request(Uri.parse(url))
@@ -90,6 +98,7 @@ class ApkUpdater(private val context: Context, private val net: NetProxy = NetPr
         }
     }
 
+    @Synchronized
     fun cancel() {
         if (viaApp) proxied.cancel()
         val id = prefs.getLong("id", -1)
@@ -100,6 +109,7 @@ class ApkUpdater(private val context: Context, private val net: NetProxy = NetPr
     }
 
     /** 已经装上(或装了更新的版本)后,下好的安装包没用了:启动时清掉。下载中、暂停、失败的留给关于页处理。 */
+    @Synchronized
     fun dropInstalled() {
         val target = file ?: return
         if (recorded().phase != DownloadPhase.Ready) return
@@ -112,6 +122,7 @@ class ApkUpdater(private val context: Context, private val net: NetProxy = NetPr
      * 只接受本应用、更高版本、同一签名的完整附件;没通过就删掉文件并抛 [ApkRejected]。
      * 系统安装器之后还会再验签名并要求用户确认。
      */
+    @Synchronized
     fun installIntent(release: ReleaseInfo): Intent {
         check(state(release).phase == DownloadPhase.Ready)
         ApkIntegrity.requireOfficialUrl(requireNotNull(release.apkUrl))
@@ -154,7 +165,7 @@ class ApkUpdater(private val context: Context, private val net: NetProxy = NetPr
     }
 
     private companion object {
-        /** 经代理在进程里下的那一份,进程里只有一个。 */
+        /** 进程内只下载一份更新。 */
         val proxied by lazy {
             ProxiedApkDownload(NetProxy.shared.client(OkHttpClient.Builder().readTimeout(60, TimeUnit.SECONDS)))
         }

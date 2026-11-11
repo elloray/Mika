@@ -187,4 +187,7 @@
     <string name="speech_footer">Hanya model yang tampak seperti model ucapan yang dicantumkan. Jika model Anda tidak ada, ketik namanya; klip pendek akan disalin sebagai uji saat Anda memilihnya.</string>
     <string name="speech_pick_failed">Model itu tidak bisa menyalin: %1$s</string>
     <string name="speech_pick_timeout">%1$s tidak menjawab klip uji dalam %2$d detik</string>
+    <string name="models_daily_token_budget">Anggaran token harian penyedia</string>
+    <string name="models_daily_token_budget_sub">Menghitung token input dan output yang dilaporkan untuk semua model dan penggunaan penyedia ini dalam hari kalender lokal. Saat batas tercapai, permintaan berikutnya diblokir; permintaan yang sedang berjalan dapat melampauinya. Penggunaan yang tidak dilaporkan dihitung 0 dan direset saat tanggal lokal berubah.</string>
+    <string name="models_daily_token_budget_save_failed">Anggaran tidak dapat disimpan. Pengaturan sebelumnya tetap berlaku.</string>
 </resources>

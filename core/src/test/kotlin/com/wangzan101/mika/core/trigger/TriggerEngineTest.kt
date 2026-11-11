@@ -8,6 +8,37 @@ import java.time.Instant
 import java.time.ZoneId
 
 class TriggerEngineTest {
+    @Test fun editingPlanInvalidatesOnlyThePendingConditionCheck() {
+        val original = TriggerDefinition("check", "t", "old action", 1_000,
+            conditionGoal = "old condition", intervalMs = 1_000)
+        val store = MemoryTriggerStore()
+        store.upsert(original)
+        val engine = TriggerEngine(store, {}) { _, _ -> }
+        engine.fire(1_000)
+        val oldWindow = store.windows().single()
+        assertEquals(TriggerWindowState.Dispatched, oldWindow.state)
+
+        assertTrue(store.edit(original.copy(goal = "new action", conditionGoal = "new condition", nextAtMs = 2_000)))
+        assertEquals(TriggerWindowState.Skipped, store.windows().single().state)
+        assertFalse(store.mark(oldWindow.key, TriggerWindowState.ActionDispatched))
+
+        engine.fire(2_000)
+        val next = store.windows().single { it.dueAtMs == 2_000L }
+        assertEquals(TriggerWindowState.Dispatched, next.state)
+        assertTrue(store.mark(next.key, TriggerWindowState.ActionDispatched))
+        assertTrue(store.edit(store.get(original.id)!!.copy(goal = "another action")))
+        assertEquals(TriggerWindowState.ActionDispatched, store.windows().single { it.key == next.key }.state)
+    }
+
+    @Test fun editingOnlyTheScheduleKeepsTheLatestConditionHistory() {
+        val original = TriggerDefinition("check", "t", "action", 1_000, conditionGoal = "condition")
+        val current = original.copy(lastConditionMet = true, baselineValue = "new value", lastFiredAtMs = 1_000)
+        val store = MemoryTriggerStore()
+        store.upsert(current)
+        assertTrue(store.edit(original.copy(nextAtMs = 2_000)))
+        assertEquals(current.copy(nextAtMs = 2_000), store.get(original.id))
+    }
+
     @Test fun idleOnlyDueWindowWaitsForWatchdogWithoutBeingClaimed() {
         val store = MemoryTriggerStore()
         store.upsert(TriggerDefinition("idle", "t", "do", 1_000, idleOnly = true))

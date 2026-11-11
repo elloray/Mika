@@ -5,6 +5,10 @@ import com.wangzan101.mika.core.net.ProxyFailure
 sealed class ModelError(message: String, cause: Throwable? = null) : Exception(message, cause) {
     class Auth : ModelError("API Key 无效或没有权限")
     class QuotaExceeded : ModelError("额度已用完")
+    /** 本任务的已报告用量达到预算；不再发起任何收尾或重试请求。 */
+    class TaskBudgetExceeded(val limit: Long, val used: Long) : ModelError("本任务的 Token 预算已用完")
+    /** 这家服务商今天在本地已报告的用量达到预算；[providerName] 只用于给用户说明是哪一家。 */
+    class DailyBudgetExceeded(val providerName: String, val limit: Long, val used: Long) : ModelError("服务商今日的 Token 预算已用完")
     class RateLimited(val retryAfterMs: Long?) : ModelError("请求太频繁,请稍后再试")
     class ContextTooLong : ModelError("对话内容超出模型上下文长度")
     /**

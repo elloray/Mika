@@ -59,4 +59,11 @@
     <string name="diagnostics_share">Поделиться</string>
     <string name="diagnostics_copied">Скопировано</string>
     <string name="diagnostics_loading">Сбор данных…</string>
+    <string name="about_auto_update">Автообновление</string>
+    <string name="about_auto_update_detail">Скачивать новые версии в фоне только по Wi-Fi и запрашивать подтверждение перед установкой</string>
+    <string name="about_auto_update_disable">Выключить автообновление</string>
+    <string name="about_auto_update_ready">Mika %1$s загружен</string>
+    <string name="about_auto_update_confirm_title">Новая версия Mika готова</string>
+    <string name="about_auto_update_confirm_detail">Установите %1$s сейчас или отключите автообновление и проверяйте обновления в настройках.</string>
+    <string name="about_auto_update_now">Обновить сейчас</string>
 </resources>

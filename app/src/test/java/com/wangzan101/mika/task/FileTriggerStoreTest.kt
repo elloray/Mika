@@ -12,6 +12,34 @@ import org.junit.Assert.assertEquals
 import org.junit.Test
 
 class FileTriggerStoreTest {
+    @Test fun multipleClocksSurviveClaimsAndReopenWithoutChangingLegacySchema() {
+        val file = Files.createTempDirectory("trigger-times").resolve("triggers.json").toFile()
+        val now = java.time.Instant.parse("2026-11-10T00:00:00Z").toEpochMilli()
+        val store = FileTriggerStore(file)
+        store.upsert(TriggerDefinition("multi", "thread", "remind", now,
+            reminderText = "break", calendarTime = "08:00", calendarZone = "Asia/Shanghai",
+            calendarTimes = listOf("08:00", "12:30", "20:00")))
+        store.claimDue(now)
+        val restored = FileTriggerStore(file)
+        assertEquals(listOf("08:00", "12:30", "20:00"), restored.get("multi")!!.calendarClocks())
+        assertEquals(java.time.Instant.parse("2026-11-10T04:30:00Z").toEpochMilli(), restored.get("multi")!!.nextAtMs)
+        assertEquals(1, restored.windows().size)
+        assertEquals(false, file.readText().contains("calendarTimes"))
+        assertEquals("08:00", Json.decodeFromString<TriggerSnapshot>(file.readText()).triggers.single().calendarTime)
+    }
+
+    @Test fun invalidOrStaleClockExtensionFallsBackToTheLegacyClock() {
+        val file = Files.createTempDirectory("trigger-times").resolve("triggers.json").toFile()
+        FileTriggerStore(file).upsert(TriggerDefinition("multi", "thread", "check", 1000,
+            calendarTime = "08:00", calendarZone = "UTC", calendarTimes = listOf("08:00", "20:00")))
+        val sidecar = File(file.parentFile, file.name + ".conditions")
+        sidecar.writeText("""{"states":{"multi":{"calendarTimes":["08:00","bad"]}}}""")
+        assertEquals(listOf("08:00"), FileTriggerStore(file).get("multi")!!.calendarClocks())
+        assertEquals(false, File(file.parentFile, file.name + ".corrupt").exists())
+        sidecar.writeText("""{"states":{"multi":{"calendarTimes":["09:00","20:00"]}}}""")
+        assertEquals(listOf("08:00"), FileTriggerStore(file).get("multi")!!.calendarClocks())
+    }
+
     @Test fun claimAndLedgerSurviveStoreReopen() {
         val file = Files.createTempDirectory("trigger-test").resolve("triggers.json").toFile()
         val first = FileTriggerStore(file)

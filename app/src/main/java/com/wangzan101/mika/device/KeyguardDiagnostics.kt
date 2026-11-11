@@ -18,6 +18,14 @@ internal object KeyguardDiagnostics {
     ): String = "window[index=$index,focused=$focused,password_nodes=$passwordNodes,digits=$digits," +
         "pad_keys=$padKeys,pin_layout=$pinLayout]"
 
+    fun windowInfo(
+        index: Int,
+        type: Int,
+        packageName: CharSequence?,
+        focused: Boolean,
+        active: Boolean,
+    ): String = "window_info[index=$index,type=$type,package=${name(packageName)},focused=$focused,active=$active]"
+
     fun field(
         id: CharSequence?,
         className: CharSequence?,

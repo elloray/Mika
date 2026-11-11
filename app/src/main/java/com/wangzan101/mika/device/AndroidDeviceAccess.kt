@@ -47,6 +47,44 @@ internal class AndroidDeviceAccessPort(context: Context, private val helper: () 
     }
 
     /**
+     * 上滑后仍是生物识别优先页、没有凭据框时,点 SystemUI 里最大的可点非数字目标一次(「用密码解锁」这类大按钮)。
+     * 只认大面积目标,「取消」「紧急呼叫」等小文字链接被排除;没有符合条件的就不点。
+     */
+    override suspend fun revealCredentialFallback(): Boolean = withContext(Dispatchers.IO) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return@withContext false
+        if (!power.isInteractive || !keyguard.isKeyguardLocked || !keyguard.isDeviceLocked) return@withContext false
+        val service = ScreenAccessibility.instance.value ?: return@withContext false
+        for (window in service.windowsOn(Display.DEFAULT_DISPLAY)) {
+            val root = window.root ?: continue
+            if (root.packageName?.toString() != SYSTEM_UI) continue
+            val windowBounds = Rect().also(window::getBoundsInScreen)
+            val candidates = mutableListOf<KeyguardReveal.Candidate>()
+            fun visit(n: AccessibilityNodeInfo, depth: Int) {
+                if (depth > 40) return
+                val sim = "sim" in n.viewIdResourceName.orEmpty().lowercase()
+                if (n.isVisibleToUser && !sim && n.isEnabled && n.isClickable) {
+                    val digit = KeyguardFields.digitKey(n.text?.toString(), n.contentDescription?.toString()) != null
+                    val b = Rect().also(n::getBoundsInScreen)
+                    candidates += KeyguardReveal.Candidate(
+                        KeyguardReveal.Bounds(b.left, b.top, b.right, b.bottom), clickable = true, digit = digit)
+                }
+                for (i in 0 until n.childCount) n.getChild(i)?.let { visit(it, depth + 1) }
+            }
+            visit(root, 0)
+            val target = KeyguardReveal.fallbackTarget(candidates,
+                KeyguardReveal.Bounds(windowBounds.left, windowBounds.top, windowBounds.right, windowBounds.bottom),
+                MIN_FALLBACK_AREA_FRACTION)
+            if (target != null) {
+                val (cx, cy) = KeyguardReveal.center(target)
+                val ok = runCatching { helper()?.revealDeviceCredentialTap(cx, cy) == true }.getOrDefault(false)
+                Log.i(TAG, "keyguard: credential fallback tap at ($cx,$cy) sent=$ok")
+                return@withContext ok
+            }
+        }
+        false
+    }
+
+    /**
      * 只认主屏 SystemUI 中唯一、类型匹配的密码框。SIM PIN/无法识别的页面不尝试。
      * 没有密码节点时,完整且布局一致的数字键盘可作为 PIN 输入目标;普通密码和图案页不降级。
      * 凭据按键要只投给 SystemUI 的窗口,靠安卓 13 起的定向注入;更早的系统在占位之前就报不支持,不留下暂停。
@@ -96,7 +134,13 @@ internal class AndroidDeviceAccessPort(context: Context, private val helper: () 
         val pinPads = mutableListOf<CredentialTarget>()
         val diagnostics = mutableListOf<String>()
         var passwordNodes = 0
-        val systemUi = service.windowsOn(Display.DEFAULT_DISPLAY).mapNotNull { w ->
+        val windows = service.windowsOn(Display.DEFAULT_DISPLAY)
+        diagnostics += "display_windows=${windows.size}"
+        windows.take(MAX_WINDOW_DIAGNOSTICS).forEachIndexed { index, window ->
+            diagnostics += KeyguardDiagnostics.windowInfo(index, window.type, window.root?.packageName,
+                window.isFocused, window.isActive)
+        }
+        val systemUi = windows.mapNotNull { w ->
             w.root?.takeIf { it.packageName?.toString() == SYSTEM_UI }?.let { w to it }
         }
         diagnostics += "systemui_windows=${systemUi.size}"
@@ -154,16 +198,28 @@ internal class AndroidDeviceAccessPort(context: Context, private val helper: () 
     override suspend fun enter(credential: DeviceCredential): Boolean {
         if (!credentialReady(credential.kind)) return false
         return withContext(Dispatchers.IO) {
+            val clear = residualClear(credential.kind)
             val bytes = ByteArray(credential.value.size) { credential.value[it].code.toByte() }
-            try { runCatching { helper()?.enterDeviceCredential(credential.kind.ordinal, bytes) == true }.getOrDefault(false) }
+            try { runCatching { helper()?.enterDeviceCredential(credential.kind.ordinal, bytes, clear) == true }.getOrDefault(false) }
             finally { bytes.fill(0) }
         }
+    }
+
+    /** 凭据框已有输入时按已有长度回删;空框(最常见,也是生物识别优先页)不删,避免空框 DEL 关掉密码页。 */
+    private fun residualClear(kind: CredentialKind): Int {
+        val target = credentialFields().singleOrNull { it.kind == kind } ?: return 0
+        val node = target.node ?: return 0
+        val length = runCatching { node.text?.length ?: 0 }.getOrDefault(0)
+        return length.coerceIn(0, MAX_CLEAR)
     }
 
     private companion object {
         const val TAG = "MikaDeviceAccess"
         const val SYSTEM_UI = "com.android.systemui"
+        const val MAX_WINDOW_DIAGNOSTICS = 6
         const val MAX_FIELD_DIAGNOSTICS = 8
         const val MAX_DIAGNOSTICS = 20
+        const val MAX_CLEAR = 16
+        const val MIN_FALLBACK_AREA_FRACTION = 0.08f
     }
 }

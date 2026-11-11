@@ -20,6 +20,7 @@ ASSETS = {
     "/": ("index.html", "text/html"),
     "/desk.css": ("desk.css", "text/css"),
     "/desk.js": ("desk.js", "text/javascript"),
+    "/notifications.js": ("notifications.js", "text/javascript"),
     # 3× header rendition of Android's drawable-nodpi/mika_launcher_art.png.
     "/mika-logo.png": ("mika-logo.png", "image/png"),
 }

@@ -13,8 +13,9 @@
     <string name="voice_foot_live">Let go · the words go into the box to edit</string>
     <string name="voice_foot_convert">Let go · converted to text, then into the box</string>
     <string name="voice_left">%1$d s left</string>
-    <string name="voice_slide_cancel">Slide up to cancel</string>
+    <string name="voice_slide_send_cancel">Slide up to send or cancel</string>
     <string name="voice_release_cancel">Let go to cancel</string>
+    <string name="voice_release_send">Let go to send</string>
     <string name="voice_release_fill">Let go to fill in</string>
     <string name="voice_release_convert">Let go to convert</string>
     <string name="voice_converting">Converting…</string>

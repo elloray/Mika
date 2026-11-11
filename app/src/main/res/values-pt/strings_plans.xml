@@ -33,7 +33,7 @@
     <string name="plans_repeat_interval">Intervalo</string>
     <string name="plans_repeat_weekly">Semanal</string>
     <string name="plans_interval_minutes">Repetir a cada (minutos)</string>
-    <string name="plans_clock">Hora local: HH:mm</string>
+    <string name="plans_clock">Horários locais (separados por vírgulas)</string>
     <string name="plans_zone">ID do fuso horário</string>
     <string name="plans_condition_optional">Condição (opcional)</string>
     <string name="plans_notify_change">Ao mudar</string>
@@ -47,7 +47,7 @@
     <string name="plans_error_reminder_condition">Um lembrete fixo não pode ter uma condição</string>
     <string name="plans_error_time">Digite uma data e hora válidas</string>
     <string name="plans_error_interval">Digite um intervalo de 1 a 525.600 minutos</string>
-    <string name="plans_error_clock">Digite uma hora válida no formato HH:mm</string>
+    <string name="plans_error_clock">Digite horários válidos em HH:mm, separados por vírgulas</string>
     <string name="plans_error_zone">Digite um ID de fuso horário válido</string>
     <string name="plans_error_weekdays">Selecione pelo menos um dia</string>
     <string name="plans_error_cooldown">Digite um intervalo mínimo de 1 a 525.600 minutos</string>

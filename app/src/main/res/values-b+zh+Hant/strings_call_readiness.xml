@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="calls_device_allow_notifications">允許通知</string>
+    <string name="calls_device_allow_phone">允許電話權限</string>
+    <string name="calls_device_helper">內建助手</string>
+    <string name="calls_device_helper_connected">已連線</string>
+    <string name="calls_device_notifications">電話通知</string>
+    <string name="calls_device_notifications_app_off">應用程式通知已關閉</string>
+    <string name="calls_device_notifications_calls_off">AI 電話通知管道已關閉</string>
+    <string name="calls_device_notifications_permission_missing">尚未授予通知權限</string>
+    <string name="calls_device_notifications_standby_off">背景待命通知管道已關閉</string>
+    <string name="calls_device_notifications_unknown">無法讀取通知狀態</string>
+    <string name="calls_device_open_app_settings">開啟應用程式權限設定</string>
+    <string name="calls_device_pair_helper">連接內建助手</string>
+    <string name="calls_device_permission_granted">已允許</string>
+    <string name="calls_device_phone_permissions">電話權限</string>
+    <string name="calls_device_phone_permissions_note">需要允許讀取通話狀態和撥打電話</string>
+    <string name="calls_device_ready_to_test">可手動驗證雙向音訊</string>
+    <string name="calls_device_system_settings_failed">無法開啟系統設定。請從 Android 設定進入本應用程式的詳細資訊頁面。</string>
+    <string name="calls_background_auto_off">自動接聽已關閉</string>
+    <string name="calls_background_battery">電池與背景活動</string>
+    <string name="calls_background_battery_managed">Android 正在套用電池最佳化</string>
+    <string name="calls_background_battery_restricted">Android 顯示背景活動受限</string>
+    <string name="calls_background_battery_unknown">無法讀取電池原則</string>
+    <string name="calls_background_battery_unrestricted">Android 顯示已豁免電池最佳化</string>
+    <string name="calls_background_lock_screen_note">如需在鎖定畫面自動接聽，請允許電話通知顯示在鎖定畫面。如果背景待命經常停止，請檢查電池和背景限制。服務執行中仍需另外驗證鎖定畫面接聽。</string>
+    <string name="calls_background_not_running">未執行 · 僅在應用程式可見且裝置解鎖時可自動接聽</string>
+    <string name="calls_background_open_battery">開啟電池設定</string>
+    <string name="calls_background_running">正在執行</string>
+    <string name="calls_background_service">來電背景待命</string>
+    <string name="calls_background_settings">背景與鎖定畫面</string>
+    <string name="calls_background_start">啟動背景待命</string>
+    <string name="calls_background_starting">正在啟動…</string>
+    <string name="calls_device_locked_dial_pending">鎖定後撥號待命</string>
+    <string name="calls_device_locked_dial_remaining">請在 %1$d 秒內鎖定裝置</string>
+    <string name="calls_device_locked_dial_preparing">正在準備鎖定畫面撥號</string>
+    <string name="calls_device_locked_dial_cancel">取消</string>
+</resources>

@@ -1,0 +1,24 @@
+<resources>
+    <string name="file_library_title">Arquivos</string>
+    <string name="file_library_search">Buscar pelo nome</string>
+    <string name="file_library_all">Todas as conversas</string>
+    <string name="file_library_current">Conversa atual</string>
+    <string name="file_library_sources">Todas as origens</string>
+    <string name="file_library_input">Anexos</string>
+    <string name="file_library_output">Arquivos criados</string>
+    <string name="file_library_loading">Carregando arquivos…</string>
+    <string name="file_library_empty">Nenhum arquivo encontrado</string>
+    <string name="file_library_missing">Indisponível</string>
+    <string name="file_library_available">Disponível</string>
+    <string name="file_library_open">Abrir</string>
+    <string name="file_library_share">Compartilhar</string>
+    <string name="file_library_add">Adicionar ao rascunho</string>
+    <string name="file_library_choose">Escolha uma conversa</string>
+    <string name="file_library_new">Nova conversa</string>
+    <string name="file_library_error">Não foi possível acessar este arquivo</string>
+    <string name="file_library_retry">Tentar novamente</string>
+    <string name="file_library_partial">Não foi possível ler algumas conversas.</string>
+    <string name="file_library_unknown_time">Data desconhecida</string>
+    <string name="file_library_draft_saved">Adicionado ao rascunho da conversa escolhida. Abra essa conversa quando for possível.</string>
+    <string name="file_library_load_failed">Não foi possível carregar os arquivos.</string>
+</resources>

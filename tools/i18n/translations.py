@@ -18,8 +18,11 @@ LANGUAGE_DIRECTORY = re.compile(
     r"values-(?:[a-z]{2,3}(?:-r[A-Z]{2})?|b\+[A-Za-z0-9]+(?:\+[A-Za-z0-9]+)*)"
 )
 # This deliberately counts substitutions rather than judging locale-specific argument order.
+# An escaped literal percent is text rather than a substitution, so it matches here as a whole
+# and is skipped below: otherwise the percent left over from a pair starts a new conversion and
+# whatever word follows it (often a different one in each language) is counted as an argument.
 FORMAT_ARGUMENT = re.compile(
-    r"%(?![%n])(?:\d+\$)?[-#+ 0,(<]*\d*(?:\.\d+)?(?:[tT])?"
+    r"%%|%(?![%n])(?:\d+\$)?[-#+ 0,(<]*\d*(?:\.\d+)?(?:[tT])?"
     r"[bBhHsScCdoxXeEfFgGaA]"
 )
 ET.register_namespace("xliff", "urn:oasis:names:tc:xliff:document:1.2")
@@ -135,7 +138,7 @@ def load_catalogs(res_dir: Path) -> Dict[str, Catalog]:
 
 
 def placeholder_count(text: str) -> int:
-    return len(FORMAT_ARGUMENT.findall(text))
+    return sum(1 for match in FORMAT_ARGUMENT.finditer(text) if match.group(0) != "%%")
 
 
 def check(catalogs: Dict[str, Catalog]) -> int:

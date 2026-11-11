@@ -14,7 +14,7 @@ dependencies = []
 mika = "mika_cli:main"
 
 [tool.setuptools]
-py-modules = ["mika_cli"]
+py-modules = ["mika_cli", "mika_notifications"]
 packages = ["mika_desk"]
 package-dir = {"" = "scripts"}
 

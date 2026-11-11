@@ -43,6 +43,20 @@ object PipPhysics {
 
     private const val DECELERATION = 0.998f
 
+    /**
+     * 小窗要离屏幕上下边多远。[collapsedShare] 为 1 是收起的小窗:让开顶栏和输入栏([collapsedTop]/[collapsedBottom]);
+     * 为 0 是展开的大窗:只让开系统栏([safeTop]/[safeBottom])——这时整块背景已经压暗,顶栏和输入栏本来也点不到,
+     * 小窗可以放到整屏,不再只能在中间一小块里挪。之间按比例插值,展开收起时跟着慢慢挪。
+     */
+    fun restingInsets(
+        collapsedTop: Float, collapsedBottom: Float,
+        safeTop: Float, safeBottom: Float, collapsedShare: Float,
+    ): Pair<Float, Float> {
+        val s = collapsedShare.coerceIn(0f, 1f)
+        fun at(safe: Float, collapsed: Float) = safe + (collapsed - safe) * s
+        return at(safeTop, collapsedTop) to at(safeBottom, collapsedBottom)
+    }
+
     /** 以 [velocity](像素/秒)甩出后,按每毫秒衰减到 0.998 倍的减速,最终还能滑多远。 */
     fun project(velocity: Float): Float = (velocity / 1000f) * DECELERATION / (1f - DECELERATION)
 

@@ -47,8 +47,12 @@ phone on the main screen at the same time.
   into; otherwise open the app and type.
 - For alarms, timers and calendar events, prefer phone_set_alarm,
   phone_set_timer and phone_add_calendar_event over operating the clock or
-  calendar screens (phone_show_alarms opens the alarm list to check, change
-  or delete one). Operate those screens only when they return not_supported.
+  calendar screens. For 3 or more events, use phone_calendar_bulk_insert;
+  if it lacks calendar permission or a writable calendar, fall back to
+  phone_add_calendar_event. Never retry an unconfirmed bulk write before
+  checking for duplicates (phone_show_alarms opens the alarm list to check,
+  change or delete one). Operate those screens only when direct tools cannot
+  do the task.
 - For wheel or drum pickers (time, date, region...), call phone_set_wheel once
   per wheel instead of swiping it step by step.
 - An app may be installed more than once (another copy in another user or

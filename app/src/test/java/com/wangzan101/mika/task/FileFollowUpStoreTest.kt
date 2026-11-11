@@ -1,5 +1,9 @@
 package com.wangzan101.mika.task
 
+import com.wangzan101.mika.core.run.Attendance
+import com.wangzan101.mika.core.run.ChannelPeer
+import com.wangzan101.mika.core.run.RunOrigin
+import com.wangzan101.mika.core.run.RunProvenance
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -23,6 +27,30 @@ class FileFollowUpStoreTest {
             assertEquals(listOf("第一件", "第二件", "第三件"), reopened.changes.value.map { it.text })
             assertEquals(QueuedSource.Fallback, reopened.changes.value[1].source)
             assertEquals(1L, reopened.changes.value[0].createdAt)
+        } finally {
+            dir.deleteRecursively()
+        }
+    }
+
+    @Test fun channelFollowUpKeepsItsIdentityAndUnlockPolicyAfterReload() {
+        val dir = Files.createTempDirectory("mika-followups").toFile()
+        try {
+            val file = dir.resolve("followups.json")
+            val peer = ChannelPeer("wechat", "owner", "thread")
+            val item = QueuedFollowUp(
+                "message-2", "thread", "第二项", 2L, QueuedSource.Fallback,
+                provenance = RunProvenance(RunOrigin.Channel, Attendance.Reachable),
+                channelPeer = peer, channelMessageId = "message-2",
+            )
+            assertTrue(FollowUpQueue(FileFollowUpQueueStore(file)).add(item))
+
+            val restored = FollowUpQueue(FileFollowUpQueueStore(file)).changes.value.single()
+
+            assertEquals(item, restored)
+            val authorized = taskUnlockAuthorization(restored.provenance.origin, restored.channelPeer) { candidate ->
+                candidate == peer
+            }
+            assertTrue(requireNotNull(authorized).invoke())
         } finally {
             dir.deleteRecursively()
         }
