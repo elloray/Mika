@@ -5,6 +5,7 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.hasAnyAncestor
 import androidx.compose.ui.test.hasTestTag
+import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithTag
@@ -23,7 +24,7 @@ import org.junit.rules.ExternalResource
 class SidebarDestinationsDeviceTest {
     private val instrumentation = InstrumentationRegistry.getInstrumentation()
     private val context = instrumentation.targetContext
-    private val preferences = listOf("onboarding" to "model_setup_done", "phone_setup" to "guide_seen")
+    private val preferences = listOf("onboarding" to "model_setup_done", "phone_setup" to "guide_seen", "app_language" to "language_prompted")
     private var saved = emptyList<Boolean?>()
     @get:Rule(order = 0) val setup = object : ExternalResource() {
         override fun before() {
@@ -44,7 +45,7 @@ class SidebarDestinationsDeviceTest {
     @get:Rule(order = 1) val compose = createAndroidComposeRule<MainActivity>()
 
     private fun open(label: Int) {
-        compose.onNode(hasText(context.getString(label)) and hasAnyAncestor(hasTestTag("drawer"))).performClick()
+        compose.onNode((hasText(context.getString(label)) or hasContentDescription(context.getString(label))) and hasAnyAncestor(hasTestTag("drawer"))).performClick()
         compose.onNodeWithTag("permanent-navigation").assertIsDisplayed()
         val navigation = compose.onNodeWithTag("permanent-navigation").fetchSemanticsNode().boundsInRoot
         val detail = compose.onNodeWithTag("navigation-detail").fetchSemanticsNode().boundsInRoot
@@ -54,6 +55,8 @@ class SidebarDestinationsDeviceTest {
     @Test fun sidebarPagesStayBesideNavigationAndBackRestoresChatDraft() {
         compose.runOnUiThread { (context.applicationContext as MikaApp).chat.newConversation() }
         compose.onNodeWithTag("composer-field").performTextReplacement("保留这段折叠屏草稿")
+        open(R.string.drawer_personal)
+        compose.onNodeWithTag("personal-screen").assertIsDisplayed()
         open(R.string.drawer_plans)
         compose.onNodeWithTag("composer-field").assertDoesNotExist()
         compose.onNodeWithTag("plans-segment-running").assertIsDisplayed()

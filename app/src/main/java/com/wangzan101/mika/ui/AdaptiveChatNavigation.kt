@@ -43,11 +43,12 @@ import com.wangzan101.mika.ui.theme.MikaTheme
 @Composable
 internal fun AdaptiveChatNavigation(
     layout: AdaptiveLayout,
-    drawerState: DrawerState,
+    drawerState: DrawerState? = null,
     modifier: Modifier = Modifier,
     drawerContent: @Composable () -> Unit,
     sideContent: (@Composable () -> Unit)? = null,
     drawerGesturesEnabled: Boolean = true,
+    compactContent: (@Composable (@Composable () -> Unit, @Composable () -> Unit) -> Unit)? = null,
     content: @Composable () -> Unit,
 ) {
     var requestedWidth by rememberSaveable { mutableStateOf<Float?>(null) }
@@ -88,10 +89,12 @@ internal fun AdaptiveChatNavigation(
             }
         } else if (!drawerGesturesEnabled) {
             chat()
+        } else if (compactContent != null) {
+            compactContent(navigation, chat)
         } else {
             ModalNavigationDrawer(
                 drawerContent = { navigation() },
-                drawerState = drawerState,
+                drawerState = requireNotNull(drawerState),
                 scrimColor = MikaTheme.colors.floatShadow.copy(alpha = 0.28f),
             ) {
                 chat()

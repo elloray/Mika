@@ -1,5 +1,7 @@
 package com.wangzan101.mika.ui
 
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.lazy.LazyColumn
@@ -34,7 +36,11 @@ import org.junit.Test
 class AdaptiveChatNavigationTest {
     @get:Rule val compose = createComposeRule()
 
-    @Test fun switchingPanesKeepsDraftScrollAndCompositionThenRestoresAfterRecreation() {
+    @Test fun switchingPanesKeepsDraftScrollAndCompositionThenRestoresAfterRecreation() = verifyStateContinuity(false)
+
+    @Test fun customDrawerKeepsDraftScrollAndCompositionAcrossSplitAndRecreation() = verifyStateContinuity(true)
+
+    private fun verifyStateContinuity(customDrawer: Boolean) {
         val compact = adaptiveLayout(400f, 900f, emptyList(), true)
         val book = adaptiveLayout(1000f, 900f,
             listOf(FoldObstacle(PaneBounds(420f, 0f, 440f, 900f), true)), true)
@@ -46,7 +52,16 @@ class AdaptiveChatNavigationTest {
         restoration.setContent {
             DeviceConfigurationOverride(DeviceConfigurationOverride.ForcedSize(DpSize(1000.dp, 900.dp))) {
                 AdaptiveChatNavigation(layout, rememberDrawerState(DrawerValue.Closed),
-                    drawerContent = { Text("Conversations") },
+                    drawerContent = { Box(Modifier.width(280.dp)) { Text("Conversations") } },
+                    compactContent = if (customDrawer) ({ navigation, detail ->
+                        ChatNavigationDrawer(
+                            drawerState = rememberChatDrawerState(DrawerValue.Closed),
+                            drawerContent = navigation,
+                            gesturesEnabled = true,
+                            contentOffset = { 0f },
+                            onDismiss = {},
+                        ) { detail() }
+                    }) else null,
                     sideContent = if (showScreen) ({ Text("Live screen", Modifier.testTag("live-screen")) }) else null,
                 ) {
                     var draft by rememberSaveable { mutableStateOf("") }

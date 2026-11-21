@@ -36,7 +36,7 @@ import org.junit.rules.ExternalResource
 class PhysicalFoldDeviceTest {
     private val instrumentation = InstrumentationRegistry.getInstrumentation()
     private val context = instrumentation.targetContext
-    private val prefs = listOf("onboarding" to "model_setup_done", "phone_setup" to "guide_seen")
+    private val prefs = listOf("onboarding" to "model_setup_done", "phone_setup" to "guide_seen", "app_language" to "language_prompted")
     private var saved = emptyList<Boolean?>()
     private val draft = "物理折叠回归测试：合屏、半折、展开后保留（未发送）"
 

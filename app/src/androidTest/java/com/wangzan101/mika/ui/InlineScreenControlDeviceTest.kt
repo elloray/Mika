@@ -33,7 +33,7 @@ class InlineScreenControlDeviceTest {
     private val instr = InstrumentationRegistry.getInstrumentation()
     private val ctx = instr.targetContext
     private val model = ScriptedModel().apply { intent = "ACT" }
-    private val prefs = listOf("onboarding" to "model_setup_done", "phone_setup" to "guide_seen")
+    private val prefs = listOf("onboarding" to "model_setup_done", "phone_setup" to "guide_seen", "app_language" to "language_prompted")
     private var testConversation: String? = null
     private var saved = emptyList<Boolean?>()
     @get:Rule(order = 0) val setup = object : ExternalResource() {
