@@ -27,7 +27,6 @@ import com.wangzan101.mika.core.agent.Turn
 import com.wangzan101.mika.core.record.RunEvent
 import com.wangzan101.mika.settings.AccessibilityState
 import com.wangzan101.mika.settings.Prerequisites
-import com.wangzan101.mika.settings.PersonaStore
 import com.wangzan101.mika.settings.Problem
 import com.wangzan101.mika.core.shell.BuiltinShellStatus
 import com.wangzan101.mika.settings.SystemStatus
@@ -817,6 +816,25 @@ class ChatViewModelTest {
 
         vm.takeOver()
         assertEquals("takeOver", calls.last())
+    }
+
+    /** 经 MCP 调外部连接器:在跑时说在调哪个;做完单独一行标连接器配置的名字,失败也看得出是哪个连接器。 */
+    @Test fun mcpConnectorNamedOnLiveLineAndSteps() = runTest {
+        val vm = vm()
+        vm.send("查一下团队笔记", ok)
+        emit(TaskState.Running(1, "我去笔记里找找", mcpConnector = "Team notes"))
+        assertEquals("正在调用 Team notes MCP…", liveLine(vm.ui.value.exchanges.single()))
+
+        acts.value = acts.value + RunEvent.Activity(0, 1, "act", "mcp_demo__search", null, "completed", mcpConnector = "Team notes")
+        runCurrent()
+        acts.value = acts.value + RunEvent.Activity(0, 2, "act", "mcp_demo__search", null, "some_error", failed = true, mcpConnector = "Team notes")
+        runCurrent()
+        emit(TaskState.Succeeded("找到了"))
+        val steps = vm.ui.value.exchanges.single().steps
+        assertEquals(StepRow(1, "已调用 Team notes MCP", "", StepState.Ok), steps[0])
+        assertEquals(StepRow(2, "已调用 Team notes MCP", tr(R.string.step_failed), StepState.Ok), steps[1])
+        // 错误码不给人看
+        assertFalse(steps.joinToString().contains("some_error") || steps.joinToString().contains("mcp_demo"))
     }
 
     @Test fun paymentTakeoverCarriesDetailsAndCanBeSkipped() = runTest {
@@ -3800,38 +3818,6 @@ class ChatViewModelTest {
         assertEquals("personal-work", vm.ui.value.conversationId)
         assertEquals("整理资料", vm.ui.value.exchanges.first().goal)
         assertEquals(1, calls.count { it.startsWith("start:") })
-    }
-
-    /** 新对话选的人格先写进旁文件,再交给服务;任务开局才能读到。 */
-    @Test fun personaIsWrittenBeforeTheTaskStarts() = runTest {
-        val conversations = ConversationStore(tmp.newFolder())
-        val personas = PersonaStore(tmp.newFolder())
-        val p = personas.add("写作助手", "", "先给结论。").getOrThrow()
-        val vm = ChatViewModel(
-            backgroundScope, state, stage, actions, conversations,
-            appLabel = { it }, activities = acts, steers = steerFlow, personaStore = personas,
-        ).also { runCurrent() }
-
-        assertTrue(vm.selectPersona(p.id))
-        assertEquals(p.id, vm.ui.value.personaId)
-        assertTrue(vm.send("查天气", ok))
-        val id = vm.ui.value.conversationId!!
-        assertEquals(p.id, conversations.persona(id)?.personaId)
-    }
-
-    /** 功能关闭时界面不读也不写人格旁文件;任务层也会忽略绑定。 */
-    @Test fun personaBindingIsIgnoredWhenTheFeatureIsOff() = runTest {
-        val conversations = ConversationStore(tmp.newFolder())
-        val id = conversations.newConversation()
-        assertTrue(conversations.setPersona(id, "p1"))
-        val vm = ChatViewModel(
-            backgroundScope, state, stage, actions, conversations,
-            appLabel = { it }, activities = acts, steers = steerFlow, personaStore = null,
-        ).also { runCurrent() }
-
-        vm.openConversation(id)
-        assertNull(vm.ui.value.personaId)
-        assertFalse(vm.selectPersona("p1"))
     }
 
     @Test fun projectDraftPersistsOnSendAndDeletesWithProject() = runTest {

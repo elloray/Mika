@@ -191,8 +191,8 @@ object UsageCopy {
 
     /** 占比:不到 1% 但不是 0 时写「<1%」。 */
     fun percent(share: Double): String {
-        val p = (share * 100).roundToInt()
-        return if (p == 0 && share > 0) "<1%" else "$p%"
+        if (share > 0 && share < 0.01) return "<1%"
+        return "${(share * 100).roundToInt()}%"
     }
 
     fun missing(n: Long) = trPlural(R.plurals.usage_missing, n.toInt())
@@ -260,12 +260,13 @@ object UsageCopy {
 }
 
 /**
- * 设置 › Token 用量。先显示当前额度，再选时间和查看总用量及三张图：用量趋势(按服务商叠起来)、
+ * 设置 › Token 用量。选时间和查看总用量及三张图：用量趋势(按服务商叠起来)、
  * 按服务商排行(点一家选中,再点取消)、按模型排行(可切服务商)。选中的服务商只影响图里亮哪家、模型列哪家的,
  * 总用量始终是全部。账本每记一笔([UsageLedger.version])就重新统计;本地时区在统计时换算。
+ * 服务商的当前额度在服务商页面上看([UsageAllowanceCard])。
  */
 @Composable
-fun UsageScreen(ledger: UsageLedger, store: ProviderStore, onBack: () -> Unit, onOpenUrl: (String) -> Unit) {
+fun UsageScreen(ledger: UsageLedger, store: ProviderStore, onBack: () -> Unit) {
     var preset by rememberSaveable { mutableStateOf(UsagePreset.Week) }
     // 自定义范围的两头,存成纪元日(rememberSaveable 能存的类型)
     var customFrom by rememberSaveable { mutableStateOf<Long?>(null) }
@@ -294,7 +295,6 @@ fun UsageScreen(ledger: UsageLedger, store: ProviderStore, onBack: () -> Unit, o
         onPickCustom = { picking = true },
         onSelect = { selected = it },
         onBack = onBack,
-        currentAllowance = { UsageAllowanceCard(live, store, onOpenUrl) },
     )
 
     if (picking) {
@@ -326,11 +326,9 @@ fun UsageContent(
     onPickCustom: () -> Unit,
     onSelect: (String?) -> Unit,
     onBack: () -> Unit,
-    currentAllowance: @Composable () -> Unit = {},
 ) {
     val c = MikaTheme.colors
     PageScaffold(UsageCopy.TITLE, onBack) {
-        currentAllowance()
         SegmentedControl(
             UsagePreset.entries.map { it.label }, preset.ordinal, { onPreset(UsagePreset.entries[it]) },
             tags = UsagePreset.entries.map { "usage-range-${it.name}" },

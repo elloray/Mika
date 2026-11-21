@@ -221,7 +221,6 @@ fun ChatScreen(
     openReport: (String) -> Unit = {},
     openPlayback: (String) -> Unit = {},
     /** 人格选择器里的「管理人格」:打开设置里的人格页。 */
-    onOpenPersonas: () -> Unit = {},
 ) {
     val checklistStore = checklists ?: (LocalContext.current.applicationContext as? MikaApp)?.savedChecklists
     val workflowRuntime = workflows ?: (LocalContext.current.applicationContext as? MikaApp)?.workflows
@@ -243,8 +242,6 @@ fun ChatScreen(
         DeviceFileBrowser(vm, id) { deviceBrowserConversation = null }
     }
     val pendingJump by vm.jump.collectAsState()
-    val personas by vm.personas.collectAsState()
-    var personaPicker by remember { mutableStateOf(false) }
     val others by vm.otherRunning.collectAsState()
     val keptAny by vm.keptPage.collectAsState()
     // 只管这个对话留下的那一页
@@ -595,16 +592,6 @@ fun ChatScreen(
             steerTarget = null,
             onVoiceHolding = { voiceHolding = it },
             editRequest = editRequest,
-            personaBar = if (personas.isNotEmpty() || ui.personaId != null) {
-                {
-                    PersonaChip(
-                        current = ui.personaId,
-                        personas = personas,
-                        enabled = vm.canSwitchPersona(),
-                        onClick = { personaPicker = true },
-                    )
-                }
-            } else null,
         )
 
         val pipOccupiesCorner = !screenDocked && ui.pip.visible && ui.pip.mode != PipMode.Done
@@ -638,16 +625,6 @@ fun ChatScreen(
         )
 
         if (showUsage) ConversationUsageSheet(ui.conversationId) { showUsage = false }
-
-        if (personaPicker) {
-            PersonaPicker(
-                current = ui.personaId,
-                personas = personas,
-                onSelect = { vm.selectPersona(it) },
-                onManage = { personaPicker = false; onOpenPersonas() },
-                onDismiss = { personaPicker = false },
-            )
-        }
 
         if (!screenDocked) AgentPip(
             pip = ui.pip,
@@ -1792,13 +1769,11 @@ internal fun Composer(
     onVoiceHolding: (Boolean) -> Unit = {},
     sendFromIme: Boolean = false,
     draftKey: String? = null,
-    /** 输入栏上方的人格 chip;为 null 时不显示。 */
-    personaBar: (@Composable () -> Unit)? = null,
 ) {
     val c = MikaTheme.colors
     var fieldFocused by remember { mutableStateOf(false) }
     // 底部从页面底色淡出到透明,输入栏是浮在上面的玻璃
-    val fade = remember(c) { Brush.verticalGradient(0f to c.bg.copy(alpha = 0f), 0.6f to c.bg, 1f to c.bg) }
+    val fade = remember(c) { Brush.verticalGradient(0f to c.bg.copy(alpha = 0f), 0.25f to c.bg, 1f to c.bg) }
     val busy = mode == ComposerMode.Busy
     val context = LocalContext.current
     // 附件功能开着就保留「＋」;此刻不能加时只提示,不展开面板
@@ -1873,7 +1848,6 @@ internal fun Composer(
             .padding(start = 12.dp, end = 12.dp, top = 10.dp, bottom = 6.dp),
     ) {
         Column(Modifier.fillMaxWidth()) {
-            personaBar?.let { it() }
             FollowUpTray(
                 queued, active = mode != ComposerMode.Idle, canGuide = mode == ComposerMode.Busy, onGuide = onGuideQueued,
                 onEdit = onEditQueued, onCancel = onCancelQueued, onStartNow = onStartQueued, onActions = onQueueActions,
@@ -1909,82 +1883,91 @@ internal fun Composer(
                 VoiceFloat(vh, vState, title, backdrop, reduceMotion)
             }
             Box(Modifier.fillMaxWidth()) {
-            GlassBar(Modifier.fillMaxWidth().keepsKeyboard(), backdrop) {
-                if (showAttach) {
-                    val label = if (panel == Panel.Open) AttachCopy.CLOSE else AttachCopy.ADD
-                    val blockedHint = stringResource(R.string.attach_blocked_running)
-                    Box(
-                        Modifier.size(MikaSize.IconButton).background(c.greySoft, CircleShape).clip(CircleShape)
-                            .clickable(enabled = !importing, onClickLabel = label, onClick = {
-                                if (attachBlocked) {
-                                    Toast.makeText(context, blockedHint, Toast.LENGTH_SHORT).show()
-                                } else togglePanel()
-                            }),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Icon(MikaIcons.Plus, label, Modifier.size(20.dp).graphicsLayer { rotationZ = turn }, tint = c.ink)
-                    }
-                }
-                Box(Modifier.weight(1f).padding(start = if (showAttach) 2.dp else 12.dp, end = 4.dp, top = 6.dp, bottom = 6.dp)) {
-                    val converting = vState is HoldToTalk.State.Converting
-                    if (text.isEmpty() && !converting) {
-                        if (vh != null) VoicePlaceholder(mode)
-                        else Text(ChatCopy.placeholder(mode, hasHistory), style = MikaType.Body, color = c.ink3, maxLines = 1)
-                    }
-                    BasicTextField(
-                        shownValue,
-                        { v -> fieldValue = v; if (v.text != text) onText(v.text) },
-                        Modifier.fillMaxWidth().testTag("composer-field").focusRequester(field)
-                            .alpha(if (converting) 0f else 1f)
-                            // 面板开着时点输入框:面板让给键盘
-                            .onFocusChanged {
-                                fieldFocused = it.isFocused
-                                if (it.isFocused && panel == Panel.Open) panel = Panel.Yielding
-                            },
-                        textStyle = MikaType.Body.copy(color = c.ink, textDirection = TextDirection.Content),
-                        cursorBrush = SolidColor(c.accent),
-                        maxLines = 5,
-                        keyboardOptions = if (sendFromIme) KeyboardOptions(imeAction = ImeAction.Send) else KeyboardOptions.Default,
-                        keyboardActions = if (sendFromIme) KeyboardActions(onSend = {
-                            if (AttachTray.canSend(text, attachments, importing)) onSend()
-                        }) else KeyboardActions.Default,
-                    )
-                    // 服务商松开后在转:输入框里转圈,转好的字填进来
-                    if (converting) VoiceConverting(Modifier.align(Alignment.CenterStart))
-                    if (voiceGesture && vh != null) {
-                        Box(Modifier.matchParentSize().holdToTalk(vh) { field.requestFocus(); keyboard?.show() })
-                    }
-                }
+            // 实底卡片:半透明玻璃在两行身后衬的底不一致会显出两个色,输入栏不走高斯模糊
+            GlassBar(Modifier.fillMaxWidth().keepsKeyboard()) {
                 val canSend = AttachTray.canSend(text, attachments, importing)
-                // 键盘出来以后长按输入框留给系统选字;话筒按住才听,点一下只提示按住
-                if (fieldFocused && vh != null) {
-                    val hint = stringResource(R.string.voice_hold_to_talk)
-                    Box(
-                        Modifier.size(MikaSize.IconButton).testTag("composer-mic").holdToTalk(vh) { vh.toast = hint },
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Icon(MikaIcons.Mic, hint, Modifier.size(MikaSize.Icon), tint = c.ink)
+                // 两行:第一行纯输入,第二行按钮;字再多按钮排布也不动
+                Column(Modifier.weight(1f)) {
+                    // start 14dp:文字左缘对齐＋图标可视左缘(40dp 按钮内 20dp 图标居中,字形自身再内缩约 4dp)
+                    Box(Modifier.fillMaxWidth().padding(start = 14.dp, end = 8.dp, top = 4.dp)) {
+                        val converting = vState is HoldToTalk.State.Converting
+                        if (text.isEmpty() && !converting) {
+                            if (vh != null) VoicePlaceholder(mode)
+                            else Text(ChatCopy.placeholder(mode, hasHistory), style = MikaType.Body, color = c.ink3, maxLines = 1)
+                        }
+                        BasicTextField(
+                            shownValue,
+                            { v -> fieldValue = v; if (v.text != text) onText(v.text) },
+                            Modifier.fillMaxWidth().testTag("composer-field").focusRequester(field)
+                                .alpha(if (converting) 0f else 1f)
+                                // 面板开着时点输入框:面板让给键盘
+                                .onFocusChanged {
+                                    fieldFocused = it.isFocused
+                                    if (it.isFocused && panel == Panel.Open) panel = Panel.Yielding
+                                },
+                            textStyle = MikaType.Body.copy(color = c.ink, textDirection = TextDirection.Content),
+                            cursorBrush = SolidColor(c.accent),
+                            maxLines = 5,
+                            keyboardOptions = if (sendFromIme) KeyboardOptions(imeAction = ImeAction.Send) else KeyboardOptions.Default,
+                            keyboardActions = if (sendFromIme) KeyboardActions(onSend = {
+                                if (AttachTray.canSend(text, attachments, importing)) onSend()
+                            }) else KeyboardActions.Default,
+                        )
+                        // 服务商松开后在转:输入框里转圈,转好的字填进来
+                        if (converting) VoiceConverting(Modifier.align(Alignment.CenterStart))
+                        if (voiceGesture && vh != null) {
+                            Box(Modifier.matchParentSize().holdToTalk(vh) { field.requestFocus(); keyboard?.show() })
+                        }
                     }
-                }
-                // 任务在跑时没字就停止;写了字停止让位给发送,发出去的话交给当前任务
-                if (busy && !canSend) {
-                    Box(
-                        Modifier.size(MikaSize.IconButton).background(c.ink, CircleShape).clip(CircleShape)
-                            .clickable(onClickLabel = stringResource(R.string.chat_stop), onClick = onStop),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Icon(MikaIcons.Stop, stringResource(R.string.chat_stop), Modifier.size(26.dp), tint = c.bg)
-                    }
-                }
-                if (!busy || canSend) {
-                    Box(
-                        Modifier.size(MikaSize.IconButton)
-                            .background(if (canSend) c.accent else c.greySoft, CircleShape)
-                            .clip(CircleShape)
-                            .clickable(enabled = canSend, onClickLabel = stringResource(R.string.chat_send)) { panel = Panel.Closed; onSend() },
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Icon(MikaIcons.Up, stringResource(R.string.chat_send), Modifier.size(20.dp), tint = if (canSend) c.onAccent else c.ink3)
+                    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                        if (showAttach) {
+                            val label = if (panel == Panel.Open) AttachCopy.CLOSE else AttachCopy.ADD
+                            val blockedHint = stringResource(R.string.attach_blocked_running)
+                            Box(
+                                Modifier.size(MikaSize.IconButton).clip(CircleShape)
+                                    .clickable(enabled = !importing, onClickLabel = label, onClick = {
+                                        if (attachBlocked) {
+                                            Toast.makeText(context, blockedHint, Toast.LENGTH_SHORT).show()
+                                        } else togglePanel()
+                                    }),
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                Icon(MikaIcons.Plus, label, Modifier.size(20.dp).graphicsLayer { rotationZ = turn }, tint = c.ink)
+                            }
+                        }
+                        Spacer(Modifier.weight(1f))
+                        // 话筒常驻:按住才听,点一下提示按住(引擎不可用则直接弹说明页);键盘出来以后长按输入框留给系统选字
+                        if (vh != null) {
+                            val hint = stringResource(R.string.voice_hold_to_talk)
+                            Box(
+                                Modifier.size(MikaSize.IconButton).testTag("composer-mic").holdToTalk(vh) { if (vh.engineUsable) vh.toast = hint else vh.explainUnavailable() },
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                Icon(MikaIcons.Mic, hint, Modifier.size(MikaSize.Icon), tint = c.ink)
+                            }
+                        }
+                        // 任务在跑时没字就停止;写了字停止让位给发送,发出去的话交给当前任务
+                        if (busy && !canSend) {
+                            Box(
+                                Modifier.size(MikaSize.IconButton).clip(CircleShape)
+                                    .clickable(onClickLabel = stringResource(R.string.chat_stop), onClick = onStop),
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                Icon(MikaIcons.Stop, stringResource(R.string.chat_stop), Modifier.size(26.dp), tint = c.ink)
+                            }
+                        }
+                        if (!busy || canSend) {
+                            // 可发时黑底白箭头(主操作);空输入灰底灰箭头——发送是主行动,空态也有圆底和＋/话筒拉开层级,但灰箭头表明还不可用。全用 token,深色主题自动反转
+                            Box(
+                                Modifier.size(MikaSize.IconButton)
+                                    .clip(CircleShape)
+                                    .background(if (canSend) c.ink else c.neutralSoft)
+                                    .clickable(enabled = canSend, onClickLabel = stringResource(R.string.chat_send)) { panel = Panel.Closed; onSend() },
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                Icon(MikaIcons.Up, stringResource(R.string.chat_send), Modifier.size(20.dp), tint = if (canSend) c.bg else c.ink3)
+                            }
+                        }
                     }
                 }
             }

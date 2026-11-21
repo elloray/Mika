@@ -530,247 +530,249 @@ private fun MikaRoot(
     val sidebarPage = nav.current in setOf(Route.Chat, Route.Personal, Route.Plans, Route.Memory, Route.Browser)
     AdaptiveWindow(navigation = sidebarPage) {
         val page: @Composable (() -> Unit) -> Unit = { openDrawer ->
-            when (nav.current) {
-                Route.PhoneSetup -> PhoneSetupScreen(status, setupRepair, onFix, onboarding = onboarding == OnboardingStep.Phone) {
-                    phoneSetup.markGuideSeen()
-                    if (onboarding == OnboardingStep.Phone) goOnboarding(null) else nav.back()
-                }
-                Route.Welcome -> WelcomeScreen { goOnboarding(OnboardingStep.Model) }
-                Route.ModelSetup -> {
-                    val inOnboarding = onboarding == OnboardingStep.Model
-                    ModelSetupScreen(
-                        store, onboarding = inOnboarding,
-                        onBack = { if (inOnboarding) goOnboarding(OnboardingStep.Welcome) else nav.back() },
-                        onDone = {
-                            if (inOnboarding) {
-                                onboardingState.markModelSetupDone()
-                                goOnboarding(Onboarding.next(OnboardingStep.Model, onboardingInputs()))
-                            } else nav.back()
-                        },
-                    )
-                }
-                Route.Chat, Route.Personal -> screenStates.SaveableStateProvider(nav.current.name) {
-                    // 对话页重新看得见(回到前台、从别的页面回来):补上别处存进来的轮次,接上别处开始的任务
-                    LifecycleStartEffect(Unit) {
-                        app.chat.refresh()
-                        onStopOrDispose {}
-                    }
-                    Box(Modifier.fillMaxSize()) {
-                        val readyRelease = readyUpdate?.takeIf { autoUpdate && it.apkUrl == updateState.update?.apkUrl }
-                        val updateBackdrop = if (readyRelease != null) rememberGlassBackdrop() else null
-                        Box(Modifier.fillMaxSize().glassSource(updateBackdrop)) {
-                            if (nav.current == Route.Personal) PersonalAgentScreen(
-                                runtime = app.personal,
-                                voice = app.voice,
-                                onOpenDrawer = openDrawer,
-                                onOpenTask = { id -> app.chat.openPersonalTask(id); nav.reset() },
-                                memoryRuntime = memoryRuntime,
-                                onModels = { nav.push(Route.Models) },
-                                onPickSpeech = { nav.push(Route.SpeechModel) },
-                            ) else ChatScreen(
-                                vm = app.chat,
-                                check = check,
-                                frames = app.taskState.frames,
-                                webOpen = app.tasks.webScreenOpen,
-                                pipInput = app.taskState.pipInput,
-                                pipSoundOn = app.taskState.pipSoundOn,
-                                pipOperateEnabled = FeatureFlags.get(context).pipOperate(),
-                                reduceMotion = MikaTheme.reduceMotion,
-                                onOpenDrawer = openDrawer,
-                                openSettings = { nav.push(Route.Settings) },
-                                openRun = { runId = it; nav.push(Route.Run) },
-                                openReport = { reportRunId = it; nav.push(Route.Report) },
-                                openPlayback = { reportRunId = it; playbackScreenshotId = null; nav.push(Route.Playback) },
-                                phoneSetupNeed = (if (status.builtinShell != BuiltinShellStatus.Running) phoneSetupNeed else null),
-                                openPhoneSetup = { onFix(Fix.OpenPhoneSetup) },
-                                loadSource = { id ->
-                                    withContext(Dispatchers.IO) { evidenceSource(RunStore(context).events(id)) { ConfirmationNotifier.appLabel(context, it) } }
-                                },
-                                openSource = { id, legacy ->
-                                    sourceRunId = id
-                                    sourceLegacyText = legacy
-                                    nav.push(Route.Source)
-                                },
-                                voice = app.voice,
-                                openSpeechModel = { nav.push(Route.SpeechModel) },
-                                onOpenPersonas = if (personasOn) ({ nav.push(Route.Persona) }) else ({}),
-                                onOpenTeach = { hint ->
-                                    app.teach.prefill(hint)
-                                    nav.push(Route.Teach)
-                                },
-                            )
-                        }
-                        var installUpdate by remember { mutableStateOf<ReleaseInfo?>(null) }
-                        readyRelease?.let { release ->
-                            UpdateReadyCapsule(
-                                release,
-                                onInstall = {
-                                    installUpdate = release
-                                    app.automaticUpdates.dismiss(release)
-                                },
-                                onTimeout = { app.automaticUpdates.dismiss(release) },
-                                onDisable = { app.automaticUpdates.setEnabled(false) },
-                                backdrop = updateBackdrop,
-                                modifier = Modifier.align(Alignment.TopCenter).statusBarsPadding().padding(top = 54.dp),
-                            )
-                        }
-                        installUpdate?.let { release ->
-                            UpdateSheet(release, BuildConfig.VERSION_NAME, BuildConfig.BETA,
-                                onOpenUrl = { openInBrowser(context, it) }, onDismiss = { installUpdate = null })
-                        }
-                    }
-
-                }
-                Route.Settings -> {
-                    val autonomous by app.approvals.autonomous.collectAsState()
-                    SettingsScreen(store, status, release, onFix, onBack = back, onOpenMemory = { nav.push(Route.Memory) },
-                        onOpenModels = { nav.push(Route.Models) },
-                        onOpenBrowser = { nav.push(Route.Browser) },
-                        onOpenFiles = { filesFromDrawer = false; filesConversation = app.chat.ui.value.conversationId; nav.push(Route.Files) },
-                        onOpenPersonal = { nav.show(Route.Personal) },
-                        onOpenPlans = { nav.push(Route.Plans) },
-                        onOpenPersonas = if (personasOn) ({ nav.push(Route.Persona) }) else null,
-                        autonomous = autonomous, onAutonomous = app.approvalControl::setAutonomous,
-                        updateVersion = updateState.update?.version, onOpenAbout = { nav.push(Route.About) },
-                        mcpServers = app.mcpServers,
-                        openPhoneOps = openPhoneOps, onPhoneOpsOpened = { openPhoneOps = false })
-                }
-                Route.Models -> ModelsScreen(store, onBack = back, onOpenSpeech = { nav.push(Route.SpeechModel) }, onOpenVoice = { nav.push(Route.VoiceModel) }, onOpenImage = { nav.push(Route.ImageModel) }, onOpenUsage = { nav.push(Route.Usage) })
-                Route.VoiceModel -> VoiceModelScreen(store, onBack = back)
-                Route.ImageModel -> ImageModelScreen(store, onBack = back)
-                Route.Persona -> if (personasOn) PersonaScreen(app.personas, onBack = back) else LaunchedEffect(Unit) { nav.back() }
-                Route.Usage -> UsageScreen(app.usage, store, onBack = back, onOpenUrl = { openInBrowser(context, it) })
-                Route.SpeechModel -> SpeechModelScreen(store, onBack = back)
-                Route.About -> AboutScreen(
-                    versionName = BuildConfig.VERSION_NAME, build = BuildConfig.GIT_HASH, beta = BuildConfig.BETA,
-                    update = updateState,
-                    issueUrl = remember {
-                        MikaLinks.issueUrl(
-                            MikaLinks.Device(
-                                Build.MANUFACTURER, Build.MODEL, Build.VERSION.RELEASE, Build.VERSION.SDK_INT,
-                                BuildConfig.VERSION_NAME, BuildConfig.GIT_HASH,
-                            ),
-                        )
-                    },
-                    onCheck = app.updates::checkInBackground,
-                    autoUpdate = autoUpdate,
-                    onAutoUpdate = app.automaticUpdates::setEnabled,
-                    mirrorEnabled = mirrorEnabled,
-                    mirrorCount = mirrors.size,
-                    onMirrorEnabled = { on ->
-                        mirrorScope.launch {
-                            val error = withContext(Dispatchers.IO) { app.updateMirrors.setEnabled(on) }
-                            if (error != null) Toast.makeText(context, R.string.about_mirrors_save_failed, Toast.LENGTH_SHORT).show()
-                        }
-                    },
-                    onOpenMirrors = { nav.push(Route.UpdateMirrors) },
-                    onOpenUrl = { openInBrowser(context, it) },
-                    onSaveQr = { QrImage.saveToPictures(context) },
-                    onOpenLicense = { nav.push(Route.License) },
-                    onBack = back,
-                    diagnostics = {
-                        Diagnostics.render(DiagnosticsCollector.collect(context, status))
-                    },
-                )
-                Route.UpdateMirrors -> UpdateMirrorsScreen(app.updateMirrors, onBack = back)
-                Route.License -> LicensesScreen(onBack = back)
-                Route.Browser -> BrowserScreen(remember { UserBrowser.of(context) }, onBack = back)
-                Route.Files -> FileLibraryScreen(app.chat, filesConversation, filesFromDrawer, onBack = back, onAdded = { id ->
-                    app.chat.openConversation(id)
-                    val opened = app.chat.ui.value.conversationId == id
-                    if (opened) nav.reset()
-                    opened
-                }, onOpenSource = { id, target ->
-                    app.chat.openConversationAt(id, target)
-                    val opened = app.chat.ui.value.conversationId == id
-                    if (opened) nav.reset()
-                    opened
-                })
-                Route.Memory -> {
-                    val registry = remember { WebSites.registry(context) }
-                    val sites by registry.entries.collectAsState()
-                    val webSites = WebSitesState(
-                        sites = sites,
-                        onOpenLogin = { WebHandover.showLogin(context, it) },
-                        onLogout = { WebSites.login(context).logout(it) },
-                        onLogoutAll = { WebSites.logoutAll(context) },
-                    )
-                    val routeStore = remember { FileRouteStore.shared(context) }
-                    var routeCount by remember { mutableStateOf<Int?>(null) }
-                    // 第一次取记忆要读盘解密,放到后台线程;页面的协程跟着这一屏走
-                    val vmScope = rememberCoroutineScope()
-                    LaunchedEffect(Unit) { routeCount = withContext(Dispatchers.IO) { runCatching { routeStore.count() }.getOrNull() } }
-                    val vm by produceState<MemoryViewModel?>(null) {
-                        value = withContext(Dispatchers.IO) {
-                            val bundled = GuideCatalog.loadBundled()
-                            MemoryViewModel(
-                                memoryRuntime.store(), memoryRuntime.settings(), memoryRuntime.skills(),
-                                vmScope, memoryRuntime.file().brokenNotice,
-                                wipe = { memoryRuntime.scope.launch(Dispatchers.IO) { memoryRuntime.wipeAll() } },
-                                onForgotten = { id -> memoryRuntime.scope.launch(Dispatchers.IO) { memoryRuntime.stripMemory(setOf(id)) } },
-                                runnableScripts = bundled.runnableScripts(),
-                                appDrafts = memoryRuntime.appKnowledge(),
-                                builtinSkillNames = bundled.items.map { it.name }.toSet(),
-                                onSkillRetired = { app.teach.forget(it) },
-                            )
-                        }
-                    }
-                    vm?.let { m ->
-                        // 从结果卡片的「看看」进来:直接看技能分段
-                        LaunchedEffect(m) {
-                            val open = memoryRuntime.openRequest.value
-                            if (open != null) m.select(if (open.draftId != null) Segment.Pending else Segment.Skills)
-                        }
-                        MemoryDataScreen(
-                            m, webSites, routeCount,
-                            onClearRoutes = {
-                                vmScope.launch { routeCount = withContext(Dispatchers.IO) { routeStore.clear(); routeStore.count() } }
-                            },
-                            onBack = { memoryRuntime.requestOpen(null); nav.back() },
-                        )
-                    }
-                }
-                Route.Run -> {
-                    val id = runId
-                    val vm = remember(id) { id?.let { RunTimelineViewModel(
-                            RunStore(context), it, resolveMemory = app.chat::usedMemoryTexts,
-                            alive = { run -> app.taskState.runs.value.any { r -> r.runId.value == run } },
-                        ) } }
-                    if (vm != null) RunTimelineScreen(vm, back) else LaunchedEffect(Unit) { nav.back() }
-                }
-                Route.Report, Route.Playback -> {
-                    val id = reportRunId
-                    val vm = remember(id) { id?.let { TaskReportViewModel(RunStore(context), it) } }
-                    if (vm == null) LaunchedEffect(Unit) { nav.back() }
-                    else if (nav.current == Route.Report) TaskReportScreen(vm, back,
-                        onReplay = { playbackScreenshotId = it; nav.push(Route.Playback) },
-                        onTimeline = { runId = id; nav.push(Route.Run) })
-                    else TaskPlaybackScreen(vm, playbackScreenshotId, back)
-                }
-                Route.Source -> {
-                    val vm = remember(sourceRunId, sourceLegacyText) {
-                        SourceViewModel(RunStore(context), sourceRunId, sourceLegacyText) { ConfirmationNotifier.appLabel(context, it) }
-                    }
-                    SourceScreen(vm, back)
-                }
-                Route.Plans -> PlansScreen(context, onBack = back, onOpenConversation = {
-                    app.chat.openConversation(it)
-                    nav.reset()
-                })
-                Route.Teach -> TeachScreen(
-                    app.teach,
-                    onBack = { nav.back() },
-                    onOpenDrafts = {
-                        memoryRuntime.requestOpen(com.wangzan101.mika.memory.MemoryOpen(app.teach.ui.value.session?.draftId))
-                        nav.push(Route.Memory)
-                    },
-                )
-                Route.Screens -> ScreensScreen(app.taskState, onBack = back, onOpenConversation = {
-                    app.chat.openConversation(it)
-                    nav.reset()
-                })
-                Route.Calls -> CallSettingsScreen(app.calls, onBack = back, standalone = true, initialHistoryCallId = focusedCallHistoryId)
+    // 全局换页套滑动推入过渡;页内一律用 route 不用 nav.current:过渡动画期间旧页还在渲染,读实时状态会瞬间变脸
+    NavSlide(nav.stack, depth = { it.size }) { stack ->
+    val route = stack.last()
+    when (route) {
+        Route.PhoneSetup -> PhoneSetupScreen(status, setupRepair, onFix, onboarding = onboarding == OnboardingStep.Phone) {
+            phoneSetup.markGuideSeen()
+            if (onboarding == OnboardingStep.Phone) goOnboarding(null) else nav.back()
+        }
+        Route.Welcome -> WelcomeScreen { goOnboarding(OnboardingStep.Model) }
+        Route.ModelSetup -> {
+            val inOnboarding = onboarding == OnboardingStep.Model
+            ModelSetupScreen(
+                store, onboarding = inOnboarding,
+                onBack = { if (inOnboarding) goOnboarding(OnboardingStep.Welcome) else nav.back() },
+                onDone = {
+                    if (inOnboarding) {
+                        onboardingState.markModelSetupDone()
+                        goOnboarding(Onboarding.next(OnboardingStep.Model, onboardingInputs()))
+                    } else nav.back()
+                },
+            )
+        }
+        Route.Chat, Route.Personal -> screenStates.SaveableStateProvider(route.name) {
+            // 对话页重新看得见(回到前台、从别的页面回来):补上别处存进来的轮次,接上别处开始的任务
+            LifecycleStartEffect(Unit) {
+                app.chat.refresh()
+                onStopOrDispose {}
             }
+            Box(Modifier.fillMaxSize()) {
+                    val readyRelease = readyUpdate?.takeIf { autoUpdate && it.apkUrl == updateState.update?.apkUrl }
+                    val updateBackdrop = if (readyRelease != null) rememberGlassBackdrop() else null
+                    Box(Modifier.fillMaxSize().glassSource(updateBackdrop)) {
+                        if (route == Route.Personal) PersonalAgentScreen(
+                            runtime = app.personal,
+                            voice = app.voice,
+                            onOpenDrawer = openDrawer,
+                            onOpenTask = { id -> app.chat.openPersonalTask(id); nav.reset() },
+                            memoryRuntime = memoryRuntime,
+                            onModels = { nav.push(Route.Models) },
+                            onPickSpeech = { nav.push(Route.SpeechModel) },
+                        ) else ChatScreen(
+                            vm = app.chat,
+                            check = check,
+                            frames = app.taskState.frames,
+                            webOpen = app.tasks.webScreenOpen,
+                            pipInput = app.taskState.pipInput,
+                            pipSoundOn = app.taskState.pipSoundOn,
+                            pipOperateEnabled = FeatureFlags.get(context).pipOperate(),
+                            reduceMotion = MikaTheme.reduceMotion,
+                            onOpenDrawer = openDrawer,
+                            openSettings = { nav.push(Route.Settings) },
+                            openRun = { runId = it; nav.push(Route.Run) },
+                            openReport = { reportRunId = it; nav.push(Route.Report) },
+                            openPlayback = { reportRunId = it; playbackScreenshotId = null; nav.push(Route.Playback) },
+                            phoneSetupNeed = (if (status.builtinShell != BuiltinShellStatus.Running) phoneSetupNeed else null),
+                            openPhoneSetup = { onFix(Fix.OpenPhoneSetup) },
+                            loadSource = { id ->
+                                withContext(Dispatchers.IO) { evidenceSource(RunStore(context).events(id)) { ConfirmationNotifier.appLabel(context, it) } }
+                            },
+                            openSource = { id, legacy ->
+                                sourceRunId = id
+                                sourceLegacyText = legacy
+                                nav.push(Route.Source)
+                            },
+                            voice = app.voice,
+                            openSpeechModel = { nav.push(Route.SpeechModel) },
+                            onOpenTeach = { hint ->
+                                app.teach.prefill(hint)
+                                nav.push(Route.Teach)
+                            },
+                        )
+                    }
+                    var installUpdate by remember { mutableStateOf<ReleaseInfo?>(null) }
+                    readyRelease?.let { release ->
+                        UpdateReadyCapsule(
+                            release,
+                            onInstall = {
+                                installUpdate = release
+                                app.automaticUpdates.dismiss(release)
+                            },
+                            onTimeout = { app.automaticUpdates.dismiss(release) },
+                            onDisable = { app.automaticUpdates.setEnabled(false) },
+                            backdrop = updateBackdrop,
+                            modifier = Modifier.align(Alignment.TopCenter).statusBarsPadding().padding(top = 54.dp),
+                        )
+                    }
+                    installUpdate?.let { release ->
+                        UpdateSheet(release, BuildConfig.VERSION_NAME, BuildConfig.BETA,
+                            onOpenUrl = { openInBrowser(context, it) }, onDismiss = { installUpdate = null })
+                    }
+                }
+        }
+        Route.Settings -> {
+            val autonomous by app.approvals.autonomous.collectAsState()
+            SettingsScreen(store, status, release, onFix, onBack = back, onOpenMemory = { nav.push(Route.Memory) },
+                onOpenModels = { nav.push(Route.Models) },
+                onOpenBrowser = { nav.push(Route.Browser) },
+                onOpenFiles = { filesFromDrawer = false; filesConversation = app.chat.ui.value.conversationId; nav.push(Route.Files) },
+                onOpenPersonal = { nav.show(Route.Personal) },
+                onOpenPlans = { nav.push(Route.Plans) },
+                onOpenPersonas = if (personasOn) ({ nav.push(Route.Persona) }) else null,
+                autonomous = autonomous, onAutonomous = app.approvalControl::setAutonomous,
+                updateVersion = updateState.update?.version, onOpenAbout = { nav.push(Route.About) },
+                mcpServers = app.mcpServers,
+                openPhoneOps = openPhoneOps, onPhoneOpsOpened = { openPhoneOps = false })
+        }
+        Route.Models -> ModelsScreen(store, onBack = back, onOpenSpeech = { nav.push(Route.SpeechModel) }, onOpenVoice = { nav.push(Route.VoiceModel) }, onOpenImage = { nav.push(Route.ImageModel) }, onOpenUsage = { nav.push(Route.Usage) })
+        Route.VoiceModel -> VoiceModelScreen(store, onBack = back)
+        Route.ImageModel -> ImageModelScreen(store, onBack = back)
+        Route.Persona -> if (personasOn) PersonaScreen(app.personas, onBack = back) else LaunchedEffect(Unit) { nav.back() }
+        Route.Usage -> UsageScreen(app.usage, store, onBack = back)
+        Route.SpeechModel -> SpeechModelScreen(store, onBack = back)
+        Route.About -> AboutScreen(
+            versionName = BuildConfig.VERSION_NAME, build = BuildConfig.GIT_HASH, beta = BuildConfig.BETA,
+            update = updateState,
+            issueUrl = remember {
+                MikaLinks.issueUrl(
+                    MikaLinks.Device(
+                        Build.MANUFACTURER, Build.MODEL, Build.VERSION.RELEASE, Build.VERSION.SDK_INT,
+                        BuildConfig.VERSION_NAME, BuildConfig.GIT_HASH,
+                    ),
+                )
+            },
+            onCheck = app.updates::checkInBackground,
+            autoUpdate = autoUpdate,
+            onAutoUpdate = app.automaticUpdates::setEnabled,
+            mirrorEnabled = mirrorEnabled,
+            mirrorCount = mirrors.size,
+            onMirrorEnabled = { on ->
+                mirrorScope.launch {
+                    val error = withContext(Dispatchers.IO) { app.updateMirrors.setEnabled(on) }
+                    if (error != null) Toast.makeText(context, R.string.about_mirrors_save_failed, Toast.LENGTH_SHORT).show()
+                }
+            },
+            onOpenMirrors = { nav.push(Route.UpdateMirrors) },
+            onOpenUrl = { openInBrowser(context, it) },
+            onSaveQr = { QrImage.saveToPictures(context) },
+            onOpenLicense = { nav.push(Route.License) },
+            onBack = back,
+            diagnostics = {
+                Diagnostics.render(DiagnosticsCollector.collect(context, status))
+            },
+        )
+        Route.UpdateMirrors -> UpdateMirrorsScreen(app.updateMirrors, onBack = back)
+        Route.License -> LicensesScreen(onBack = back)
+        Route.Browser -> BrowserScreen(remember { UserBrowser.of(context) }, onBack = back)
+        Route.Files -> FileLibraryScreen(app.chat, filesConversation, filesFromDrawer, onBack = back, onAdded = { id ->
+            app.chat.openConversation(id)
+            val opened = app.chat.ui.value.conversationId == id
+            if (opened) nav.reset()
+            opened
+        }, onOpenSource = { id, target ->
+            app.chat.openConversationAt(id, target)
+            val opened = app.chat.ui.value.conversationId == id
+            if (opened) nav.reset()
+            opened
+        })
+        Route.Memory -> {
+            val registry = remember { WebSites.registry(context) }
+            val sites by registry.entries.collectAsState()
+            val webSites = WebSitesState(
+                sites = sites,
+                onOpenLogin = { WebHandover.showLogin(context, it) },
+                onLogout = { WebSites.login(context).logout(it) },
+                onLogoutAll = { WebSites.logoutAll(context) },
+            )
+            val routeStore = remember { FileRouteStore.shared(context) }
+            var routeCount by remember { mutableStateOf<Int?>(null) }
+            // 第一次取记忆要读盘解密,放到后台线程;页面的协程跟着这一屏走
+            val vmScope = rememberCoroutineScope()
+            LaunchedEffect(Unit) { routeCount = withContext(Dispatchers.IO) { runCatching { routeStore.count() }.getOrNull() } }
+            val vm by produceState<MemoryViewModel?>(null) {
+                value = withContext(Dispatchers.IO) {
+                    val bundled = GuideCatalog.loadBundled()
+                    MemoryViewModel(
+                        memoryRuntime.store(), memoryRuntime.settings(), memoryRuntime.skills(),
+                        vmScope, memoryRuntime.file().brokenNotice,
+                        wipe = { memoryRuntime.scope.launch(Dispatchers.IO) { memoryRuntime.wipeAll() } },
+                        onForgotten = { id -> memoryRuntime.scope.launch(Dispatchers.IO) { memoryRuntime.stripMemory(setOf(id)) } },
+                        runnableScripts = bundled.runnableScripts(),
+                        appDrafts = memoryRuntime.appKnowledge(),
+                        builtinSkillNames = bundled.items.map { it.name }.toSet(),
+                        onSkillRetired = { app.teach.forget(it) },
+                    )
+                }
+            }
+            vm?.let { m ->
+                // 从结果卡片的「看看」进来:直接看技能分段
+                LaunchedEffect(m) {
+                    val open = memoryRuntime.openRequest.value
+                    if (open != null) m.select(if (open.draftId != null) Segment.Pending else Segment.Skills)
+                }
+                MemoryDataScreen(
+                    m, webSites, routeCount,
+                    onClearRoutes = {
+                        vmScope.launch { routeCount = withContext(Dispatchers.IO) { routeStore.clear(); routeStore.count() } }
+                    },
+                    onBack = { memoryRuntime.requestOpen(null); nav.back() },
+                )
+            }
+        }
+        Route.Run -> {
+            val id = runId
+            val vm = remember(id) { id?.let { RunTimelineViewModel(
+                    RunStore(context), it, resolveMemory = app.chat::usedMemoryTexts,
+                    alive = { run -> app.taskState.runs.value.any { r -> r.runId.value == run } },
+                ) } }
+            if (vm != null) RunTimelineScreen(vm, back) else LaunchedEffect(Unit) { nav.back() }
+        }
+        Route.Report, Route.Playback -> {
+            val id = reportRunId
+            val vm = remember(id) { id?.let { TaskReportViewModel(RunStore(context), it) } }
+            if (vm == null) LaunchedEffect(Unit) { nav.back() }
+            else if (route == Route.Report) TaskReportScreen(vm, back,
+                onReplay = { playbackScreenshotId = it; nav.push(Route.Playback) },
+                onTimeline = { runId = id; nav.push(Route.Run) })
+            else TaskPlaybackScreen(vm, playbackScreenshotId, back)
+        }
+        Route.Source -> {
+            val vm = remember(sourceRunId, sourceLegacyText) {
+                SourceViewModel(RunStore(context), sourceRunId, sourceLegacyText) { ConfirmationNotifier.appLabel(context, it) }
+            }
+            SourceScreen(vm, back)
+        }
+        Route.Plans -> PlansScreen(context, onBack = back, onOpenConversation = {
+            app.chat.openConversation(it)
+            nav.reset()
+        })
+        Route.Teach -> TeachScreen(
+            app.teach,
+            onBack = { nav.back() },
+            onOpenDrafts = {
+                memoryRuntime.requestOpen(com.wangzan101.mika.memory.MemoryOpen(app.teach.ui.value.session?.draftId))
+                nav.push(Route.Memory)
+            },
+        )
+        Route.Screens -> ScreensScreen(app.taskState, onBack = back, onOpenConversation = {
+            app.chat.openConversation(it)
+            nav.reset()
+        })
+        Route.Calls -> CallSettingsScreen(app.calls, onBack = back, standalone = true, initialHistoryCallId = focusedCallHistoryId)
+    }
+    }
         }
         val permanent = LocalAdaptiveLayout.current.hasNavigation
         if (nav.current == Route.Chat || nav.current == Route.Personal || (permanent && sidebarPage)) {
